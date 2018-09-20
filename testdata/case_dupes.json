@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/case_dupes",
+  "type": "object",
+  "properties": {
+    "somefield": {
+      "type": "string"
+    },
+    "someField": {
+      "type": "string"
+    },
+    "some_field": {
+      "type": "string"
+    },
+    "some_Field": {
+      "type": "string"
+    },
+    "SomeField": {
+      "type": "string"
+    }
+  }
+}

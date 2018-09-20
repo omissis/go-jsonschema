@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/object_with_anonymous_properties",
+  "type": "object",
+  "properties": {
+    "foo": {
+      "type": "object",
+      "required": ["bar"],
+      "properties": {
+        "bar": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

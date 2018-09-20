@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/ref_to_external_file_with_dupe",
+  "type": "object",
+  "description": "A simple schema.",
+  "properties": {
+    "myThing": {
+      "$ref": "./ref.json#/Definitions/Thing"
+    },
+    "myOtherThing": {
+      "$ref": "#/Definitions/Thing"
+    }
+  },
+  "definitions": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "something": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/empty_def",
+  "type": "object",
+  "properties": {
+    "foo": {}
+  }
+}

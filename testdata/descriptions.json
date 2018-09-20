@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/descriptions",
+  "type": "object",
+  "description": "A simple schema.",
+  "properties": {
+    "myField": {
+      "type": "string",
+      "description": "A string field."
+    },
+    "myDescriptionlessField": {
+      "type": "string"
+    }
+  }
+}

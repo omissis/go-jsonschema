@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/required_fields",
+  "type": "object",
+  "required": [
+    "myString",
+    "myNumber",
+    "myBoolean",
+    "myNull",
+    "myObject",
+    "myStringArray",
+    "myNumberArray",
+    "myBooleanArray",
+    "myNullArray"
+  ],
+  "properties": {
+    "myString": {
+      "type": "string"
+    },
+    "myNumber": {
+      "type": "number"
+    },
+    "myBoolean": {
+      "type": "boolean"
+    },
+    "myNull": {
+      "type": "null"
+    },
+    "myObject": {
+      "type": "object",
+      "required": ["s"],
+      "properties": {
+        "s": {
+          "type": "string"
+        }
+      }
+    },
+
+    "myStringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "myNumberArray": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "myBooleanArray": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "myNullArray": {
+      "type": "array",
+      "items": {
+        "type": "null"
+      }
+    }
+  }
+}

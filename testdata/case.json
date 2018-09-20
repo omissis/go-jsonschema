@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/case",
+  "type": "object",
+  "properties": {
+    "lowercase": {
+      "type": "string"
+    },
+    "camelCase": {
+      "type": "string"
+    },
+    "snake_case": {
+      "type": "string"
+    },
+    "snake_Mixed_Case": {
+      "type": "string"
+    },
+    "CapitalCamelField": {
+      "type": "string"
+    },
+    "UPPERCASEFIELD": {
+      "type": "string"
+    }
+  }
+}
