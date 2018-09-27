@@ -112,6 +112,15 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 	return schema, nil
 }
 
+func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
+	for _, m := range g.schemaMappings {
+		if m.SchemaID == schema.ID && m.RootType != "" {
+			return m.RootType
+		}
+	}
+	return codegen.IdentifierFromFileName(fileName)
+}
+
 func (g *Generator) findOutputFileForSchemaID(id string) (*codegen.File, error) {
 	if f, ok := g.schemaFiles[id]; ok {
 		return f, nil
@@ -183,16 +192,7 @@ func (g *schemaGenerator) generateRootType() error {
 		return fmt.Errorf("type of root must be object; found %q", g.schema.Type.Type)
 	}
 
-	var rootTypeName string
-	for _, m := range g.schemaMappings {
-		if m.SchemaID == g.schema.ID && m.RootType != "" {
-			rootTypeName = m.RootType
-			break
-		}
-	}
-	if rootTypeName == "" {
-		rootTypeName = codegen.IdentifierFromFileName(g.schemaFileName)
-	}
+	rootTypeName := g.getRootTypeName(g.schema, g.schemaFileName)
 	if _, ok := g.types[rootTypeName]; ok {
 		return nil
 	}
@@ -226,6 +226,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 	var def *schemas.Type
 	if defName != "" {
+		// TODO: Support nested definitions
 		var ok bool
 		def, ok = schema.Definitions[defName]
 		if !ok {
@@ -233,6 +234,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}
 	} else {
 		def = schema.Type
+		defName = g.getRootTypeName(schema, fileName)
 	}
 
 	var sg *schemaGenerator
@@ -289,6 +291,10 @@ func (g *schemaGenerator) generateStructType(
 	t *schemas.Type,
 	defs schemas.Definitions,
 	isRoot bool) (codegen.Type, error) {
+	if typeName == "" {
+		return nil, errors.New("empty type name")
+	}
+
 	if s, ok := g.types[typeName]; ok {
 		return &codegen.NamedType{Decl: s}, nil
 	}
