@@ -11,7 +11,8 @@
     "myStringArray",
     "myNumberArray",
     "myBooleanArray",
-    "myNullArray"
+    "myNullArray",
+    "myObjectArray"
   ],
   "properties": {
     "myString": {
@@ -28,9 +29,9 @@
     },
     "myObject": {
       "type": "object",
-      "required": ["s"],
+      "required": ["myNestedObjectString"],
       "properties": {
-        "s": {
+        "myNestedObjectString": {
           "type": "string"
         }
       }
@@ -58,6 +59,18 @@
       "type": "array",
       "items": {
         "type": "null"
+      }
+    },
+    "myObjectArray": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["myNestedObjectString"],
+        "properties": {
+          "myNestedObjectString": {
+            "type": "string"
+          }
+        }
       }
     }
   }

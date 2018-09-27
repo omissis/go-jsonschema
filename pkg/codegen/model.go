@@ -51,14 +51,9 @@ func (p *Package) Generate(out *Emitter) {
 	out.Comment(p.Comment)
 	out.Println("package %s", p.Name())
 	if len(p.Imports) > 0 {
-		// out.Println("(")
-		// out.Indent(1)
-		out.Newline()
 		for _, i := range p.Imports {
 			i.Generate(out)
 		}
-		// out.Indent(-1)
-		// out.Println(")")
 	}
 	out.Newline()
 	for i, t := range p.Decls {
@@ -109,7 +104,11 @@ type Import struct {
 }
 
 func (i *Import) Generate(out *Emitter) {
-	out.Println("import %s %q", i.Name, i.QualifiedName)
+	if i.Name != "" {
+		out.Println("import %s %q", i.Name, i.QualifiedName)
+	} else {
+		out.Println("import %q", i.QualifiedName)
+	}
 }
 
 // TypeDecl is a "type <name> = <definition>".

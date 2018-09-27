@@ -22,16 +22,13 @@ type SchemaMapping struct {
 }
 
 type Generator struct {
-	emitter            *codegen.Emitter
-	defaultPackageName string
-	defaultOutputName  string
-	schemaMappings     []SchemaMapping
-	warner             func(string)
-
-	schemaFiles map[string]*codegen.File
-	schemasRead map[string]*schemas.Schema
-	enums       map[string]cachedEnum
-	types       map[string]*codegen.TypeDecl
+	emitter               *codegen.Emitter
+	defaultPackageName    string
+	defaultOutputName     string
+	schemaMappings        []SchemaMapping
+	warner                func(string)
+	outputs               map[string]*output
+	schemaCacheByFileName map[string]*schemas.Schema
 }
 
 func New(
@@ -40,27 +37,25 @@ func New(
 	defaultOutputName string,
 	warner func(string)) (*Generator, error) {
 	return &Generator{
-		warner:             warner,
-		schemaMappings:     schemaMappings,
-		defaultPackageName: defaultPackageName,
-		defaultOutputName:  defaultOutputName,
-		schemaFiles:        map[string]*codegen.File{},
-		types:              map[string]*codegen.TypeDecl{},
-		schemasRead:        map[string]*schemas.Schema{},
-		enums:              map[string]cachedEnum{},
+		warner:                warner,
+		schemaMappings:        schemaMappings,
+		defaultPackageName:    defaultPackageName,
+		defaultOutputName:     defaultOutputName,
+		outputs:               map[string]*output{},
+		schemaCacheByFileName: map[string]*schemas.Schema{},
 	}, nil
 }
 
 func (g *Generator) Sources() map[string][]byte {
-	sources := make(map[string]*strings.Builder, len(g.schemaFiles))
-	for _, f := range g.schemaFiles {
+	sources := make(map[string]*strings.Builder, len(g.outputs))
+	for _, output := range g.outputs {
 		emitter := codegen.NewEmitter(80)
-		f.Generate(emitter)
+		output.file.Generate(emitter)
 
-		sb, ok := sources[f.FileName]
+		sb, ok := sources[output.file.FileName]
 		if !ok {
 			sb = &strings.Builder{}
-			sources[f.FileName] = sb
+			sources[output.file.FileName] = sb
 		}
 		_, _ = sb.WriteString(emitter.String())
 	}
@@ -73,7 +68,7 @@ func (g *Generator) Sources() map[string][]byte {
 }
 
 func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
-	f, err := g.findOutputFileForSchemaID(schema.ID)
+	o, err := g.findOutputFileForSchemaID(schema.ID)
 	if err != nil {
 		return err
 	}
@@ -82,7 +77,7 @@ func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
 		Generator:      g,
 		schema:         schema,
 		schemaFileName: fileName,
-		file:           f,
+		output:         o,
 	}).generateRootType()
 }
 
@@ -96,7 +91,7 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 		return nil, err
 	}
 
-	if schema, ok := g.schemasRead[fileName]; ok {
+	if schema, ok := g.schemaCacheByFileName[fileName]; ok {
 		return schema, nil
 	}
 
@@ -104,7 +99,7 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 	if err != nil {
 		return nil, err
 	}
-	g.schemasRead[fileName] = schema
+	g.schemaCacheByFileName[fileName] = schema
 
 	if err = g.AddFile(fileName, schema); err != nil {
 		return nil, err
@@ -121,9 +116,9 @@ func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) str
 	return codegen.IdentifierFromFileName(fileName)
 }
 
-func (g *Generator) findOutputFileForSchemaID(id string) (*codegen.File, error) {
-	if f, ok := g.schemaFiles[id]; ok {
-		return f, nil
+func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
+	if o, ok := g.outputs[id]; ok {
+		return o, nil
 	}
 
 	for _, m := range g.schemaMappings {
@@ -136,7 +131,7 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*codegen.File, error) 
 
 func (g *Generator) beginOutput(
 	id string,
-	outputName, packageName string) (*codegen.File, error) {
+	outputName, packageName string) (*output, error) {
 	if outputName == "" {
 		return nil, fmt.Errorf("unable to map schema URI %q to a file name", id)
 	}
@@ -144,42 +139,51 @@ func (g *Generator) beginOutput(
 		return nil, fmt.Errorf("unable to map schema URI %q to a Go package name", id)
 	}
 
-	for _, f := range g.schemaFiles {
-		if f.FileName == outputName && f.Package.QualifiedName != packageName {
+	for _, o := range g.outputs {
+		if o.file.FileName == outputName && o.file.Package.QualifiedName != packageName {
 			return nil, fmt.Errorf(
 				"conflict: same file (%s) mapped to two different Go packages (%q and %q) for schema %q",
-				f.FileName, f.Package.QualifiedName, packageName, id)
+				o.file.FileName, o.file.Package.QualifiedName, packageName, id)
 		}
-		if f.FileName == outputName && f.Package.QualifiedName == packageName {
-			return f, nil
+		if o.file.FileName == outputName && o.file.Package.QualifiedName == packageName {
+			return o, nil
 		}
 	}
 
 	pkg := codegen.Package{
 		QualifiedName: packageName,
 	}
+	pkg.AddImport(codegen.Import{QualifiedName: "fmt"})
+	pkg.AddImport(codegen.Import{QualifiedName: "reflect"})
+	pkg.AddImport(codegen.Import{QualifiedName: "encoding/json"})
+
 	pkg.AddDecl(codegen.Fragment(func(out *codegen.Emitter) {
 		out.Println(`func validateEnum(value interface{}, expected ...interface{}) error {
   for _, v := range expected {
 		if reflect.DeepEqual(value, v) {
-			return true
+			return nil
 		}
 	}
 	return fmt.Errorf("invalid value: %%#v", value)
 }`)
 	}))
 
-	f := codegen.File{
-		FileName: outputName,
-		Package:  pkg,
+	output := &output{
+		warner: g.warner,
+		file: &codegen.File{
+			FileName: outputName,
+			Package:  pkg,
+		},
+		types: map[string]*codegen.TypeDecl{},
+		enums: map[string]cachedEnum{},
 	}
-	g.schemaFiles[id] = &f
-	return &f, nil
+	g.outputs[id] = output
+	return output, nil
 }
 
 type schemaGenerator struct {
 	*Generator
-	file           *codegen.File
+	output         *output
 	schema         *schemas.Schema
 	schemaFileName string
 }
@@ -193,7 +197,7 @@ func (g *schemaGenerator) generateRootType() error {
 	}
 
 	rootTypeName := g.getRootTypeName(g.schema, g.schemaFileName)
-	if _, ok := g.types[rootTypeName]; ok {
+	if _, ok := g.output.types[rootTypeName]; ok {
 		return nil
 	}
 
@@ -239,7 +243,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 	var sg *schemaGenerator
 	if fileName != "" {
-		f, err := g.findOutputFileForSchemaID(schema.ID)
+		output, err := g.findOutputFileForSchemaID(schema.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -248,7 +252,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 			Generator:      g.Generator,
 			schema:         schema,
 			schemaFileName: fileName,
-			file:           f,
+			output:         output,
 		}
 	} else {
 		sg = g
@@ -264,26 +268,26 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		panic(fmt.Sprintf("expected *NamedType, got %T", t))
 	}
 
-	if sg.file.Package.QualifiedName == g.file.Package.QualifiedName {
+	if sg.output.file.Package.QualifiedName == g.output.file.Package.QualifiedName {
 		return namedType, nil
 	}
 
 	var imp *codegen.Import
-	for _, i := range g.file.Package.Imports {
-		if i.Name == sg.file.Package.Name() && i.QualifiedName == sg.file.Package.QualifiedName {
+	for _, i := range g.output.file.Package.Imports {
+		if i.Name == sg.output.file.Package.Name() && i.QualifiedName == sg.output.file.Package.QualifiedName {
 			imp = &i
 			break
 		}
 	}
 	if imp == nil {
-		g.file.Package.AddImport(codegen.Import{
-			Name:          sg.file.Package.Name(),
-			QualifiedName: sg.file.Package.QualifiedName,
+		g.output.file.Package.AddImport(codegen.Import{
+			Name:          sg.output.file.Package.Name(),
+			QualifiedName: sg.output.file.Package.QualifiedName,
 		})
 	}
 
 	// TODO: Use better result here that doesn't need string concatenation
-	return codegen.PrimitiveType{sg.file.Package.Name() + "." + namedType.Decl.Name}, nil
+	return codegen.PrimitiveType{sg.output.file.Package.Name() + "." + namedType.Decl.Name}, nil
 }
 
 func (g *schemaGenerator) generateStructType(
@@ -295,7 +299,7 @@ func (g *schemaGenerator) generateStructType(
 		return nil, errors.New("empty type name")
 	}
 
-	if s, ok := g.types[typeName]; ok {
+	if s, ok := g.output.types[typeName]; ok {
 		return &codegen.NamedType{Decl: s}, nil
 	}
 
@@ -303,7 +307,7 @@ func (g *schemaGenerator) generateStructType(
 		Name:    typeName,
 		Comment: t.Description,
 	}
-	g.types[typeName] = &structDecl
+	g.output.types[typeName] = &structDecl
 
 	if structDecl.Comment == "" {
 		if origName != "" {
@@ -370,8 +374,8 @@ func (g *schemaGenerator) generateStructType(
 		structType.AddField(structField)
 	}
 
-	g.file.Package.AddDecl(&structDecl)
-	g.file.Package.AddDecl(&codegen.Method{
+	g.output.file.Package.AddDecl(&structDecl)
+	g.output.file.Package.AddDecl(&codegen.Method{
 		Impl: func(out *codegen.Emitter) {
 			out.Comment("UnmarshalJSON implements json.Unmarshaler.")
 			out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", structDecl.Name)
@@ -502,7 +506,7 @@ func (g *schemaGenerator) generateTypeForStructFieldEnum(
 		return fmt.Errorf("property %q enum array cannot be empty", name)
 	}
 
-	if enumDecl, ok := g.findEnum(t.Enum); ok {
+	if enumDecl, ok := g.output.findEnum(t.Enum); ok {
 		structField.Type = enumDecl
 		return nil
 	}
@@ -542,12 +546,18 @@ func (g *schemaGenerator) generateTypeForStructFieldEnum(
 	}
 
 	enumDecl := codegen.TypeDecl{
-		Name:    codegen.Identifierize(name) + "Enum",
+		Name:    g.output.uniqueTypeName(codegen.Identifierize(name) + "Enum"),
 		Type:    propType,
 		Comment: t.Description,
 	}
-	g.file.Package.AddDecl(&enumDecl)
-	g.file.Package.AddDecl(&codegen.Method{
+	g.output.types[enumDecl.Name] = &enumDecl
+	g.output.enums[hashArrayOfValues(t.Enum)] = cachedEnum{
+		enum:   &enumDecl,
+		values: t.Enum,
+	}
+
+	g.output.file.Package.AddDecl(&enumDecl)
+	g.output.file.Package.AddDecl(&codegen.Method{
 		Impl: func(out *codegen.Emitter) {
 			out.Comment("UnmarshalJSON implements json.Unmarshaler.")
 			out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
@@ -576,8 +586,8 @@ func (g *schemaGenerator) generateTypeForStructFieldEnum(
 		for _, v := range t.Enum {
 			if s, ok := v.(string); ok {
 				// TODO: Make sure the name is unique across scope
-				g.file.Package.AddDecl(&codegen.Constant{
-					Name:  enumDecl.Name + codegen.Identifierize(s),
+				g.output.file.Package.AddDecl(&codegen.Constant{
+					Name:  makeEnumConstantName(enumDecl.Name, s),
 					Type:  &codegen.NamedType{Decl: &enumDecl},
 					Value: s,
 				})
@@ -586,11 +596,6 @@ func (g *schemaGenerator) generateTypeForStructFieldEnum(
 	}
 
 	structField.Type = &codegen.NamedType{Decl: &enumDecl}
-
-	g.enums[hashArrayOfValues(t.Enum)] = cachedEnum{
-		enum:   &enumDecl,
-		values: t.Enum,
-	}
 	return nil
 }
 
@@ -606,29 +611,39 @@ func (g *schemaGenerator) generateAnonymousType(
 			}, nil
 		}
 
-		typeName := g.uniqueTypeName(fmt.Sprintf("%s%s", parentType.Name, codegen.Identifierize(fieldName)))
+		typeName := g.output.uniqueTypeName(
+			fmt.Sprintf("%s%s", parentType.Name, codegen.Identifierize(fieldName)))
 		return g.generateStructType(typeName, "", t, g.schema.Definitions, false)
 	}
 	return nil, fmt.Errorf("unexpected type %q", t.Type)
 }
 
-func (g *schemaGenerator) uniqueTypeName(name string) string {
-	if _, ok := g.types[name]; !ok {
+type output struct {
+	file   *codegen.File
+	enums  map[string]cachedEnum
+	types  map[string]*codegen.TypeDecl
+	warner func(string)
+}
+
+func (o *output) uniqueTypeName(name string) string {
+	if _, ok := o.types[name]; !ok {
 		return name
 	}
 	count := 1
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
-		if _, ok := g.types[suffixed]; !ok {
+		if _, ok := o.types[suffixed]; !ok {
+			o.warner(fmt.Sprintf(
+				"multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
 			return suffixed
 		}
 		count++
 	}
 }
 
-func (g *schemaGenerator) findEnum(values []interface{}) (codegen.Type, bool) {
+func (o *output) findEnum(values []interface{}) (codegen.Type, bool) {
 	key := hashArrayOfValues(values)
-	if t, ok := g.enums[key]; ok && reflect.DeepEqual(values, t.values) {
+	if t, ok := o.enums[key]; ok && reflect.DeepEqual(values, t.values) {
 		return &codegen.NamedType{Decl: t.enum}, true
 	}
 	return nil, false
