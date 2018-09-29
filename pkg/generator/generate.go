@@ -245,10 +245,11 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		if !ok {
 			return nil, fmt.Errorf("definition %q (from ref %q) does not exist in schema", defName, ref)
 		}
-		if def.Type == "" {
-			// Minor hack to make definitions default to being objects
-			def.Type = schemas.TypeNameObject
+		if def.Type == "" && len(def.Properties) == 0 {
+			return nil, nil
 		}
+		// Minor hack to make definitions default to being objects
+		def.Type = schemas.TypeNameObject
 		defName = codegen.Identifierize(defName)
 	} else {
 		def = schema.Type
