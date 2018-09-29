@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/arrays",
+  "type": "object",
+  "properties": {
+    "myStringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "myNumberArray": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "myBooleanArray": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "myNullArray": {
+      "type": "array",
+      "items": {
+        "type": "null"
+      }
+    },
+    "myObjectArray": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

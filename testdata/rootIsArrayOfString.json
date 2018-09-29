@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://example.com/root_is_array_of_string",
+  "id": "https://example.com/rootIsArrayOfString",
   "type": "array",
   "items": {
     "type": "string"

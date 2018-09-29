@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/objectNested",
+  "type": "object",
+  "properties": {
+    "myObject": {
+      "type": "object",
+      "properties": {
+        "myObject": {
+          "type": "object",
+          "properties": {
+            "myString": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -8,8 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sanity-io/litter"
-
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
@@ -153,20 +151,6 @@ func (g *Generator) beginOutput(
 	pkg := codegen.Package{
 		QualifiedName: packageName,
 	}
-	pkg.AddImport(codegen.Import{QualifiedName: "fmt"})
-	pkg.AddImport(codegen.Import{QualifiedName: "reflect"})
-	pkg.AddImport(codegen.Import{QualifiedName: "encoding/json"})
-
-	pkg.AddDecl(codegen.Fragment(func(out *codegen.Emitter) {
-		out.Println(`func validateEnum(value interface{}, expected ...interface{}) error {
-  for _, v := range expected {
-		if reflect.DeepEqual(value, v) {
-			return nil
-		}
-	}
-	return fmt.Errorf("invalid value: %%#v", value)
-}`)
-	}))
 
 	output := &output{
 		warner: g.warner,
@@ -174,8 +158,9 @@ func (g *Generator) beginOutput(
 			FileName: outputName,
 			Package:  pkg,
 		},
-		types: map[string]*codegen.TypeDecl{},
-		enums: map[string]cachedEnum{},
+		declsBySchema: map[*schemas.Type]*codegen.TypeDecl{},
+		declsByName:   map[string]*codegen.TypeDecl{},
+		enums:         map[string]cachedEnum{},
 	}
 	g.outputs[id] = output
 	return output, nil
@@ -190,18 +175,25 @@ type schemaGenerator struct {
 
 func (g *schemaGenerator) generateRootType() error {
 	if g.schema.Type == nil {
-		return errors.New("schema has no root type")
-	}
-	if g.schema.Type.Type != schemas.TypeNameObject {
-		return fmt.Errorf("type of root must be object; found %q", g.schema.Type.Type)
+		return errors.New("schema has no root")
 	}
 
-	rootTypeName := g.getRootTypeName(g.schema, g.schemaFileName)
-	if _, ok := g.output.types[rootTypeName]; ok {
+	if g.schema.Type.Type == "" {
+		for name, def := range g.schema.Definitions {
+			_, err := g.generateDeclaredType(def, newNameScope(codegen.Identifierize(name)))
+			if err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 
-	_, err := g.generateStructType(rootTypeName, "", g.schema.Type, g.schema.Definitions, true)
+	rootTypeName := g.getRootTypeName(g.schema, g.schemaFileName)
+	if _, ok := g.output.declsByName[rootTypeName]; ok {
+		return nil
+	}
+
+	_, err := g.generateDeclaredType(g.schema.Type, newNameScope(rootTypeName))
 	return err
 }
 
@@ -236,6 +228,11 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		if !ok {
 			return nil, fmt.Errorf("definition %q (from ref %q) does not exist in schema", defName, ref)
 		}
+		if def.Type == "" {
+			// Minor hack to make definitions default to being objects
+			def.Type = schemas.TypeNameObject
+		}
+		defName = codegen.Identifierize(defName)
 	} else {
 		def = schema.Type
 		defName = g.getRootTypeName(schema, fileName)
@@ -258,18 +255,13 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		sg = g
 	}
 
-	t, err := sg.generateStructType(codegen.Identifierize(defName), defName, def, schema.Definitions, false)
+	t, err := sg.generateDeclaredType(def, newNameScope(defName))
 	if err != nil {
 		return nil, err
 	}
 
-	namedType, ok := t.(*codegen.NamedType)
-	if !ok {
-		panic(fmt.Sprintf("expected *NamedType, got %T", t))
-	}
-
 	if sg.output.file.Package.QualifiedName == g.output.file.Package.QualifiedName {
-		return namedType, nil
+		return t, nil
 	}
 
 	var imp *codegen.Import
@@ -280,43 +272,140 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}
 	}
 	if imp == nil {
-		g.output.file.Package.AddImport(codegen.Import{
-			Name:          sg.output.file.Package.Name(),
-			QualifiedName: sg.output.file.Package.QualifiedName,
+		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, sg.output.file.Package.Name())
+	}
+
+	return &codegen.NamedType{
+		Package: &sg.output.file.Package,
+		Decl:    t.(*codegen.NamedType).Decl,
+	}, nil
+}
+
+func (g *schemaGenerator) generateDeclaredType(
+	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if t, ok := g.output.declsBySchema[t]; ok {
+		return &codegen.NamedType{Decl: t}, nil
+	}
+
+	decl := codegen.TypeDecl{
+		Name:    g.output.uniqueTypeName(scope.string()),
+		Comment: t.Description,
+	}
+	theType, err := g.generateType(t, scope)
+	if err != nil {
+		return nil, err
+	}
+	if d, ok := theType.(*codegen.NamedType); ok {
+		return d, nil
+	}
+	decl.Type = theType
+
+	g.output.declsBySchema[t] = &decl
+	g.output.declsByName[decl.Name] = &decl
+	g.output.file.Package.AddDecl(&decl)
+
+	if structType, ok := theType.(*codegen.StructType); ok {
+		g.output.file.Package.AddImport("encoding/json", "")
+		g.output.file.Package.AddDecl(&codegen.Method{
+			Impl: func(out *codegen.Emitter) {
+				out.Comment("UnmarshalJSON implements json.Unmarshaler.")
+				out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", decl.Name)
+				out.Indent(1)
+				out.Println("var v struct {")
+				out.Indent(1)
+				out.Println("%s", decl.Name)
+
+				fields := append([]codegen.StructField{}, structType.Fields...)
+				for _, f := range structType.Fields {
+					if f.Synthetic {
+						f.Generate(out)
+						out.Newline()
+					}
+				}
+
+				out.Indent(-1)
+				out.Println("}")
+				out.Println("if err := json.Unmarshal(b, &v); err != nil {")
+				out.Indent(1)
+				out.Println("return err")
+				out.Indent(-1)
+				out.Println("}")
+				for _, f := range fields {
+					for _, r := range f.Rules {
+						r.GenerateValidation(out, fmt.Sprintf("v.%s", f.Name),
+							fmt.Sprintf("field %s", f.JSONName))
+					}
+				}
+				out.Println("*j = v.%s", decl.Name)
+				out.Println("return nil")
+				out.Indent(-1)
+				out.Println("}")
+			},
 		})
 	}
 
-	// TODO: Use better result here that doesn't need string concatenation
-	return codegen.PrimitiveType{sg.output.file.Package.Name() + "." + namedType.Decl.Name}, nil
+	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+func (g *schemaGenerator) generateType(
+	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if t.Enum != nil {
+		return g.generateEnumType(t, scope)
+	}
+
+	switch t.Type {
+	case schemas.TypeNameArray:
+		if t.Items == nil {
+			return nil, errors.New("array property must have 'items' set to a type")
+		}
+
+		var elemType codegen.Type
+		if schemas.IsPrimitiveType(t.Items.Type) {
+			var err error
+			elemType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Items.Type)
+			if err != nil {
+				return nil, fmt.Errorf("cannot determine type of field: %s", err)
+			}
+		} else if t.Items.Type != "" {
+			var err error
+			elemType, err = g.generateDeclaredType(t.Items, scope.add("Elem"))
+			if err != nil {
+				return nil, err
+			}
+		} else if t.Items.Ref != "" {
+			var err error
+			elemType, err = g.generateReferencedType(t.Items.Ref)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("array property must have a type")
+		}
+		return codegen.ArrayType{elemType}, nil
+	case schemas.TypeNameObject:
+		return g.generateStructType(t, scope)
+	case schemas.TypeNameNull:
+		return codegen.EmptyInterfaceType{}, nil
+	}
+
+	if t.Ref != "" {
+		return g.generateReferencedType(t.Ref)
+	}
+	return codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
 }
 
 func (g *schemaGenerator) generateStructType(
-	typeName, origName string,
 	t *schemas.Type,
-	defs schemas.Definitions,
-	isRoot bool) (codegen.Type, error) {
-	if typeName == "" {
-		return nil, errors.New("empty type name")
-	}
-
-	if s, ok := g.output.types[typeName]; ok {
-		return &codegen.NamedType{Decl: s}, nil
-	}
-
-	structDecl := codegen.TypeDecl{
-		Name:    typeName,
-		Comment: t.Description,
-	}
-	g.output.types[typeName] = &structDecl
-
-	if structDecl.Comment == "" {
-		if origName != "" {
-			structDecl.Comment = fmt.Sprintf("%s corresponds to the JSON schema type %q.",
-				typeName, origName)
-		} else if isRoot {
-			structDecl.Comment = fmt.Sprintf("%s corresponds to the root of the JSON schema %q.",
-				typeName, filepath.Base(g.schemaFileName))
+	scope nameScope) (codegen.Type, error) {
+	if len(t.Properties) == 0 {
+		if len(t.Required) > 0 {
+			g.warner("object type with no properties has required fields; " +
+				"skipping validation code for them since we don't know their types")
 		}
+		return &codegen.MapType{
+			KeyType:   codegen.PrimitiveType{"string"},
+			ValueType: codegen.EmptyInterfaceType{},
+		}, nil
 	}
 
 	propNames := make([]string, 0, len(t.Properties))
@@ -333,29 +422,27 @@ func (g *schemaGenerator) generateStructType(
 	uniqueNames := make(map[string]int, len(propNames))
 
 	var structType codegen.StructType
-	structDecl.Type = &structType
-
 	for _, name := range propNames {
 		prop := t.Properties[name]
+		isRequired := requiredNames[name]
 
 		fieldName := codegen.Identifierize(name)
 		if count, ok := uniqueNames[fieldName]; ok {
 			uniqueNames[fieldName] = count + 1
 			fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
 			g.warner(fmt.Sprintf("field %q maps to a field by the same name declared "+
-				"in the struct %s; it will be declared as %s", name, structDecl.Name, fieldName))
+				"in the same struct; it will be declared as %s", name, fieldName))
 		} else {
 			uniqueNames[fieldName] = 1
 		}
 
 		structField := codegen.StructField{
-			Name:       fieldName,
-			Comment:    prop.Description,
-			JSONName:   name,
-			IsRequired: requiredNames[name],
+			Name:     fieldName,
+			Comment:  prop.Description,
+			JSONName: name,
 		}
 
-		if structField.IsRequired {
+		if isRequired {
 			structField.Tags = fmt.Sprintf(`json:"%s"`, name)
 		} else {
 			structField.Tags = fmt.Sprintf(`json:"%s,omitempty"`, name)
@@ -366,159 +453,76 @@ func (g *schemaGenerator) generateStructType(
 				structField.Name, name)
 		}
 
-		if err := g.generateTypeForStructField(
-			name, prop, &structDecl, &structType, &structField); err != nil {
-			return nil, err
+		var err error
+		structField.Type, err = g.generateTypeInline(prop, scope.add(structField.Name))
+		if err != nil {
+			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
+		}
+
+		if isRequired {
+			if rt, ok := structField.Type.(codegen.RuledType); ok {
+				g.output.file.Package.AddImport("fmt", "") // All rules need fmt
+				for _, r := range rt.GetRequiredRules() {
+					structField.AddRule(r)
+				}
+			}
+			if !structField.Type.IsNillable() {
+				g.output.file.Package.AddImport("fmt", "") // All rules need fmt
+				syntheticField := structField
+				syntheticField.Comment = ""
+				syntheticField.Synthetic = true
+				syntheticField.Name = "__synthetic_" + syntheticField.Name
+				syntheticField.Type = codegen.PointerType{Type: syntheticField.Type}
+				syntheticField.AddRule(codegen.NilStructFieldRequired{})
+				structType.AddField(syntheticField)
+			}
+		} else if !structField.Type.IsNillable() {
+			structField.Type = codegen.PointerType{Type: structField.Type}
 		}
 
 		structType.AddField(structField)
 	}
-
-	g.output.file.Package.AddDecl(&structDecl)
-	g.output.file.Package.AddDecl(&codegen.Method{
-		Impl: func(out *codegen.Emitter) {
-			out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-			out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", structDecl.Name)
-			out.Indent(1)
-			out.Println("var v struct {")
-			out.Indent(1)
-			out.Println("%s", structDecl.Name)
-
-			fields := append([]codegen.StructField{}, structType.Fields...)
-			for _, f := range structType.Fields {
-				if f.Synthetic {
-					f.Generate(out)
-				}
-			}
-
-			out.Indent(-1)
-			out.Println("}")
-			out.Println("if err := json.Unmarshal(b, &v); err != nil {")
-			out.Indent(1)
-			out.Println("return err")
-			out.Indent(-1)
-			out.Println("}")
-			for _, f := range fields {
-				for _, r := range f.Rules {
-					r.GenerateValidation(out, fmt.Sprintf("v.%s", f.Name),
-						fmt.Sprintf("field %s", f.JSONName))
-				}
-			}
-			// for _, f := range fields {
-			// 	f.generateValidation(out)
-			// }
-			out.Println("*j = v.%s", structDecl.Name)
-			out.Println("return nil")
-			out.Indent(-1)
-			out.Println("}")
-		},
-	})
-
-	return &codegen.NamedType{Decl: &structDecl}, nil
+	return &structType, nil
 }
 
-func (g *schemaGenerator) generateTypeForStructField(
-	name string,
+func (g *schemaGenerator) generateTypeInline(
 	t *schemas.Type,
-	parentStructDecl *codegen.TypeDecl,
-	parentStructType *codegen.StructType,
-	structField *codegen.StructField) error {
-	if t.Enum != nil {
-		return g.generateTypeForStructFieldEnum(name, t, parentStructDecl, parentStructType, structField)
+	scope nameScope) (codegen.Type, error) {
+	if schemas.IsPrimitiveType(t.Type) && t.Enum == nil && t.Ref == "" {
+		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
 	}
 
-	switch t.Type {
-	case schemas.TypeNameArray:
-		if t.Items == nil {
-			return fmt.Errorf("array property %q must have 'items' set to a type", name)
-		}
-
-		var elemType codegen.Type
-		if schemas.IsPrimitiveType(t.Items.Type) {
-			var err error
-			elemType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Items.Type)
-			if err != nil {
-				return fmt.Errorf("cannot determine type of field %q: %s", name, err)
-			}
-		} else if t.Items.Type != "" {
-			var err error
-			elemType, err = g.generateAnonymousType(t.Items, name, parentStructDecl)
-			if err != nil {
-				return fmt.Errorf("cannot determine type of array field %q: %s", name, err)
-			}
-		} else if t.Items.Ref != "" {
-			var err error
-			elemType, err = g.generateReferencedType(t.Items.Ref)
-			if err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("array property %q must have a type", name)
-		}
-
-		structField.Type = codegen.ArrayType{elemType}
-		if structField.IsRequired {
-			structField.AddRule(codegen.ArrayNotEmpty{})
-		}
-	case schemas.TypeNameObject:
-		var err error
-		structField.Type, err = g.generateAnonymousType(t, name, parentStructDecl)
+	if t.Type == schemas.TypeNameArray {
+		theType, err := g.generateTypeInline(t.Items, scope.add("Elem"))
 		if err != nil {
-			return fmt.Errorf("cannot determine type of array field %q: %s", name, err)
+			return nil, err
 		}
-	case schemas.TypeNameNull:
-		structField.Type = codegen.EmptyInterfaceType{}
-	default:
-		if t.Ref != "" {
-			var err error
-			structField.Type, err = g.generateReferencedType(t.Ref)
-			if err != nil {
-				return err
-			}
-		} else {
-			var err error
-			structField.Type, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
-			if err != nil {
-				return fmt.Errorf("cannot determine type of field %q: %s", name, err)
-			}
-		}
+		return &codegen.ArrayType{Type: theType}, nil
 	}
 
-	if structField.IsRequired && !structField.Type.IsNillable() {
-		syntheticField := *structField
-		syntheticField.Comment = ""
-		syntheticField.Synthetic = true
-		syntheticField.Name = "__synthetic_" + syntheticField.Name
-		syntheticField.Type = codegen.PointerType{Type: syntheticField.Type}
-		syntheticField.AddRule(codegen.NilStructFieldRequired{})
-		parentStructType.AddField(syntheticField)
-	}
-	return nil
+	return g.generateDeclaredType(t, scope)
 }
 
-func (g *schemaGenerator) generateTypeForStructFieldEnum(
-	name string,
-	t *schemas.Type,
-	parentStructDecl *codegen.TypeDecl,
-	parentStructType *codegen.StructType,
-	structField *codegen.StructField) error {
+func (g *schemaGenerator) generateEnumType(
+	t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if len(t.Enum) == 0 {
-		return fmt.Errorf("property %q enum array cannot be empty", name)
+		return nil, errors.New("enum array cannot be empty")
 	}
 
-	if enumDecl, ok := g.output.findEnum(t.Enum); ok {
-		structField.Type = enumDecl
-		return nil
+	if decl, ok := g.output.findEnum(t.Enum); ok {
+		return decl, nil
 	}
 
-	var propType codegen.Type
+	var wrapInStruct bool
+	var enumType codegen.Type
 	if t.Type != "" {
 		var err error
-		if propType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type); err != nil {
-			return err
+		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type); err != nil {
+			return nil, err
 		}
+		wrapInStruct = t.Type == schemas.TypeNameNull // Null uses interface{}, which cannot have methods
 	} else {
-		var enumPrimitiveType string
+		var primitiveType string
 		for _, v := range t.Enum {
 			var valueType string
 			if v == nil {
@@ -532,57 +536,102 @@ func (g *schemaGenerator) generateTypeForStructFieldEnum(
 				case bool:
 					valueType = "bool"
 				default:
-					return fmt.Errorf("property %q enum has non-primitive value %v", name, v)
+					return nil, fmt.Errorf("enum has non-primitive value %v", v)
 				}
 			}
-			if enumPrimitiveType == "" {
-				enumPrimitiveType = valueType
-			} else if enumPrimitiveType != valueType {
-				enumPrimitiveType = "interface{}"
+			if primitiveType == "" {
+				primitiveType = valueType
+			} else if primitiveType != valueType {
+				primitiveType = "interface{}"
 				break
 			}
 		}
-		propType = codegen.PrimitiveType{enumPrimitiveType}
+		if primitiveType == "interface{}" {
+			wrapInStruct = true
+		}
+		enumType = codegen.PrimitiveType{primitiveType}
+	}
+	if wrapInStruct {
+		g.warner("Enum field wrapped in struct in order to store values of multiple types")
+		enumType = &codegen.StructType{
+			Fields: []codegen.StructField{
+				{
+					Name: "Value",
+					Type: enumType,
+				},
+			},
+		}
+	}
+
+	if enumDecl, ok := enumType.(*codegen.NamedType); ok {
+		return enumDecl, nil
 	}
 
 	enumDecl := codegen.TypeDecl{
-		Name:    g.output.uniqueTypeName(codegen.Identifierize(name) + "Enum"),
-		Type:    propType,
-		Comment: t.Description,
+		Name: g.output.uniqueTypeName(scope.add("Enum").string()),
+		Type: enumType,
 	}
-	g.output.types[enumDecl.Name] = &enumDecl
+	g.output.file.Package.AddDecl(&enumDecl)
+
+	g.output.declsByName[enumDecl.Name] = &enumDecl
 	g.output.enums[hashArrayOfValues(t.Enum)] = cachedEnum{
 		enum:   &enumDecl,
 		values: t.Enum,
 	}
 
-	g.output.file.Package.AddDecl(&enumDecl)
+	valueConstant := &codegen.Var{
+		Name:  "enumValues_" + enumDecl.Name,
+		Value: t.Enum,
+	}
+	g.output.file.Package.AddDecl(valueConstant)
+
+	if wrapInStruct {
+		g.output.file.Package.AddImport("encoding/json", "")
+		g.output.file.Package.AddDecl(&codegen.Method{
+			Impl: func(out *codegen.Emitter) {
+				out.Comment("MarshalJSON implements json.Marshaler.")
+				out.Println("func (j *%s) MarshalJSON() ([]byte, error) {", enumDecl.Name)
+				out.Indent(1)
+				out.Println("return json.Marshal(j.Value)")
+				out.Indent(-1)
+				out.Println("}")
+			},
+		})
+	}
+
+	g.output.file.Package.AddImport("fmt", "")
+	g.output.file.Package.AddImport("reflect", "")
+	g.output.file.Package.AddImport("encoding/json", "")
 	g.output.file.Package.AddDecl(&codegen.Method{
 		Impl: func(out *codegen.Emitter) {
 			out.Comment("UnmarshalJSON implements json.Unmarshaler.")
 			out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
 			out.Indent(1)
 			out.Print("var v ")
-			propType.Generate(out)
+			enumType.Generate(out)
 			out.Newline()
-			out.Println("if err := json.Unmarshal(b, &v); err != nil { return err }")
-			out.Print("if err := validateEnum(v, ")
-			for i, v := range t.Enum {
-				if i > 0 {
-					out.Print(", ")
-				}
-				out.Print("%s", litter.Sdump(v))
+			varName := "v"
+			if wrapInStruct {
+				varName += ".Value"
 			}
-			out.Println("); err != nil { return err }")
-			out.Println("*j = %s(v)", enumDecl.Name)
-			out.Println("return nil")
+			out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
+			out.Println("var ok bool")
+			out.Println("for _, expected := range %s {", valueConstant.Name)
+			out.Println("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
+			out.Println("}")
+			out.Println("if !ok {")
+			out.Println(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
+				valueConstant.Name, varName)
+			out.Println("}")
+			out.Println(`*j = %s(v)`, enumDecl.Name)
+			out.Println(`return nil`)
 			out.Indent(-1)
 			out.Println("}")
 		},
 	})
 
 	// TODO: May be aliased string type
-	if prim, ok := propType.(codegen.PrimitiveType); ok && prim.Type == "string" {
+	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
 		for _, v := range t.Enum {
 			if s, ok := v.(string); ok {
 				// TODO: Make sure the name is unique across scope
@@ -595,44 +644,43 @@ func (g *schemaGenerator) generateTypeForStructFieldEnum(
 		}
 	}
 
-	structField.Type = &codegen.NamedType{Decl: &enumDecl}
-	return nil
+	return &codegen.NamedType{Decl: &enumDecl}, nil
 }
 
-func (g *schemaGenerator) generateAnonymousType(
-	t *schemas.Type,
-	fieldName string,
-	parentType *codegen.TypeDecl) (codegen.Type, error) {
-	if t.Type == schemas.TypeNameObject {
-		if len(t.Properties) == 0 {
-			return codegen.MapType{
-				KeyType:   codegen.PrimitiveType{"string"},
-				ValueType: codegen.EmptyInterfaceType{},
-			}, nil
-		}
-
-		typeName := g.output.uniqueTypeName(
-			fmt.Sprintf("%s%s", parentType.Name, codegen.Identifierize(fieldName)))
-		return g.generateStructType(typeName, "", t, g.schema.Definitions, false)
-	}
-	return nil, fmt.Errorf("unexpected type %q", t.Type)
-}
+// func (g *schemaGenerator) generateAnonymousType(
+// 	t *schemas.Type, name string) (codegen.Type, error) {
+// 	if t.Type == schemas.TypeNameObject {
+// 		if len(t.Properties) == 0 {
+// 			return codegen.MapType{
+// 				KeyType:   codegen.PrimitiveType{"string"},
+// 				ValueType: codegen.EmptyInterfaceType{},
+// 			}, nil
+// 		}
+// 		s, err := g.generateStructDecl(t, name, "", false)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		return &codegen.NamedType{Decl: s}, nil
+// 	}
+// 	return nil, fmt.Errorf("unexpected type %q", t.Type)
+// }
 
 type output struct {
-	file   *codegen.File
-	enums  map[string]cachedEnum
-	types  map[string]*codegen.TypeDecl
-	warner func(string)
+	file          *codegen.File
+	enums         map[string]cachedEnum
+	declsByName   map[string]*codegen.TypeDecl
+	declsBySchema map[*schemas.Type]*codegen.TypeDecl
+	warner        func(string)
 }
 
 func (o *output) uniqueTypeName(name string) string {
-	if _, ok := o.types[name]; !ok {
+	if _, ok := o.declsByName[name]; !ok {
 		return name
 	}
 	count := 1
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
-		if _, ok := o.types[suffixed]; !ok {
+		if _, ok := o.declsByName[suffixed]; !ok {
 			o.warner(fmt.Sprintf(
 				"multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
 			return suffixed
@@ -652,4 +700,21 @@ func (o *output) findEnum(values []interface{}) (codegen.Type, bool) {
 type cachedEnum struct {
 	values []interface{}
 	enum   *codegen.TypeDecl
+}
+
+type nameScope []string
+
+func newNameScope(s string) nameScope {
+	return nameScope{s}
+}
+
+func (ns nameScope) string() string {
+	return strings.Join(ns, "")
+}
+
+func (ns nameScope) add(s string) nameScope {
+	result := make(nameScope, len(ns)+1)
+	copy(result, ns)
+	result[len(result)-1] = s
+	return result
 }

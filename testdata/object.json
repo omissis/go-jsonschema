@@ -1,13 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://example.com/object_with_anonymous_properties",
+  "id": "https://example.com/object",
   "type": "object",
   "properties": {
-    "foo": {
+    "myObject": {
       "type": "object",
-      "required": ["bar"],
+      "required": ["myString"],
       "properties": {
-        "bar": {
+        "myString": {
           "type": "string"
         }
       }

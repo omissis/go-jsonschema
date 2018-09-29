@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/empty_def",
+  "definitions": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A field."
+        }
+      }
+    }
+  }
+}

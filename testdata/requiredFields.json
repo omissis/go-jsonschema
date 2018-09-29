@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://example.com/required_fields",
+  "id": "https://example.com/requiredFields",
   "type": "object",
   "required": [
     "myString",
