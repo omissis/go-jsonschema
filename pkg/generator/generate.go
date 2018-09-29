@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -65,7 +66,23 @@ func (g *Generator) Sources() map[string][]byte {
 	return result
 }
 
-func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
+func (g *Generator) DoFile(fileName string) error {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	schema, err := schemas.FromReader(f)
+	if err != nil {
+		return err
+	}
+	return g.addFile(fileName, schema)
+}
+
+func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
 	o, err := g.findOutputFileForSchemaID(schema.ID)
 	if err != nil {
 		return err
@@ -99,7 +116,7 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 	}
 	g.schemaCacheByFileName[fileName] = schema
 
-	if err = g.AddFile(fileName, schema); err != nil {
+	if err = g.addFile(fileName, schema); err != nil {
 		return nil, err
 	}
 	return schema, nil

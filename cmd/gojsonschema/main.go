@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -76,20 +75,7 @@ var rootCmd = &cobra.Command{
 
 		for _, fileName := range args {
 			verboseLog("Loading %s", fileName)
-
-			f, err := os.Open(fileName)
-			if err != nil {
-				abortWithErr(err)
-			}
-			defer func() { _ = f.Close() }()
-
-			schema, err := schemas.FromReader(f)
-			if err != nil {
-				abortWithErr(err)
-			}
-			_ = f.Close()
-
-			if err = generator.AddFile(fileName, schema); err != nil {
+			if err = generator.DoFile(fileName); err != nil {
 				abortWithErr(err)
 			}
 		}
