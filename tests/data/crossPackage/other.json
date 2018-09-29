@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/other",
+  "description": "A simple schema.",
+  "definitions": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "s": {
+          "type": "string",
+          "description": "A field."
+        }
+      }
+    }
+  }
+}

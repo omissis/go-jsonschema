@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://example.com/arrays",
+  "id": "https://example.com/array",
   "type": "object",
   "properties": {
     "myStringArray": {

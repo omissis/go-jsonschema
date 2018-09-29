@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/schema",
+  "type": "object",
+  "description": "A simple schema.",
+  "properties": {
+    "defInSameSchema": {
+      "$ref": "#/Definitions/Thing"
+    },
+    "defInOtherSchema": {
+      "$ref": "other.json#/Definitions/Thing"
+    }
+  },
+  "definitions": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "s": {
+          "type": "string",
+          "description": "A field."
+        }
+      }
+    }
+  }
+}
