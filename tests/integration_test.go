@@ -89,6 +89,7 @@ func testExampleFile(t *testing.T, generator *generator.Generator, fileName stri
 			if outputName == "-" {
 				outputName = strings.TrimSuffix(filepath.Base(fileName), ".json") + ".go"
 			}
+			outputName += ".output"
 
 			goldenFileName := filepath.Join(filepath.Dir(fileName), outputName)
 
