@@ -1,0 +1,19 @@
+distro: trusty
+language: go
+go:
+- '1.11'
+env:
+- GO111MODULE=on
+script:
+- go get github.com/mitchellh/gox
+- go mod download
+- gox -osarch="darwin/amd64 linux/amd64 linux/arm windows/amd64" -output="bin/gojsonschema-{{.OS}}-{{.Arch}}" ./cmd/...
+deploy:
+  provider: releases
+  api_key:
+    secure: mPxZhDKyd77bElPJQC3GTAXS0MAltEjWzFS9pK4arJLsbV0iL5k+r3tfaRGS6Z2P5BoXy20kCIt5SLenmI12n8J2x9/o8yPJ7PPonLUr5USHuI8svX59E6JQtqjMnj5Aa6jZ7wnJVC3gpbckrem5qI9gGecNoO67BheaASJCXwqx19pBVhS34hb1aJvvEgkKY1cJhy175X7kw3RY4XtytrUQPRe8HaWejMRjcO0iBSMB4JhN3wovyWkIkwgBY0D8hsHeWV7AT5OB2kDQLoEr1+GyQgFSq/o2MXMK/b8Qe3VY5BIKo2+xlgfReLXXYdZniltQAWXuz5EYK6TxOE0yxBsmO9mKJTgl0uJYVPHopdAvYEu8d86pmUVKRYnL0uI6nssnXKk/iIxPRTQTUwNkhJtdDdYAAnB5VUdVjwkF/icuwBkKtFDHU1XNVRSkNO9N0iISUGKnkwSn7rAS3tB267n/PY7gphk0UzRj6Nb3AhZebhyGTDg4kWSriIUGCpF2pXbX3593gExuxVOxkmHf1Z6poRAN+RgdZ3oDuNNNV9zFZXCJtR7BR2Y8Fx5skfs6kpHzbNc2lFpV3VXR6KCD9Ad6x1ynOPf7tSR100sYU2tZQuI4Z36OCbyQSoPsXhFjrPR6QUe0wuPdkqsMtevlzByNnvtaKORNhkaJur2TnTs=
+  file_glob: true
+  file: 'bin/*'
+  skip_cleanup: true
+  on:
+    tags: true
