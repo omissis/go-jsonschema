@@ -331,8 +331,6 @@ func (g *schemaGenerator) generateDeclaredType(
 				out.Indent(1)
 				out.Println("var v struct {")
 				out.Indent(1)
-				out.Println("%s", decl.Name)
-
 				fields := append([]codegen.StructField{}, structType.Fields...)
 				for _, f := range structType.Fields {
 					if f.Synthetic {
@@ -340,21 +338,29 @@ func (g *schemaGenerator) generateDeclaredType(
 						out.Newline()
 					}
 				}
-
 				out.Indent(-1)
 				out.Println("}")
-				out.Println("if err := json.Unmarshal(b, &v); err != nil {")
-				out.Indent(1)
-				out.Println("return err")
-				out.Indent(-1)
-				out.Println("}")
+				out.Println("if err := json.Unmarshal(b, &v); err != nil { return err }")
 				for _, f := range fields {
-					for _, r := range f.Rules {
-						r.GenerateValidation(out, fmt.Sprintf("v.%s", f.Name),
-							fmt.Sprintf("field %s", f.JSONName))
+					if f.Synthetic {
+						for _, r := range f.Rules {
+							r.GenerateValidation(out, fmt.Sprintf("v.%s", f.Name),
+								fmt.Sprintf("field %s", f.JSONName))
+						}
 					}
 				}
-				out.Println("*j = v.%s", decl.Name)
+				out.Println("type plain %s", decl.Name)
+				out.Println("var p plain")
+				out.Println("if err := json.Unmarshal(b, &p); err != nil { return err }")
+				for _, f := range fields {
+					if !f.Synthetic {
+						for _, r := range f.Rules {
+							r.GenerateValidation(out, fmt.Sprintf("p.%s", f.Name),
+								fmt.Sprintf("field %s", f.JSONName))
+						}
+					}
+				}
+				out.Println("*j = %s(p)", decl.Name)
 				out.Println("return nil")
 				out.Indent(-1)
 				out.Println("}")
@@ -489,7 +495,6 @@ func (g *schemaGenerator) generateStructType(
 				syntheticField := structField
 				syntheticField.Comment = ""
 				syntheticField.Synthetic = true
-				syntheticField.Name = "__synthetic_" + syntheticField.Name
 				syntheticField.Type = codegen.PointerType{Type: syntheticField.Type}
 				syntheticField.AddRule(codegen.NilStructFieldRequired{})
 				structType.AddField(syntheticField)

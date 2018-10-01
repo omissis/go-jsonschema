@@ -18,12 +18,12 @@ type 101Description struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *101Description) UnmarshalJSON(b []byte) error {
 	var v struct {
-		101Description
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.101Description
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 101Description
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 101Description(p)
 	return nil
 }
 
@@ -199,12 +199,12 @@ type 612Enum struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *612Enum) UnmarshalJSON(b []byte) error {
 	var v struct {
-		612Enum
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.612Enum
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 612Enum
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 612Enum(p)
 	return nil
 }
 

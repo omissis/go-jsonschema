@@ -18,12 +18,12 @@ type 101Description struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *101Description) UnmarshalJSON(b []byte) error {
 	var v struct {
-		101Description
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.101Description
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 101Description
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 101Description(p)
 	return nil
 }
 
@@ -199,12 +199,12 @@ type 612Enum struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *612Enum) UnmarshalJSON(b []byte) error {
 	var v struct {
-		612Enum
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.612Enum
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 612Enum
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 612Enum(p)
 	return nil
 }
 
@@ -218,16 +218,16 @@ type 653RequiredFieldsMyObject struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *653RequiredFieldsMyObject) UnmarshalJSON(b []byte) error {
 	var v struct {
-		653RequiredFieldsMyObject
-		__synthetic_MyNestedObjectString *string `json:"myNestedObjectString"`
+		MyNestedObjectString *string `json:"myNestedObjectString"`
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	if v.__synthetic_MyNestedObjectString == nil {
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	if v.MyNestedObjectString == nil {
 		return fmt.Errorf("field myNestedObjectString: must be set")
 	}
-	*j = v.653RequiredFieldsMyObject
+	type plain 653RequiredFieldsMyObject
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 653RequiredFieldsMyObject(p)
 	return nil
 }
 
@@ -241,16 +241,16 @@ type 653RequiredFieldsMyObjectArrayElem struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *653RequiredFieldsMyObjectArrayElem) UnmarshalJSON(b []byte) error {
 	var v struct {
-		653RequiredFieldsMyObjectArrayElem
-		__synthetic_MyNestedObjectString *string `json:"myNestedObjectString"`
+		MyNestedObjectString *string `json:"myNestedObjectString"`
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	if v.__synthetic_MyNestedObjectString == nil {
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	if v.MyNestedObjectString == nil {
 		return fmt.Errorf("field myNestedObjectString: must be set")
 	}
-	*j = v.653RequiredFieldsMyObjectArrayElem
+	type plain 653RequiredFieldsMyObjectArrayElem
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 653RequiredFieldsMyObjectArrayElem(p)
 	return nil
 }
 
@@ -290,43 +290,43 @@ type 653RequiredFields struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *653RequiredFields) UnmarshalJSON(b []byte) error {
 	var v struct {
-		653RequiredFields
-		__synthetic_MyBoolean *bool `json:"myBoolean"`
-		__synthetic_MyNumber *float64 `json:"myNumber"`
-		__synthetic_MyObject *653RequiredFieldsMyObject `json:"myObject"`
-		__synthetic_MyString *string `json:"myString"`
+		MyBoolean *bool `json:"myBoolean"`
+		MyNumber *float64 `json:"myNumber"`
+		MyObject *653RequiredFieldsMyObject `json:"myObject"`
+		MyString *string `json:"myString"`
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	if v.__synthetic_MyBoolean == nil {
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	if v.MyBoolean == nil {
 		return fmt.Errorf("field myBoolean: must be set")
 	}
-	if len(v.MyBooleanArray) == 0 {
-		return fmt.Errorf("field myBooleanArray: array cannot be empty")
-	}
-	if len(v.MyNullArray) == 0 {
-		return fmt.Errorf("field myNullArray: array cannot be empty")
-	}
-	if v.__synthetic_MyNumber == nil {
+	if v.MyNumber == nil {
 		return fmt.Errorf("field myNumber: must be set")
 	}
-	if len(v.MyNumberArray) == 0 {
-		return fmt.Errorf("field myNumberArray: array cannot be empty")
-	}
-	if v.__synthetic_MyObject == nil {
+	if v.MyObject == nil {
 		return fmt.Errorf("field myObject: must be set")
 	}
-	if len(v.MyObjectArray) == 0 {
-		return fmt.Errorf("field myObjectArray: array cannot be empty")
-	}
-	if v.__synthetic_MyString == nil {
+	if v.MyString == nil {
 		return fmt.Errorf("field myString: must be set")
 	}
-	if len(v.MyStringArray) == 0 {
+	type plain 653RequiredFields
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	if len(p.MyBooleanArray) == 0 {
+		return fmt.Errorf("field myBooleanArray: array cannot be empty")
+	}
+	if len(p.MyNullArray) == 0 {
+		return fmt.Errorf("field myNullArray: array cannot be empty")
+	}
+	if len(p.MyNumberArray) == 0 {
+		return fmt.Errorf("field myNumberArray: array cannot be empty")
+	}
+	if len(p.MyObjectArray) == 0 {
+		return fmt.Errorf("field myObjectArray: array cannot be empty")
+	}
+	if len(p.MyStringArray) == 0 {
 		return fmt.Errorf("field myStringArray: array cannot be empty")
 	}
-	*j = v.653RequiredFields
+	*j = 653RequiredFields(p)
 	return nil
 }
 

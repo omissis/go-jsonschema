@@ -26,12 +26,12 @@ type Case struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Case) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Case
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Case
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Case
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Case(p)
 	return nil
 }
 
@@ -56,12 +56,12 @@ type CaseDupes struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *CaseDupes) UnmarshalJSON(b []byte) error {
 	var v struct {
-		CaseDupes
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.CaseDupes
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain CaseDupes
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = CaseDupes(p)
 	return nil
 }
 

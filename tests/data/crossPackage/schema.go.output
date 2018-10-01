@@ -12,12 +12,12 @@ type Thing struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Thing) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Thing
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Thing
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Thing
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Thing(p)
 	return nil
 }
 
@@ -34,12 +34,12 @@ type Schema struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Schema) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Schema
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Schema
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Schema
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Schema(p)
 	return nil
 }
 

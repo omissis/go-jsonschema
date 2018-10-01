@@ -16,12 +16,12 @@ type 101Description struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *101Description) UnmarshalJSON(b []byte) error {
 	var v struct {
-		101Description
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.101Description
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 101Description
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 101Description(p)
 	return nil
 }
 

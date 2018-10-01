@@ -25,12 +25,12 @@ type 421Array struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *421Array) UnmarshalJSON(b []byte) error {
 	var v struct {
-		421Array
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.421Array
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 421Array
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 421Array(p)
 	return nil
 }
 
@@ -43,16 +43,16 @@ type ObjectMyObject struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectMyObject) UnmarshalJSON(b []byte) error {
 	var v struct {
-		ObjectMyObject
-		__synthetic_MyString *string `json:"myString"`
+		MyString *string `json:"myString"`
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	if v.__synthetic_MyString == nil {
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	if v.MyString == nil {
 		return fmt.Errorf("field myString: must be set")
 	}
-	*j = v.ObjectMyObject
+	type plain ObjectMyObject
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = ObjectMyObject(p)
 	return nil
 }
 
@@ -65,12 +65,12 @@ type Object struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Object) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Object
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Object
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Object
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Object(p)
 	return nil
 }
 
@@ -84,12 +84,12 @@ type ObjectEmpty struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectEmpty) UnmarshalJSON(b []byte) error {
 	var v struct {
-		ObjectEmpty
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.ObjectEmpty
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain ObjectEmpty
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = ObjectEmpty(p)
 	return nil
 }
 
@@ -102,12 +102,12 @@ type ObjectNestedMyObjectMyObject struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectNestedMyObjectMyObject) UnmarshalJSON(b []byte) error {
 	var v struct {
-		ObjectNestedMyObjectMyObject
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.ObjectNestedMyObjectMyObject
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain ObjectNestedMyObjectMyObject
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = ObjectNestedMyObjectMyObject(p)
 	return nil
 }
 
@@ -120,12 +120,12 @@ type ObjectNestedMyObject struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectNestedMyObject) UnmarshalJSON(b []byte) error {
 	var v struct {
-		ObjectNestedMyObject
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.ObjectNestedMyObject
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain ObjectNestedMyObject
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = ObjectNestedMyObject(p)
 	return nil
 }
 
@@ -138,12 +138,12 @@ type ObjectNested struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectNested) UnmarshalJSON(b []byte) error {
 	var v struct {
-		ObjectNested
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.ObjectNested
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain ObjectNested
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = ObjectNested(p)
 	return nil
 }
 
@@ -165,12 +165,12 @@ type Primitives struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Primitives) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Primitives
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Primitives
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Primitives
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Primitives(p)
 	return nil
 }
 
@@ -183,12 +183,12 @@ type Thing struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Thing) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Thing
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Thing
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Thing
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Thing(p)
 	return nil
 }
 
@@ -205,12 +205,12 @@ type Ref struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Ref) UnmarshalJSON(b []byte) error {
 	var v struct {
-		Ref
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.Ref
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain Ref
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = Ref(p)
 	return nil
 }
 

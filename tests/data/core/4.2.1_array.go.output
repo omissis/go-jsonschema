@@ -24,12 +24,12 @@ type 421Array struct {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *421Array) UnmarshalJSON(b []byte) error {
 	var v struct {
-		421Array
 	}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	*j = v.421Array
+	if err := json.Unmarshal(b, &v); err != nil { return err }
+	type plain 421Array
+	var p plain
+	if err := json.Unmarshal(b, &p); err != nil { return err }
+	*j = 421Array(p)
 	return nil
 }
 
