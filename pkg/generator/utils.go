@@ -4,9 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"sort"
-	"strings"
-
-	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"unicode"
 )
 
 func hashArrayOfValues(values []interface{}) string {
@@ -23,9 +21,49 @@ func hashArrayOfValues(values []interface{}) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func makeEnumConstantName(typeName, value string) string {
-	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
-		return typeName + "_" + codegen.Identifierize(value)
+func splitIdentifierByCaseAndSeparators(s string) []string {
+	if len(s) == 0 {
+		return nil
 	}
-	return typeName + codegen.Identifierize(value)
+
+	type state int
+	const (
+		stateNothing state = iota
+		stateLower
+		stateUpper
+		stateNumber
+		stateDelimiter
+	)
+
+	var result []string
+	currState, j := stateNothing, 0
+	for i := 0; i < len(s); i++ {
+		var nextState state
+		c := rune(s[i])
+		switch {
+		case unicode.IsLower(c):
+			nextState = stateLower
+		case unicode.IsUpper(c):
+			nextState = stateUpper
+		case unicode.IsNumber(c):
+			nextState = stateNumber
+		default:
+			nextState = stateDelimiter
+		}
+		if nextState != currState {
+			if currState == stateDelimiter {
+				j = i
+			} else if !(currState == stateUpper && nextState == stateLower) {
+				if i > j {
+					result = append(result, s[j:i])
+				}
+				j = i
+			}
+			currState = nextState
+		}
+	}
+	if currState != stateDelimiter && len(s)-j > 0 {
+		result = append(result, s[j:])
+	}
+	return result
 }

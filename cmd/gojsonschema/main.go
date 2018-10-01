@@ -18,6 +18,7 @@ var (
 	schemaPackages  []string
 	schemaOutputs   []string
 	schemaRootTypes []string
+	capitalizations []string
 )
 
 var rootCmd = &cobra.Command{
@@ -47,7 +48,15 @@ var rootCmd = &cobra.Command{
 			abortWithErr(err)
 		}
 
-		schemaMappings := []generator.SchemaMapping{}
+		cfg := generator.Config{
+			Warner: func(message string) {
+				log("Warning: %s", message)
+			},
+			Capitalizations:    capitalizations,
+			DefaultOutputName:  defaultOutput,
+			DefaultPackageName: defaultPackage,
+			SchemaMappings:     []generator.SchemaMapping{},
+		}
 		for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 			mapping := generator.SchemaMapping{SchemaID: id}
 			if s, ok := schemaPackageMap[id]; ok {
@@ -63,12 +72,10 @@ var rootCmd = &cobra.Command{
 			if s, ok := schemaRootTypeMap[id]; ok {
 				mapping.RootType = s
 			}
-			schemaMappings = append(schemaMappings, mapping)
+			cfg.SchemaMappings = append(cfg.SchemaMappings, mapping)
 		}
 
-		generator, err := generator.New(schemaMappings, defaultPackage, defaultOutput, func(message string) {
-			log("Warning: %s", message)
-		})
+		generator, err := generator.New(cfg)
 		if err != nil {
 			abortWithErr(err)
 		}
@@ -129,6 +136,9 @@ func main() {
 	rootCmd.PersistentFlags().StringSliceVar(&schemaRootTypes, "schema-root-type", nil,
 		"Override name to use for the root type of a specific schema ID; "+
 			"must be in the format URI=PACKAGE. By default, it is derived from the file name.")
+	rootCmd.PersistentFlags().StringSliceVar(&capitalizations, "capitalization", nil,
+		"Specify a preferred Go capitalization for a string. For example, by default a field "+
+			"named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.")
 
 	abortWithErr(rootCmd.Execute())
 }

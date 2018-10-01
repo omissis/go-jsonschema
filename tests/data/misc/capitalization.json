@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/case",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "html": {
+      "type": "string"
+    },
+
+    "url_something": {
+      "type": "string"
+    },
+    "id_something": {
+      "type": "string"
+    },
+    "html_something": {
+      "type": "string"
+    },
+
+    "urlSomethingElse": {
+      "type": "string"
+    },
+    "idSomethingElse": {
+      "type": "string"
+    },
+    "htmlSomethingElse": {
+      "type": "string"
+    },
+
+    "url__": {
+      "type": "string"
+    },
+    "id__": {
+      "type": "string"
+    },
+    "html__": {
+      "type": "string"
+    }
+  }
+}

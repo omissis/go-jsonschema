@@ -13,6 +13,14 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
+type Config struct {
+	SchemaMappings     []SchemaMapping
+	Capitalizations    []string
+	DefaultPackageName string
+	DefaultOutputName  string
+	Warner             func(string)
+}
+
 type SchemaMapping struct {
 	SchemaID    string
 	PackageName string
@@ -21,25 +29,15 @@ type SchemaMapping struct {
 }
 
 type Generator struct {
+	config                Config
 	emitter               *codegen.Emitter
-	defaultPackageName    string
-	defaultOutputName     string
-	schemaMappings        []SchemaMapping
-	warner                func(string)
 	outputs               map[string]*output
 	schemaCacheByFileName map[string]*schemas.Schema
 }
 
-func New(
-	schemaMappings []SchemaMapping,
-	defaultPackageName string,
-	defaultOutputName string,
-	warner func(string)) (*Generator, error) {
+func New(config Config) (*Generator, error) {
 	return &Generator{
-		warner:                warner,
-		schemaMappings:        schemaMappings,
-		defaultPackageName:    defaultPackageName,
-		defaultOutputName:     defaultOutputName,
+		config:                config,
 		outputs:               map[string]*output{},
 		schemaCacheByFileName: map[string]*schemas.Schema{},
 	}, nil
@@ -123,12 +121,12 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
-	for _, m := range g.schemaMappings {
+	for _, m := range g.config.SchemaMappings {
 		if m.SchemaID == schema.ID && m.RootType != "" {
 			return m.RootType
 		}
 	}
-	return codegen.IdentifierFromFileName(fileName)
+	return g.identifierFromFileName(fileName)
 }
 
 func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
@@ -136,12 +134,12 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 		return o, nil
 	}
 
-	for _, m := range g.schemaMappings {
+	for _, m := range g.config.SchemaMappings {
 		if m.SchemaID == id {
 			return g.beginOutput(id, m.OutputName, m.PackageName)
 		}
 	}
-	return g.beginOutput(id, g.defaultOutputName, g.defaultPackageName)
+	return g.beginOutput(id, g.config.DefaultOutputName, g.config.DefaultPackageName)
 }
 
 func (g *Generator) beginOutput(
@@ -170,7 +168,7 @@ func (g *Generator) beginOutput(
 	}
 
 	output := &output{
-		warner: g.warner,
+		warner: g.config.Warner,
 		file: &codegen.File{
 			FileName: outputName,
 			Package:  pkg,
@@ -181,6 +179,39 @@ func (g *Generator) beginOutput(
 	}
 	g.outputs[id] = output
 	return output, nil
+}
+
+func (g *Generator) makeEnumConstantName(typeName, value string) string {
+	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
+		return typeName + "_" + g.identifierize(value)
+	}
+	return typeName + g.identifierize(value)
+}
+
+func (g *Generator) identifierFromFileName(fileName string) string {
+	s := filepath.Base(fileName)
+	return g.identifierize(strings.TrimSuffix(strings.TrimSuffix(s, ".json"), ".schema"))
+}
+
+func (g *Generator) identifierize(s string) string {
+	// FIXME: Better handling of non-identifier chars
+	var sb strings.Builder
+	for _, part := range splitIdentifierByCaseAndSeparators(s) {
+		_, _ = sb.WriteString(g.capitalize(part))
+	}
+	return sb.String()
+}
+
+func (g *Generator) capitalize(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	for _, c := range g.config.Capitalizations {
+		if strings.ToLower(c) == strings.ToLower(s) {
+			return c
+		}
+	}
+	return strings.ToUpper(s[0:1]) + s[1:]
 }
 
 type schemaGenerator struct {
@@ -197,7 +228,7 @@ func (g *schemaGenerator) generateRootType() error {
 
 	if g.schema.Type.Type == "" {
 		for name, def := range g.schema.Definitions {
-			_, err := g.generateDeclaredType(def, newNameScope(codegen.Identifierize(name)))
+			_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
 			if err != nil {
 				return err
 			}
@@ -250,7 +281,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}
 		// Minor hack to make definitions default to being objects
 		def.Type = schemas.TypeNameObject
-		defName = codegen.Identifierize(defName)
+		defName = g.identifierize(defName)
 	} else {
 		def = schema.Type
 		defName = g.getRootTypeName(schema, fileName)
@@ -423,7 +454,7 @@ func (g *schemaGenerator) generateStructType(
 	scope nameScope) (codegen.Type, error) {
 	if len(t.Properties) == 0 {
 		if len(t.Required) > 0 {
-			g.warner("object type with no properties has required fields; " +
+			g.config.Warner("object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
 		}
 		return &codegen.MapType{
@@ -450,11 +481,11 @@ func (g *schemaGenerator) generateStructType(
 		prop := t.Properties[name]
 		isRequired := requiredNames[name]
 
-		fieldName := codegen.Identifierize(name)
+		fieldName := g.identifierize(name)
 		if count, ok := uniqueNames[fieldName]; ok {
 			uniqueNames[fieldName] = count + 1
 			fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
-			g.warner(fmt.Sprintf("field %q maps to a field by the same name declared "+
+			g.config.Warner(fmt.Sprintf("field %q maps to a field by the same name declared "+
 				"in the same struct; it will be declared as %s", name, fieldName))
 		} else {
 			uniqueNames[fieldName] = 1
@@ -575,7 +606,7 @@ func (g *schemaGenerator) generateEnumType(
 		enumType = codegen.PrimitiveType{primitiveType}
 	}
 	if wrapInStruct {
-		g.warner("Enum field wrapped in struct in order to store values of multiple types")
+		g.config.Warner("Enum field wrapped in struct in order to store values of multiple types")
 		enumType = &codegen.StructType{
 			Fields: []codegen.StructField{
 				{
@@ -659,7 +690,7 @@ func (g *schemaGenerator) generateEnumType(
 			if s, ok := v.(string); ok {
 				// TODO: Make sure the name is unique across scope
 				g.output.file.Package.AddDecl(&codegen.Constant{
-					Name:  makeEnumConstantName(enumDecl.Name, s),
+					Name:  g.makeEnumConstantName(enumDecl.Name, s),
 					Type:  &codegen.NamedType{Decl: &enumDecl},
 					Value: s,
 				})
@@ -669,24 +700,6 @@ func (g *schemaGenerator) generateEnumType(
 
 	return &codegen.NamedType{Decl: &enumDecl}, nil
 }
-
-// func (g *schemaGenerator) generateAnonymousType(
-// 	t *schemas.Type, name string) (codegen.Type, error) {
-// 	if t.Type == schemas.TypeNameObject {
-// 		if len(t.Properties) == 0 {
-// 			return codegen.MapType{
-// 				KeyType:   codegen.PrimitiveType{"string"},
-// 				ValueType: codegen.EmptyInterfaceType{},
-// 			}, nil
-// 		}
-// 		s, err := g.generateStructDecl(t, name, "", false)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		return &codegen.NamedType{Decl: s}, nil
-// 	}
-// 	return nil, fmt.Errorf("unexpected type %q", t.Type)
-// }
 
 type output struct {
 	file          *codegen.File
