@@ -67,7 +67,7 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
 - Validation ([RFC draft](http://json-schema.org/latest/json-schema-validation.html))
   - [ ] Schema annotations (§10)
     - [x] `description`
-    - [ ] `default`
+    - [x] `default` (only for struct fields)
     - [ ] `readOnly`
     - [ ] `writeOnly`
     - [ ] ~~`title`~~ (N/A)

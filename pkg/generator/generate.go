@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sanity-io/litter"
+
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
@@ -354,49 +356,59 @@ func (g *schemaGenerator) generateDeclaredType(
 	g.output.file.Package.AddDecl(&decl)
 
 	if structType, ok := theType.(*codegen.StructType); ok {
-		g.output.file.Package.AddImport("encoding/json", "")
-		g.output.file.Package.AddDecl(&codegen.Method{
-			Impl: func(out *codegen.Emitter) {
-				out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-				out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", decl.Name)
-				out.Indent(1)
-				out.Println("var v struct {")
-				out.Indent(1)
-				fields := append([]codegen.StructField{}, structType.Fields...)
-				for _, f := range structType.Fields {
-					if f.Synthetic {
-						f.Generate(out)
-						out.Newline()
-					}
+		needUnmarshal := false
+		if len(structType.RequiredJSONFields) > 0 {
+			needUnmarshal = true
+		} else {
+			for _, f := range structType.Fields {
+				if f.DefaultValue != nil {
+					needUnmarshal = true
+					break
 				}
-				out.Indent(-1)
-				out.Println("}")
-				out.Println("if err := json.Unmarshal(b, &v); err != nil { return err }")
-				for _, f := range fields {
-					if f.Synthetic {
-						for _, r := range f.Rules {
-							r.GenerateValidation(out, fmt.Sprintf("v.%s", f.Name),
-								fmt.Sprintf("field %s", f.JSONName))
+			}
+		}
+		if needUnmarshal {
+			if len(structType.RequiredJSONFields) > 0 {
+				g.output.file.Package.AddImport("fmt", "")
+			}
+			g.output.file.Package.AddImport("encoding/json", "")
+			g.output.file.Package.AddDecl(&codegen.Method{
+				Impl: func(out *codegen.Emitter) {
+					out.Comment("UnmarshalJSON implements json.Unmarshaler.")
+					out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", decl.Name)
+					out.Indent(1)
+					out.Println("var %s map[string]interface{}", varNameRawMap)
+					out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }",
+						varNameRawMap)
+					for _, f := range structType.RequiredJSONFields {
+						out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, f)
+						out.Indent(1)
+						out.Println(`return fmt.Errorf("field %s: required")`, f)
+						out.Indent(-1)
+						out.Println("}")
+					}
+
+					out.Println("type Plain %s", decl.Name)
+					out.Println("var %s Plain", varNamePlainStruct)
+					out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }",
+						varNamePlainStruct)
+					for _, f := range structType.Fields {
+						if f.DefaultValue != nil {
+							out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, f.JSONName)
+							out.Indent(1)
+							out.Println(`%s.%s = %s`, varNamePlainStruct, f.Name, litter.Sdump(f.DefaultValue))
+							out.Indent(-1)
+							out.Println("}")
 						}
 					}
-				}
-				out.Println("type plain %s", decl.Name)
-				out.Println("var p plain")
-				out.Println("if err := json.Unmarshal(b, &p); err != nil { return err }")
-				for _, f := range fields {
-					if !f.Synthetic {
-						for _, r := range f.Rules {
-							r.GenerateValidation(out, fmt.Sprintf("p.%s", f.Name),
-								fmt.Sprintf("field %s", f.JSONName))
-						}
-					}
-				}
-				out.Println("*j = %s(p)", decl.Name)
-				out.Println("return nil")
-				out.Indent(-1)
-				out.Println("}")
-			},
-		})
+
+					out.Println("*j = %s(%s)", decl.Name, varNamePlainStruct)
+					out.Println("return nil")
+					out.Indent(-1)
+					out.Println("}")
+				},
+			})
+		}
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
@@ -514,23 +526,12 @@ func (g *schemaGenerator) generateStructType(
 			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
 		}
 
-		if isRequired {
-			if rt, ok := structField.Type.(codegen.RuledType); ok {
-				g.output.file.Package.AddImport("fmt", "") // All rules need fmt
-				for _, r := range rt.GetRequiredRules() {
-					structField.AddRule(r)
-				}
-			}
-			if !structField.Type.IsNillable() {
-				g.output.file.Package.AddImport("fmt", "") // All rules need fmt
-				syntheticField := structField
-				syntheticField.Comment = ""
-				syntheticField.Synthetic = true
-				syntheticField.Type = codegen.PointerType{Type: syntheticField.Type}
-				syntheticField.AddRule(codegen.NilStructFieldRequired{})
-				structType.AddField(syntheticField)
-			}
-		} else if !structField.Type.IsNillable() {
+		if prop.Default != nil {
+			structField.DefaultValue = prop.Default
+		} else if isRequired {
+			structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+		} else {
+			// Optional, so must be pointer
 			structField.Type = codegen.PointerType{Type: structField.Type}
 		}
 
@@ -754,3 +755,8 @@ func (ns nameScope) add(s string) nameScope {
 	result[len(result)-1] = s
 	return result
 }
+
+var (
+	varNamePlainStruct = "plain"
+	varNameRawMap      = "raw"
+)

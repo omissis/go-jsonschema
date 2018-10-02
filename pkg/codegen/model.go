@@ -156,10 +156,6 @@ type Type interface {
 	IsNillable() bool
 }
 
-type RuledType interface {
-	GetRequiredRules() []Rule
-}
-
 type PointerType struct {
 	Type Type
 }
@@ -180,12 +176,6 @@ func (ArrayType) IsNillable() bool { return true }
 func (a ArrayType) Generate(out *Emitter) {
 	out.Print("[]")
 	a.Type.Generate(out)
-}
-
-func (ArrayType) GetRequiredRules() []Rule {
-	return []Rule{
-		ArrayNotEmpty{},
-	}
 }
 
 type NamedType struct {
@@ -237,7 +227,8 @@ func (EmptyInterfaceType) Generate(out *Emitter) {
 }
 
 type StructType struct {
-	Fields []StructField
+	Fields             []StructField
+	RequiredJSONFields []string
 }
 
 func (StructType) IsNillable() bool { return false }
@@ -251,31 +242,24 @@ func (s *StructType) Generate(out *Emitter) {
 	out.Indent(1)
 	i := 0
 	for _, f := range s.Fields {
-		if !f.Synthetic {
-			if i > 0 {
-				out.Newline()
-			}
-			f.Generate(out)
+		if i > 0 {
 			out.Newline()
-			i++
 		}
+		f.Generate(out)
+		out.Newline()
+		i++
 	}
 	out.Indent(-1)
 	out.Print("}")
 }
 
 type StructField struct {
-	Name      string
-	Type      Type
-	Comment   string
-	Tags      string
-	JSONName  string
-	Synthetic bool
-	Rules     []Rule
-}
-
-func (f *StructField) AddRule(rule Rule) {
-	f.Rules = append(f.Rules, rule)
+	Name         string
+	Type         Type
+	Comment      string
+	Tags         string
+	JSONName     string
+	DefaultValue interface{}
 }
 
 func (f *StructField) Generate(out *Emitter) {
