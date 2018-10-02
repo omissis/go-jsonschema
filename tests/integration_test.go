@@ -20,27 +20,15 @@ var basicConfig = generator.Config{
 }
 
 func TestCore(t *testing.T) {
-	generator, err := generator.New(basicConfig)
-	if err != nil {
-		t.Error(err)
-	}
-	testExamples(t, generator, "./data/core")
+	testExamples(t, basicConfig, "./data/core")
 }
 
 func TestValidation(t *testing.T) {
-	generator, err := generator.New(basicConfig)
-	if err != nil {
-		t.Error(err)
-	}
-	testExamples(t, generator, "./data/validation")
+	testExamples(t, basicConfig, "./data/validation")
 }
 
 func TestMiscWithDefaults(t *testing.T) {
-	generator, err := generator.New(basicConfig)
-	if err != nil {
-		t.Error(err)
-	}
-	testExamples(t, generator, "./data/miscWithDefaults")
+	testExamples(t, basicConfig, "./data/miscWithDefaults")
 }
 
 func TestCrossPackage(t *testing.T) {
@@ -57,24 +45,16 @@ func TestCrossPackage(t *testing.T) {
 			OutputName:  "other.go",
 		},
 	}
-	generator, err := generator.New(cfg)
-	if err != nil {
-		t.Error(err)
-	}
-	testExampleFile(t, generator, "./data/crossPackage/schema.json")
+	testExampleFile(t, cfg, "./data/crossPackage/schema.json")
 }
 
 func TestCapitalization(t *testing.T) {
 	cfg := basicConfig
 	cfg.Capitalizations = []string{"ID", "URL", "HtMl"}
-	generator, err := generator.New(cfg)
-	if err != nil {
-		t.Error(err)
-	}
-	testExampleFile(t, generator, "./data/misc/capitalization.json")
+	testExampleFile(t, cfg, "./data/misc/capitalization.json")
 }
 
-func testExamples(t *testing.T, generator *generator.Generator, dataDir string) {
+func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	fileInfos, err := ioutil.ReadDir(dataDir)
 	if err != nil {
 		t.Error(err.Error())
@@ -84,16 +64,21 @@ func testExamples(t *testing.T, generator *generator.Generator, dataDir string) 
 		if strings.HasSuffix(file.Name(), ".json") {
 			fileName := filepath.Join(dataDir, file.Name())
 			if strings.HasSuffix(file.Name(), ".FAIL.json") {
-				testFailingExampleFile(t, generator, fileName)
+				testFailingExampleFile(t, cfg, fileName)
 			} else {
-				testExampleFile(t, generator, fileName)
+				testExampleFile(t, cfg, fileName)
 			}
 		}
 	}
 }
 
-func testExampleFile(t *testing.T, generator *generator.Generator, fileName string) {
+func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Run(fileName, func(t *testing.T) {
+		generator, err := generator.New(cfg)
+		if err != nil {
+			t.Error(err)
+		}
+
 		if err := generator.DoFile(fileName); err != nil {
 			t.Error(err)
 		}
@@ -128,8 +113,12 @@ func testExampleFile(t *testing.T, generator *generator.Generator, fileName stri
 	})
 }
 
-func testFailingExampleFile(t *testing.T, generator *generator.Generator, fileName string) {
+func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Run(fileName, func(t *testing.T) {
+		generator, err := generator.New(cfg)
+		if err != nil {
+			t.Error(err)
+		}
 		if err := generator.DoFile(fileName); err == nil {
 			t.Error("Expected test to fail")
 		}
