@@ -229,7 +229,8 @@ func (g *schemaGenerator) generateRootType() error {
 	}
 
 	if g.schema.Type.Type == "" {
-		for name, def := range g.schema.Definitions {
+		for _, name := range sortDefinitionsByName(g.schema.Definitions) {
+			def := g.schema.Definitions[name]
 			_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
 			if err != nil {
 				return err
@@ -475,21 +476,15 @@ func (g *schemaGenerator) generateStructType(
 		}, nil
 	}
 
-	propNames := make([]string, 0, len(t.Properties))
-	for name := range t.Properties {
-		propNames = append(propNames, name)
-	}
-	sort.Strings(propNames)
-
 	requiredNames := make(map[string]bool, len(t.Properties))
 	for _, r := range t.Required {
 		requiredNames[r] = true
 	}
 
-	uniqueNames := make(map[string]int, len(propNames))
+	uniqueNames := make(map[string]int, len(t.Properties))
 
 	var structType codegen.StructType
-	for _, name := range propNames {
+	for _, name := range sortPropertiesByName(t.Properties) {
 		prop := t.Properties[name]
 		isRequired := requiredNames[name]
 
@@ -760,3 +755,21 @@ var (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 )
+
+func sortPropertiesByName(props map[string]*schemas.Type) []string {
+	names := make([]string, 0, len(props))
+	for name := range props {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func sortDefinitionsByName(defs schemas.Definitions) []string {
+	names := make([]string, 0, len(defs))
+	for name := range defs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
