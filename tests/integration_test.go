@@ -51,6 +51,22 @@ func TestCrossPackage(t *testing.T) {
 	testExampleFile(t, cfg, "./data/crossPackage/schema.json")
 }
 
+func TestCrossPackageNoOutput(t *testing.T) {
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schema",
+			PackageName: "github.com/example/schema",
+			OutputName:  "schema.go",
+		},
+		{
+			SchemaID:    "https://example.com/other",
+			PackageName: "github.com/example/other",
+		},
+	}
+	testExampleFile(t, cfg, "./data/crossPackageNoOutput/schema.json")
+}
+
 func TestCapitalization(t *testing.T) {
 	cfg := basicConfig
 	cfg.Capitalizations = []string{"ID", "URL", "HtMl"}

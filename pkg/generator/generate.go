@@ -43,12 +43,17 @@ func New(config Config) (*Generator, error) {
 		config:                config,
 		outputs:               map[string]*output{},
 		schemaCacheByFileName: map[string]*schemas.Schema{},
+		inScope:               map[qualifiedDefinition]struct{}{},
+		warner:                config.Warner,
 	}, nil
 }
 
 func (g *Generator) Sources() map[string][]byte {
 	sources := make(map[string]*strings.Builder, len(g.outputs))
 	for _, output := range g.outputs {
+		if output.file.FileName == "" {
+			continue
+		}
 		emitter := codegen.NewEmitter(80)
 		output.file.Generate(emitter)
 
@@ -155,9 +160,6 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 func (g *Generator) beginOutput(
 	id string,
 	outputName, packageName string) (*output, error) {
-	if outputName == "" {
-		return nil, fmt.Errorf("unable to map schema URI %q to a file name", id)
-	}
 	if packageName == "" {
 		return nil, fmt.Errorf("unable to map schema URI %q to a Go package name", id)
 	}
