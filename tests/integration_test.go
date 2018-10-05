@@ -76,7 +76,7 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 }
 
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
-	t.Run(fileName, func(t *testing.T) {
+	t.Run(titleFromFileName(fileName), func(t *testing.T) {
 		generator, err := generator.New(cfg)
 		if err != nil {
 			t.Error(err)
@@ -117,7 +117,7 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 }
 
 func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string) {
-	t.Run(fileName, func(t *testing.T) {
+	t.Run(titleFromFileName(fileName), func(t *testing.T) {
 		generator, err := generator.New(cfg)
 		if err != nil {
 			t.Error(err)
@@ -157,4 +157,25 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 
 	diff := string(out)
 	return &diff, false
+}
+
+func titleFromFileName(fileName string) string {
+	relative := mustRel(mustAbs("./data"), mustAbs(fileName))
+	return strings.TrimSuffix(relative, ".json")
+}
+
+func mustRel(base, s string) string {
+	result, err := filepath.Rel(base, s)
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+func mustAbs(s string) string {
+	result, err := filepath.Abs(s)
+	if err != nil {
+		panic(err)
+	}
+	return result
 }
