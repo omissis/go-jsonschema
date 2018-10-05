@@ -60,7 +60,7 @@ func TestCapitalization(t *testing.T) {
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	fileInfos, err := ioutil.ReadDir(dataDir)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	for _, file := range fileInfos {
@@ -79,15 +79,15 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Run(titleFromFileName(fileName), func(t *testing.T) {
 		generator, err := generator.New(cfg)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if err := generator.DoFile(fileName); err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if len(generator.Sources()) == 0 {
-			t.Error("Expected sources to contain something")
+			t.Fatal("Expected sources to contain something")
 		}
 
 		for outputName, source := range generator.Sources() {
@@ -101,16 +101,16 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			goldenData, err := ioutil.ReadFile(goldenFileName)
 			if err != nil {
 				if !os.IsNotExist(err) {
-					t.Error(err)
+					t.Fatal(err)
 				}
 				goldenData = source
 				t.Logf("Writing golden data to %s", goldenFileName)
 				if err = ioutil.WriteFile(goldenFileName, goldenData, 0655); err != nil {
-					t.Error(err)
+					t.Fatal(err)
 				}
 			}
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Error(fmt.Sprintf("Contents different (left is expected, right is actual):\n%s", *diff))
+				t.Fatal(fmt.Sprintf("Contents different (left is expected, right is actual):\n%s", *diff))
 			}
 		}
 	})
@@ -120,10 +120,10 @@ func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string)
 	t.Run(titleFromFileName(fileName), func(t *testing.T) {
 		generator, err := generator.New(cfg)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		if err := generator.DoFile(fileName); err == nil {
-			t.Error("Expected test to fail")
+			t.Fatal("Expected test to fail")
 		}
 	})
 }
@@ -135,24 +135,24 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 
 	dir, err := ioutil.TempDir("", "test")
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer func() {
 		_ = os.RemoveAll(dir)
 	}()
 
 	if err := ioutil.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0644); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 	if err := ioutil.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0644); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	out, err := exec.Command("diff", "--side-by-side",
 		fmt.Sprintf("%s/expected", dir),
 		fmt.Sprintf("%s/actual", dir)).Output()
 	if _, ok := err.(*exec.ExitError); !ok {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	diff := string(out)
