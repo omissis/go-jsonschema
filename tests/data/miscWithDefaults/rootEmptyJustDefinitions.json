@@ -6,8 +6,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "description": "A field."
+          "type": "string"
         }
       }
     }

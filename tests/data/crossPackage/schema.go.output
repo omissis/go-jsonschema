@@ -4,10 +4,9 @@ package schema
 import other "github.com/example/other"
 
 type Thing struct {
-	// A field.
+	// S corresponds to the JSON schema field "s".
 	S *string `json:"s,omitempty"`
 }
-// A simple schema.
 type Schema struct {
 	// DefInOtherSchema corresponds to the JSON schema field "defInOtherSchema".
 	DefInOtherSchema *other.Thing `json:"defInOtherSchema,omitempty"`

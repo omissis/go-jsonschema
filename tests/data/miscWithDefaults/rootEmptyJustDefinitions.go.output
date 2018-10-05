@@ -3,6 +3,6 @@
 package test
 
 type Thing struct {
-	// A field.
+	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty"`
 }
