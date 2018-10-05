@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"go/format"
 	"os"
 	"strings"
 
@@ -92,15 +91,8 @@ var rootCmd = &cobra.Command{
 				verboseLog("Writing %s", fileName)
 			}
 
-			src, err := format.Source(source)
-			if err != nil {
-				verboseLog("the generated code could not be formatted automatically; "+
-					"falling back to unformatted: %s", err)
-				src = source
-			}
-
 			if fileName == "-" {
-				if _, err = os.Stdout.Write(src); err != nil {
+				if _, err = os.Stdout.Write(source); err != nil {
 					abortWithErr(err)
 				}
 			} else {
@@ -109,7 +101,7 @@ var rootCmd = &cobra.Command{
 					abortWithErr(err)
 				}
 				defer func() { _ = w.Close() }()
-				if _, err = w.Write(src); err != nil {
+				if _, err = w.Write(source); err != nil {
 					abortWithErr(err)
 				}
 				_ = w.Close()

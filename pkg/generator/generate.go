@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"go/format"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -61,7 +62,14 @@ func (g *Generator) Sources() map[string][]byte {
 
 	result := make(map[string][]byte, len(sources))
 	for f, sb := range sources {
-		result[f] = []byte(sb.String())
+		source := []byte(sb.String())
+		src, err := format.Source(source)
+		if err != nil {
+			g.config.Warner(fmt.Sprintf("The generated code could not be formatted automatically; "+
+				"falling back to unformatted: %s", err))
+			src = source
+		}
+		result[f] = src
 	}
 	return result
 }
