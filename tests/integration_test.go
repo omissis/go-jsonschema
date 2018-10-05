@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,7 +17,9 @@ var basicConfig = generator.Config{
 	SchemaMappings:     []generator.SchemaMapping{},
 	DefaultPackageName: "github.com/example/test",
 	DefaultOutputName:  "-",
-	Warner:             func(message string) {},
+	Warner: func(message string) {
+		log.Printf("[from warner] %s", message)
+	},
 }
 
 func TestCore(t *testing.T) {
