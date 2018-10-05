@@ -149,6 +149,7 @@ func (td *TypeDecl) Generate(out *Emitter) {
 	out.Comment(td.Comment)
 	out.Print("type %s ", td.Name)
 	td.Type.Generate(out)
+	out.Newline()
 }
 
 type Type interface {
