@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/sanity-io/litter"
 
@@ -211,7 +212,11 @@ func (g *Generator) identifierize(s string) string {
 	for _, part := range splitIdentifierByCaseAndSeparators(s) {
 		_, _ = sb.WriteString(g.capitalize(part))
 	}
-	return sb.String()
+	ident := sb.String()
+	if !unicode.IsLetter(rune(ident[0])) {
+		ident = "A" + ident
+	}
+	return ident
 }
 
 func (g *Generator) capitalize(s string) string {
