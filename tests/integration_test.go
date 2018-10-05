@@ -113,6 +113,7 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			outputName += ".output"
 
 			goldenFileName := filepath.Join(filepath.Dir(fileName), outputName)
+			t.Logf("Using golden data in %s", mustAbs(goldenFileName))
 
 			goldenData, err := ioutil.ReadFile(goldenFileName)
 			if err != nil {
@@ -120,7 +121,7 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 					t.Fatal(err)
 				}
 				goldenData = source
-				t.Logf("Writing golden data to %s", goldenFileName)
+				t.Log("File does not exist; creating it")
 				if err = ioutil.WriteFile(goldenFileName, goldenData, 0655); err != nil {
 					t.Fatal(err)
 				}

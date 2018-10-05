@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"unicode"
 
@@ -37,6 +36,8 @@ type Generator struct {
 	emitter               *codegen.Emitter
 	outputs               map[string]*output
 	schemaCacheByFileName map[string]*schemas.Schema
+	inScope               map[qualifiedDefinition]struct{}
+	warner                func(string)
 }
 
 func New(config Config) (*Generator, error) {
@@ -181,7 +182,7 @@ func (g *Generator) beginOutput(
 	}
 
 	output := &output{
-		warner: g.config.Warner,
+		warner: g.warner,
 		file: &codegen.File{
 			FileName: outputName,
 			Package:  pkg,
@@ -286,6 +287,11 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		schema = g.schema
 	}
 
+	qual := qualifiedDefinition{
+		schema: schema,
+		name:   defName,
+	}
+
 	var def *schemas.Type
 	if defName != "" {
 		// TODO: Support nested definitions
@@ -295,14 +301,24 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 			return nil, fmt.Errorf("definition %q (from ref %q) does not exist in schema", defName, ref)
 		}
 		if def.Type == "" && len(def.Properties) == 0 {
-			return nil, nil
+			return &codegen.EmptyInterfaceType{}, nil
 		}
-		// Minor hack to make definitions default to being objects
-		def.Type = schemas.TypeNameObject
 		defName = g.identifierize(defName)
 	} else {
 		def = schema.Type
 		defName = g.getRootTypeName(schema, fileName)
+		if def.Type == "" {
+			// Minor hack to make definitions default to being objects
+			def.Type = schemas.TypeNameObject
+		}
+	}
+
+	_, isCycle := g.inScope[qual]
+	if !isCycle {
+		g.inScope[qual] = struct{}{}
+		defer func() {
+			delete(g.inScope, qual)
+		}()
 	}
 
 	var sg *schemaGenerator
@@ -327,6 +343,13 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		return nil, err
 	}
 
+	nt := t.(*codegen.NamedType)
+
+	if isCycle {
+		g.warner(fmt.Sprintf("Cycle detected; must wrap type %s in pointer", nt.Decl.Name))
+		t = codegen.WrapTypeInPointer(t)
+	}
+
 	if sg.output.file.Package.QualifiedName == g.output.file.Package.QualifiedName {
 		return t, nil
 	}
@@ -344,31 +367,39 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 	return &codegen.NamedType{
 		Package: &sg.output.file.Package,
-		Decl:    t.(*codegen.NamedType).Decl,
+		Decl:    nt.Decl,
 	}, nil
 }
 
 func (g *schemaGenerator) generateDeclaredType(
 	t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	if t, ok := g.output.declsBySchema[t]; ok {
-		return &codegen.NamedType{Decl: t}, nil
+	if decl, ok := g.output.declsBySchema[t]; ok {
+		return &codegen.NamedType{Decl: decl}, nil
+	}
+
+	if t.Enum != nil {
+		return g.generateEnumType(t, scope)
 	}
 
 	decl := codegen.TypeDecl{
 		Name:    g.output.uniqueTypeName(scope.string()),
 		Comment: t.Description,
 	}
+	g.output.declsBySchema[t] = &decl
+	g.output.declsByName[decl.Name] = &decl
+
 	theType, err := g.generateType(t, scope)
 	if err != nil {
 		return nil, err
 	}
-	if d, ok := theType.(*codegen.NamedType); ok {
-		return d, nil
+	if isNamedType(theType) {
+		// Don't declare named types under a new name
+		delete(g.output.declsBySchema, t)
+		delete(g.output.declsByName, decl.Name)
+		return theType, nil
 	}
 	decl.Type = theType
 
-	g.output.declsBySchema[t] = &decl
-	g.output.declsByName[decl.Name] = &decl
 	g.output.file.Package.AddDecl(&decl)
 
 	if structType, ok := theType.(*codegen.StructType); ok {
@@ -441,28 +472,9 @@ func (g *schemaGenerator) generateType(
 		if t.Items == nil {
 			return nil, errors.New("array property must have 'items' set to a type")
 		}
-
-		var elemType codegen.Type
-		if schemas.IsPrimitiveType(t.Items.Type) {
-			var err error
-			elemType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Items.Type)
-			if err != nil {
-				return nil, fmt.Errorf("cannot determine type of field: %s", err)
-			}
-		} else if t.Items.Type != "" {
-			var err error
-			elemType, err = g.generateDeclaredType(t.Items, scope.add("Elem"))
-			if err != nil {
-				return nil, err
-			}
-		} else if t.Items.Ref != "" {
-			var err error
-			elemType, err = g.generateReferencedType(t.Items.Ref)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, errors.New("array property must have a type")
+		elemType, err := g.generateType(t.Items, scope.add("Elem"))
+		if err != nil {
+			return nil, err
 		}
 		return codegen.ArrayType{elemType}, nil
 	case schemas.TypeNameObject:
@@ -474,7 +486,10 @@ func (g *schemaGenerator) generateType(
 	if t.Ref != "" {
 		return g.generateReferencedType(t.Ref)
 	}
-	return codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
+	if t.Type != "" {
+		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
+	}
+	return codegen.EmptyInterfaceType{}, nil
 }
 
 func (g *schemaGenerator) generateStructType(
@@ -482,7 +497,7 @@ func (g *schemaGenerator) generateStructType(
 	scope nameScope) (codegen.Type, error) {
 	if len(t.Properties) == 0 {
 		if len(t.Required) > 0 {
-			g.config.Warner("object type with no properties has required fields; " +
+			g.warner("Object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
 		}
 		return &codegen.MapType{
@@ -507,7 +522,7 @@ func (g *schemaGenerator) generateStructType(
 		if count, ok := uniqueNames[fieldName]; ok {
 			uniqueNames[fieldName] = count + 1
 			fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
-			g.config.Warner(fmt.Sprintf("field %q maps to a field by the same name declared "+
+			g.warner(fmt.Sprintf("field %q maps to a field by the same name declared "+
 				"in the same struct; it will be declared as %s", name, fieldName))
 		} else {
 			uniqueNames[fieldName] = 1
@@ -542,7 +557,9 @@ func (g *schemaGenerator) generateStructType(
 			structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
 		} else {
 			// Optional, so must be pointer
-			structField.Type = codegen.PointerType{Type: structField.Type}
+			if !structField.Type.IsNillable() {
+				structField.Type = codegen.WrapTypeInPointer(structField.Type)
+			}
 		}
 
 		structType.AddField(structField)
@@ -617,7 +634,7 @@ func (g *schemaGenerator) generateEnumType(
 		enumType = codegen.PrimitiveType{primitiveType}
 	}
 	if wrapInStruct {
-		g.config.Warner("Enum field wrapped in struct in order to store values of multiple types")
+		g.warner("Enum field wrapped in struct in order to store values of multiple types")
 		enumType = &codegen.StructType{
 			Fields: []codegen.StructField{
 				{
@@ -628,12 +645,8 @@ func (g *schemaGenerator) generateEnumType(
 		}
 	}
 
-	if enumDecl, ok := enumType.(*codegen.NamedType); ok {
-		return enumDecl, nil
-	}
-
 	enumDecl := codegen.TypeDecl{
-		Name: g.output.uniqueTypeName(scope.add("Enum").string()),
+		Name: g.output.uniqueTypeName(scope.string()),
 		Type: enumType,
 	}
 	g.output.file.Package.AddDecl(&enumDecl)
@@ -749,6 +762,11 @@ type cachedEnum struct {
 	enum   *codegen.TypeDecl
 }
 
+type qualifiedDefinition struct {
+	schema *schemas.Schema
+	name   string
+}
+
 type nameScope []string
 
 func newNameScope(s string) nameScope {
@@ -770,21 +788,3 @@ var (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 )
-
-func sortPropertiesByName(props map[string]*schemas.Type) []string {
-	names := make([]string, 0, len(props))
-	for name := range props {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortDefinitionsByName(defs schemas.Definitions) []string {
-	names := make([]string, 0, len(defs))
-	for name := range defs {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}

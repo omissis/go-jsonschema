@@ -6,6 +6,24 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
+func WrapTypeInPointer(t Type) Type {
+	if isPointerType(t) {
+		return t
+	}
+	return &PointerType{Type: t}
+}
+
+func isPointerType(t Type) bool {
+	switch x := t.(type) {
+	case *PointerType:
+		return true
+	case *NamedType:
+		return isPointerType(x.Decl.Type)
+	default:
+		return false
+	}
+}
+
 func PrimitiveTypeFromJSONSchemaType(jsType string) (Type, error) {
 	switch jsType {
 	case schemas.TypeNameString:
