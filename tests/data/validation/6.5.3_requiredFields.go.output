@@ -60,6 +60,12 @@ type A653RequiredFields struct {
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
 	MyBooleanArray []bool `json:"myBooleanArray"`
 
+	// MyInteger corresponds to the JSON schema field "myInteger".
+	MyInteger *int `json:"myInteger,omitempty"`
+
+	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
+	MyIntegerArray []int `json:"myIntegerArray,omitempty"`
+
 	// MyNull corresponds to the JSON schema field "myNull".
 	MyNull interface{} `json:"myNull"`
 

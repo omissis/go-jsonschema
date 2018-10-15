@@ -4,6 +4,7 @@ const (
 	TypeNameString  = "string"
 	TypeNameArray   = "array"
 	TypeNameNumber  = "number"
+	TypeNameInteger = "integer"
 	TypeNameObject  = "object"
 	TypeNameBoolean = "boolean"
 	TypeNameNull    = "null"
@@ -11,7 +12,7 @@ const (
 
 func IsPrimitiveType(t string) bool {
 	switch t {
-	case TypeNameString, TypeNameNumber, TypeNameBoolean, TypeNameNull:
+	case TypeNameString, TypeNameNumber, TypeNameInteger, TypeNameBoolean, TypeNameNull:
 		return true
 	default:
 		return false

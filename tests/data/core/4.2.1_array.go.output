@@ -8,6 +8,9 @@ type A421Array struct {
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
 	MyBooleanArray []bool `json:"myBooleanArray,omitempty"`
 
+	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
+	MyIntegerArray []int `json:"myIntegerArray,omitempty"`
+
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
 	MyNullArray []interface{} `json:"myNullArray,omitempty"`
 

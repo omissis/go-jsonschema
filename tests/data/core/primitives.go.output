@@ -6,6 +6,9 @@ type Primitives struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
 	MyBoolean *bool `json:"myBoolean,omitempty"`
 
+	// MyInteger corresponds to the JSON schema field "myInteger".
+	MyInteger *int `json:"myInteger,omitempty"`
+
 	// MyNull corresponds to the JSON schema field "myNull".
 	MyNull interface{} `json:"myNull,omitempty"`
 
