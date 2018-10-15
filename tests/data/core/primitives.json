@@ -9,6 +9,9 @@
     "myNumber": {
       "type": "number"
     },
+    "myInteger": {
+      "type": "integer"
+    },
     "myBoolean": {
       "type": "boolean"
     },

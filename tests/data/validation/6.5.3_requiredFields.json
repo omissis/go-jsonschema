@@ -21,6 +21,9 @@
     "myNumber": {
       "type": "number"
     },
+    "myInteger": {
+      "type": "integer"
+    },
     "myBoolean": {
       "type": "boolean"
     },
@@ -47,6 +50,12 @@
       "type": "array",
       "items": {
         "type": "number"
+      }
+    },
+    "myIntegerArray": {
+      "type": "array",
+      "items": {
+        "type": "integer"
       }
     },
     "myBooleanArray": {

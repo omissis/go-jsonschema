@@ -30,6 +30,8 @@ func PrimitiveTypeFromJSONSchemaType(jsType string) (Type, error) {
 		return PrimitiveType{"string"}, nil
 	case schemas.TypeNameNumber:
 		return PrimitiveType{"float64"}, nil
+	case schemas.TypeNameInteger:
+		return PrimitiveType{"int"}, nil
 	case schemas.TypeNameBoolean:
 		return PrimitiveType{"bool"}, nil
 	case schemas.TypeNameNull:
