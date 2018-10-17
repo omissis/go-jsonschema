@@ -244,7 +244,7 @@ func (g *schemaGenerator) generateRootType() error {
 		return errors.New("schema has no root")
 	}
 
-	if g.schema.Type.Type == "" {
+	if len(g.schema.Type.Type) == 0 {
 		for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 			def := g.schema.Definitions[name]
 			_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
@@ -300,16 +300,16 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		if !ok {
 			return nil, fmt.Errorf("definition %q (from ref %q) does not exist in schema", defName, ref)
 		}
-		if def.Type == "" && len(def.Properties) == 0 {
+		if len(def.Type) == 0 && len(def.Properties) == 0 {
 			return &codegen.EmptyInterfaceType{}, nil
 		}
 		defName = g.identifierize(defName)
 	} else {
 		def = schema.Type
 		defName = g.getRootTypeName(schema, fileName)
-		if def.Type == "" {
+		if len(def.Type) == 0 {
 			// Minor hack to make definitions default to being objects
-			def.Type = schemas.TypeNameObject
+			def.Type = schemas.TypeList{schemas.TypeNameObject}
 		}
 	}
 
@@ -466,8 +466,19 @@ func (g *schemaGenerator) generateType(
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
 	}
+	if t.Ref != "" {
+		return g.generateReferencedType(t.Ref)
+	}
+	if len(t.Type) == 0 {
+		return codegen.EmptyInterfaceType{}, nil
+	}
+	if len(t.Type) != 1 {
+		// TODO: Support validation for properties with multiple types
+		g.warner("Property has multiple types; will be represented as interface{} with no validation")
+		return codegen.EmptyInterfaceType{}, nil
+	}
 
-	switch t.Type {
+	switch t.Type[0] {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
 			return nil, errors.New("array property must have 'items' set to a type")
@@ -481,15 +492,9 @@ func (g *schemaGenerator) generateType(
 		return g.generateStructType(t, scope)
 	case schemas.TypeNameNull:
 		return codegen.EmptyInterfaceType{}, nil
+	default:
+		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0])
 	}
-
-	if t.Ref != "" {
-		return g.generateReferencedType(t.Ref)
-	}
-	if t.Type != "" {
-		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
-	}
-	return codegen.EmptyInterfaceType{}, nil
 }
 
 func (g *schemaGenerator) generateStructType(
@@ -522,7 +527,7 @@ func (g *schemaGenerator) generateStructType(
 		if count, ok := uniqueNames[fieldName]; ok {
 			uniqueNames[fieldName] = count + 1
 			fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
-			g.warner(fmt.Sprintf("field %q maps to a field by the same name declared "+
+			g.warner(fmt.Sprintf("Field %q maps to a field by the same name declared "+
 				"in the same struct; it will be declared as %s", name, fieldName))
 		} else {
 			uniqueNames[fieldName] = 1
@@ -570,18 +575,27 @@ func (g *schemaGenerator) generateStructType(
 func (g *schemaGenerator) generateTypeInline(
 	t *schemas.Type,
 	scope nameScope) (codegen.Type, error) {
-	if schemas.IsPrimitiveType(t.Type) && t.Enum == nil && t.Ref == "" {
-		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type)
-	}
-
-	if t.Type == schemas.TypeNameArray {
-		theType, err := g.generateTypeInline(t.Items, scope.add("Elem"))
-		if err != nil {
-			return nil, err
+	if t.Enum == nil && t.Ref == "" {
+		if len(t.Type) > 1 {
+			g.warner("Property has multiple types; will be represented as interface{} with no validation")
+			return codegen.EmptyInterfaceType{}, nil
 		}
-		return &codegen.ArrayType{Type: theType}, nil
-	}
+		if len(t.Type) == 0 {
+			return codegen.EmptyInterfaceType{}, nil
+		}
 
+		if schemas.IsPrimitiveType(t.Type[0]) {
+			return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0])
+		}
+
+		if t.Type[0] == schemas.TypeNameArray {
+			theType, err := g.generateTypeInline(t.Items, scope.add("Elem"))
+			if err != nil {
+				return nil, err
+			}
+			return &codegen.ArrayType{Type: theType}, nil
+		}
+	}
 	return g.generateDeclaredType(t, scope)
 }
 
@@ -597,13 +611,18 @@ func (g *schemaGenerator) generateEnumType(
 
 	var wrapInStruct bool
 	var enumType codegen.Type
-	if t.Type != "" {
+	if len(t.Type) == 1 {
 		var err error
-		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type); err != nil {
+		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0]); err != nil {
 			return nil, err
 		}
-		wrapInStruct = t.Type == schemas.TypeNameNull // Null uses interface{}, which cannot have methods
+		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods
 	} else {
+		if len(t.Type) > 1 {
+			// TODO: Support multiple types
+			g.warner("Enum defined with multiple types; ignoring it and using enum values instead")
+		}
+
 		var primitiveType string
 		for _, v := range t.Enum {
 			var valueType string
@@ -742,7 +761,7 @@ func (o *output) uniqueTypeName(name string) string {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
 		if _, ok := o.declsByName[suffixed]; !ok {
 			o.warner(fmt.Sprintf(
-				"multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
+				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
 			return suffixed
 		}
 		count++

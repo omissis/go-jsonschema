@@ -35,6 +35,32 @@ type Schema struct {
 	Definitions Definitions `json:"definitions,omitempty"`
 }
 
+// TypeList is a list of type names.
+type TypeList []string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (t *TypeList) UnmarshalJSON(b []byte) error {
+	if len(b) > 0 && b[0] == '[' {
+		var s []string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		*t = TypeList(s)
+		return nil
+	}
+
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	if s != "" {
+		*t = TypeList([]string{s})
+	} else {
+		*t = nil
+	}
+	return nil
+}
+
 // Definitions hold schema definitions.
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26
@@ -67,7 +93,7 @@ type Type struct {
 	AdditionalProperties json.RawMessage  `json:"additionalProperties,omitempty"` // section 5.18
 	Dependencies         map[string]*Type `json:"dependencies,omitempty"`         // section 5.19
 	Enum                 []interface{}    `json:"enum,omitempty"`                 // section 5.20
-	Type                 string           `json:"type,omitempty"`                 // section 5.21
+	Type                 TypeList         `json:"type,omitempty"`                 // section 5.21
 	AllOf                []*Type          `json:"allOf,omitempty"`                // section 5.22
 	AnyOf                []*Type          `json:"anyOf,omitempty"`                // section 5.23
 	OneOf                []*Type          `json:"oneOf,omitempty"`                // section 5.24

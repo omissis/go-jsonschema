@@ -38,6 +38,11 @@
     "myNullTypedEnum": {
       "type": "null",
       "enum": [null]
+    },
+
+    "myMixedTypeEnum": {
+      "type": ["string", "number"],
+      "enum": [42, "smurf"]
     }
   }
 }

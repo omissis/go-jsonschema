@@ -75,7 +75,7 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
   - [ ] General validation (§6.1)
     - [x] `enum`
     - [x] `type` (single)
-    - [ ] `type` (multiple)
+    - [x] `type` (multiple; **note**: partial support, limited validation)
     - [ ] `const`
   - [ ] Numeric validation (§6.2)
     - [ ] `multipleOf`

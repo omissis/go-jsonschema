@@ -61,6 +61,42 @@ func (j *A612EnumMyIntegerTypedEnum) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type A612EnumMyMixedTypeEnum struct {
+	Value interface{}
+}
+
+var enumValues_A612EnumMyMixedTypeEnum = []interface{}{
+	42,
+	"smurf",
+}
+
+// MarshalJSON implements json.Marshaler.
+func (j *A612EnumMyMixedTypeEnum) MarshalJSON() ([]byte, error) {
+	return json.Marshal(j.Value)
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *A612EnumMyMixedTypeEnum) UnmarshalJSON(b []byte) error {
+	var v struct {
+		Value interface{}
+	}
+	if err := json.Unmarshal(b, &v.Value); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_A612EnumMyMixedTypeEnum {
+		if reflect.DeepEqual(v.Value, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_A612EnumMyMixedTypeEnum, v.Value)
+	}
+	*j = A612EnumMyMixedTypeEnum(v)
+	return nil
+}
+
 type A612EnumMyMixedUntypedEnum struct {
 	Value interface{}
 }
@@ -176,6 +212,9 @@ type A612Enum struct {
 
 	// MyIntegerTypedEnum corresponds to the JSON schema field "myIntegerTypedEnum".
 	MyIntegerTypedEnum *A612EnumMyIntegerTypedEnum `json:"myIntegerTypedEnum,omitempty"`
+
+	// MyMixedTypeEnum corresponds to the JSON schema field "myMixedTypeEnum".
+	MyMixedTypeEnum *A612EnumMyMixedTypeEnum `json:"myMixedTypeEnum,omitempty"`
 
 	// MyMixedUntypedEnum corresponds to the JSON schema field "myMixedUntypedEnum".
 	MyMixedUntypedEnum *A612EnumMyMixedUntypedEnum `json:"myMixedUntypedEnum,omitempty"`
