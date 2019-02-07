@@ -19,6 +19,7 @@ import (
 type Config struct {
 	SchemaMappings     []SchemaMapping
 	Capitalizations    []string
+	ResolveExtensions  []string
 	DefaultPackageName string
 	DefaultOutputName  string
 	Warner             func(string)
@@ -115,25 +116,36 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 		fileName = filepath.Join(filepath.Dir(parentFileName), fileName)
 	}
 
-	fileName, err := filepath.EvalSymlinks(fileName)
-	if err != nil {
-		return nil, err
-	}
+	for i, ext := range g.config.ResolveExtensions {
+		qualified := fileName + ext
 
-	if schema, ok := g.schemaCacheByFileName[fileName]; ok {
+		// Poor man's resolving loop
+		if i < len(g.config.ResolveExtensions)-1 && !fileExists(qualified) {
+			continue
+		}
+
+		var err error
+		qualified, err = filepath.EvalSymlinks(qualified)
+		if err != nil {
+			return nil, err
+		}
+
+		if schema, ok := g.schemaCacheByFileName[qualified]; ok {
+			return schema, nil
+		}
+
+		schema, err := schemas.FromFile(qualified)
+		if err != nil {
+			return nil, err
+		}
+		g.schemaCacheByFileName[qualified] = schema
+
+		if err = g.addFile(qualified, schema); err != nil {
+			return nil, err
+		}
 		return schema, nil
 	}
-
-	schema, err := schemas.FromFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-	g.schemaCacheByFileName[fileName] = schema
-
-	if err = g.addFile(fileName, schema); err != nil {
-		return nil, err
-	}
-	return schema, nil
+	return nil, fmt.Errorf("could not resolve schema %q", fileName)
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
@@ -806,3 +818,8 @@ var (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 )
+
+func fileExists(fileName string) bool {
+	_, err := os.Stat(fileName)
+	return err == nil || !os.IsNotExist(err)
+}

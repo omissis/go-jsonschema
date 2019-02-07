@@ -11,13 +11,14 @@ import (
 )
 
 var (
-	verbose         bool
-	defaultPackage  string
-	defaultOutput   string
-	schemaPackages  []string
-	schemaOutputs   []string
-	schemaRootTypes []string
-	capitalizations []string
+	verbose           bool
+	defaultPackage    string
+	defaultOutput     string
+	schemaPackages    []string
+	schemaOutputs     []string
+	schemaRootTypes   []string
+	capitalizations   []string
+	resolveExtensions []string
 )
 
 var rootCmd = &cobra.Command{
@@ -55,6 +56,7 @@ var rootCmd = &cobra.Command{
 			DefaultOutputName:  defaultOutput,
 			DefaultPackageName: defaultPackage,
 			SchemaMappings:     []generator.SchemaMapping{},
+			ResolveExtensions:  append([]string{""}, resolveExtensions...),
 		}
 		for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 			mapping := generator.SchemaMapping{SchemaID: id}
@@ -114,21 +116,25 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
 		"Verbose output")
 	rootCmd.PersistentFlags().StringVarP(&defaultPackage, "package", "p", "",
-		"Default name of package to declare Go files under, unless overridden with --schema-package")
+		`Default name of package to declare Go files under, unless overridden with
+--schema-package`)
 	rootCmd.PersistentFlags().StringVarP(&defaultOutput, "output", "o", "-",
 		"File to write (- for standard output)")
 	rootCmd.PersistentFlags().StringSliceVar(&schemaPackages, "schema-package", nil,
-		"Name of package to declare Go files for a specific schema ID under; "+
-			"must be in the format URI=PACKAGE.")
+		`Name of package to declare Go files for a specific schema ID under;
+must be in the format URI=PACKAGE.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
-		"File to write (- for standard output) a specific schema ID to; "+
-			"must be in the format URI=PACKAGE.")
+		`File to write (- for standard output) a specific schema ID to;
+must be in the format URI=PACKAGE.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaRootTypes, "schema-root-type", nil,
-		"Override name to use for the root type of a specific schema ID; "+
-			"must be in the format URI=PACKAGE. By default, it is derived from the file name.")
+		`Override name to use for the root type of a specific schema ID;
+must be in the format URI=PACKAGE. By default, it is derived from the file name.`)
 	rootCmd.PersistentFlags().StringSliceVar(&capitalizations, "capitalization", nil,
-		"Specify a preferred Go capitalization for a string. For example, by default a field "+
-			"named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.")
+		`Specify a preferred Go capitalization for a string. For example, by default a field
+named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.`)
+	rootCmd.PersistentFlags().StringSliceVar(&resolveExtensions, "resolve-extension", nil,
+		`Add a file extension that is used to resolve schema names, e.g. {"$ref": "./foo"} will
+also look for foo.json if --resolve-extension json is provided.`)
 
 	abortWithErr(rootCmd.Execute())
 }
