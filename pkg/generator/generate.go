@@ -33,7 +33,6 @@ type SchemaMapping struct {
 
 type Generator struct {
 	config                Config
-	emitter               *codegen.Emitter
 	outputs               map[string]*output
 	schemaCacheByFileName map[string]*schemas.Schema
 	inScope               map[qualifiedDefinition]struct{}
@@ -487,7 +486,7 @@ func (g *schemaGenerator) generateType(
 		if err != nil {
 			return nil, err
 		}
-		return codegen.ArrayType{elemType}, nil
+		return codegen.ArrayType{Type: elemType}, nil
 	case schemas.TypeNameObject:
 		return g.generateStructType(t, scope)
 	case schemas.TypeNameNull:
@@ -506,7 +505,7 @@ func (g *schemaGenerator) generateStructType(
 				"skipping validation code for them since we don't know their types")
 		}
 		return &codegen.MapType{
-			KeyType:   codegen.PrimitiveType{"string"},
+			KeyType:   codegen.PrimitiveType{Type: "string"},
 			ValueType: codegen.EmptyInterfaceType{},
 		}, nil
 	}
@@ -650,7 +649,7 @@ func (g *schemaGenerator) generateEnumType(
 		if primitiveType == "interface{}" {
 			wrapInStruct = true
 		}
-		enumType = codegen.PrimitiveType{primitiveType}
+		enumType = codegen.PrimitiveType{Type: primitiveType}
 	}
 	if wrapInStruct {
 		g.warner("Enum field wrapped in struct in order to store values of multiple types")
