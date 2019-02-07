@@ -125,10 +125,10 @@ func main() {
 must be in the format URI=PACKAGE.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
 		`File to write (- for standard output) a specific schema ID to;
-must be in the format URI=PACKAGE.`)
+must be in the format URI=FILENAME.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaRootTypes, "schema-root-type", nil,
 		`Override name to use for the root type of a specific schema ID;
-must be in the format URI=PACKAGE. By default, it is derived from the file name.`)
+must be in the format URI=TYPE. By default, it is derived from the file name.`)
 	rootCmd.PersistentFlags().StringSliceVar(&capitalizations, "capitalization", nil,
 		`Specify a preferred Go capitalization for a string. For example, by default a field
 named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.`)
