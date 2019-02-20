@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -96,6 +97,9 @@ var rootCmd = &cobra.Command{
 					abortWithErr(err)
 				}
 			} else {
+				if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
+					abortWithErr(err)
+				}
 				w, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 				if err != nil {
 					abortWithErr(err)
