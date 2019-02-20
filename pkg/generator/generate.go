@@ -82,12 +82,12 @@ func (g *Generator) Sources() map[string][]byte {
 }
 
 func (g *Generator) DoFile(fileName string) error {
-	f, err := os.Open(fileName)
+	f, closer, err := openFileArg(fileName)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		_ = f.Close()
+		_ = closer()
 	}()
 
 	schema, err := schemas.FromReader(f)
@@ -822,4 +822,12 @@ var (
 func fileExists(fileName string) bool {
 	_, err := os.Stat(fileName)
 	return err == nil || !os.IsNotExist(err)
+}
+
+func openFileArg(arg string) (io.Reader, func() error, error) {
+	if arg == "-" {
+		return os.Stdin, func() error { return nil }, nil
+	}
+	f, err := os.Open(arg)
+	return f, f.Close, err
 }
