@@ -2,9 +2,9 @@
 
 package test
 
-type ObjectEmptyFoo map[string]interface{}
-
 type ObjectEmpty struct {
 	// Foo corresponds to the JSON schema field "foo".
 	Foo ObjectEmptyFoo `json:"foo,omitempty"`
 }
+
+type ObjectEmptyFoo map[string]interface{}

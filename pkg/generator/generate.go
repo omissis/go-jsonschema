@@ -255,14 +255,14 @@ func (g *schemaGenerator) generateRootType() error {
 		return errors.New("schema has no root")
 	}
 
-	if len(g.schema.Type.Type) == 0 {
-		for _, name := range sortDefinitionsByName(g.schema.Definitions) {
-			def := g.schema.Definitions[name]
-			_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
-			if err != nil {
-				return err
-			}
+	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
+		def := g.schema.Definitions[name]
+		_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
+		if err != nil {
+			return err
 		}
+	}
+	if len(g.schema.Type.Type) == 0 {
 		return nil
 	}
 

@@ -2,11 +2,6 @@
 
 package test
 
-type Thing struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty"`
-}
-
 type Ref struct {
 	// MyThing corresponds to the JSON schema field "myThing".
 	MyThing *Thing `json:"myThing,omitempty"`
@@ -22,4 +17,9 @@ type RefExternalFile struct {
 	// SomeOtherExternalThing corresponds to the JSON schema field
 	// "someOtherExternalThing".
 	SomeOtherExternalThing *Thing `json:"someOtherExternalThing,omitempty"`
+}
+
+type Thing struct {
+	// Name corresponds to the JSON schema field "name".
+	Name *string `json:"name,omitempty"`
 }

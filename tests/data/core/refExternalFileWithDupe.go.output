@@ -2,28 +2,28 @@
 
 package test
 
-type Thing struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty"`
-}
-
 type Ref struct {
 	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing `json:"myThing,omitempty"`
+	MyThing *Thing_1 `json:"myThing,omitempty"`
 
 	// MyThing2 corresponds to the JSON schema field "myThing2".
-	MyThing2 *Thing `json:"myThing2,omitempty"`
-}
-
-type Thing_1 struct {
-	// Something corresponds to the JSON schema field "something".
-	Something *string `json:"something,omitempty"`
+	MyThing2 *Thing_1 `json:"myThing2,omitempty"`
 }
 
 type RefExternalFileWithDupe struct {
 	// MyExternalThing corresponds to the JSON schema field "myExternalThing".
-	MyExternalThing *Thing `json:"myExternalThing,omitempty"`
+	MyExternalThing *Thing_1 `json:"myExternalThing,omitempty"`
 
 	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing_1 `json:"myThing,omitempty"`
+	MyThing *Thing `json:"myThing,omitempty"`
+}
+
+type Thing struct {
+	// Something corresponds to the JSON schema field "something".
+	Something *string `json:"something,omitempty"`
+}
+
+type Thing_1 struct {
+	// Name corresponds to the JSON schema field "name".
+	Name *string `json:"name,omitempty"`
 }

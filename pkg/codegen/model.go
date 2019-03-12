@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/sanity-io/litter"
@@ -8,6 +9,11 @@ import (
 
 type Decl interface {
 	Generate(out *Emitter)
+}
+
+type Named interface {
+	Decl
+	GetName() string
 }
 
 type File struct {
@@ -68,7 +74,18 @@ func (p *Package) Generate(out *Emitter) {
 		}
 	}
 	out.Newline()
-	for i, t := range p.Decls {
+
+	sorted := make([]Decl, len(p.Decls))
+	copy(sorted, p.Decls)
+	sort.Slice(sorted, func(i, j int) bool {
+		if a, ok := sorted[i].(Named); ok {
+			if b, ok := sorted[j].(Named); ok {
+				return a.GetName() < b.GetName()
+			}
+		}
+		return false
+	})
+	for i, t := range sorted {
 		if i > 0 {
 			out.Newline()
 		}
@@ -81,6 +98,10 @@ type Var struct {
 	Type  Type
 	Name  string
 	Value interface{}
+}
+
+func (v *Var) GetName() string {
+	return v.Name
 }
 
 func (v *Var) Generate(out *Emitter) {
@@ -96,6 +117,10 @@ type Constant struct {
 	Type  Type
 	Name  string
 	Value interface{}
+}
+
+func (c *Constant) GetName() string {
+	return c.Name
 }
 
 func (c *Constant) Generate(out *Emitter) {
@@ -145,6 +170,10 @@ type TypeDecl struct {
 	Comment string
 }
 
+func (td *TypeDecl) GetName() string {
+	return td.Name
+}
+
 func (td *TypeDecl) Generate(out *Emitter) {
 	out.Comment(td.Comment)
 	out.Print("type %s ", td.Name)
@@ -184,8 +213,12 @@ type NamedType struct {
 	Decl    *TypeDecl
 }
 
+func (t NamedType) GetName() string {
+	return t.Decl.Name
+}
+
 func (t NamedType) IsNillable() bool {
-	return t.Decl.Type.IsNillable()
+	return t.Decl.Type != nil && t.Decl.Type.IsNillable()
 }
 
 func (t NamedType) Generate(out *Emitter) {
@@ -261,6 +294,10 @@ type StructField struct {
 	Tags         string
 	JSONName     string
 	DefaultValue interface{}
+}
+
+func (f *StructField) GetName() string {
+	return f.Name
 }
 
 func (f *StructField) Generate(out *Emitter) {
