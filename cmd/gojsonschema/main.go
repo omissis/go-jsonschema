@@ -57,7 +57,7 @@ var rootCmd = &cobra.Command{
 			DefaultOutputName:  defaultOutput,
 			DefaultPackageName: defaultPackage,
 			SchemaMappings:     []generator.SchemaMapping{},
-			ResolveExtensions:  append([]string{""}, resolveExtensions...),
+			ResolveExtensions:  resolveExtensions,
 		}
 		for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 			mapping := generator.SchemaMapping{SchemaID: id}

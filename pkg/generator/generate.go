@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -116,11 +117,12 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 		fileName = filepath.Join(filepath.Dir(parentFileName), fileName)
 	}
 
-	for i, ext := range g.config.ResolveExtensions {
+	exts := append([]string{""}, g.config.ResolveExtensions...)
+	for i, ext := range exts {
 		qualified := fileName + ext
 
 		// Poor man's resolving loop
-		if i < len(g.config.ResolveExtensions)-1 && !fileExists(qualified) {
+		if i < len(exts)-1 && !fileExists(qualified) {
 			continue
 		}
 
