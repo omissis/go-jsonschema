@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"unicode"
 
@@ -202,7 +201,6 @@ func (g *Generator) beginOutput(
 		},
 		declsBySchema: map[*schemas.Type]*codegen.TypeDecl{},
 		declsByName:   map[string]*codegen.TypeDecl{},
-		enums:         map[string]cachedEnum{},
 	}
 	g.outputs[id] = output
 	return output, nil
@@ -618,10 +616,6 @@ func (g *schemaGenerator) generateEnumType(
 		return nil, errors.New("enum array cannot be empty")
 	}
 
-	if decl, ok := g.output.findEnum(t.Enum); ok {
-		return decl, nil
-	}
-
 	var wrapInStruct bool
 	var enumType codegen.Type
 	if len(t.Type) == 1 {
@@ -684,10 +678,6 @@ func (g *schemaGenerator) generateEnumType(
 	g.output.file.Package.AddDecl(&enumDecl)
 
 	g.output.declsByName[enumDecl.Name] = &enumDecl
-	g.output.enums[hashArrayOfValues(t.Enum)] = cachedEnum{
-		enum:   &enumDecl,
-		values: t.Enum,
-	}
 
 	valueConstant := &codegen.Var{
 		Name:  "enumValues_" + enumDecl.Name,
@@ -759,7 +749,6 @@ func (g *schemaGenerator) generateEnumType(
 
 type output struct {
 	file          *codegen.File
-	enums         map[string]cachedEnum
 	declsByName   map[string]*codegen.TypeDecl
 	declsBySchema map[*schemas.Type]*codegen.TypeDecl
 	warner        func(string)
@@ -779,14 +768,6 @@ func (o *output) uniqueTypeName(name string) string {
 		}
 		count++
 	}
-}
-
-func (o *output) findEnum(values []interface{}) (codegen.Type, bool) {
-	key := hashArrayOfValues(values)
-	if t, ok := o.enums[key]; ok && reflect.DeepEqual(values, t.values) {
-		return &codegen.NamedType{Decl: t.enum}, true
-	}
-	return nil, false
 }
 
 type cachedEnum struct {
