@@ -38,6 +38,9 @@
       "items": {
         "type": "object"
       }
+    },
+    "myArray": {
+      "type": "array"
     }
   }
 }

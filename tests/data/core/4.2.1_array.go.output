@@ -3,6 +3,9 @@
 package test
 
 type A421Array struct {
+	// MyArray corresponds to the JSON schema field "myArray".
+	MyArray []interface{} `json:"myArray,omitempty"`
+
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
 	MyBooleanArray []bool `json:"myBooleanArray,omitempty"`
 
