@@ -104,7 +104,6 @@ var rootCmd = &cobra.Command{
 				if err != nil {
 					abortWithErr(err)
 				}
-				defer func() { _ = w.Close() }()
 				if _, err = w.Write(source); err != nil {
 					abortWithErr(err)
 				}
