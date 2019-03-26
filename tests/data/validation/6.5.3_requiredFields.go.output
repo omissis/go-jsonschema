@@ -132,6 +132,14 @@ func (j *A653RequiredFields) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
+	if plain.MyNull != nil {
+		return fmt.Errorf("field %s: must be null", "myNull")
+	}
+	for i0 := range plain.MyNullArray {
+		if plain.MyNullArray[i0] != nil {
+			return fmt.Errorf("field %s: must be null", fmt.Sprinf("myNullArray[%d]", i0))
+		}
+	}
 	*j = A653RequiredFields(plain)
 	return nil
 }

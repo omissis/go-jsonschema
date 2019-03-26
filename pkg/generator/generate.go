@@ -414,21 +414,49 @@ func (g *schemaGenerator) generateDeclaredType(
 	g.output.file.Package.AddDecl(&decl)
 
 	if structType, ok := theType.(*codegen.StructType); ok {
-		needUnmarshal := false
-		if len(structType.RequiredJSONFields) > 0 {
-			needUnmarshal = true
-		} else {
-			for _, f := range structType.Fields {
-				if f.DefaultValue != nil {
-					needUnmarshal = true
-					break
+		var validators []validator
+		for _, f := range structType.RequiredJSONFields {
+			validators = append(validators, &requiredValidator{f})
+		}
+		for _, f := range structType.Fields {
+			if f.DefaultValue != nil {
+				validators = append(validators, &defaultValidator{
+					jsonName:     f.JSONName,
+					fieldName:    f.Name,
+					defaultValue: litter.Sdump(f.DefaultValue),
+				})
+			}
+			if _, ok := f.Type.(codegen.NullType); ok {
+				validators = append(validators, &nullTypeValidator{
+					fieldName: f.Name,
+					jsonName:  f.JSONName,
+				})
+			} else {
+				t, arrayDepth := f.Type, 0
+				for v, ok := t.(*codegen.ArrayType); ok; v, ok = t.(*codegen.ArrayType) {
+					arrayDepth++
+					if _, ok := v.Type.(codegen.NullType); ok {
+						validators = append(validators, &nullTypeValidator{
+							fieldName:  f.Name,
+							jsonName:   f.JSONName,
+							arrayDepth: arrayDepth,
+						})
+						break
+					}
+
+					t = v.Type
 				}
 			}
 		}
-		if needUnmarshal {
-			if len(structType.RequiredJSONFields) > 0 {
-				g.output.file.Package.AddImport("fmt", "")
+
+		if len(validators) > 0 {
+			for _, v := range validators {
+				if v.desc().hasError {
+					g.output.file.Package.AddImport("fmt", "")
+					break
+				}
 			}
+
 			g.output.file.Package.AddImport("encoding/json", "")
 			g.output.file.Package.AddDecl(&codegen.Method{
 				Impl: func(out *codegen.Emitter) {
@@ -438,25 +466,20 @@ func (g *schemaGenerator) generateDeclaredType(
 					out.Println("var %s map[string]interface{}", varNameRawMap)
 					out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }",
 						varNameRawMap)
-					for _, f := range structType.RequiredJSONFields {
-						out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, f)
-						out.Indent(1)
-						out.Println(`return fmt.Errorf("field %s: required")`, f)
-						out.Indent(-1)
-						out.Println("}")
+					for _, v := range validators {
+						if v.desc().beforeJSONUnmarshal {
+							v.generate(out)
+						}
 					}
 
 					out.Println("type Plain %s", decl.Name)
 					out.Println("var %s Plain", varNamePlainStruct)
 					out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }",
 						varNamePlainStruct)
-					for _, f := range structType.Fields {
-						if f.DefaultValue != nil {
-							out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, f.JSONName)
-							out.Indent(1)
-							out.Println(`%s.%s = %s`, varNamePlainStruct, f.Name, litter.Sdump(f.DefaultValue))
-							out.Indent(-1)
-							out.Println("}")
+
+					for _, v := range validators {
+						if !v.desc().beforeJSONUnmarshal {
+							v.generate(out)
 						}
 					}
 

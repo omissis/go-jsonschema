@@ -35,7 +35,7 @@ func PrimitiveTypeFromJSONSchemaType(jsType string) (Type, error) {
 	case schemas.TypeNameBoolean:
 		return PrimitiveType{"bool"}, nil
 	case schemas.TypeNameNull:
-		return EmptyInterfaceType{}, nil
+		return NullType{}, nil
 	case schemas.TypeNameObject, schemas.TypeNameArray:
 		return nil, fmt.Errorf("unexpected type %q here", jsType)
 	}
