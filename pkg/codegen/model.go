@@ -260,6 +260,14 @@ func (EmptyInterfaceType) Generate(out *Emitter) {
 	out.Print("interface{}")
 }
 
+type NullType struct{}
+
+func (NullType) IsNillable() bool { return true }
+
+func (NullType) Generate(out *Emitter) {
+	out.Print("interface{}")
+}
+
 type StructType struct {
 	Fields             []StructField
 	RequiredJSONFields []string

@@ -41,6 +41,15 @@
     },
     "myArray": {
       "type": "array"
+    },
+    "myNestedNullArray": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "null"
+        }
+      }
     }
   }
 }

@@ -2,6 +2,9 @@
 
 package test
 
+import "fmt"
+import "encoding/json"
+
 type A421Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".
 	MyArray []interface{} `json:"myArray,omitempty"`
@@ -11,6 +14,9 @@ type A421Array struct {
 
 	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
 	MyIntegerArray []int `json:"myIntegerArray,omitempty"`
+
+	// MyNestedNullArray corresponds to the JSON schema field "myNestedNullArray".
+	MyNestedNullArray [][]interface{} `json:"myNestedNullArray,omitempty"`
 
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
 	MyNullArray []interface{} `json:"myNullArray,omitempty"`
@@ -26,3 +32,30 @@ type A421Array struct {
 }
 
 type A421ArrayMyObjectArrayElem map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *A421Array) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	type Plain A421Array
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	for i0 := range plain.MyNestedNullArray {
+		for i1 := range plain.MyNestedNullArray[i0] {
+			if plain.MyNestedNullArray[i0][i1] != nil {
+				return fmt.Errorf("field %s: must be null", fmt.Sprinf("myNestedNullArray[%d][%d]", i0, i1))
+			}
+		}
+	}
+	for i0 := range plain.MyNullArray {
+		if plain.MyNullArray[i0] != nil {
+			return fmt.Errorf("field %s: must be null", fmt.Sprinf("myNullArray[%d]", i0))
+		}
+	}
+	*j = A421Array(plain)
+	return nil
+}
