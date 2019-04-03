@@ -420,24 +420,21 @@ func (g *schemaGenerator) generateDeclaredType(
 		return g.generateEnumType(t, scope)
 	}
 
-	decl := codegen.TypeDecl{
-		Name:    g.output.uniqueTypeName(scope.string()),
-		Comment: t.Description,
-	}
-	g.output.declsBySchema[t] = &decl
-	g.output.declsByName[decl.Name] = &decl
-
 	theType, err := g.generateType(t, scope)
 	if err != nil {
 		return nil, err
 	}
 	if isNamedType(theType) {
-		// Don't declare named types under a new name
-		delete(g.output.declsBySchema, t)
-		delete(g.output.declsByName, decl.Name)
 		return theType, nil
 	}
-	decl.Type = theType
+
+	decl := codegen.TypeDecl{
+		Name:    g.output.uniqueTypeName(scope.string()),
+		Comment: t.Description,
+		Type:    theType,
+	}
+	g.output.declsBySchema[t] = &decl
+	g.output.declsByName[decl.Name] = &decl
 
 	g.output.file.Package.AddDecl(&decl)
 
