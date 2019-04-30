@@ -674,15 +674,9 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if t.Type[0] == schemas.TypeNameArray {
-			var theType codegen.Type
-			if t.Items == nil {
-				theType = codegen.EmptyInterfaceType{}
-			} else {
-				var err error
-				theType, err = g.generateTypeInline(t.Items, scope.add("Elem"))
-				if err != nil {
-					return nil, err
-				}
+			theType, err := g.generateTypeInline(t.Items, scope.add("Elem"))
+			if err != nil {
+				return nil, err
 			}
 			return &codegen.ArrayType{Type: theType}, nil
 		}
