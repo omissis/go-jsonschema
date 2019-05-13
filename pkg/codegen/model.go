@@ -239,6 +239,16 @@ func (p PrimitiveType) Generate(out *Emitter) {
 	out.Print(p.Type)
 }
 
+type CustomNameType struct {
+	Type string
+}
+
+func (CustomNameType) IsNillable() bool { return false }
+
+func (p CustomNameType) Generate(out *Emitter) {
+	out.Print(p.Type)
+}
+
 type MapType struct {
 	KeyType, ValueType Type
 }

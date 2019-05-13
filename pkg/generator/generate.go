@@ -497,6 +497,11 @@ func (g *schemaGenerator) generateDeclaredType(
 
 func (g *schemaGenerator) generateType(
 	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if ext := t.GoJSONSchemaExtension; ext != nil {
+		if ext.Type != nil {
+			return &codegen.CustomNameType{Type: *ext.Type}, nil
+		}
+	}
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
 	}
@@ -558,6 +563,12 @@ func (g *schemaGenerator) generateStructType(
 		isRequired := requiredNames[name]
 
 		fieldName := g.identifierize(name)
+		if ext := prop.GoJSONSchemaExtension; ext != nil {
+			if ext.Identifier != nil {
+				fieldName = *ext.Identifier
+			}
+		}
+
 		if count, ok := uniqueNames[fieldName]; ok {
 			uniqueNames[fieldName] = count + 1
 			fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
@@ -610,6 +621,12 @@ func (g *schemaGenerator) generateTypeInline(
 	t *schemas.Type,
 	scope nameScope) (codegen.Type, error) {
 	if t.Enum == nil && t.Ref == "" {
+		if ext := t.GoJSONSchemaExtension; ext != nil {
+			if ext.Type != nil {
+				return &codegen.CustomNameType{Type: *ext.Type}, nil
+			}
+		}
+
 		if len(t.Type) > 1 {
 			g.warner("Property has multiple types; will be represented as interface{} with no validation")
 			return codegen.EmptyInterfaceType{}, nil

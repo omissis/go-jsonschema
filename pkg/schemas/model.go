@@ -107,4 +107,13 @@ type Type struct {
 	// RFC draft-wright-json-schema-hyperschema-00, section 4
 	Media          *Type  `json:"media,omitempty"`          // section 4.3
 	BinaryEncoding string `json:"binaryEncoding,omitempty"` // section 4.3
+
+	// ExtGoCustomType is the name of a (qualified or not) custom Go type
+	// to use for the field.
+	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"`
+}
+
+type GoJSONSchemaExtension struct {
+	Type       *string `json:"type,omitempty"`
+	Identifier *string `json:"identifier,omitempty"`
 }
