@@ -1,15 +1,14 @@
 package generator
 
 import (
-	"errors"
 	"fmt"
 	"go/format"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
 
+	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -20,6 +19,7 @@ type Config struct {
 	SchemaMappings     []SchemaMapping
 	Capitalizations    []string
 	ResolveExtensions  []string
+	YAMLExtensions     []string
 	DefaultPackageName string
 	DefaultOutputName  string
 	Warner             func(string)
@@ -82,19 +82,36 @@ func (g *Generator) Sources() map[string][]byte {
 }
 
 func (g *Generator) DoFile(fileName string) error {
-	f, closer, err := openFileArg(fileName)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = closer()
-	}()
-
-	schema, err := schemas.FromReader(f)
-	if err != nil {
-		return err
+	var err error
+	var schema *schemas.Schema
+	if fileName == "-" {
+		schema, err = schemas.FromJSONReader(os.Stdin)
+		if err != nil {
+			return errors.Wrap(err, "error parsing from standard input")
+		}
+	} else {
+		schema, err = g.parseFile(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing from file %s", fileName)
+		}
 	}
 	return g.addFile(fileName, schema)
+}
+
+func (g *Generator) parseFile(fileName string) (*schemas.Schema, error) {
+	// TODO: Refactor into some kind of loader
+	isYAML := false
+	for _, yamlExt := range g.config.YAMLExtensions {
+		if strings.HasSuffix(fileName, yamlExt) {
+			isYAML = true
+			break
+		}
+	}
+	if isYAML {
+		return schemas.FromYAMLFile(fileName)
+	} else {
+		return schemas.FromJSONFile(fileName)
+	}
 }
 
 func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
@@ -135,7 +152,7 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 			return schema, nil
 		}
 
-		schema, err := schemas.FromFile(qualified)
+		schema, err := g.parseFile(qualified)
 		if err != nil {
 			return nil, err
 		}
@@ -215,7 +232,14 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 
 func (g *Generator) identifierFromFileName(fileName string) string {
 	s := filepath.Base(fileName)
-	return g.identifierize(strings.TrimSuffix(strings.TrimSuffix(s, ".json"), ".schema"))
+	for _, ext := range g.config.ResolveExtensions {
+		trimmed := strings.TrimSuffix(s, ext)
+		if trimmed == s {
+			break
+		}
+		s = trimmed
+	}
+	return g.identifierize(s)
 }
 
 func (g *Generator) identifierize(s string) string {
@@ -855,12 +879,4 @@ var (
 func fileExists(fileName string) bool {
 	_, err := os.Stat(fileName)
 	return err == nil || !os.IsNotExist(err)
-}
-
-func openFileArg(arg string) (io.Reader, func() error, error) {
-	if arg == "-" {
-		return os.Stdin, func() error { return nil }, nil
-	}
-	f, err := os.Open(arg)
-	return f, f.Close, err
 }

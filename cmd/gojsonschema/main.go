@@ -20,6 +20,7 @@ var (
 	schemaRootTypes   []string
 	capitalizations   []string
 	resolveExtensions []string
+	yamlExtensions    = []string{".yml", ".yaml"}
 )
 
 var rootCmd = &cobra.Command{
@@ -58,6 +59,7 @@ var rootCmd = &cobra.Command{
 			DefaultPackageName: defaultPackage,
 			SchemaMappings:     []generator.SchemaMapping{},
 			ResolveExtensions:  resolveExtensions,
+			YAMLExtensions:     yamlExtensions,
 		}
 		for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 			mapping := generator.SchemaMapping{SchemaID: id}
@@ -138,6 +140,8 @@ named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.
 	rootCmd.PersistentFlags().StringSliceVar(&resolveExtensions, "resolve-extension", nil,
 		`Add a file extension that is used to resolve schema names, e.g. {"$ref": "./foo"} will
 also look for foo.json if --resolve-extension json is provided.`)
+	rootCmd.PersistentFlags().StringSliceVar(&yamlExtensions, "yaml-extension", nil,
+		`Add a file extension that should be recognized as YAML. Default are .yml, .yaml.`)
 
 	abortWithErr(rootCmd.Execute())
 }

@@ -8,9 +8,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v2"
+
+	"github.com/atombender/go-jsonschema/pkg/yamlutils"
 )
 
-func FromFile(fileName string) (*Schema, error) {
+func FromJSONFile(fileName string) (*Schema, error) {
 	f, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
@@ -18,12 +22,42 @@ func FromFile(fileName string) (*Schema, error) {
 	defer func() {
 		_ = f.Close()
 	}()
-	return FromReader(f)
+	return FromJSONReader(f)
 }
 
-func FromReader(r io.Reader) (*Schema, error) {
+func FromJSONReader(r io.Reader) (*Schema, error) {
 	var schema Schema
 	if err := json.NewDecoder(r).Decode(&schema); err != nil {
+		return nil, err
+	}
+	return &schema, nil
+}
+
+func FromYAMLFile(fileName string) (*Schema, error) {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	return FromYAMLReader(f)
+}
+
+func FromYAMLReader(r io.Reader) (*Schema, error) {
+	// Marshal to JSON first because YAML decoder doesn't understand JSON tags
+	var m map[string]interface{}
+	if err := yaml.NewDecoder(r).Decode(&m); err != nil {
+		return nil, err
+	}
+	yamlutils.FixMapKeys(m)
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	var schema Schema
+	if err = json.Unmarshal(b, &schema); err != nil {
 		return nil, err
 	}
 	return &schema, nil
