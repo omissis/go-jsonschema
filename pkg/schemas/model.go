@@ -114,6 +114,7 @@ type Type struct {
 }
 
 type GoJSONSchemaExtension struct {
-	Type       *string `json:"type,omitempty"`
-	Identifier *string `json:"identifier,omitempty"`
+	Type       *string  `json:"type,omitempty"`
+	Identifier *string  `json:"identifier,omitempty"`
+	Imports    []string `json:"imports,omitempty"`
 }
