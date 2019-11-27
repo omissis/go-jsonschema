@@ -21,6 +21,7 @@ var (
 	_ validator = new(requiredValidator)
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
+	_ validator = new(minMaxValidator)
 )
 
 type requiredValidator struct {
@@ -102,6 +103,49 @@ func (v *defaultValidator) generate(out *codegen.Emitter) {
 func (v *defaultValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            false,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+type minMaxValidator struct {
+	jsonName     string
+	fieldName    string
+	min          float64
+	exclusiveMin bool
+	max          float64
+	exclusiveMax bool
+}
+
+func (v *minMaxValidator) generate(out *codegen.Emitter) {
+	if v.min != 0 {
+		operand, constrain := "<", "bigger"
+		if v.exclusiveMin {
+			operand += "="
+			constrain += " or equal"
+		}
+		out.Println(`if %s.%s %s %f{`, varNamePlainStruct, v.fieldName, operand, v.min)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constrain, v.min)
+		out.Indent(-1)
+		out.Println("}")
+	}
+	if v.max != 0 {
+		operand, constrain := ">", "smaller"
+		if v.exclusiveMax {
+			operand += "="
+			constrain += " or equal"
+		}
+		out.Println(`if %s.%s %s %f{`, varNamePlainStruct, v.fieldName, operand, v.max)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constrain, v.max)
+		out.Indent(-1)
+		out.Println("}")
+	}
+}
+
+func (v *minMaxValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
 }

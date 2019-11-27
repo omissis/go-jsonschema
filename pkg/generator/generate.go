@@ -410,8 +410,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	}, nil
 }
 
-func (g *schemaGenerator) generateDeclaredType(
-	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		return &codegen.NamedType{Decl: decl}, nil
 	}
@@ -452,6 +451,16 @@ func (g *schemaGenerator) generateDeclaredType(
 					jsonName:     f.JSONName,
 					fieldName:    f.Name,
 					defaultValue: litter.Sdump(f.DefaultValue),
+				})
+			}
+			if f.MinMax != nil {
+				validators = append(validators, &minMaxValidator{
+					jsonName:     f.JSONName,
+					fieldName:    f.Name,
+					min:          f.MinMax.Min,
+					exclusiveMin: f.MinMax.ExclusiveMin,
+					max:          f.MinMax.Max,
+					exclusiveMax: f.MinMax.ExclusiveMax,
 				})
 			}
 			if _, ok := f.Type.(codegen.NullType); ok {
@@ -523,8 +532,7 @@ func (g *schemaGenerator) generateDeclaredType(
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
-func (g *schemaGenerator) generateType(
-	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -567,9 +575,7 @@ func (g *schemaGenerator) generateType(
 	}
 }
 
-func (g *schemaGenerator) generateStructType(
-	t *schemas.Type,
-	scope nameScope) (codegen.Type, error) {
+func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if len(t.Properties) == 0 {
 		if len(t.Required) > 0 {
 			g.warner("Object type with no properties has required fields; " +
@@ -640,6 +646,15 @@ func (g *schemaGenerator) generateStructType(
 		structField.Type, err = g.generateTypeInline(prop, scope.add(structField.Name))
 		if err != nil {
 			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
+		}
+
+		if prop.Minimum != 0 || prop.Maximum != 0 {
+			structField.MinMax = &codegen.MinMaxValidation{
+				ExclusiveMin: prop.ExclusiveMinimum,
+				Min:          prop.Minimum,
+				ExclusiveMax: prop.ExclusiveMaximum,
+				Max:          prop.Maximum,
+			}
 		}
 
 		if prop.Default != nil {

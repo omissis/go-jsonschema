@@ -305,6 +305,13 @@ func (s *StructType) Generate(out *Emitter) {
 	out.Print("}")
 }
 
+type MinMaxValidation struct {
+	Min          float64
+	ExclusiveMin bool
+	Max          float64
+	ExclusiveMax bool
+}
+
 type StructField struct {
 	Name         string
 	Type         Type
@@ -312,6 +319,7 @@ type StructField struct {
 	Tags         string
 	JSONName     string
 	DefaultValue interface{}
+	MinMax       *MinMaxValidation
 }
 
 func (f *StructField) GetName() string {

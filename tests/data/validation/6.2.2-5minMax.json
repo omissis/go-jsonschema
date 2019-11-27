@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/minMax",
+  "type": "object",
+  "properties": {
+    "myBiggerThan90": {
+      "type": "number",
+      "minimum": 90
+    },
+    "myBiggerOrEqualThan90": {
+      "type": "number",
+      "minimum": 90,
+      "exclusiveMinimum": true
+    },
+    "mySmallerThan90": {
+      "type": "number",
+      "maximum": 90
+    },
+    "mySmallerOrEqualThan90": {
+      "type": "number",
+      "maximum": 90,
+      "exclusiveMaximum": true
+    }
+  }
+}
