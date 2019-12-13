@@ -219,6 +219,10 @@ func (g *Generator) identifierFromFileName(fileName string) string {
 }
 
 func (g *Generator) identifierize(s string) string {
+	if s == "" {
+		return "Blank"
+	}
+
 	// FIXME: Better handling of non-identifier chars
 	var sb strings.Builder
 	for _, part := range splitIdentifierByCaseAndSeparators(s) {
