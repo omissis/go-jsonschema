@@ -119,7 +119,7 @@ type minMaxValidator struct {
 func (v *minMaxValidator) generate(out *codegen.Emitter) {
 	if v.min != 0 {
 		operand, constrain := "<", "bigger"
-		if v.exclusiveMin {
+		if !v.exclusiveMin {
 			operand += "="
 			constrain += " or equal"
 		}
@@ -131,7 +131,7 @@ func (v *minMaxValidator) generate(out *codegen.Emitter) {
 	}
 	if v.max != 0 {
 		operand, constrain := ">", "smaller"
-		if v.exclusiveMax {
+		if !v.exclusiveMax {
 			operand += "="
 			constrain += " or equal"
 		}
