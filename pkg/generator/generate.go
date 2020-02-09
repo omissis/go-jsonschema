@@ -648,7 +648,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
 		}
 
-		if prop.Minimum != 0 || prop.Maximum != 0 {
+		if prop.Minimum != 0 || prop.Maximum != 0 || prop.ExclusiveMinimum != 0 || prop.ExclusiveMaximum != 0 {
 			structField.MinMax = &codegen.MinMaxValidation{
 				ExclusiveMin: prop.ExclusiveMinimum,
 				Min:          prop.Minimum,

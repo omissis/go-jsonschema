@@ -307,9 +307,9 @@ func (s *StructType) Generate(out *Emitter) {
 
 type MinMaxValidation struct {
 	Min          float64
-	ExclusiveMin bool
+	ExclusiveMin float64
 	Max          float64
-	ExclusiveMax bool
+	ExclusiveMax float64
 }
 
 type StructField struct {

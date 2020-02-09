@@ -32,16 +32,16 @@ func (j *A6225MinMax) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if plain.MyBiggerOrEqualThan90 <= 90.000000 {
+	if plain.MyBiggerOrEqualThan90 < 90.000000 {
 		return fmt.Errorf("field myBiggerOrEqualThan90: must be bigger or equal than 90.000000")
 	}
-	if plain.MyBiggerThan90 < 90.000000 {
+	if plain.MyBiggerThan90 <= 90.000000 {
 		return fmt.Errorf("field myBiggerThan90: must be bigger than 90.000000")
 	}
-	if plain.MySmallerOrEqualThan90 >= 90.000000 {
+	if plain.MySmallerOrEqualThan90 > 90.000000 {
 		return fmt.Errorf("field mySmallerOrEqualThan90: must be smaller or equal than 90.000000")
 	}
-	if plain.MySmallerThan90 > 90.000000 {
+	if plain.MySmallerThan90 >= 90.000000 {
 		return fmt.Errorf("field mySmallerThan90: must be smaller than 90.000000")
 	}
 	*j = A6225MinMax(plain)

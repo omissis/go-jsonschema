@@ -111,36 +111,33 @@ type minMaxValidator struct {
 	jsonName     string
 	fieldName    string
 	min          float64
-	exclusiveMin bool
+	exclusiveMin float64
 	max          float64
-	exclusiveMax bool
+	exclusiveMax float64
 }
 
 func (v *minMaxValidator) generate(out *codegen.Emitter) {
-	if v.min != 0 {
-		operand, constrain := "<", "bigger"
-		if !v.exclusiveMin {
-			operand += "="
-			constrain += " or equal"
-		}
-		out.Println(`if %s.%s %s %f{`, varNamePlainStruct, v.fieldName, operand, v.min)
-		out.Indent(1)
-		out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constrain, v.min)
-		out.Indent(-1)
-		out.Println("}")
-	}
+	var operand, constraint string
+	var reference float64
+
 	if v.max != 0 {
-		operand, constrain := ">", "smaller"
-		if !v.exclusiveMax {
-			operand += "="
-			constrain += " or equal"
-		}
-		out.Println(`if %s.%s %s %f{`, varNamePlainStruct, v.fieldName, operand, v.max)
-		out.Indent(1)
-		out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constrain, v.max)
-		out.Indent(-1)
-		out.Println("}")
+		operand, constraint, reference = ">", "smaller or equal", v.max
 	}
+	if v.exclusiveMax != 0 {
+		operand, constraint, reference = ">=", "smaller", v.exclusiveMax
+	}
+	if v.min != 0 {
+		operand, constraint, reference = "<", "bigger or equal", v.min
+	}
+	if v.exclusiveMin != 0 {
+		operand, constraint, reference = "<=", "bigger", v.exclusiveMin
+	}
+
+	out.Println(`if %s.%s %s %f{`, varNamePlainStruct, v.fieldName, operand, reference)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constraint, reference)
+	out.Indent(-1)
+	out.Println("}")
 }
 
 func (v *minMaxValidator) desc() *validatorDesc {

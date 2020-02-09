@@ -3,23 +3,21 @@
   "id": "https://example.com/minMax",
   "type": "object",
   "properties": {
-    "myBiggerThan90": {
+    "mySmallerOrEqualThan90": {
       "type": "number",
-      "minimum": 90,
-      "exclusiveMinimum": true
+      "maximum": 90
+    },
+    "mySmallerThan90": {
+      "type": "number",
+      "exclusiveMaximum": 90
     },
     "myBiggerOrEqualThan90": {
       "type": "number",
       "minimum": 90
     },
-    "mySmallerThan90": {
+    "myBiggerThan90": {
       "type": "number",
-      "maximum": 90,
-      "exclusiveMaximum": true
-    },
-    "mySmallerOrEqualThan90": {
-      "type": "number",
-      "maximum": 90
+      "exclusiveMinimum": 90
     }
   }
 }
