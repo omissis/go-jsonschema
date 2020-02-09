@@ -21,7 +21,7 @@ var (
 	_ validator = new(requiredValidator)
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
-	_ validator = new(minMaxValidator)
+	_ validator = new(numericValidator)
 )
 
 type requiredValidator struct {
@@ -107,16 +107,28 @@ func (v *defaultValidator) desc() *validatorDesc {
 	}
 }
 
-type minMaxValidator struct {
+type numericValidator struct {
 	jsonName     string
 	fieldName    string
+	multipleOf   float64
 	min          float64
 	exclusiveMin float64
 	max          float64
 	exclusiveMax float64
 }
 
-func (v *minMaxValidator) generate(out *codegen.Emitter) {
+// todo fix combinations of them
+func (v *numericValidator) generate(out *codegen.Emitter) {
+	if v.multipleOf != 0 {
+		// wtf printing "plain.MyMultipleOf10%10.000000" NO SPACES
+		out.Println(`if %s.%s %% %f != 0 {`, varNamePlainStruct, v.fieldName, v.multipleOf)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %s: must be multiple of %f")`, v.jsonName, v.multipleOf)
+		out.Indent(-1)
+		out.Println("}")
+		return
+	}
+
 	var operand, constraint string
 	var reference float64
 
@@ -133,14 +145,14 @@ func (v *minMaxValidator) generate(out *codegen.Emitter) {
 		operand, constraint, reference = "<=", "bigger", v.exclusiveMin
 	}
 
-	out.Println(`if %s.%s %s %f{`, varNamePlainStruct, v.fieldName, operand, reference)
+	out.Println(`if %s.%s %s %f {`, varNamePlainStruct, v.fieldName, operand, reference)
 	out.Indent(1)
 	out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constraint, reference)
 	out.Indent(-1)
 	out.Println("}")
 }
 
-func (v *minMaxValidator) desc() *validatorDesc {
+func (v *numericValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,

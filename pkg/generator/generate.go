@@ -453,14 +453,15 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 					defaultValue: litter.Sdump(f.DefaultValue),
 				})
 			}
-			if f.MinMax != nil {
-				validators = append(validators, &minMaxValidator{
+			if f.NumericValidation != nil {
+				validators = append(validators, &numericValidator{
 					jsonName:     f.JSONName,
 					fieldName:    f.Name,
-					min:          f.MinMax.Min,
-					exclusiveMin: f.MinMax.ExclusiveMin,
-					max:          f.MinMax.Max,
-					exclusiveMax: f.MinMax.ExclusiveMax,
+					multipleOf:   f.NumericValidation.MultipleOf,
+					min:          f.NumericValidation.Min,
+					exclusiveMin: f.NumericValidation.ExclusiveMin,
+					max:          f.NumericValidation.Max,
+					exclusiveMax: f.NumericValidation.ExclusiveMax,
 				})
 			}
 			if _, ok := f.Type.(codegen.NullType); ok {
@@ -648,8 +649,9 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
 		}
 
-		if prop.Minimum != 0 || prop.Maximum != 0 || prop.ExclusiveMinimum != 0 || prop.ExclusiveMaximum != 0 {
-			structField.MinMax = &codegen.MinMaxValidation{
+		if g.hasNumericValidations(prop) {
+			structField.NumericValidation = &codegen.NumericValidation{
+				MultipleOf:   prop.MultipleOf,
 				ExclusiveMin: prop.ExclusiveMinimum,
 				Min:          prop.Minimum,
 				ExclusiveMax: prop.ExclusiveMaximum,
@@ -671,6 +673,14 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		structType.AddField(structField)
 	}
 	return &structType, nil
+}
+
+func (g *schemaGenerator) hasNumericValidations(prop *schemas.Type) bool {
+	return prop.MultipleOf != 0 ||
+		prop.Minimum != 0 ||
+		prop.Maximum != 0 ||
+		prop.ExclusiveMinimum != 0 ||
+		prop.ExclusiveMaximum != 0
 }
 
 func (g *schemaGenerator) generateTypeInline(
