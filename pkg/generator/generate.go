@@ -649,15 +649,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
 		}
 
-		if g.hasNumericValidations(prop) {
-			structField.NumericValidation = &codegen.NumericValidation{
-				MultipleOf:   prop.MultipleOf,
-				ExclusiveMin: prop.ExclusiveMinimum,
-				Min:          prop.Minimum,
-				ExclusiveMax: prop.ExclusiveMaximum,
-				Max:          prop.Maximum,
-			}
-		}
+		g.setNumericValidations(prop, &structField)
 
 		if prop.Default != nil {
 			structField.DefaultValue = prop.Default
@@ -675,12 +667,32 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	return &structType, nil
 }
 
-func (g *schemaGenerator) hasNumericValidations(prop *schemas.Type) bool {
-	return prop.MultipleOf != nil ||
-		prop.Minimum != nil ||
-		prop.Maximum != nil ||
-		prop.ExclusiveMinimum != nil ||
-		prop.ExclusiveMaximum != nil
+func (g *schemaGenerator) setNumericValidations(prop *schemas.Type, f *codegen.StructField) {
+	var any bool
+	v := &codegen.NumericValidation{}
+	if prop.MultipleOf != nil {
+		v.MultipleOf = prop.MultipleOf
+		any = true
+	}
+	if prop.ExclusiveMaximum != nil {
+		v.ExclusiveMax = prop.ExclusiveMaximum
+		any = true
+	}
+	if prop.Maximum != nil {
+		v.Max = prop.Maximum
+		any = true
+	}
+	if prop.ExclusiveMinimum != nil {
+		v.ExclusiveMin = prop.ExclusiveMinimum
+		any = true
+	}
+	if prop.Minimum != nil {
+		v.Min = prop.Minimum
+		any = true
+	}
+	if any {
+		f.NumericValidation = v
+	}
 }
 
 func (g *schemaGenerator) generateTypeInline(

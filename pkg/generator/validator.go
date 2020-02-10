@@ -117,29 +117,19 @@ type numericValidator struct {
 	exclusiveMax *float64
 }
 
-// todo fix combinations of them
 func (v *numericValidator) generate(out *codegen.Emitter) {
-	var operand, constraint string
-	var reference float64
-
-	if v.max != nil {
-		operand, constraint, reference = ">", "smaller or equal", *v.max
-	}
 	if v.exclusiveMax != nil {
-		operand, constraint, reference = ">=", "smaller", *v.exclusiveMax
+		v.generateExclusiveMax(out)
 	}
-	if v.min != nil {
-		operand, constraint, reference = "<", "bigger or equal", *v.min
+	if v.max != nil {
+		v.generateMax(out)
 	}
 	if v.exclusiveMin != nil {
-		operand, constraint, reference = "<=", "bigger", *v.exclusiveMin
+		v.generateExclusiveMin(out)
 	}
-
-	out.Println(`if %s.%s %s %f {`, varNamePlainStruct, v.fieldName, operand, reference)
-	out.Indent(1)
-	out.Println(`return fmt.Errorf("field %s: must be %s than %f")`, v.jsonName, constraint, reference)
-	out.Indent(-1)
-	out.Println("}")
+	if v.min != nil {
+		v.generateMin(out)
+	}
 }
 
 func (v *numericValidator) desc() *validatorDesc {
@@ -147,4 +137,36 @@ func (v *numericValidator) desc() *validatorDesc {
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+}
+
+func (v *numericValidator) generateExclusiveMax(out *codegen.Emitter) {
+	out.Println(`if %s.%s >= %f {`, varNamePlainStruct, v.fieldName, *v.exclusiveMax)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must be smaller than %f")`, v.jsonName, *v.exclusiveMax)
+	out.Indent(-1)
+	out.Println("}")
+}
+
+func (v *numericValidator) generateMax(out *codegen.Emitter) {
+	out.Println(`if %s.%s > %f {`, varNamePlainStruct, v.fieldName, *v.max)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must be smaller or equal than %f")`, v.jsonName, *v.max)
+	out.Indent(-1)
+	out.Println("}")
+}
+
+func (v *numericValidator) generateExclusiveMin(out *codegen.Emitter) {
+	out.Println(`if %s.%s <= %f {`, varNamePlainStruct, v.fieldName, *v.exclusiveMin)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must be bigger than %f")`, v.jsonName, *v.exclusiveMin)
+	out.Indent(-1)
+	out.Println("}")
+}
+
+func (v *numericValidator) generateMin(out *codegen.Emitter) {
+	out.Println(`if %s.%s < %f {`, varNamePlainStruct, v.fieldName, *v.min)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must be bigger or equal than %f")`, v.jsonName, *v.min)
+	out.Indent(-1)
+	out.Println("}")
 }
