@@ -3,21 +3,17 @@
   "id": "https://example.com/numValidations",
   "type": "object",
   "properties": {
-    "mySmallerOrEqualThan90": {
+    "myPositiveValidatedFloat": {
       "type": "number",
-      "maximum": 90
+      "multipleOf": 10,
+      "maximum": 90,
+      "minimum": 0
     },
-    "mySmallerThan90": {
+    "myExcludedNegativeValidatedFloat": {
       "type": "number",
-      "exclusiveMaximum": 90
-    },
-    "myBiggerOrEqualThan90": {
-      "type": "number",
-      "minimum": 90
-    },
-    "myBiggerThan90": {
-      "type": "number",
-      "exclusiveMinimum": 90
+      "multipleOf": 10,
+      "exclusiveMinimum": -90,
+      "exclusiveMaximum": 0
     }
   }
 }

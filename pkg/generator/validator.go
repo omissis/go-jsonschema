@@ -118,6 +118,9 @@ type numericValidator struct {
 }
 
 func (v *numericValidator) generate(out *codegen.Emitter) {
+	if v.multipleOf != nil {
+		v.generateMultipleOf(out)
+	}
 	if v.exclusiveMax != nil {
 		v.generateExclusiveMax(out)
 	}
@@ -137,6 +140,14 @@ func (v *numericValidator) desc() *validatorDesc {
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+}
+
+func (v *numericValidator) generateMultipleOf(out *codegen.Emitter) {
+	out.Println(`if %s.%s %% %f != 0 {`, varNamePlainStruct, v.fieldName, *v.multipleOf)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must be multiple of %f")`, v.jsonName, *v.multipleOf)
+	out.Indent(-1)
+	out.Println("}")
 }
 
 func (v *numericValidator) generateExclusiveMax(out *codegen.Emitter) {
