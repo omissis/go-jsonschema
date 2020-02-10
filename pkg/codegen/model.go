@@ -306,11 +306,11 @@ func (s *StructType) Generate(out *Emitter) {
 }
 
 type NumericValidation struct {
-	MultipleOf   float64
-	Min          float64
-	ExclusiveMin float64
-	Max          float64
-	ExclusiveMax float64
+	MultipleOf   *float64
+	Min          *float64
+	ExclusiveMin *float64
+	Max          *float64
+	ExclusiveMax *float64
 }
 
 type StructField struct {

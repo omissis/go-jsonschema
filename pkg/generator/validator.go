@@ -110,11 +110,11 @@ func (v *defaultValidator) desc() *validatorDesc {
 type numericValidator struct {
 	jsonName     string
 	fieldName    string
-	multipleOf   float64
-	min          float64
-	exclusiveMin float64
-	max          float64
-	exclusiveMax float64
+	multipleOf   *float64
+	min          *float64
+	exclusiveMin *float64
+	max          *float64
+	exclusiveMax *float64
 }
 
 // todo fix combinations of them
@@ -122,17 +122,17 @@ func (v *numericValidator) generate(out *codegen.Emitter) {
 	var operand, constraint string
 	var reference float64
 
-	if v.max != 0 {
-		operand, constraint, reference = ">", "smaller or equal", v.max
+	if v.max != nil {
+		operand, constraint, reference = ">", "smaller or equal", *v.max
 	}
-	if v.exclusiveMax != 0 {
-		operand, constraint, reference = ">=", "smaller", v.exclusiveMax
+	if v.exclusiveMax != nil {
+		operand, constraint, reference = ">=", "smaller", *v.exclusiveMax
 	}
-	if v.min != 0 {
-		operand, constraint, reference = "<", "bigger or equal", v.min
+	if v.min != nil {
+		operand, constraint, reference = "<", "bigger or equal", *v.min
 	}
-	if v.exclusiveMin != 0 {
-		operand, constraint, reference = "<=", "bigger", v.exclusiveMin
+	if v.exclusiveMin != nil {
+		operand, constraint, reference = "<=", "bigger", *v.exclusiveMin
 	}
 
 	out.Println(`if %s.%s %s %f {`, varNamePlainStruct, v.fieldName, operand, reference)

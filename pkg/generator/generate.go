@@ -676,11 +676,11 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 }
 
 func (g *schemaGenerator) hasNumericValidations(prop *schemas.Type) bool {
-	return prop.MultipleOf != 0 ||
-		prop.Minimum != 0 ||
-		prop.Maximum != 0 ||
-		prop.ExclusiveMinimum != 0 ||
-		prop.ExclusiveMaximum != 0
+	return prop.MultipleOf != nil ||
+		prop.Minimum != nil ||
+		prop.Maximum != nil ||
+		prop.ExclusiveMinimum != nil ||
+		prop.ExclusiveMaximum != nil
 }
 
 func (g *schemaGenerator) generateTypeInline(
