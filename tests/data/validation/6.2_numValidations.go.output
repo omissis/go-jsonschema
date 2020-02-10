@@ -13,9 +13,6 @@ type A62NumValidations struct {
 	// MyBiggerThan90 corresponds to the JSON schema field "myBiggerThan90".
 	MyBiggerThan90 *float64 `json:"myBiggerThan90,omitempty"`
 
-	// MyMultipleOf10 corresponds to the JSON schema field "myMultipleOf10".
-	MyMultipleOf10 *float64 `json:"myMultipleOf10,omitempty"`
-
 	// MySmallerOrEqualThan90 corresponds to the JSON schema field
 	// "mySmallerOrEqualThan90".
 	MySmallerOrEqualThan90 *float64 `json:"mySmallerOrEqualThan90,omitempty"`
@@ -40,9 +37,6 @@ func (j *A62NumValidations) UnmarshalJSON(b []byte) error {
 	}
 	if plain.MyBiggerThan90 <= 90.000000 {
 		return fmt.Errorf("field myBiggerThan90: must be bigger than 90.000000")
-	}
-	if plain.MyMultipleOf10 % 10.000000 != 0 {
-		return fmt.Errorf("field myMultipleOf10: must be multiple of 10.000000")
 	}
 	if plain.MySmallerOrEqualThan90 > 90.000000 {
 		return fmt.Errorf("field mySmallerOrEqualThan90: must be smaller or equal than 90.000000")

@@ -3,10 +3,6 @@
   "id": "https://example.com/numValidations",
   "type": "object",
   "properties": {
-    "myMultipleOf10": {
-      "type": "number",
-      "multipleOf": 10
-    },
     "mySmallerOrEqualThan90": {
       "type": "number",
       "maximum": 90

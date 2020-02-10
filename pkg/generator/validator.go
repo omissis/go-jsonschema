@@ -119,16 +119,6 @@ type numericValidator struct {
 
 // todo fix combinations of them
 func (v *numericValidator) generate(out *codegen.Emitter) {
-	if v.multipleOf != 0 {
-		// wtf printing "plain.MyMultipleOf10%10.000000" NO SPACES
-		out.Println(`if %s.%s %% %f != 0 {`, varNamePlainStruct, v.fieldName, v.multipleOf)
-		out.Indent(1)
-		out.Println(`return fmt.Errorf("field %s: must be multiple of %f")`, v.jsonName, v.multipleOf)
-		out.Indent(-1)
-		out.Println("}")
-		return
-	}
-
 	var operand, constraint string
 	var reference float64
 
