@@ -28,12 +28,31 @@ import (
 )
 
 // Schema is the root schema.
-// RFC draft-wright-json-schema-00, section 4.5
 type Schema struct {
 	*Type
-	ID          string      `json:"id"`
+	ID          string      `json:"$id"` // RFC draft-wright-json-schema-01, section-9.2
+	LegacyID    string      `json:"id"`  // RFC draft-wright-json-schema-00, section 4.5
 	Definitions Definitions `json:"definitions,omitempty"`
 }
+
+// UnmarshalJSON implements json.Unmarshaler for Schema struct
+func (s *Schema) UnmarshalJSON(data []byte) error {
+	var unmarshSchema unmarshalerSchema
+	if err := json.Unmarshal(data, &unmarshSchema); err != nil {
+		return err
+	}
+
+	// fall back to id if $id is not present
+	if unmarshSchema.ID == "" {
+		unmarshSchema.ID = unmarshSchema.LegacyID
+	}
+
+	*s = Schema(unmarshSchema)
+
+	return nil
+}
+
+type unmarshalerSchema Schema
 
 // TypeList is a list of type names.
 type TypeList []string
