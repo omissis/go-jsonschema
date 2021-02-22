@@ -90,7 +90,7 @@ type Type struct {
 	Required             []string         `json:"required,omitempty"`             // section 5.15
 	Properties           map[string]*Type `json:"properties,omitempty"`           // section 5.16
 	PatternProperties    map[string]*Type `json:"patternProperties,omitempty"`    // section 5.17
-	AdditionalProperties json.RawMessage  `json:"additionalProperties,omitempty"` // section 5.18
+	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // section 5.18
 	Dependencies         map[string]*Type `json:"dependencies,omitempty"`         // section 5.19
 	Enum                 []interface{}    `json:"enum,omitempty"`                 // section 5.20
 	Type                 TypeList         `json:"type,omitempty"`                 // section 5.21

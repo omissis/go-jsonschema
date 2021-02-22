@@ -575,9 +575,16 @@ func (g *schemaGenerator) generateStructType(
 			g.warner("Object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
 		}
+		valueType := codegen.Type(codegen.EmptyInterfaceType{})
+		var err error
+		if t.AdditionalProperties != nil {
+			if valueType, err = g.generateType(t.AdditionalProperties, nil); err != nil {
+				return nil, err
+			}
+		}
 		return &codegen.MapType{
 			KeyType:   codegen.PrimitiveType{Type: "string"},
-			ValueType: codegen.EmptyInterfaceType{},
+			ValueType: valueType,
 		}, nil
 	}
 
