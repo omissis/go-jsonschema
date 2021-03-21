@@ -25,12 +25,13 @@ var (
 
 type requiredValidator struct {
 	jsonName string
+	declName string
 }
 
 func (v *requiredValidator) generate(out *codegen.Emitter) {
 	out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Println(`return fmt.Errorf("field %s: required")`, v.jsonName)
+	out.Println(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
 	out.Indent(-1)
 	out.Println("}")
 }
