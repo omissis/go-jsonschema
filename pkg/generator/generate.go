@@ -444,7 +444,7 @@ func (g *schemaGenerator) generateDeclaredType(
 	if structType, ok := theType.(*codegen.StructType); ok {
 		var validators []validator
 		for _, f := range structType.RequiredJSONFields {
-			validators = append(validators, &requiredValidator{f})
+			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
 		for _, f := range structType.Fields {
 			if f.DefaultValue != nil {
