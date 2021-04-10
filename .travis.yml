@@ -1,12 +1,13 @@
 distro: trusty
 language: go
 go:
-- '1.13'
+- '1.16.3'
 env:
 - GO111MODULE=on
 script:
 - go get github.com/mitchellh/gox
 - go mod download
+- go test ./...
 - gox -osarch="darwin/amd64 linux/amd64 linux/arm windows/amd64" -output="bin/gojsonschema-{{.OS}}-{{.Arch}}" ./cmd/...
 deploy:
   provider: releases
