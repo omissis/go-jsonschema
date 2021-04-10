@@ -17,6 +17,7 @@ var basicConfig = generator.Config{
 	SchemaMappings:     []generator.SchemaMapping{},
 	DefaultPackageName: "github.com/example/test",
 	DefaultOutputName:  "-",
+	ResolveExtensions:  []string{".json", ".yaml"},
 	Warner: func(message string) {
 		log.Printf("[from warner] %s", message)
 	},
