@@ -15,6 +15,7 @@ type validator interface {
 type validatorDesc struct {
 	hasError            bool
 	beforeJSONUnmarshal bool
+	requiredImports     []string
 }
 
 var (
@@ -136,14 +137,19 @@ func (v *numericValidator) generate(out *codegen.Emitter) {
 }
 
 func (v *numericValidator) desc() *validatorDesc {
+	requiredImports := make([]string, 0)
+	if v.multipleOf != nil {
+		requiredImports = append(requiredImports, "math")
+	}
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
+		requiredImports:     requiredImports,
 	}
 }
 
 func (v *numericValidator) generateMultipleOf(out *codegen.Emitter) {
-	out.Println(`if %s.%s %% %f != 0 {`, varNamePlainStruct, v.fieldName, *v.multipleOf)
+	out.Println(`if math.Mod(%s.%s, %f) != 0 {`, varNamePlainStruct, v.fieldName, *v.multipleOf)
 	out.Indent(1)
 	out.Println(`return fmt.Errorf("field %s: must be multiple of %f")`, v.jsonName, *v.multipleOf)
 	out.Indent(-1)

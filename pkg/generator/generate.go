@@ -489,6 +489,10 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 		if len(validators) > 0 {
 			for _, v := range validators {
+				for _, i := range v.desc().requiredImports {
+					g.output.file.Package.AddImport(i, "")
+				}
+
 				if v.desc().hasError {
 					g.output.file.Package.AddImport("fmt", "")
 					break
