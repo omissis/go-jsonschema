@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/sanity-io/litter"
+
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 type Decl interface {
@@ -312,6 +314,7 @@ type StructField struct {
 	Tags         string
 	JSONName     string
 	DefaultValue interface{}
+	SchemaType   *schemas.Type
 }
 
 func (f *StructField) GetName() string {
