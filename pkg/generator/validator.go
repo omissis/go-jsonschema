@@ -21,6 +21,7 @@ var (
 	_ validator = new(requiredValidator)
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
+	_ validator = new(maximumValidator)
 )
 
 type requiredValidator struct {
@@ -105,3 +106,36 @@ func (v *defaultValidator) desc() *validatorDesc {
 		beforeJSONUnmarshal: false,
 	}
 }
+
+type maximumValidator struct {
+	jsonName  string
+	fieldName string
+	value     float64
+	exclusive bool
+	pointer   bool
+}
+
+func (v *maximumValidator) generate(out *codegen.Emitter) {
+	fieldName := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	op := ">"
+	if v.exclusive {
+		op += "="
+	}
+	out.Print(`if `)
+	if v.pointer {
+		out.Print(`%s != nil && *`, fieldName)
+	}
+	out.Println(`%s %s %v {`, fieldName, op, v.value)
+	out.Indent(1)
+	out.Println(`return fmt.Errorf("field %s: must not be %s %v")`, v.jsonName, op, v.value)
+	out.Indent(-1)
+	out.Println(`}`)
+}
+
+func (v *maximumValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+

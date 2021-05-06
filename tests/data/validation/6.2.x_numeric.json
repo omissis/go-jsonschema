@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/enum",
+  "type": "object",
+  "required": [
+    "maxInt",
+    "maxInt0Excl",
+    "maxNum",
+    "maxNum0",
+    "maxStringIgnored",
+    "maxBoolIgnored"
+  ],
+  "properties": {
+    "maxInt": {
+      "type": "integer",
+      "maximum": 42
+    },
+    "maxInt0Excl": {
+      "type": "integer",
+      "maximum": 0,
+      "exclusiveMaximum": true
+    },
+    "maxIntOpt": {
+      "type": "integer",
+      "maximum": 0
+    },
+    "maxNum": {
+      "type": "number",
+      "maximum": -42.0
+    },
+    "maxNum0": {
+      "type": "number",
+      "maximum": 0.0
+    },
+    "maxNum0OptExcl": {
+      "type": "number",
+      "maximum": 0.0,
+      "exclusiveMaximum": true
+    },
+    "maxStringIgnored": {
+      "type": "string",
+      "maximum": 100
+    },
+    "maxBoolIgnored": {
+      "type": "boolean",
+      "maximum": -273
+    }
+  }
+}

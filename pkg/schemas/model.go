@@ -92,7 +92,7 @@ type Type struct {
 	Ref     string `json:"$ref,omitempty"`    // section 7
 	// RFC draft-wright-json-schema-validation-00, section 5
 	MultipleOf           int              `json:"multipleOf,omitempty"`           // section 5.1
-	Maximum              float64          `json:"maximum,omitempty"`              // section 5.2
+	Maximum              *float64         `json:"maximum,omitempty"`              // section 5.2
 	ExclusiveMaximum     bool             `json:"exclusiveMaximum,omitempty"`     // section 5.3
 	Minimum              float64          `json:"minimum,omitempty"`              // section 5.4
 	ExclusiveMinimum     bool             `json:"exclusiveMinimum,omitempty"`     // section 5.5
