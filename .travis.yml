@@ -2,8 +2,6 @@ distro: trusty
 language: go
 go:
 - '1.16.3'
-env:
-- GO111MODULE=on
 script:
 - go get github.com/mitchellh/gox
 - go mod download

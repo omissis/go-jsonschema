@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
 	"go/format"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -87,12 +87,12 @@ func (g *Generator) DoFile(fileName string) error {
 	if fileName == "-" {
 		schema, err = schemas.FromJSONReader(os.Stdin)
 		if err != nil {
-			return errors.Wrap(err, "error parsing from standard input")
+			return fmt.Errorf("error parsing from standard input: %w", err)
 		}
 	} else {
 		schema, err = g.parseFile(fileName)
 		if err != nil {
-			return errors.Wrapf(err, "error parsing from file %s", fileName)
+			return fmt.Errorf("error parsing from file %s: %w", fileName, err)
 		}
 	}
 	return g.addFile(fileName, schema)
@@ -858,11 +858,6 @@ func (o *output) uniqueTypeName(name string) string {
 		}
 		count++
 	}
-}
-
-type cachedEnum struct {
-	values []interface{}
-	enum   *codegen.TypeDecl
 }
 
 type qualifiedDefinition struct {
