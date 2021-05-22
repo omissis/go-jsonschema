@@ -1,4 +1,4 @@
-// Package schema defines JSON schema types.
+// Package schemas defines JSON schema types.
 //
 // Code borrowed from https://github.com/alecthomas/jsonschema/
 //
@@ -76,7 +76,7 @@ func (t *TypeList) UnmarshalJSON(b []byte) error {
 		if err := json.Unmarshal(b, &s); err != nil {
 			return err
 		}
-		*t = TypeList(s)
+		*t = s
 		return nil
 	}
 
@@ -85,7 +85,7 @@ func (t *TypeList) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	if s != "" {
-		*t = TypeList([]string{s})
+		*t = []string{s}
 	} else {
 		*t = nil
 	}

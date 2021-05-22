@@ -38,7 +38,7 @@ func (e *Emitter) Indent(n int) {
 
 func (e *Emitter) Comment(s string) {
 	if s != "" {
-		limit := e.maxLineLength - uint(e.indent)
+		limit := e.maxLineLength - e.indent
 		lines := strings.Split(wordwrap.WrapString(s, limit), "\n")
 		for _, line := range lines {
 			e.Println("// %s", line)

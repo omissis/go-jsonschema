@@ -1,13 +1,13 @@
 package yamlutils
 
-// Fix non-string keys that occur in nested YAML unmarshaling results.
+// FixMapKeys fixes non-string keys that occur in nested YAML unmarshalling results.
 func FixMapKeys(m map[string]interface{}) {
 	for k, v := range m {
 		m[k] = fixMapKeysIn(v)
 	}
 }
 
-// Fix non-string keys that occur in nested YAML unmarshaling results.
+// Fix non-string keys that occur in nested YAML unmarshalling results.
 func fixMapKeysIn(value interface{}) interface{} {
 	switch t := value.(type) {
 	case []interface{}:

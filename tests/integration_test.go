@@ -1,11 +1,9 @@
 package tests
 
 import (
-	"fmt"
-	"io/ioutil"
+	"github.com/stretchr/testify/require"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -92,7 +90,7 @@ func TestYamlMultilineDescriptions(t *testing.T) {
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
-	fileInfos, err := ioutil.ReadDir(dataDir)
+	fileInfos, err := os.ReadDir(dataDir)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -111,20 +109,20 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Run(titleFromFileName(fileName), func(t *testing.T) {
-		generator, err := generator.New(cfg)
+		g, err := generator.New(cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := generator.DoFile(fileName); err != nil {
+		if err := g.DoFile(fileName); err != nil {
 			t.Fatal(err)
 		}
 
-		if len(generator.Sources()) == 0 {
+		if len(g.Sources()) == 0 {
 			t.Fatal("Expected sources to contain something")
 		}
 
-		for outputName, source := range generator.Sources() {
+		for outputName, source := range g.Sources() {
 			if outputName == "-" {
 				outputName = strings.TrimSuffix(filepath.Base(fileName), filepath.Ext(fileName)) + ".go"
 			}
@@ -133,65 +131,32 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			goldenFileName := filepath.Join(filepath.Dir(fileName), outputName)
 			t.Logf("Using golden data in %s", mustAbs(goldenFileName))
 
-			goldenData, err := ioutil.ReadFile(goldenFileName)
+			goldenData, err := os.ReadFile(goldenFileName)
 			if err != nil {
 				if !os.IsNotExist(err) {
 					t.Fatal(err)
 				}
 				goldenData = source
 				t.Log("File does not exist; creating it")
-				if err = ioutil.WriteFile(goldenFileName, goldenData, 0655); err != nil {
+				if err = os.WriteFile(goldenFileName, goldenData, 0655); err != nil {
 					t.Fatal(err)
 				}
 			}
-			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatal(fmt.Sprintf("Contents different (left is expected, right is actual):\n%s", *diff))
-			}
+			require.Equal(t, string(goldenData), string(source))
 		}
 	})
 }
 
 func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Run(titleFromFileName(fileName), func(t *testing.T) {
-		generator, err := generator.New(cfg)
+		g, err := generator.New(cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := generator.DoFile(fileName); err == nil {
+		if err := g.DoFile(fileName); err == nil {
 			t.Fatal("Expected test to fail")
 		}
 	})
-}
-
-func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
-	if actual == expected {
-		return nil, true
-	}
-
-	dir, err := ioutil.TempDir("", "test")
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	defer func() {
-		_ = os.RemoveAll(dir)
-	}()
-
-	if err := ioutil.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0644); err != nil {
-		t.Fatal(err.Error())
-	}
-	if err := ioutil.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0644); err != nil {
-		t.Fatal(err.Error())
-	}
-
-	out, err := exec.Command("diff", "--side-by-side",
-		fmt.Sprintf("%s/expected", dir),
-		fmt.Sprintf("%s/actual", dir)).Output()
-	if _, ok := err.(*exec.ExitError); !ok {
-		t.Fatal(err.Error())
-	}
-
-	diff := string(out)
-	return &diff, false
 }
 
 func titleFromFileName(fileName string) string {
