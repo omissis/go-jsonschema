@@ -99,7 +99,7 @@ type Type struct {
 	MaxLength            int              `json:"maxLength,omitempty"`            // section 5.6
 	MinLength            int              `json:"minLength,omitempty"`            // section 5.7
 	Pattern              string           `json:"pattern,omitempty"`              // section 5.8
-	AdditionalItems      *Type            `json:"additionalItems,omitempty"`      // section 5.9
+	AdditionalItems      *TypeOrBool      `json:"additionalItems,omitempty"`      // section 5.9
 	Items                *Type            `json:"items,omitempty"`                // section 5.9
 	MaxItems             int              `json:"maxItems,omitempty"`             // section 5.10
 	MinItems             int              `json:"minItems,omitempty"`             // section 5.11
@@ -109,7 +109,7 @@ type Type struct {
 	Required             []string         `json:"required,omitempty"`             // section 5.15
 	Properties           map[string]*Type `json:"properties,omitempty"`           // section 5.16
 	PatternProperties    map[string]*Type `json:"patternProperties,omitempty"`    // section 5.17
-	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // section 5.18
+	AdditionalProperties *TypeOrBool      `json:"additionalProperties,omitempty"` // section 5.18
 	Dependencies         map[string]*Type `json:"dependencies,omitempty"`         // section 5.19
 	Enum                 []interface{}    `json:"enum,omitempty"`                 // section 5.20
 	Type                 TypeList         `json:"type,omitempty"`                 // section 5.21
@@ -130,6 +130,28 @@ type Type struct {
 	// ExtGoCustomType is the name of a (qualified or not) custom Go type
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"`
+}
+
+type TypeOrBool struct {
+	*Type
+	*bool
+}
+
+// UnmarshalJSON implements json.Unmarshaler for TypeOrBool struct.
+func (value *TypeOrBool) UnmarshalJSON(raw []byte) error {
+	var b bool
+	if err := json.Unmarshal(raw, &b); err == nil {
+		value.bool = &b
+		return nil
+	}
+
+	var t Type
+	if err := json.Unmarshal(raw, &t); err != nil {
+		return err
+	}
+	value.Type = &t
+
+	return nil
 }
 
 type GoJSONSchemaExtension struct {
