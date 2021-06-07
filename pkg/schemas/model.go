@@ -29,7 +29,7 @@ import (
 
 // Schema is the root schema.
 type Schema struct {
-	*Type
+	*ObjectAsType
 	ID          string      `json:"$id"` // RFC draft-wright-json-schema-01, section-9.2
 	LegacyID    string      `json:"id"`  // RFC draft-wright-json-schema-00, section 4.5
 	Definitions Definitions `json:"definitions,omitempty"`
@@ -53,6 +53,7 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 }
 
 type unmarshalerSchema Schema
+type ObjectAsType Type
 
 // TypeList is a list of type names.
 type TypeList []string
@@ -130,6 +131,29 @@ type Type struct {
 	// ExtGoCustomType is the name of a (qualified or not) custom Go type
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"`
+}
+
+// UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
+// and `false` is equivalent to `{"not": {}}`.
+func (value *Type) UnmarshalJSON(raw []byte) error {
+	var b bool
+	if err := json.Unmarshal(raw, &b); err == nil {
+		if b {
+			*value = Type{}
+		} else {
+			*value = Type{Not: &Type{}}
+		}
+		return nil
+	}
+
+	var obj ObjectAsType
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return err
+	}
+
+	*value = Type(obj)
+
+	return nil
 }
 
 type GoJSONSchemaExtension struct {

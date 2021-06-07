@@ -279,7 +279,7 @@ type schemaGenerator struct {
 }
 
 func (g *schemaGenerator) generateRootType() error {
-	if g.schema.Type == nil {
+	if g.schema.ObjectAsType == nil {
 		return errors.New("schema has no root")
 	}
 
@@ -290,7 +290,7 @@ func (g *schemaGenerator) generateRootType() error {
 			return err
 		}
 	}
-	if len(g.schema.Type.Type) == 0 {
+	if len(g.schema.ObjectAsType.Type) == 0 {
 		return nil
 	}
 
@@ -299,7 +299,7 @@ func (g *schemaGenerator) generateRootType() error {
 		return nil
 	}
 
-	_, err := g.generateDeclaredType(g.schema.Type, newNameScope(rootTypeName))
+	_, err := g.generateDeclaredType((*schemas.Type)(g.schema.ObjectAsType), newNameScope(rootTypeName))
 	return err
 }
 
@@ -344,7 +344,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}
 		defName = g.identifierize(defName)
 	} else {
-		def = schema.Type
+		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
 		if len(def.Type) == 0 {
 			// Minor hack to make definitions default to being objects
