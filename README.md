@@ -89,8 +89,8 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
     - [ ] `pattern`
   - [ ] Array validation (§6.4)
     - [X] `items`
-    - [ ] `maxItems`
-    - [ ] `minItems`
+    - [x] `maxItems`
+    - [x] `minItems`
     - [ ] `uniqueItems`
     - [ ] `additionalItems`
     - [ ] `contains`

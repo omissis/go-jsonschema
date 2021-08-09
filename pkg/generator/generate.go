@@ -470,6 +470,16 @@ func (g *schemaGenerator) generateDeclaredType(
 							arrayDepth: arrayDepth,
 						})
 						break
+					} else {
+						if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+							validators = append(validators, &arrayValidator{
+								fieldName:  f.Name,
+								jsonName:   f.JSONName,
+								arrayDepth: arrayDepth,
+								minItems:   f.SchemaType.MinItems,
+								maxItems:   f.SchemaType.MaxItems,
+							})
+						}
 					}
 
 					t = v.Type
@@ -620,9 +630,10 @@ func (g *schemaGenerator) generateStructType(
 		}
 
 		structField := codegen.StructField{
-			Name:     fieldName,
-			Comment:  prop.Description,
-			JSONName: name,
+			Name:       fieldName,
+			Comment:    prop.Description,
+			JSONName:   name,
+			SchemaType: prop,
 		}
 
 		if isRequired {

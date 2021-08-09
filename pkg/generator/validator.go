@@ -21,6 +21,7 @@ var (
 	_ validator = new(requiredValidator)
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
+	_ validator = new(arrayValidator)
 )
 
 type requiredValidator struct {
@@ -63,7 +64,7 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter) {
 
 	fieldName = fmt.Sprintf(`"%s"`, fieldName)
 	if len(indexes) > 0 {
-		fieldName = fmt.Sprintf(`fmt.Sprinf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
+		fieldName = fmt.Sprintf(`fmt.Sprintf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
 	}
 
 	out.Println(`if %s != nil {`, value)
@@ -102,6 +103,65 @@ func (v *defaultValidator) generate(out *codegen.Emitter) {
 func (v *defaultValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            false,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+type arrayValidator struct {
+	jsonName   string
+	fieldName  string
+	arrayDepth int
+	minItems   int
+	maxItems   int
+}
+
+func (v *arrayValidator) generate(out *codegen.Emitter) {
+	if v.minItems == 0 && v.maxItems == 0 {
+		return
+	}
+
+	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	fieldName := v.jsonName
+	var indexes []string
+	for i := 1; i < v.arrayDepth; i++ {
+		index := fmt.Sprintf("i%d", i)
+		indexes = append(indexes, index)
+		out.Println(`for %s := range %s {`, index, value)
+		value += fmt.Sprintf("[%s]", index)
+		fieldName += "[%d]"
+		out.Indent(1)
+	}
+
+	fieldName = fmt.Sprintf(`"%s"`, fieldName)
+	if len(indexes) > 0 {
+		fieldName = fmt.Sprintf(`fmt.Sprintf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
+	}
+
+	if v.minItems != 0 {
+		out.Println(`if len(%s) < %d {`, value, v.minItems)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %%s length: must be >= %%d", %s, %d)`, fieldName, v.minItems)
+		out.Indent(-1)
+		out.Println("}")
+	}
+
+	if v.maxItems != 0 {
+		out.Println(`if len(%s) > %d {`, value, v.maxItems)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxItems)
+		out.Indent(-1)
+		out.Println("}")
+	}
+
+	for i := 1; i < v.arrayDepth; i++ {
+		out.Indent(-1)
+		out.Println("}")
+	}
+}
+
+func (v *arrayValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
 }
