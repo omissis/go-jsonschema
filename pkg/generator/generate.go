@@ -8,11 +8,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/pkg/errors"
-	"github.com/sanity-io/litter"
-
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/pkg/errors"
 )
 
 type Config struct {
@@ -449,9 +447,10 @@ func (g *schemaGenerator) generateDeclaredType(
 		for _, f := range structType.Fields {
 			if f.DefaultValue != nil {
 				validators = append(validators, &defaultValidator{
-					jsonName:     f.JSONName,
-					fieldName:    f.Name,
-					defaultValue: litter.Sdump(f.DefaultValue),
+					jsonName:         f.JSONName,
+					fieldName:        f.Name,
+					defaultValueType: f.Type,
+					defaultValue:     f.DefaultValue,
 				})
 			}
 			if _, ok := f.Type.(codegen.NullType); ok {
