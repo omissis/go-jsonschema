@@ -70,3 +70,7 @@ func (e *Emitter) checkIndent() {
 		e.start = false
 	}
 }
+
+func (e *Emitter) MaxLineLength() uint {
+	return e.maxLineLength
+}

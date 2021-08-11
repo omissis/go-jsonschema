@@ -2,9 +2,11 @@ package generator
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/sanity-io/litter"
 )
 
 type validator interface {
@@ -86,15 +88,35 @@ func (v *nullTypeValidator) desc() *validatorDesc {
 }
 
 type defaultValidator struct {
-	jsonName     string
-	fieldName    string
-	defaultValue string
+	jsonName         string
+	fieldName        string
+	defaultValueType codegen.Type
+	defaultValue     interface{}
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter) {
+	var defaultValue string
+	tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+	v.defaultValueType.Generate(tmpEmitter)
+	tmpEmitter.Println("{")
+
+	kind := reflect.ValueOf(v.defaultValue).Kind()
+	switch kind {
+	case reflect.Slice:
+		for _, value := range v.defaultValue.([]interface{}) {
+			tmpEmitter.Println("%s,", litter.Sdump(value))
+		}
+	default:
+		// fallback to sdump in case it's not a slice
+		defaultValue = litter.Sdump(v.defaultValue)
+	}
+
+	tmpEmitter.Print("}")
+	defaultValue = tmpEmitter.String()
+
 	out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Println(`%s.%s = %s`, varNamePlainStruct, v.fieldName, v.defaultValue)
+	out.Println(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
 	out.Indent(-1)
 	out.Println("}")
 }
