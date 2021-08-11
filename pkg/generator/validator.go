@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
 )
 
@@ -95,8 +96,21 @@ type defaultValidator struct {
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter) {
-	var defaultValue string
-	tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+	defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength())
+	if err != nil {
+		// fallback to sdump in case we couldn't dump it properly
+		defaultValue = litter.Sdump(v.defaultValue)
+	}
+
+	out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	out.Indent(1)
+	out.Println(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+	out.Indent(-1)
+	out.Println("}")
+}
+
+func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen uint) (string, error) {
+	tmpEmitter := codegen.NewEmitter(maxLineLen)
 	v.defaultValueType.Generate(tmpEmitter)
 	tmpEmitter.Println("{")
 
@@ -107,18 +121,11 @@ func (v *defaultValidator) generate(out *codegen.Emitter) {
 			tmpEmitter.Println("%s,", litter.Sdump(value))
 		}
 	default:
-		// fallback to sdump in case it's not a slice
-		defaultValue = litter.Sdump(v.defaultValue)
+		return "", errors.New("didn't find a slice to dump")
 	}
 
 	tmpEmitter.Print("}")
-	defaultValue = tmpEmitter.String()
-
-	out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
-	out.Indent(1)
-	out.Println(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
-	out.Indent(-1)
-	out.Println("}")
+	return tmpEmitter.String(), nil
 }
 
 func (v *defaultValidator) desc() *validatorDesc {
