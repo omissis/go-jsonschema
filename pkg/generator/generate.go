@@ -636,9 +636,9 @@ func (g *schemaGenerator) generateStructType(
 		}
 
 		if isRequired {
-			structField.Tags = fmt.Sprintf(`json:"%s"`, name)
+			structField.Tags = fmt.Sprintf(`json:"%s" yaml:"%s"`, name, name)
 		} else {
-			structField.Tags = fmt.Sprintf(`json:"%s,omitempty"`, name)
+			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty"`, name, name)
 		}
 
 		if structField.Comment == "" {
