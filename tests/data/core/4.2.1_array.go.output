@@ -47,13 +47,13 @@ func (j *A421Array) UnmarshalJSON(b []byte) error {
 	for i0 := range plain.MyNestedNullArray {
 		for i1 := range plain.MyNestedNullArray[i0] {
 			if plain.MyNestedNullArray[i0][i1] != nil {
-				return fmt.Errorf("field %s: must be null", fmt.Sprinf("myNestedNullArray[%d][%d]", i0, i1))
+				return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNestedNullArray[%d][%d]", i0, i1))
 			}
 		}
 	}
 	for i0 := range plain.MyNullArray {
 		if plain.MyNullArray[i0] != nil {
-			return fmt.Errorf("field %s: must be null", fmt.Sprinf("myNullArray[%d]", i0))
+			return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNullArray[%d]", i0))
 		}
 	}
 	*j = A421Array(plain)

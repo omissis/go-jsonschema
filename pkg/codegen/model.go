@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 	"sort"
 	"strings"
 
@@ -312,6 +313,7 @@ type StructField struct {
 	Tags         string
 	JSONName     string
 	DefaultValue interface{}
+	SchemaType   *schemas.Type
 }
 
 func (f *StructField) GetName() string {

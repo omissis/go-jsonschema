@@ -8,11 +8,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/pkg/errors"
-	"github.com/sanity-io/litter"
-
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/pkg/errors"
 )
 
 type Config struct {
@@ -449,9 +447,10 @@ func (g *schemaGenerator) generateDeclaredType(
 		for _, f := range structType.Fields {
 			if f.DefaultValue != nil {
 				validators = append(validators, &defaultValidator{
-					jsonName:     f.JSONName,
-					fieldName:    f.Name,
-					defaultValue: litter.Sdump(f.DefaultValue),
+					jsonName:         f.JSONName,
+					fieldName:        f.Name,
+					defaultValueType: f.Type,
+					defaultValue:     f.DefaultValue,
 				})
 			}
 			if _, ok := f.Type.(codegen.NullType); ok {
@@ -470,6 +469,16 @@ func (g *schemaGenerator) generateDeclaredType(
 							arrayDepth: arrayDepth,
 						})
 						break
+					} else {
+						if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+							validators = append(validators, &arrayValidator{
+								fieldName:  f.Name,
+								jsonName:   f.JSONName,
+								arrayDepth: arrayDepth,
+								minItems:   f.SchemaType.MinItems,
+								maxItems:   f.SchemaType.MaxItems,
+							})
+						}
 					}
 
 					t = v.Type
@@ -620,15 +629,16 @@ func (g *schemaGenerator) generateStructType(
 		}
 
 		structField := codegen.StructField{
-			Name:     fieldName,
-			Comment:  prop.Description,
-			JSONName: name,
+			Name:       fieldName,
+			Comment:    prop.Description,
+			JSONName:   name,
+			SchemaType: prop,
 		}
 
 		if isRequired {
-			structField.Tags = fmt.Sprintf(`json:"%s"`, name)
+			structField.Tags = fmt.Sprintf(`json:"%s" yaml:"%s"`, name, name)
 		} else {
-			structField.Tags = fmt.Sprintf(`json:"%s,omitempty"`, name)
+			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty"`, name, name)
 		}
 
 		if structField.Comment == "" {

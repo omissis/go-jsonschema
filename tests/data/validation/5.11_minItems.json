@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array",
+  "type": "object",
+  "properties": {
+    "myStringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 5
+    },
+    "myNestedArray": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 3
+      },
+      "minItems": 5
+    }
+  }
+}
