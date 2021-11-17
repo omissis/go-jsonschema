@@ -534,6 +534,9 @@ func (g *schemaGenerator) generateDeclaredType(
 
 func (g *schemaGenerator) generateType(
 	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	var typeIndex = 0
+	var typeShouldBePointer bool
+
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -551,13 +554,21 @@ func (g *schemaGenerator) generateType(
 	if len(t.Type) == 0 {
 		return codegen.EmptyInterfaceType{}, nil
 	}
-	if len(t.Type) != 1 {
+	if len(t.Type) == 2 {
+		for i, t := range t.Type {
+			if t == "null" {
+				typeShouldBePointer = true
+				continue
+			}
+			typeIndex = i
+		}
+	} else if len(t.Type) != 1 {
 		// TODO: Support validation for properties with multiple types
 		g.warner("Property has multiple types; will be represented as interface{} with no validation")
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
-	switch t.Type[0] {
+	switch t.Type[typeIndex] {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
 			return nil, errors.New("array property must have 'items' set to a type")
@@ -572,7 +583,7 @@ func (g *schemaGenerator) generateType(
 	case schemas.TypeNameNull:
 		return codegen.EmptyInterfaceType{}, nil
 	default:
-		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0])
+		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
 	}
 }
 
@@ -690,7 +701,7 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if schemas.IsPrimitiveType(t.Type[0]) {
-			return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0])
+			return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], false)
 		}
 
 		if t.Type[0] == schemas.TypeNameArray {
@@ -720,7 +731,7 @@ func (g *schemaGenerator) generateEnumType(
 	var enumType codegen.Type
 	if len(t.Type) == 1 {
 		var err error
-		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0]); err != nil {
+		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], false); err != nil {
 			return nil, err
 		}
 		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods
