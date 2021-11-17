@@ -4,5 +4,5 @@ package other
 
 type Thing struct {
 	// S corresponds to the JSON schema field "s".
-	S *string `json:"s,omitempty"`
+	S *string `json:"s,omitempty" yaml:"s,omitempty"`
 }

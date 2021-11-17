@@ -7,7 +7,7 @@ import "encoding/json"
 
 type Foo struct {
 	// RefToBar corresponds to the JSON schema field "refToBar".
-	RefToBar Bar `json:"refToBar"`
+	RefToBar Bar `json:"refToBar" yaml:"refToBar"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -17,7 +17,7 @@ func (j *Foo) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	if v, ok := raw["refToBar"]; !ok || v == nil {
-		return fmt.Errorf("field refToBar: required")
+		return fmt.Errorf("field refToBar in Foo: required")
 	}
 	type Plain Foo
 	var plain Plain
@@ -30,7 +30,7 @@ func (j *Foo) UnmarshalJSON(b []byte) error {
 
 type Bar struct {
 	// RefToFoo corresponds to the JSON schema field "refToFoo".
-	RefToFoo Foo `json:"refToFoo"`
+	RefToFoo Foo `json:"refToFoo" yaml:"refToFoo"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -40,7 +40,7 @@ func (j *Bar) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	if v, ok := raw["refToFoo"]; !ok || v == nil {
-		return fmt.Errorf("field refToFoo: required")
+		return fmt.Errorf("field refToFoo in Bar: required")
 	}
 	type Plain Bar
 	var plain Plain
@@ -53,5 +53,5 @@ func (j *Bar) UnmarshalJSON(b []byte) error {
 
 type CyclicAndRequired2 struct {
 	// A corresponds to the JSON schema field "a".
-	A *Foo `json:"a,omitempty"`
+	A *Foo `json:"a,omitempty" yaml:"a,omitempty"`
 }

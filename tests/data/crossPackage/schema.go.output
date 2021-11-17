@@ -6,13 +6,13 @@ import other "github.com/example/other"
 
 type Schema struct {
 	// DefInOtherSchema corresponds to the JSON schema field "defInOtherSchema".
-	DefInOtherSchema *other.Thing `json:"defInOtherSchema,omitempty"`
+	DefInOtherSchema *other.Thing `json:"defInOtherSchema,omitempty" yaml:"defInOtherSchema,omitempty"`
 
 	// DefInSameSchema corresponds to the JSON schema field "defInSameSchema".
-	DefInSameSchema *Thing `json:"defInSameSchema,omitempty"`
+	DefInSameSchema *Thing `json:"defInSameSchema,omitempty" yaml:"defInSameSchema,omitempty"`
 }
 
 type Thing struct {
 	// S corresponds to the JSON schema field "s".
-	S *string `json:"s,omitempty"`
+	S *string `json:"s,omitempty" yaml:"s,omitempty"`
 }

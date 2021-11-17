@@ -128,7 +128,7 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				}
 				goldenData = source
 				t.Log("File does not exist; creating it")
-				if err = ioutil.WriteFile(goldenFileName, goldenData, 0655); err != nil {
+				if err = ioutil.WriteFile(goldenFileName, goldenData, 0666); err != nil {
 					t.Fatal(err)
 				}
 			}

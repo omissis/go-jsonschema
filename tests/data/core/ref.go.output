@@ -4,13 +4,13 @@ package test
 
 type Ref struct {
 	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing `json:"myThing,omitempty"`
+	MyThing *Thing `json:"myThing,omitempty" yaml:"myThing,omitempty"`
 
 	// MyThing2 corresponds to the JSON schema field "myThing2".
-	MyThing2 *Thing `json:"myThing2,omitempty"`
+	MyThing2 *Thing `json:"myThing2,omitempty" yaml:"myThing2,omitempty"`
 }
 
 type Thing struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty" yaml:"name,omitempty"`
 }
