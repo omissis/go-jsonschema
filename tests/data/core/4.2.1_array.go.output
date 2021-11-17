@@ -7,28 +7,28 @@ import "encoding/json"
 
 type A421Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".
-	MyArray []interface{} `json:"myArray,omitempty"`
+	MyArray []interface{} `json:"myArray,omitempty" yaml:"myArray,omitempty"`
 
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
-	MyBooleanArray []bool `json:"myBooleanArray,omitempty"`
+	MyBooleanArray []bool `json:"myBooleanArray,omitempty" yaml:"myBooleanArray,omitempty"`
 
 	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
-	MyIntegerArray []int `json:"myIntegerArray,omitempty"`
+	MyIntegerArray []int `json:"myIntegerArray,omitempty" yaml:"myIntegerArray,omitempty"`
 
 	// MyNestedNullArray corresponds to the JSON schema field "myNestedNullArray".
-	MyNestedNullArray [][]interface{} `json:"myNestedNullArray,omitempty"`
+	MyNestedNullArray [][]interface{} `json:"myNestedNullArray,omitempty" yaml:"myNestedNullArray,omitempty"`
 
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
-	MyNullArray []interface{} `json:"myNullArray,omitempty"`
+	MyNullArray []interface{} `json:"myNullArray,omitempty" yaml:"myNullArray,omitempty"`
 
 	// MyNumberArray corresponds to the JSON schema field "myNumberArray".
-	MyNumberArray []float64 `json:"myNumberArray,omitempty"`
+	MyNumberArray []float64 `json:"myNumberArray,omitempty" yaml:"myNumberArray,omitempty"`
 
 	// MyObjectArray corresponds to the JSON schema field "myObjectArray".
-	MyObjectArray []A421ArrayMyObjectArrayElem `json:"myObjectArray,omitempty"`
+	MyObjectArray []A421ArrayMyObjectArrayElem `json:"myObjectArray,omitempty" yaml:"myObjectArray,omitempty"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
-	MyStringArray []string `json:"myStringArray,omitempty"`
+	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty"`
 }
 
 type A421ArrayMyObjectArrayElem map[string]interface{}

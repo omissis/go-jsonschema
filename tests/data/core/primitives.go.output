@@ -7,19 +7,19 @@ import "encoding/json"
 
 type Primitives struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
-	MyBoolean *bool `json:"myBoolean,omitempty"`
+	MyBoolean *bool `json:"myBoolean,omitempty" yaml:"myBoolean,omitempty"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
-	MyInteger *int `json:"myInteger,omitempty"`
+	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull interface{} `json:"myNull,omitempty"`
+	MyNull interface{} `json:"myNull,omitempty" yaml:"myNull,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
-	MyNumber *float64 `json:"myNumber,omitempty"`
+	MyNumber *float64 `json:"myNumber,omitempty" yaml:"myNumber,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
-	MyString *string `json:"myString,omitempty"`
+	MyString *string `json:"myString,omitempty" yaml:"myString,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
