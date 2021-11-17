@@ -25,6 +25,7 @@ var (
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
+	_ validator = new(stringValidator)
 )
 
 type requiredValidator struct {
@@ -190,6 +191,59 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 }
 
 func (v *arrayValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+type stringValidator struct {
+	jsonName  string
+	fieldName string
+	minLength int
+	maxLength int
+	pattern   string
+
+	codeGenPackage *codegen.Package
+}
+
+func (v *stringValidator) generate(out *codegen.Emitter) {
+	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+
+	if v.minLength != 0 {
+		out.Println(`if len(%s) < %d {`, value, v.minLength)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %%s length: must be >= %%d", %s, %d)`, value, v.minLength)
+		out.Indent(-1)
+		out.Println("}")
+	}
+
+	if v.maxLength != 0 {
+		out.Println(`if len(%s) > %d {`, value, v.maxLength)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, value, v.maxLength)
+		out.Indent(-1)
+		out.Println("}")
+	}
+
+	if v.pattern != "" {
+		v.codeGenPackage.AddImport("regexp", "")
+		out.Println(`reg, err := regexp.Compile("%s")`, v.pattern)
+		out.Println(`if err != nil {`)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("%s field has invalid pattern '%s'")`, v.fieldName, v.pattern)
+		out.Indent(-1)
+		out.Println(`}`)
+		out.Println(`if match := reg.MatchString(%s); !match {`, value)
+		out.Indent(1)
+		out.Println(`return fmt.Errorf("%s field does not match pattern '%s'")`, v.fieldName, v.pattern)
+		out.Indent(-1)
+		out.Println(`}`)
+	}
+
+}
+
+func (v *stringValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,

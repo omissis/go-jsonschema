@@ -453,6 +453,25 @@ func (g *schemaGenerator) generateDeclaredType(
 					defaultValue:     f.DefaultValue,
 				})
 			}
+
+			if t, ok := f.Type.(codegen.PrimitiveType); ok {
+				if t.Type == "string" {
+					needStringValidator := f.SchemaType.MinLength != 0 ||
+						f.SchemaType.MaxLength != 0 ||
+						f.SchemaType.Pattern != ""
+					if needStringValidator {
+						validators = append(validators, &stringValidator{
+							fieldName:      f.Name,
+							jsonName:       f.JSONName,
+							minLength:      f.SchemaType.MinLength,
+							maxLength:      f.SchemaType.MaxLength,
+							pattern:        f.SchemaType.Pattern,
+							codeGenPackage: &g.output.file.Package,
+						})
+					}
+				}
+			}
+
 			if _, ok := f.Type.(codegen.NullType); ok {
 				validators = append(validators, &nullTypeValidator{
 					fieldName: f.Name,
