@@ -3,8 +3,8 @@
 package test
 
 import "fmt"
-import "regexp"
 import "encoding/json"
+import "regexp"
 
 type Strings struct {
 	// CountryCode corresponds to the JSON schema field "country_code".
@@ -25,12 +25,18 @@ func (j *Strings) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
+	if len(plain.CountryCode) < 2 {
+		return fmt.Errorf("field %s length: must be >= %d", plain.CountryCode, 2)
+	}
+	if len(plain.CountryCode) > 2 {
+		return fmt.Errorf("field %s length: must be <= %d", plain.CountryCode, 2)
+	}
 	reg, err := regexp.Compile("^[A-Z]{2}$")
 	if err != nil {
-		return fmt.Errorf("CountryCode field has invalid pattern '^[A-Z]{2}$'")
+		return fmt.Errorf("field %s has invalid pattern: %s", plain.CountryCode, "^[A-Z]{2}$")
 	}
 	if match := reg.MatchString(plain.CountryCode); !match {
-		return fmt.Errorf("CountryCode field does not match pattern '^[A-Z]{2}$'")
+		return fmt.Errorf("field %s does not match pattern: %s", plain.CountryCode, "^[A-Z]{2}$")
 	}
 	*j = Strings(plain)
 	return nil
