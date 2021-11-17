@@ -24,16 +24,34 @@ func isPointerType(t Type) bool {
 	}
 }
 
-func PrimitiveTypeFromJSONSchemaType(jsType string) (Type, error) {
+func PrimitiveTypeFromJSONSchemaType(jsType string, pointer bool) (Type, error) {
 	switch jsType {
 	case schemas.TypeNameString:
-		return PrimitiveType{"string"}, nil
+		t := PrimitiveType{"string"}
+		if pointer == true {
+			return WrapTypeInPointer(t), nil
+		}
+		return t, nil
 	case schemas.TypeNameNumber:
-		return PrimitiveType{"float64"}, nil
+		t := PrimitiveType{"float64"}
+		if pointer == true {
+			return WrapTypeInPointer(t), nil
+		}
+		return t, nil
 	case schemas.TypeNameInteger:
-		return PrimitiveType{"int"}, nil
+		t := PrimitiveType{"int"}
+		if pointer == true {
+			return WrapTypeInPointer(t), nil
+		}
+
+		return t, nil
 	case schemas.TypeNameBoolean:
-		return PrimitiveType{"bool"}, nil
+		t := PrimitiveType{"bool"}
+		if pointer == true {
+			return WrapTypeInPointer(t), nil
+		}
+
+		return t, nil
 	case schemas.TypeNameNull:
 		return NullType{}, nil
 	case schemas.TypeNameObject, schemas.TypeNameArray:
