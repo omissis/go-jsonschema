@@ -31,6 +31,12 @@
   "properties": {
     "MyStringValue": {
       "$ref": "#/Definitions/StringThing"
+    },
+    "MyInlineStringValue": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }
