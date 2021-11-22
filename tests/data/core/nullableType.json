@@ -31,6 +31,12 @@
   "properties": {
     "MyStringValue": {
       "$ref": "#/$defs/StringThing"
+    },
+    "MyInlineStringValue": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }
