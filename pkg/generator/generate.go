@@ -703,7 +703,18 @@ func (g *schemaGenerator) generateTypeInline(
 			}
 		}
 
-		if len(t.Type) > 1 {
+		var typeIndex = 0
+		var typeShouldBePointer bool
+
+		if len(t.Type) == 2 {
+			for i, t := range t.Type {
+				if t == "null" {
+					typeShouldBePointer = true
+					continue
+				}
+				typeIndex = i
+			}
+		} else if len(t.Type) > 1 {
 			g.warner("Property has multiple types; will be represented as interface{} with no validation")
 			return codegen.EmptyInterfaceType{}, nil
 		}
@@ -711,11 +722,11 @@ func (g *schemaGenerator) generateTypeInline(
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
-		if schemas.IsPrimitiveType(t.Type[0]) {
-			return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], false)
+		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
+			return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
 		}
 
-		if t.Type[0] == schemas.TypeNameArray {
+		if t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type
 			if t.Items == nil {
 				theType = codegen.EmptyInterfaceType{}
