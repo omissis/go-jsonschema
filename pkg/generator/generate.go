@@ -307,10 +307,21 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		fileName = ref
 	} else {
 		fileName, scope = ref[0:i], ref[i+1:]
-		if !strings.HasPrefix(strings.ToLower(scope), "/definitions/") {
+		var prefix string
+		lowercaseScope := strings.ToLower(scope)
+		for _, currentPrefix := range []string{
+			"/$defs/",       // draft-handrews-json-schema-validation-02
+			"/definitions/", // legacy
+		} {
+			if strings.HasPrefix(lowercaseScope, currentPrefix) {
+				prefix = currentPrefix
+				break
+			}
+		}
+		if len(prefix) <= 0 {
 			return nil, fmt.Errorf("unsupported $ref format; must point to definition within file: %q", ref)
 		}
-		defName = scope[13:]
+		defName = scope[len(prefix):]
 	}
 
 	var schema *schemas.Schema

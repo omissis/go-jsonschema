@@ -4,13 +4,16 @@
   "type": "object",
   "properties": {
     "myThing": {
-      "$ref": "#/definitions/Thing"
+      "$ref": "#/$defs/Thing"
     }
   },
-  "definitions": {
+  "$defs": {
     "Thing": {
       "type": "string",
-      "enum": ["x", "y"]
+      "enum": [
+        "x",
+        "y"
+      ]
     }
   }
 }

@@ -4,13 +4,13 @@
   "type": "object",
   "properties": {
     "defInSameSchema": {
-      "$ref": "#/Definitions/Thing"
+      "$ref": "#/$defs/Thing"
     },
     "defInOtherSchema": {
-      "$ref": "other.json#/Definitions/Thing"
+      "$ref": "other.json#/$defs/Thing"
     }
   },
-  "definitions": {
+  "$defs": {
     "Thing": {
       "type": "object",
       "properties": {

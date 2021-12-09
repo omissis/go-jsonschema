@@ -4,16 +4,18 @@
   "type": "object",
   "properties": {
     "a": {
-      "$ref": "#/definitions/Foo"
+      "$ref": "#/$defs/Foo"
     }
   },
-  "definitions": {
+  "$defs": {
     "Foo": {
       "type": "object",
-      "required": ["refToBar"],
+      "required": [
+        "refToBar"
+      ],
       "properties": {
         "refToBar": {
-          "$ref": "#/definitions/Bar"
+          "$ref": "#/$defs/Bar"
         }
       }
     },
@@ -21,7 +23,7 @@
       "type": "object",
       "properties": {
         "refToFoo": {
-          "$ref": "#/definitions/Foo"
+          "$ref": "#/$defs/Foo"
         }
       }
     }
