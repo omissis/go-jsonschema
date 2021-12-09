@@ -4,13 +4,13 @@
   "type": "object",
   "properties": {
     "myThing": {
-      "$ref": "#/$defs/Thing"
+      "$ref": "#/definitions/Thing"
     },
     "myThing2": {
-      "$ref": "#/$defs/Thing"
+      "$ref": "#/definitions/Thing"
     }
   },
-  "$defs": {
+  "definitions": {
     "Thing": {
       "type": "object",
       "properties": {

@@ -2,36 +2,35 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "https://example.com/nullableType",
   "type": "object",
-  "definitions": {
+  "$defs": {
     "StringThing": {
       "type": [
-          "null",
-          "string"
+        "null",
+        "string"
       ]
     },
     "FloatThing": {
       "type": [
-          "number",
-          "null"
+        "number",
+        "null"
       ]
     },
     "IntegerThing": {
       "type": [
-          "integer",
-          "null"
+        "integer",
+        "null"
       ]
     },
     "BoolThing": {
       "type": [
-          "boolean",
-          "null"
+        "boolean",
+        "null"
       ]
     }
   },
   "properties": {
     "MyStringValue": {
-      "$ref": "#/Definitions/StringThing"
+      "$ref": "#/$defs/StringThing"
     }
   }
 }
-

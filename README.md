@@ -59,10 +59,10 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
       - [ ] Option to use `json.Number`
     - [x] `string`
   - [ ] Location identifiers (§8.2.3)
-    - [x] References against top-level names: `#/Definitions/someName`
-    - [ ] References against nested names: `#/Definitions/someName/Definitions/someOtherName`
-    - [x] References against top-level names in external files: `myschema.json#/Definitions/someName`
-    - [ ] References against nested names: `myschema.json#/Definitions/someName/Definitions/someOtherName`
+    - [x] References against top-level names: `#/$defs/someName`
+    - [ ] References against nested names: `#/$defs/someName/$defs/someOtherName`
+    - [x] References against top-level names in external files: `myschema.json#/$defs/someName`
+    - [ ] References against nested names: `myschema.json#/$defs/someName/$defs/someOtherName`
   - [x] Comments (§9)
 - Validation ([RFC draft](http://json-schema.org/latest/json-schema-validation.html))
   - [ ] Schema annotations (§10)
