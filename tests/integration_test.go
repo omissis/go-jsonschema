@@ -18,6 +18,7 @@ var basicConfig = generator.Config{
 	DefaultPackageName: "github.com/example/test",
 	DefaultOutputName:  "-",
 	ResolveExtensions:  []string{".json", ".yaml"},
+	YAMLExtensions:     []string{".yaml", ".yml"},
 	Warner: func(message string) {
 		log.Printf("[from warner] %s", message)
 	},
