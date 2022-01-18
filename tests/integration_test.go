@@ -79,6 +79,12 @@ func TestBooleanAsSchema(t *testing.T) {
 	testExampleFile(t, cfg, "./data/misc/boolean-as-schema.json")
 }
 
+func TestYamlMultilineDescriptions(t *testing.T) {
+	cfg := basicConfig
+	cfg.YAMLExtensions = []string{"yaml"}
+	testExampleFile(t, cfg, "./data/misc/yamlMultilineDescriptions.yaml")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	fileInfos, err := ioutil.ReadDir(dataDir)
 	if err != nil {
