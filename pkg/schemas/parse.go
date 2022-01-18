@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 
 	"github.com/atombender/go-jsonschema/pkg/yamlutils"
 )
@@ -50,6 +50,7 @@ func FromYAMLReader(r io.Reader) (*Schema, error) {
 	if err := yaml.NewDecoder(r).Decode(&m); err != nil {
 		return nil, err
 	}
+
 	yamlutils.FixMapKeys(m)
 
 	b, err := json.Marshal(m)
