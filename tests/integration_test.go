@@ -114,7 +114,7 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 
 		for outputName, source := range generator.Sources() {
 			if outputName == "-" {
-				outputName = strings.TrimSuffix(filepath.Base(fileName), ".json") + ".go"
+				outputName = strings.TrimSuffix(filepath.Base(fileName), filepath.Ext(fileName)) + ".go"
 			}
 			outputName += ".output"
 
