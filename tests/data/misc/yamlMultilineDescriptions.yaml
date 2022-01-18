@@ -1,5 +1,5 @@
 "$schema": "http://json-schema.org/draft-04/schema#"
-"$id": "https://example.com/yaml_formatting"
+"$id": "https://example.com/yaml_multiline_description"
 
 title: MyObject
 type: object
