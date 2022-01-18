@@ -82,7 +82,7 @@ func TestBooleanAsSchema(t *testing.T) {
 func TestYamlMultilineDescriptions(t *testing.T) {
 	cfg := basicConfig
 	cfg.YAMLExtensions = []string{"yaml"}
-	testExampleFile(t, cfg, "./data/misc/yamlMultilineDescriptions.yaml")
+	testExampleFile(t, cfg, "./data/yaml/yamlMultilineDescriptions.yaml")
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
