@@ -232,10 +232,10 @@ func (g *Generator) identifierFromFileName(fileName string) string {
 	s := filepath.Base(fileName)
 	for _, ext := range g.config.ResolveExtensions {
 		trimmed := strings.TrimSuffix(s, ext)
-		if trimmed == s {
+		if trimmed != s {
+			s = trimmed
 			break
 		}
-		s = trimmed
 	}
 	return g.identifierize(s)
 }
