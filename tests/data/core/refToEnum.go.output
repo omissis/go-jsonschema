@@ -35,38 +35,8 @@ func (j *Thing) UnmarshalJSON(b []byte) error {
 
 type RefToEnum struct {
 	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing_1 `json:"myThing,omitempty" yaml:"myThing,omitempty"`
+	MyThing *Thing `json:"myThing,omitempty" yaml:"myThing,omitempty"`
 }
 
 const ThingX Thing = "x"
-
-type Thing_1 string
-
-var enumValues_Thing_1 = []interface{}{
-	"x",
-	"y",
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Thing_1) UnmarshalJSON(b []byte) error {
-	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_Thing_1 {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Thing_1, v)
-	}
-	*j = Thing_1(v)
-	return nil
-}
-
 const ThingY Thing = "y"
-const Thing_1_X Thing_1 = "x"
-const Thing_1_Y Thing_1 = "y"

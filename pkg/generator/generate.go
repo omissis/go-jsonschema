@@ -789,6 +789,7 @@ func (g *schemaGenerator) generateEnumType(
 	g.output.file.Package.AddDecl(&enumDecl)
 
 	g.output.declsByName[enumDecl.Name] = &enumDecl
+	g.output.declsBySchema[t] = &enumDecl
 
 	valueConstant := &codegen.Var{
 		Name:  "enumValues_" + enumDecl.Name,
