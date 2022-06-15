@@ -10,7 +10,7 @@ This tool generates Go data types and structs that corresponds to definitions in
 
 ```shell
 $ go get github.com/atombender/go-jsonschema/...
-$ go install github.com/atombender/go-jsonschema/cmd/gojsonschema
+$ go install github.com/atombender/go-jsonschema/cmd/gojsonschema@latest
 ```
 
 ## Usage
