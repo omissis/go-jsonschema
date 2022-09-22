@@ -1,9 +1,10 @@
 package codegen
 
 import (
-	"github.com/atombender/go-jsonschema/pkg/schemas"
 	"sort"
 	"strings"
+
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 
 	"github.com/sanity-io/litter"
 )

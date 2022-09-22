@@ -2,7 +2,7 @@
 
 package test
 
-type YamlMultilineDescriptionsYaml struct {
+type YamlMultilineDescriptions struct {
 	// I'm a multiline description in a literal block. Literal blocks, on the other
 	// hand,
 	// should have hard line breaks and may end in a line break, too.
