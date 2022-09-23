@@ -1,12 +1,13 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/require"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
 )
