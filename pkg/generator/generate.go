@@ -889,9 +889,12 @@ type output struct {
 }
 
 func (o *output) uniqueTypeName(name string) string {
-	if _, ok := o.declsByName[name]; !ok {
+	v, ok := o.declsByName[name]
+
+	if !ok || (ok && v.Type == nil) {
 		return name
 	}
+
 	count := 1
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
