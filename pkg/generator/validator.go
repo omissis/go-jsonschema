@@ -33,11 +33,11 @@ type requiredValidator struct {
 }
 
 func (v *requiredValidator) generate(out *codegen.Emitter) {
-	out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Println(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
 	out.Indent(-1)
-	out.Println("}")
+	out.Printlnf("}")
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
@@ -56,13 +56,16 @@ type nullTypeValidator struct {
 func (v *nullTypeValidator) generate(out *codegen.Emitter) {
 	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
 	fieldName := v.jsonName
+
 	var indexes []string
+
 	for i := 0; i < v.arrayDepth; i++ {
 		index := fmt.Sprintf("i%d", i)
 		indexes = append(indexes, index)
-		out.Println(`for %s := range %s {`, index, value)
+		out.Printlnf(`for %s := range %s {`, index, value)
 		value += fmt.Sprintf("[%s]", index)
 		fieldName += "[%d]"
+
 		out.Indent(1)
 	}
 
@@ -71,15 +74,15 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter) {
 		fieldName = fmt.Sprintf(`fmt.Sprintf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
 	}
 
-	out.Println(`if %s != nil {`, value)
+	out.Printlnf(`if %s != nil {`, value)
 	out.Indent(1)
-	out.Println(`return fmt.Errorf("field %%s: must be null", %s)`, fieldName)
+	out.Printlnf(`return fmt.Errorf("field %%s: must be null", %s)`, fieldName)
 	out.Indent(-1)
-	out.Println("}")
+	out.Printlnf("}")
 
 	for i := 0; i < v.arrayDepth; i++ {
 		out.Indent(-1)
-		out.Println("}")
+		out.Printlnf("}")
 	}
 }
 
@@ -100,33 +103,40 @@ type defaultValidator struct {
 func (v *defaultValidator) generate(out *codegen.Emitter) {
 	defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength())
 	if err != nil {
-		// fallback to sdump in case we couldn't dump it properly
+		// Fallback to sdump in case we couldn't dump it properly.
 		defaultValue = litter.Sdump(v.defaultValue)
 	}
 
-	out.Println(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Println(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+	out.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
 	out.Indent(-1)
-	out.Println("}")
+	out.Printlnf("}")
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen uint) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
 	v.defaultValueType.Generate(tmpEmitter)
-	tmpEmitter.Println("{")
+	tmpEmitter.Printlnf("{")
 
 	kind := reflect.ValueOf(v.defaultValue).Kind()
 	switch kind {
 	case reflect.Slice:
-		for _, value := range v.defaultValue.([]interface{}) {
-			tmpEmitter.Println("%s,", litter.Sdump(value))
+		df, ok := v.defaultValue.([]interface{})
+		if !ok {
+			return "", errors.New("invalid default value")
 		}
+
+		for _, value := range df {
+			tmpEmitter.Printlnf("%s,", litter.Sdump(value))
+		}
+
 	default:
 		return "", errors.New("didn't find a slice to dump")
 	}
 
-	tmpEmitter.Print("}")
+	tmpEmitter.Printf("}")
+
 	return tmpEmitter.String(), nil
 }
 
@@ -152,13 +162,16 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 
 	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
 	fieldName := v.jsonName
+
 	var indexes []string
+
 	for i := 1; i < v.arrayDepth; i++ {
 		index := fmt.Sprintf("i%d", i)
 		indexes = append(indexes, index)
-		out.Println(`for %s := range %s {`, index, value)
+		out.Printlnf(`for %s := range %s {`, index, value)
 		value += fmt.Sprintf("[%s]", index)
 		fieldName += "[%d]"
+
 		out.Indent(1)
 	}
 
@@ -168,24 +181,24 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 	}
 
 	if v.minItems != 0 {
-		out.Println(`if len(%s) < %d {`, value, v.minItems)
+		out.Printlnf(`if len(%s) < %d {`, value, v.minItems)
 		out.Indent(1)
-		out.Println(`return fmt.Errorf("field %%s length: must be >= %%d", %s, %d)`, fieldName, v.minItems)
+		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", %s, %d)`, fieldName, v.minItems)
 		out.Indent(-1)
-		out.Println("}")
+		out.Printlnf("}")
 	}
 
 	if v.maxItems != 0 {
-		out.Println(`if len(%s) > %d {`, value, v.maxItems)
+		out.Printlnf(`if len(%s) > %d {`, value, v.maxItems)
 		out.Indent(1)
-		out.Println(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxItems)
+		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxItems)
 		out.Indent(-1)
-		out.Println("}")
+		out.Printlnf("}")
 	}
 
 	for i := 1; i < v.arrayDepth; i++ {
 		out.Indent(-1)
-		out.Println("}")
+		out.Printlnf("}")
 	}
 }
 

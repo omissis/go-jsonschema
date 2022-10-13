@@ -14,6 +14,7 @@ func IsPrimitiveType(t string) bool {
 	switch t {
 	case TypeNameString, TypeNameNumber, TypeNameInteger, TypeNameBoolean, TypeNameNull:
 		return true
+
 	default:
 		return false
 	}

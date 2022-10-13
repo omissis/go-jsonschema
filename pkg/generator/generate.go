@@ -38,6 +38,25 @@ type Generator struct {
 	warner                func(string)
 }
 
+const (
+	varNamePlainStruct = "plain"
+	varNameRawMap      = "raw"
+	interfaceTypeName  = "interface{}"
+)
+
+var (
+	errSchemaHasNoRoot                = errors.New("schema has no root")
+	errArrayPropertyItems             = errors.New("array property must have 'items' set to a type")
+	errEnumArrCannotBeEmpty           = errors.New("enum array cannot be empty")
+	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
+	errCouldNotResolveSchema          = errors.New("could not resolve schema")
+	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
+	errExpectedNamedType              = errors.New("expected named type")
+	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
+	errConflictSameFile               = errors.New("conflict: same file")
+	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
+)
+
 func New(config Config) (*Generator, error) {
 	return &Generator{
 		config:                config,
@@ -49,12 +68,16 @@ func New(config Config) (*Generator, error) {
 }
 
 func (g *Generator) Sources() map[string][]byte {
+	var maxLineLength uint = 80
+
 	sources := make(map[string]*strings.Builder, len(g.outputs))
+
 	for _, output := range g.outputs {
 		if output.file.FileName == "" {
 			continue
 		}
-		emitter := codegen.NewEmitter(80)
+
+		emitter := codegen.NewEmitter(maxLineLength)
 		output.file.Generate(emitter)
 
 		sb, ok := sources[output.file.FileName]
@@ -62,26 +85,34 @@ func (g *Generator) Sources() map[string][]byte {
 			sb = &strings.Builder{}
 			sources[output.file.FileName] = sb
 		}
+
 		_, _ = sb.WriteString(emitter.String())
 	}
 
 	result := make(map[string][]byte, len(sources))
+
 	for f, sb := range sources {
 		source := []byte(sb.String())
+
 		src, err := format.Source(source)
 		if err != nil {
 			g.config.Warner(fmt.Sprintf("The generated code could not be formatted automatically; "+
 				"falling back to unformatted: %s", err))
+
 			src = source
 		}
+
 		result[f] = src
 	}
+
 	return result
 }
 
 func (g *Generator) DoFile(fileName string) error {
 	var err error
+
 	var schema *schemas.Schema
+
 	if fileName == "-" {
 		schema, err = schemas.FromJSONReader(os.Stdin)
 		if err != nil {
@@ -93,23 +124,37 @@ func (g *Generator) DoFile(fileName string) error {
 			return fmt.Errorf("error parsing from file %s: %w", fileName, err)
 		}
 	}
+
 	return g.addFile(fileName, schema)
 }
 
 func (g *Generator) parseFile(fileName string) (*schemas.Schema, error) {
-	// TODO: Refactor into some kind of loader
+	// TODO: Refactor into some kind of loader.
 	isYAML := false
+
 	for _, yamlExt := range g.config.YAMLExtensions {
 		if strings.HasSuffix(fileName, yamlExt) {
 			isYAML = true
+
 			break
 		}
 	}
+
 	if isYAML {
-		return schemas.FromYAMLFile(fileName)
-	} else {
-		return schemas.FromJSONFile(fileName)
+		sc, err := schemas.FromYAMLFile(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing YAML file %s: %w", fileName, err)
+		}
+
+		return sc, nil
 	}
+
+	sc, err := schemas.FromJSONFile(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing JSON file %s: %w", fileName, err)
+	}
+
+	return sc, nil
 }
 
 func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
@@ -135,15 +180,16 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 	for i, ext := range exts {
 		qualified := fileName + ext
 
-		// Poor man's resolving loop
+		// Poor man's resolving loop.
 		if i < len(exts)-1 && !fileExists(qualified) {
 			continue
 		}
 
 		var err error
+
 		qualified, err = filepath.EvalSymlinks(qualified)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error resolving symlinks in %s: %w", qualified, err)
 		}
 
 		if schema, ok := g.schemaCacheByFileName[qualified]; ok {
@@ -154,14 +200,17 @@ func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schema
 		if err != nil {
 			return nil, err
 		}
+
 		g.schemaCacheByFileName[qualified] = schema
 
 		if err = g.addFile(qualified, schema); err != nil {
 			return nil, err
 		}
+
 		return schema, nil
 	}
-	return nil, fmt.Errorf("could not resolve schema %q", fileName)
+
+	return nil, fmt.Errorf("%w %q", errCouldNotResolveSchema, fileName)
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
@@ -170,6 +219,7 @@ func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) str
 			return m.RootType
 		}
 	}
+
 	return g.identifierFromFileName(fileName)
 }
 
@@ -183,22 +233,25 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 			return g.beginOutput(id, m.OutputName, m.PackageName)
 		}
 	}
+
 	return g.beginOutput(id, g.config.DefaultOutputName, g.config.DefaultPackageName)
 }
 
 func (g *Generator) beginOutput(
 	id string,
-	outputName, packageName string) (*output, error) {
+	outputName, packageName string,
+) (*output, error) {
 	if packageName == "" {
-		return nil, fmt.Errorf("unable to map schema URI %q to a Go package name", id)
+		return nil, fmt.Errorf("%w: %q", errMapURIToPackageName, id)
 	}
 
 	for _, o := range g.outputs {
 		if o.file.FileName == outputName && o.file.Package.QualifiedName != packageName {
 			return nil, fmt.Errorf(
-				"conflict: same file (%s) mapped to two different Go packages (%q and %q) for schema %q",
-				o.file.FileName, o.file.Package.QualifiedName, packageName, id)
+				"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
+				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id)
 		}
+
 		if o.file.FileName == outputName && o.file.Package.QualifiedName == packageName {
 			return o, nil
 		}
@@ -218,6 +271,7 @@ func (g *Generator) beginOutput(
 		declsByName:   map[string]*codegen.TypeDecl{},
 	}
 	g.outputs[id] = output
+
 	return output, nil
 }
 
@@ -225,6 +279,7 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
 		return typeName + "_" + g.identifierize(value)
 	}
+
 	return typeName + g.identifierize(value)
 }
 
@@ -234,9 +289,11 @@ func (g *Generator) identifierFromFileName(fileName string) string {
 		trimmed := strings.TrimSuffix(s, ext)
 		if trimmed != s {
 			s = trimmed
+
 			break
 		}
 	}
+
 	return g.identifierize(s)
 }
 
@@ -245,15 +302,18 @@ func (g *Generator) identifierize(s string) string {
 		return "Blank"
 	}
 
-	// FIXME: Better handling of non-identifier chars
+	// FIXME: Better handling of non-identifier chars.
 	var sb strings.Builder
 	for _, part := range splitIdentifierByCaseAndSeparators(s) {
 		_, _ = sb.WriteString(g.capitalize(part))
 	}
+
 	ident := sb.String()
+
 	if !unicode.IsLetter(rune(ident[0])) {
 		ident = "A" + ident
 	}
+
 	return ident
 }
 
@@ -261,11 +321,13 @@ func (g *Generator) capitalize(s string) string {
 	if len(s) == 0 {
 		return ""
 	}
+
 	for _, c := range g.config.Capitalizations {
-		if strings.ToLower(c) == strings.ToLower(s) {
+		if strings.EqualFold(c, s) {
 			return c
 		}
 	}
+
 	return strings.ToUpper(s[0:1]) + s[1:]
 }
 
@@ -278,16 +340,18 @@ type schemaGenerator struct {
 
 func (g *schemaGenerator) generateRootType() error {
 	if g.schema.ObjectAsType == nil {
-		return errors.New("schema has no root")
+		return errSchemaHasNoRoot
 	}
 
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
+
 		_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
 		if err != nil {
 			return err
 		}
 	}
+
 	if len(g.schema.ObjectAsType.Type) == 0 {
 		return nil
 	}
@@ -298,6 +362,7 @@ func (g *schemaGenerator) generateRootType() error {
 	}
 
 	_, err := g.generateDeclaredType((*schemas.Type)(g.schema.ObjectAsType), newNameScope(rootTypeName))
+
 	return err
 }
 
@@ -310,26 +375,30 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		var prefix string
 		lowercaseScope := strings.ToLower(scope)
 		for _, currentPrefix := range []string{
-			"/$defs/",       // draft-handrews-json-schema-validation-02
-			"/definitions/", // legacy
+			"/$defs/",       // Draft-handrews-json-schema-validation-02.
+			"/definitions/", // Legacy.
 		} {
 			if strings.HasPrefix(lowercaseScope, currentPrefix) {
 				prefix = currentPrefix
+
 				break
 			}
 		}
-		if len(prefix) <= 0 {
-			return nil, fmt.Errorf("unsupported $ref format; must point to definition within file: %q", ref)
+
+		if len(prefix) == 0 {
+			return nil, fmt.Errorf("%w; must point to definition within file: %q", errUnsupportedRefFormat, ref)
 		}
 		defName = scope[len(prefix):]
 	}
 
 	var schema *schemas.Schema
+
 	if fileName != "" {
 		var err error
+
 		schema, err = g.loadSchemaFromFile(fileName, g.schemaFileName)
 		if err != nil {
-			return nil, fmt.Errorf("could not follow $ref %q to file %q: %s", ref, fileName, err)
+			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, err)
 		}
 	} else {
 		schema = g.schema
@@ -341,22 +410,26 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	}
 
 	var def *schemas.Type
+
 	if defName != "" {
-		// TODO: Support nested definitions
+		// TODO: Support nested definitions.
 		var ok bool
+
 		def, ok = schema.Definitions[defName]
 		if !ok {
-			return nil, fmt.Errorf("definition %q (from ref %q) does not exist in schema", defName, ref)
+			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, ref)
 		}
+
 		if len(def.Type) == 0 && len(def.Properties) == 0 {
 			return &codegen.EmptyInterfaceType{}, nil
 		}
+
 		defName = g.identifierize(defName)
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
 		if len(def.Type) == 0 {
-			// Minor hack to make definitions default to being objects
+			// Minor hack to make definitions default to being objects.
 			def.Type = schemas.TypeList{schemas.TypeNameObject}
 		}
 	}
@@ -370,6 +443,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	}
 
 	var sg *schemaGenerator
+
 	if fileName != "" {
 		output, err := g.findOutputFileForSchemaID(schema.ID)
 		if err != nil {
@@ -391,10 +465,14 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		return nil, err
 	}
 
-	nt := t.(*codegen.NamedType)
+	nt, ok := t.(*codegen.NamedType)
+	if !ok {
+		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, t)
+	}
 
 	if isCycle {
 		g.warner(fmt.Sprintf("Cycle detected; must wrap type %s in pointer", nt.Decl.Name))
+
 		t = codegen.WrapTypeInPointer(t)
 	}
 
@@ -403,12 +481,16 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	}
 
 	var imp *codegen.Import
+
 	for _, i := range g.output.file.Package.Imports {
+		i := i
 		if i.Name == sg.output.file.Package.Name() && i.QualifiedName == sg.output.file.Package.QualifiedName {
 			imp = &i
+
 			break
 		}
 	}
+
 	if imp == nil {
 		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, sg.output.file.Package.Name())
 	}
@@ -420,7 +502,8 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 }
 
 func (g *schemaGenerator) generateDeclaredType(
-	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	t *schemas.Type, scope nameScope,
+) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		return &codegen.NamedType{Decl: decl}, nil
 	}
@@ -440,12 +523,15 @@ func (g *schemaGenerator) generateDeclaredType(
 	if err != nil {
 		return nil, err
 	}
+
 	if isNamedType(theType) {
-		// Don't declare named types under a new name
+		// Don't declare named types under a new name.
 		delete(g.output.declsBySchema, t)
 		delete(g.output.declsByName, decl.Name)
+
 		return theType, nil
 	}
+
 	decl.Type = theType
 
 	g.output.file.Package.AddDecl(&decl)
@@ -455,6 +541,7 @@ func (g *schemaGenerator) generateDeclaredType(
 		for _, f := range structType.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
+
 		for _, f := range structType.Fields {
 			if f.DefaultValue != nil {
 				validators = append(validators, &defaultValidator{
@@ -464,6 +551,7 @@ func (g *schemaGenerator) generateDeclaredType(
 					defaultValue:     f.DefaultValue,
 				})
 			}
+
 			if _, ok := f.Type.(codegen.NullType); ok {
 				validators = append(validators, &nullTypeValidator{
 					fieldName: f.Name,
@@ -479,17 +567,16 @@ func (g *schemaGenerator) generateDeclaredType(
 							jsonName:   f.JSONName,
 							arrayDepth: arrayDepth,
 						})
+
 						break
-					} else {
-						if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
-							validators = append(validators, &arrayValidator{
-								fieldName:  f.Name,
-								jsonName:   f.JSONName,
-								arrayDepth: arrayDepth,
-								minItems:   f.SchemaType.MinItems,
-								maxItems:   f.SchemaType.MaxItems,
-							})
-						}
+					} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+						validators = append(validators, &arrayValidator{
+							fieldName:  f.Name,
+							jsonName:   f.JSONName,
+							arrayDepth: arrayDepth,
+							minItems:   f.SchemaType.MinItems,
+							maxItems:   f.SchemaType.MaxItems,
+						})
 					}
 
 					t = v.Type
@@ -501,6 +588,7 @@ func (g *schemaGenerator) generateDeclaredType(
 			for _, v := range validators {
 				if v.desc().hasError {
 					g.output.file.Package.AddImport("fmt", "")
+
 					break
 				}
 			}
@@ -509,10 +597,10 @@ func (g *schemaGenerator) generateDeclaredType(
 			g.output.file.Package.AddDecl(&codegen.Method{
 				Impl: func(out *codegen.Emitter) {
 					out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-					out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", decl.Name)
+					out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", decl.Name)
 					out.Indent(1)
-					out.Println("var %s map[string]interface{}", varNameRawMap)
-					out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }",
+					out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+					out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }",
 						varNameRawMap)
 					for _, v := range validators {
 						if v.desc().beforeJSONUnmarshal {
@@ -520,9 +608,9 @@ func (g *schemaGenerator) generateDeclaredType(
 						}
 					}
 
-					out.Println("type Plain %s", decl.Name)
-					out.Println("var %s Plain", varNamePlainStruct)
-					out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }",
+					out.Printlnf("type Plain %s", decl.Name)
+					out.Printlnf("var %s Plain", varNamePlainStruct)
+					out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }",
 						varNamePlainStruct)
 
 					for _, v := range validators {
@@ -531,10 +619,10 @@ func (g *schemaGenerator) generateDeclaredType(
 						}
 					}
 
-					out.Println("*j = %s(%s)", decl.Name, varNamePlainStruct)
-					out.Println("return nil")
+					out.Printlnf("*j = %s(%s)", decl.Name, varNamePlainStruct)
+					out.Printlnf("return nil")
 					out.Indent(-1)
-					out.Println("}")
+					out.Printlnf("}")
 				},
 			})
 		}
@@ -544,75 +632,102 @@ func (g *schemaGenerator) generateDeclaredType(
 }
 
 func (g *schemaGenerator) generateType(
-	t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	var typeIndex = 0
+	t *schemas.Type, scope nameScope,
+) (codegen.Type, error) {
+	typeIndex := 0
+
 	var typeShouldBePointer bool
+
+	two := 2
 
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
 		}
+
 		if ext.Type != nil {
 			return &codegen.CustomNameType{Type: *ext.Type}, nil
 		}
 	}
+
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
 	}
+
 	if t.Ref != "" {
 		return g.generateReferencedType(t.Ref)
 	}
+
 	if len(t.Type) == 0 {
 		return codegen.EmptyInterfaceType{}, nil
 	}
-	if len(t.Type) == 2 {
+
+	if len(t.Type) == two {
 		for i, t := range t.Type {
 			if t == "null" {
 				typeShouldBePointer = true
+
 				continue
 			}
+
 			typeIndex = i
 		}
 	} else if len(t.Type) != 1 {
-		// TODO: Support validation for properties with multiple types
+		// TODO: Support validation for properties with multiple types.
 		g.warner("Property has multiple types; will be represented as interface{} with no validation")
+
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
 	switch t.Type[typeIndex] {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
-			return nil, errors.New("array property must have 'items' set to a type")
+			return nil, errArrayPropertyItems
 		}
+
 		elemType, err := g.generateType(t.Items, scope.add("Elem"))
 		if err != nil {
 			return nil, err
 		}
+
 		return codegen.ArrayType{Type: elemType}, nil
+
 	case schemas.TypeNameObject:
 		return g.generateStructType(t, scope)
+
 	case schemas.TypeNameNull:
 		return codegen.EmptyInterfaceType{}, nil
+
 	default:
-		return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
+		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
+		}
+
+		return cg, nil
 	}
 }
 
 func (g *schemaGenerator) generateStructType(
 	t *schemas.Type,
-	scope nameScope) (codegen.Type, error) {
+	scope nameScope,
+) (codegen.Type, error) {
 	if len(t.Properties) == 0 {
 		if len(t.Required) > 0 {
 			g.warner("Object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
 		}
+
 		valueType := codegen.Type(codegen.EmptyInterfaceType{})
+
 		var err error
+
 		if t.AdditionalProperties != nil {
 			if valueType, err = g.generateType(t.AdditionalProperties, nil); err != nil {
 				return nil, err
 			}
 		}
+
 		return &codegen.MapType{
 			KeyType:   codegen.PrimitiveType{Type: "string"},
 			ValueType: valueType,
@@ -627,15 +742,18 @@ func (g *schemaGenerator) generateStructType(
 	uniqueNames := make(map[string]int, len(t.Properties))
 
 	var structType codegen.StructType
+
 	for _, name := range sortPropertiesByName(t.Properties) {
 		prop := t.Properties[name]
 		isRequired := requiredNames[name]
 
 		fieldName := g.identifierize(name)
+
 		if ext := prop.GoJSONSchemaExtension; ext != nil {
 			for _, pkg := range ext.Imports {
 				g.output.file.Package.AddImport(pkg, "")
 			}
+
 			if ext.Identifier != nil {
 				fieldName = *ext.Identifier
 			}
@@ -669,97 +787,122 @@ func (g *schemaGenerator) generateStructType(
 		}
 
 		var err error
+
 		structField.Type, err = g.generateTypeInline(prop, scope.add(structField.Name))
 		if err != nil {
-			return nil, fmt.Errorf("could not generate type for field %q: %s", name, err)
+			return nil, fmt.Errorf("could not generate type for field %q: %w", name, err)
 		}
 
-		if prop.Default != nil {
+		switch {
+		case prop.Default != nil:
 			structField.DefaultValue = prop.Default
-		} else if isRequired {
-			structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
-		} else {
-			// Optional, so must be pointer
-			if !structField.Type.IsNillable() {
+
+		default:
+			if isRequired {
+				structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+			} else if !structField.Type.IsNillable() {
 				structField.Type = codegen.WrapTypeInPointer(structField.Type)
 			}
 		}
 
 		structType.AddField(structField)
 	}
+
 	return &structType, nil
 }
 
 func (g *schemaGenerator) generateTypeInline(
 	t *schemas.Type,
-	scope nameScope) (codegen.Type, error) {
+	scope nameScope,
+) (codegen.Type, error) {
+	two := 2
+
 	if t.Enum == nil && t.Ref == "" {
 		if ext := t.GoJSONSchemaExtension; ext != nil {
 			for _, pkg := range ext.Imports {
 				g.output.file.Package.AddImport(pkg, "")
 			}
+
 			if ext.Type != nil {
 				return &codegen.CustomNameType{Type: *ext.Type}, nil
 			}
 		}
 
-		var typeIndex = 0
+		typeIndex := 0
+
 		var typeShouldBePointer bool
 
-		if len(t.Type) == 2 {
+		if len(t.Type) == two {
 			for i, t := range t.Type {
 				if t == "null" {
 					typeShouldBePointer = true
+
 					continue
 				}
+
 				typeIndex = i
 			}
 		} else if len(t.Type) > 1 {
 			g.warner("Property has multiple types; will be represented as interface{} with no validation")
+
 			return codegen.EmptyInterfaceType{}, nil
 		}
+
 		if len(t.Type) == 0 {
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
 		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
-			return codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
+			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
+			if err != nil {
+				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
+			}
+
+			return cg, nil
 		}
 
 		if t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type
+
 			if t.Items == nil {
 				theType = codegen.EmptyInterfaceType{}
 			} else {
 				var err error
+
 				theType, err = g.generateTypeInline(t.Items, scope.add("Elem"))
 				if err != nil {
 					return nil, err
 				}
 			}
+
 			return &codegen.ArrayType{Type: theType}, nil
 		}
 	}
+
 	return g.generateDeclaredType(t, scope)
 }
 
 func (g *schemaGenerator) generateEnumType(
-	t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	t *schemas.Type, scope nameScope,
+) (codegen.Type, error) {
 	if len(t.Enum) == 0 {
-		return nil, errors.New("enum array cannot be empty")
+		return nil, errEnumArrCannotBeEmpty
 	}
 
 	var wrapInStruct bool
+
 	var enumType codegen.Type
+
 	if len(t.Type) == 1 {
 		var err error
 		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], false); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
-		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods
+
+		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods.
 	} else {
 		if len(t.Type) > 1 {
-			// TODO: Support multiple types
+			// TODO: Support multiple types.
 			g.warner("Enum defined with multiple types; ignoring it and using enum values instead")
 		}
 
@@ -767,7 +910,7 @@ func (g *schemaGenerator) generateEnumType(
 		for _, v := range t.Enum {
 			var valueType string
 			if v == nil {
-				valueType = "interface{}"
+				valueType = interfaceTypeName
 			} else {
 				switch v.(type) {
 				case string:
@@ -777,23 +920,26 @@ func (g *schemaGenerator) generateEnumType(
 				case bool:
 					valueType = "bool"
 				default:
-					return nil, fmt.Errorf("enum has non-primitive value %v", v)
+					return nil, fmt.Errorf("%w %v", errEnumNonPrimitiveVal, v)
 				}
 			}
 			if primitiveType == "" {
 				primitiveType = valueType
 			} else if primitiveType != valueType {
-				primitiveType = "interface{}"
+				primitiveType = interfaceTypeName
+
 				break
 			}
 		}
-		if primitiveType == "interface{}" {
+		if primitiveType == interfaceTypeName {
 			wrapInStruct = true
 		}
 		enumType = codegen.PrimitiveType{Type: primitiveType}
 	}
+
 	if wrapInStruct {
 		g.warner("Enum field wrapped in struct in order to store values of multiple types")
+
 		enumType = &codegen.StructType{
 			Fields: []codegen.StructField{
 				{
@@ -824,11 +970,11 @@ func (g *schemaGenerator) generateEnumType(
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: func(out *codegen.Emitter) {
 				out.Comment("MarshalJSON implements json.Marshaler.")
-				out.Println("func (j *%s) MarshalJSON() ([]byte, error) {", enumDecl.Name)
+				out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", enumDecl.Name)
 				out.Indent(1)
-				out.Println("return json.Marshal(j.Value)")
+				out.Printlnf("return json.Marshal(j.Value)")
 				out.Indent(-1)
-				out.Println("}")
+				out.Printlnf("}")
 			},
 		})
 	}
@@ -839,36 +985,36 @@ func (g *schemaGenerator) generateEnumType(
 	g.output.file.Package.AddDecl(&codegen.Method{
 		Impl: func(out *codegen.Emitter) {
 			out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-			out.Println("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
+			out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
 			out.Indent(1)
-			out.Print("var v ")
+			out.Printf("var v ")
 			enumType.Generate(out)
 			out.Newline()
 			varName := "v"
 			if wrapInStruct {
 				varName += ".Value"
 			}
-			out.Println("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
-			out.Println("var ok bool")
-			out.Println("for _, expected := range %s {", valueConstant.Name)
-			out.Println("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
-			out.Println("}")
-			out.Println("if !ok {")
-			out.Println(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
+			out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
+			out.Printlnf("var ok bool")
+			out.Printlnf("for _, expected := range %s {", valueConstant.Name)
+			out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
+			out.Printlnf("}")
+			out.Printlnf("if !ok {")
+			out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
 				valueConstant.Name, varName)
-			out.Println("}")
-			out.Println(`*j = %s(v)`, enumDecl.Name)
-			out.Println(`return nil`)
+			out.Printlnf("}")
+			out.Printlnf(`*j = %s(v)`, enumDecl.Name)
+			out.Printlnf(`return nil`)
 			out.Indent(-1)
-			out.Println("}")
+			out.Printlnf("}")
 		},
 	})
 
-	// TODO: May be aliased string type
+	// TODO: May be aliased string type.
 	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
 		for _, v := range t.Enum {
 			if s, ok := v.(string); ok {
-				// TODO: Make sure the name is unique across scope
+				// TODO: Make sure the name is unique across scope.
 				g.output.file.Package.AddDecl(&codegen.Constant{
 					Name:  g.makeEnumConstantName(enumDecl.Name, s),
 					Type:  &codegen.NamedType{Decl: &enumDecl},
@@ -896,11 +1042,13 @@ func (o *output) uniqueTypeName(name string) string {
 	}
 
 	count := 1
+
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
 		if _, ok := o.declsByName[suffixed]; !ok {
 			o.warner(fmt.Sprintf(
 				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
+
 			return suffixed
 		}
 		count++
@@ -926,15 +1074,12 @@ func (ns nameScope) add(s string) nameScope {
 	result := make(nameScope, len(ns)+1)
 	copy(result, ns)
 	result[len(result)-1] = s
+
 	return result
 }
 
-var (
-	varNamePlainStruct = "plain"
-	varNameRawMap      = "raw"
-)
-
 func fileExists(fileName string) bool {
 	_, err := os.Stat(fileName)
+
 	return err == nil || !os.IsNotExist(err)
 }

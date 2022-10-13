@@ -1,8 +1,8 @@
-package tests
+package tests_test
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -25,18 +25,26 @@ var basicConfig = generator.Config{
 }
 
 func TestCore(t *testing.T) {
+	t.Parallel()
+
 	testExamples(t, basicConfig, "./data/core")
 }
 
 func TestValidation(t *testing.T) {
+	t.Parallel()
+
 	testExamples(t, basicConfig, "./data/validation")
 }
 
 func TestMiscWithDefaults(t *testing.T) {
+	t.Parallel()
+
 	testExamples(t, basicConfig, "./data/miscWithDefaults")
 }
 
 func TestCrossPackage(t *testing.T) {
+	t.Parallel()
+
 	cfg := basicConfig
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
@@ -54,6 +62,8 @@ func TestCrossPackage(t *testing.T) {
 }
 
 func TestCrossPackageNoOutput(t *testing.T) {
+	t.Parallel()
+
 	cfg := basicConfig
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
@@ -70,28 +80,38 @@ func TestCrossPackageNoOutput(t *testing.T) {
 }
 
 func TestCapitalization(t *testing.T) {
+	t.Parallel()
+
 	cfg := basicConfig
 	cfg.Capitalizations = []string{"ID", "URL", "HtMl"}
 	testExampleFile(t, cfg, "./data/misc/capitalization.json")
 }
 
 func TestBooleanAsSchema(t *testing.T) {
+	t.Parallel()
+
 	cfg := basicConfig
 	testExampleFile(t, cfg, "./data/misc/boolean-as-schema.json")
 }
 
 func TestYamlStructNameFromFile(t *testing.T) {
+	t.Parallel()
+
 	cfg := basicConfig
 	testExampleFile(t, cfg, "./data/yaml/yamlStructNameFromFile.yaml")
 }
 
 func TestYamlMultilineDescriptions(t *testing.T) {
+	t.Parallel()
+
 	cfg := basicConfig
 	cfg.YAMLExtensions = []string{"yaml"}
 	testExampleFile(t, cfg, "./data/yaml/yamlMultilineDescriptions.yaml")
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
+	t.Helper()
+
 	fileInfos, err := os.ReadDir(dataDir)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -110,7 +130,11 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 }
 
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
+	t.Helper()
+
 	t.Run(titleFromFileName(fileName), func(t *testing.T) {
+		t.Parallel()
+
 		g, err := generator.New(cfg)
 		if err != nil {
 			t.Fatal(err)
@@ -140,18 +164,20 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				}
 				goldenData = source
 				t.Log("File does not exist; creating it")
-				if err = os.WriteFile(goldenFileName, goldenData, 0655); err != nil {
+				if err = os.WriteFile(goldenFileName, goldenData, 0o655); err != nil {
 					t.Fatal(err)
 				}
 			}
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatal(fmt.Sprintf("Contents different (left is expected, right is actual):\n%s", *diff))
+				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
 			}
 		}
 	})
 }
 
 func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string) {
+	t.Helper()
+
 	t.Run(titleFromFileName(fileName), func(t *testing.T) {
 		g, err := generator.New(cfg)
 		if err != nil {
@@ -164,39 +190,46 @@ func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string)
 }
 
 func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
+	t.Helper()
+
 	if actual == expected {
 		return nil, true
 	}
 
-	dir, err := ioutil.TempDir("", "test")
-
+	dir, err := os.MkdirTemp("", "test")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
 	defer func() {
 		_ = os.RemoveAll(dir)
 	}()
 
-	if err := ioutil.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0644); err != nil {
+	if err = os.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0o644); err != nil {
 		t.Fatal(err.Error())
 	}
-	if err := ioutil.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0644); err != nil {
+
+	if err = os.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0o644); err != nil {
 		t.Fatal(err.Error())
 	}
 
 	out, err := exec.Command("diff", "--side-by-side",
 		fmt.Sprintf("%s/expected", dir),
 		fmt.Sprintf("%s/actual", dir)).Output()
-	if _, ok := err.(*exec.ExitError); !ok {
+
+	var exitErr *exec.ExitError
+	if ok := errors.Is(err, exitErr); !ok {
 		t.Fatal(err.Error())
 	}
 
 	diff := string(out)
+
 	return &diff, false
 }
 
 func titleFromFileName(fileName string) string {
 	relative := mustRel(mustAbs("./data"), mustAbs(fileName))
+
 	return strings.TrimSuffix(relative, ".json")
 }
 
@@ -205,6 +238,7 @@ func mustRel(base, s string) string {
 	if err != nil {
 		panic(err)
 	}
+
 	return result
 }
 
@@ -213,5 +247,6 @@ func mustAbs(s string) string {
 	if err != nil {
 		panic(err)
 	}
+
 	return result
 }
