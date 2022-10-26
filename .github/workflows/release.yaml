@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: "^1.19.1"
-      - name: Fix file permissions
-        run: sudo chmod 0700 internal/arch/file/expect/test/permissions/0700.txt
       - name: Lint Go files
         uses: golangci/golangci-lint-action@v3
         with:
