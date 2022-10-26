@@ -61,7 +61,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "1.11.2"
-          args: release --debug --rm-dist --release-notes=.changes/${{ github.ref_name }}.md
+          args: release --debug --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GO_VERSION: "1.19.1"

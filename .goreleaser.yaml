@@ -49,3 +49,10 @@ brews:
       system "#{bin}/go-jsonschema"
     install: |
       bin.install 'go-jsonschema'
+dockers:
+  - skip_push: auto
+    image_templates:
+      - "omissis/go-jsonschema:latest"
+      - "omissis/go-jsonschema:v{{ .Major }}"
+      - "omissis/go-jsonschema:v{{ .Major }}.{{ .Minor }}"
+      - "omissis/go-jsonschema:{{ .Tag }}"
