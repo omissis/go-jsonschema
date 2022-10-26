@@ -1,7 +1,18 @@
 **go-jsonschema is a tool to generate Go data types from [JSON Schema](http://json-schema.org/) definitions.**
 
 This tool generates Go data types and structs that corresponds to definitions in the schema, along with unmarshalling code that validates the input JSON according to the schema's validation rules.
-
+## Badges
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema/releases/latest)
+[![GitHub Workflow Status (event)](https://img.shields.io/github/workflow/status/omissis/go-jsonschema/development?style=for-the-badge)](https://github.com/omissis/go-jsonschema/actions?workflow=development)
+[![License](https://img.shields.io/github/license/omissis/go-jsonschema?style=for-the-badge)](/LICENSE.md)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/omissis/go-jsonschema?style=for-the-badge)](https://tip.golang.org/doc/go1.19)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema)
+[![GitHub repo file count (file type)](https://img.shields.io/github/directory-file-count/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema)
+[![GitHub all releases](https://img.shields.io/github/downloads/omissis/go-jsonschema/total?style=for-the-badge)](https://github.com/omissis/go-jsonschema)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/y/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema/commits)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org)
+[![Codecov branch](https://img.shields.io/codecov/c/github/omissis/go-jsonschema/main.svg?style=for-the-badge)](https://codecov.io/gh/omissis/go-jsonschema)
+[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/omissis/go-jsonschema?style=for-the-badge)](https://codeclimate.com/github/omissis/go-jsonschema)
 ## Installing
 
 * **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
