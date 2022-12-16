@@ -4,5 +4,3 @@
 .tool-versions
 bin
 coverage.out
-dist/
-vendor/
