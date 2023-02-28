@@ -6,7 +6,7 @@ import "encoding/json"
 
 type TypedDefault struct {
 	// TopLevelDomains corresponds to the JSON schema field "topLevelDomains".
-	TopLevelDomains []string `json:"topLevelDomains,omitempty" yaml:"topLevelDomains,omitempty"`
+	TopLevelDomains []string `json:"topLevelDomains,omitempty" yaml:"topLevelDomains,omitempty" mapstructure:"topLevelDomains,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

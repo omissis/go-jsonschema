@@ -8,7 +8,7 @@ import "encoding/json"
 type A653RequiredFieldsMyObject struct {
 	// MyNestedObjectString corresponds to the JSON schema field
 	// "myNestedObjectString".
-	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString"`
+	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString" mapstructure:"myNestedObjectString"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -32,7 +32,7 @@ func (j *A653RequiredFieldsMyObject) UnmarshalJSON(b []byte) error {
 type A653RequiredFieldsMyObjectArrayElem struct {
 	// MyNestedObjectString corresponds to the JSON schema field
 	// "myNestedObjectString".
-	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString"`
+	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString" mapstructure:"myNestedObjectString"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -55,40 +55,40 @@ func (j *A653RequiredFieldsMyObjectArrayElem) UnmarshalJSON(b []byte) error {
 
 type A653RequiredFields struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
-	MyBoolean bool `json:"myBoolean" yaml:"myBoolean"`
+	MyBoolean bool `json:"myBoolean" yaml:"myBoolean" mapstructure:"myBoolean"`
 
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
-	MyBooleanArray []bool `json:"myBooleanArray" yaml:"myBooleanArray"`
+	MyBooleanArray []bool `json:"myBooleanArray" yaml:"myBooleanArray" mapstructure:"myBooleanArray"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
-	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty"`
+	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
 
 	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
-	MyIntegerArray []int `json:"myIntegerArray,omitempty" yaml:"myIntegerArray,omitempty"`
+	MyIntegerArray []int `json:"myIntegerArray,omitempty" yaml:"myIntegerArray,omitempty" mapstructure:"myIntegerArray,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull interface{} `json:"myNull" yaml:"myNull"`
+	MyNull interface{} `json:"myNull" yaml:"myNull" mapstructure:"myNull"`
 
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
-	MyNullArray []interface{} `json:"myNullArray" yaml:"myNullArray"`
+	MyNullArray []interface{} `json:"myNullArray" yaml:"myNullArray" mapstructure:"myNullArray"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
-	MyNumber float64 `json:"myNumber" yaml:"myNumber"`
+	MyNumber float64 `json:"myNumber" yaml:"myNumber" mapstructure:"myNumber"`
 
 	// MyNumberArray corresponds to the JSON schema field "myNumberArray".
-	MyNumberArray []float64 `json:"myNumberArray" yaml:"myNumberArray"`
+	MyNumberArray []float64 `json:"myNumberArray" yaml:"myNumberArray" mapstructure:"myNumberArray"`
 
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject A653RequiredFieldsMyObject `json:"myObject" yaml:"myObject"`
+	MyObject A653RequiredFieldsMyObject `json:"myObject" yaml:"myObject" mapstructure:"myObject"`
 
 	// MyObjectArray corresponds to the JSON schema field "myObjectArray".
-	MyObjectArray []A653RequiredFieldsMyObjectArrayElem `json:"myObjectArray" yaml:"myObjectArray"`
+	MyObjectArray []A653RequiredFieldsMyObjectArrayElem `json:"myObjectArray" yaml:"myObjectArray" mapstructure:"myObjectArray"`
 
 	// MyString corresponds to the JSON schema field "myString".
-	MyString string `json:"myString" yaml:"myString"`
+	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
-	MyStringArray []string `json:"myStringArray" yaml:"myStringArray"`
+	MyStringArray []string `json:"myStringArray" yaml:"myStringArray" mapstructure:"myStringArray"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

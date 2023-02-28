@@ -7,7 +7,7 @@ import "encoding/json"
 
 type ObjectMyObject struct {
 	// MyString corresponds to the JSON schema field "myString".
-	MyString string `json:"myString" yaml:"myString"`
+	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -30,5 +30,5 @@ func (j *ObjectMyObject) UnmarshalJSON(b []byte) error {
 
 type Object struct {
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *ObjectMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty"`
+	MyObject *ObjectMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
