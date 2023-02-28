@@ -797,10 +797,10 @@ func (g *schemaGenerator) generateStructType(
 		}
 
 		if isRequired {
-			structField.Tags = fmt.Sprintf(`json:"%s" yaml:"%s"`, name, name)
+			structField.Tags = fmt.Sprintf(`json:"%s" yaml:"%s" mapstructure:"%s"`, name, name, name)
 		} else {
-			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty"`,
-				name, name)
+			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty" mapstructure:"%s,omitempty"`,
+				name, name, name)
 		}
 
 		if structField.Comment == "" {

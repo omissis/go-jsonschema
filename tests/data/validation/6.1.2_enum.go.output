@@ -8,38 +8,38 @@ import "encoding/json"
 
 type A612Enum struct {
 	// MyBooleanTypedEnum corresponds to the JSON schema field "myBooleanTypedEnum".
-	MyBooleanTypedEnum *A612EnumMyBooleanTypedEnum `json:"myBooleanTypedEnum,omitempty" yaml:"myBooleanTypedEnum,omitempty"`
+	MyBooleanTypedEnum *A612EnumMyBooleanTypedEnum `json:"myBooleanTypedEnum,omitempty" yaml:"myBooleanTypedEnum,omitempty" mapstructure:"myBooleanTypedEnum,omitempty"`
 
 	// MyBooleanUntypedEnum corresponds to the JSON schema field
 	// "myBooleanUntypedEnum".
-	MyBooleanUntypedEnum *A612EnumMyBooleanUntypedEnum `json:"myBooleanUntypedEnum,omitempty" yaml:"myBooleanUntypedEnum,omitempty"`
+	MyBooleanUntypedEnum *A612EnumMyBooleanUntypedEnum `json:"myBooleanUntypedEnum,omitempty" yaml:"myBooleanUntypedEnum,omitempty" mapstructure:"myBooleanUntypedEnum,omitempty"`
 
 	// MyIntegerTypedEnum corresponds to the JSON schema field "myIntegerTypedEnum".
-	MyIntegerTypedEnum *A612EnumMyIntegerTypedEnum `json:"myIntegerTypedEnum,omitempty" yaml:"myIntegerTypedEnum,omitempty"`
+	MyIntegerTypedEnum *A612EnumMyIntegerTypedEnum `json:"myIntegerTypedEnum,omitempty" yaml:"myIntegerTypedEnum,omitempty" mapstructure:"myIntegerTypedEnum,omitempty"`
 
 	// MyMixedTypeEnum corresponds to the JSON schema field "myMixedTypeEnum".
-	MyMixedTypeEnum *A612EnumMyMixedTypeEnum `json:"myMixedTypeEnum,omitempty" yaml:"myMixedTypeEnum,omitempty"`
+	MyMixedTypeEnum *A612EnumMyMixedTypeEnum `json:"myMixedTypeEnum,omitempty" yaml:"myMixedTypeEnum,omitempty" mapstructure:"myMixedTypeEnum,omitempty"`
 
 	// MyMixedUntypedEnum corresponds to the JSON schema field "myMixedUntypedEnum".
-	MyMixedUntypedEnum *A612EnumMyMixedUntypedEnum `json:"myMixedUntypedEnum,omitempty" yaml:"myMixedUntypedEnum,omitempty"`
+	MyMixedUntypedEnum *A612EnumMyMixedUntypedEnum `json:"myMixedUntypedEnum,omitempty" yaml:"myMixedUntypedEnum,omitempty" mapstructure:"myMixedUntypedEnum,omitempty"`
 
 	// MyNullTypedEnum corresponds to the JSON schema field "myNullTypedEnum".
-	MyNullTypedEnum *A612EnumMyNullTypedEnum `json:"myNullTypedEnum,omitempty" yaml:"myNullTypedEnum,omitempty"`
+	MyNullTypedEnum *A612EnumMyNullTypedEnum `json:"myNullTypedEnum,omitempty" yaml:"myNullTypedEnum,omitempty" mapstructure:"myNullTypedEnum,omitempty"`
 
 	// MyNullUntypedEnum corresponds to the JSON schema field "myNullUntypedEnum".
-	MyNullUntypedEnum *A612EnumMyNullUntypedEnum `json:"myNullUntypedEnum,omitempty" yaml:"myNullUntypedEnum,omitempty"`
+	MyNullUntypedEnum *A612EnumMyNullUntypedEnum `json:"myNullUntypedEnum,omitempty" yaml:"myNullUntypedEnum,omitempty" mapstructure:"myNullUntypedEnum,omitempty"`
 
 	// MyNumberTypedEnum corresponds to the JSON schema field "myNumberTypedEnum".
-	MyNumberTypedEnum *A612EnumMyNumberTypedEnum `json:"myNumberTypedEnum,omitempty" yaml:"myNumberTypedEnum,omitempty"`
+	MyNumberTypedEnum *A612EnumMyNumberTypedEnum `json:"myNumberTypedEnum,omitempty" yaml:"myNumberTypedEnum,omitempty" mapstructure:"myNumberTypedEnum,omitempty"`
 
 	// MyNumberUntypedEnum corresponds to the JSON schema field "myNumberUntypedEnum".
-	MyNumberUntypedEnum *A612EnumMyNumberUntypedEnum `json:"myNumberUntypedEnum,omitempty" yaml:"myNumberUntypedEnum,omitempty"`
+	MyNumberUntypedEnum *A612EnumMyNumberUntypedEnum `json:"myNumberUntypedEnum,omitempty" yaml:"myNumberUntypedEnum,omitempty" mapstructure:"myNumberUntypedEnum,omitempty"`
 
 	// MyStringTypedEnum corresponds to the JSON schema field "myStringTypedEnum".
-	MyStringTypedEnum *A612EnumMyStringTypedEnum `json:"myStringTypedEnum,omitempty" yaml:"myStringTypedEnum,omitempty"`
+	MyStringTypedEnum *A612EnumMyStringTypedEnum `json:"myStringTypedEnum,omitempty" yaml:"myStringTypedEnum,omitempty" mapstructure:"myStringTypedEnum,omitempty"`
 
 	// MyStringUntypedEnum corresponds to the JSON schema field "myStringUntypedEnum".
-	MyStringUntypedEnum *A612EnumMyStringUntypedEnum `json:"myStringUntypedEnum,omitempty" yaml:"myStringUntypedEnum,omitempty"`
+	MyStringUntypedEnum *A612EnumMyStringUntypedEnum `json:"myStringUntypedEnum,omitempty" yaml:"myStringUntypedEnum,omitempty" mapstructure:"myStringUntypedEnum,omitempty"`
 }
 
 type A612EnumMyBooleanTypedEnum bool
