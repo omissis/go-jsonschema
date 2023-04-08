@@ -33,27 +33,29 @@ func (e *Emitter) Indent(n int) {
 	if int(e.indent)+n < 0 {
 		panic("unexpected unbalanced indentation")
 	}
+
 	e.indent += uint(n)
 }
 
 func (e *Emitter) Comment(s string) {
 	if s != "" {
-		limit := e.maxLineLength - uint(e.indent)
+		limit := e.maxLineLength - e.indent
 		lines := strings.Split(wordwrap.WrapString(s, limit), "\n")
+
 		for _, line := range lines {
-			e.Println("// %s", line)
+			e.Printlnf("// %s", line)
 		}
 	}
 }
 
-func (e *Emitter) Print(format string, args ...interface{}) {
+func (e *Emitter) Printf(format string, args ...interface{}) {
 	e.checkIndent()
 	fmt.Fprintf(&e.sb, format, args...)
 	e.start = false
 }
 
-func (e *Emitter) Println(format string, args ...interface{}) {
-	e.Print(format, args...)
+func (e *Emitter) Printlnf(format string, args ...interface{}) {
+	e.Printf(format, args...)
 	e.Newline()
 }
 
@@ -67,6 +69,7 @@ func (e *Emitter) checkIndent() {
 		for i := uint(0); i < e.indent; i++ {
 			e.sb.WriteRune('\t')
 		}
+
 		e.start = false
 	}
 }

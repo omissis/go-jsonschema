@@ -1,16 +1,33 @@
 **go-jsonschema is a tool to generate Go data types from [JSON Schema](http://json-schema.org/) definitions.**
 
-This tool generates Go data types and structs that corresponds to definitions in the schema, along with unmarshaling code that validates the input JSON according to the schema's validation rules.
-
+This tool generates Go data types and structs that corresponds to definitions in the schema, along with unmarshalling code that validates the input JSON according to the schema's validation rules.
+## Badges
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema/releases/latest)
+[![GitHub Workflow Status (event)](https://img.shields.io/github/workflow/status/omissis/go-jsonschema/development?style=for-the-badge)](https://github.com/omissis/go-jsonschema/actions?workflow=development)
+[![License](https://img.shields.io/github/license/omissis/go-jsonschema?style=for-the-badge)](/LICENSE.md)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/omissis/go-jsonschema?style=for-the-badge)](https://tip.golang.org/doc/go1.19)
+[![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema)
+[![GitHub repo file count (file type)](https://img.shields.io/github/directory-file-count/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema)
+[![GitHub all releases](https://img.shields.io/github/downloads/omissis/go-jsonschema/total?style=for-the-badge)](https://github.com/omissis/go-jsonschema)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/y/omissis/go-jsonschema?style=for-the-badge)](https://github.com/omissis/go-jsonschema/commits)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org)
+[![Codecov branch](https://img.shields.io/codecov/c/github/omissis/go-jsonschema/main.svg?style=for-the-badge)](https://codecov.io/gh/omissis/go-jsonschema)
+[![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/omissis/go-jsonschema?style=for-the-badge)](https://codeclimate.com/github/omissis/go-jsonschema)
 ## Installing
 
-* **Binary install**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
+* **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
 
-* **From source**: Go 1.11 or later, with Go modules enabled, is advisable in order to get the right dependencies. To install:
+* **Install from source**: To install with Go 1.16+:
 
 ```shell
 $ go get github.com/atombender/go-jsonschema/...
 $ go install github.com/atombender/go-jsonschema/cmd/gojsonschema@latest
+```
+
+* **Install with Bingo**: To install with [Bingo](https://github.com/bwplotka/bingo):
+
+```shell
+$ bingo get github.com/atombender/go-jsonschema/cmd/gojsonschema
 ```
 
 ## Usage
@@ -59,10 +76,10 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
       - [ ] Option to use `json.Number`
     - [x] `string`
   - [ ] Location identifiers (§8.2.3)
-    - [x] References against top-level names: `#/Definitions/someName`
-    - [ ] References against nested names: `#/Definitions/someName/Definitions/someOtherName`
-    - [x] References against top-level names in external files: `myschema.json#/Definitions/someName`
-    - [ ] References against nested names: `myschema.json#/Definitions/someName/Definitions/someOtherName`
+    - [x] References against top-level names: `#/$defs/someName`
+    - [ ] References against nested names: `#/$defs/someName/$defs/someOtherName`
+    - [x] References against top-level names in external files: `myschema.json#/$defs/someName`
+    - [ ] References against nested names: `myschema.json#/$defs/someName/$defs/someOtherName`
   - [x] Comments (§9)
 - Validation ([RFC draft](http://json-schema.org/latest/json-schema-validation.html))
   - [ ] Schema annotations (§10)

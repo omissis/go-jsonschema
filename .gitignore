@@ -1,2 +1,6 @@
+.env
+.envrc
 .idea
+.tool-versions
 bin
+coverage.out

@@ -1,0 +1,58 @@
+---
+project_name: go-jsonschema
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: cmd/gojsonschema/main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.gitCommit={{.Commit}} -X main.buildTime={{.Date}} -X main.goVersion={{.Env.GO_VERSION}} -X main.osArch={{.Arch}}
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+release:
+  github:
+    owner: omissis
+    name: go-jsonschema
+  name_template: "{{ .Tag }}"
+  prerelease: auto
+brews:
+  - name: go-jsonschema
+    tap:
+      owner: omissis
+      name: homebrew-go-jsonschema
+    skip_upload: auto
+    folder: Formula
+    homepage: "https://gihub.com/omissis/go-jsonschema"
+    description: "go-jsonschema binary"
+    test: |
+      system "#{bin}/go-jsonschema"
+    install: |
+      bin.install 'go-jsonschema'
+dockers:
+  - skip_push: auto
+    image_templates:
+      - "omissis/go-jsonschema:latest"
+      - "omissis/go-jsonschema:v{{ .Major }}"
+      - "omissis/go-jsonschema:v{{ .Major }}.{{ .Minor }}"
+      - "omissis/go-jsonschema:{{ .Tag }}"

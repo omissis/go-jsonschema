@@ -9,6 +9,9 @@ type FloatThing *float64
 type IntegerThing *int
 
 type NullableType struct {
+	// MyInlineStringValue corresponds to the JSON schema field "MyInlineStringValue".
+	MyInlineStringValue *string `json:"MyInlineStringValue,omitempty" yaml:"MyInlineStringValue,omitempty"`
+
 	// MyStringValue corresponds to the JSON schema field "MyStringValue".
 	MyStringValue StringThing `json:"MyStringValue,omitempty" yaml:"MyStringValue,omitempty"`
 }

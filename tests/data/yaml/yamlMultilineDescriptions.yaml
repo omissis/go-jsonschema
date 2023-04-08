@@ -1,0 +1,19 @@
+"$schema": "http://json-schema.org/draft-04/schema#"
+"$id": "https://example.com/yaml_multiline_description"
+
+title: MyObject
+type: object
+properties:
+  foo:
+    description: >
+      I'm a multiline description in a folded block. Folded blocks should not
+      have hard line breaks after parsing. They should also not end in a line break.
+    type: string
+  bar:
+    description: |
+      I'm a multiline description in a literal block. Literal blocks, on the other hand,
+      should have hard line breaks and may end in a line break, too.
+
+      This may look funky when Go code is generated to a specific line width, though.
+    type: string
+

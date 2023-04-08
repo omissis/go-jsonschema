@@ -1,14 +1,19 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
-
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/spf13/cobra"
+)
+
+const (
+	perm755 = 0o755
+	perm644 = 0o644
 )
 
 var (
@@ -21,101 +26,103 @@ var (
 	capitalizations   []string
 	resolveExtensions []string
 	yamlExtensions    = []string{".yml", ".yaml"}
-)
 
-var rootCmd = &cobra.Command{
-	Use:   "gojsonschema FILE ...",
-	Short: "Generates Go code from JSON Schema files.",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			abort("No arguments specified. Run with --help for usage.")
-		}
+	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
-		if defaultPackage == "" && len(schemaPackages) == 0 {
-			abort("Package name not specified.")
-		}
-
-		schemaPackageMap, err := stringSliceToStringMap(schemaPackages)
-		if err != nil {
-			abortWithErr(err)
-		}
-
-		schemaOutputMap, err := stringSliceToStringMap(schemaOutputs)
-		if err != nil {
-			abortWithErr(err)
-		}
-
-		schemaRootTypeMap, err := stringSliceToStringMap(schemaRootTypes)
-		if err != nil {
-			abortWithErr(err)
-		}
-
-		cfg := generator.Config{
-			Warner: func(message string) {
-				log("Warning: %s", message)
-			},
-			Capitalizations:    capitalizations,
-			DefaultOutputName:  defaultOutput,
-			DefaultPackageName: defaultPackage,
-			SchemaMappings:     []generator.SchemaMapping{},
-			ResolveExtensions:  resolveExtensions,
-			YAMLExtensions:     yamlExtensions,
-		}
-		for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
-			mapping := generator.SchemaMapping{SchemaID: id}
-			if s, ok := schemaPackageMap[id]; ok {
-				mapping.PackageName = s
-			} else {
-				mapping.PackageName = defaultPackage
+	rootCmd = &cobra.Command{
+		Use:   "gojsonschema FILE ...",
+		Short: "Generates Go code from JSON Schema files.",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				abort("No arguments specified. Run with --help for usage.")
 			}
-			if s, ok := schemaOutputMap[id]; ok {
-				mapping.OutputName = s
-			}
-			if s, ok := schemaRootTypeMap[id]; ok {
-				mapping.RootType = s
-			}
-			cfg.SchemaMappings = append(cfg.SchemaMappings, mapping)
-		}
 
-		generator, err := generator.New(cfg)
-		if err != nil {
-			abortWithErr(err)
-		}
+			if defaultPackage == "" && len(schemaPackages) == 0 {
+				abort("Package name not specified.")
+			}
 
-		for _, fileName := range args {
-			verboseLog("Loading %s", fileName)
-			if err = generator.DoFile(fileName); err != nil {
+			schemaPackageMap, err := stringSliceToStringMap(schemaPackages)
+			if err != nil {
 				abortWithErr(err)
 			}
-		}
 
-		for fileName, source := range generator.Sources() {
-			if fileName != "-" {
-				verboseLog("Writing %s", fileName)
+			schemaOutputMap, err := stringSliceToStringMap(schemaOutputs)
+			if err != nil {
+				abortWithErr(err)
 			}
 
-			if fileName == "-" {
-				if _, err = os.Stdout.Write(source); err != nil {
-					abortWithErr(err)
-				}
-			} else {
-				if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
-					abortWithErr(err)
-				}
-				w, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-				if err != nil {
-					abortWithErr(err)
-				}
-				if _, err = w.Write(source); err != nil {
-					abortWithErr(err)
-				}
-				_ = w.Close()
+			schemaRootTypeMap, err := stringSliceToStringMap(schemaRootTypes)
+			if err != nil {
+				abortWithErr(err)
 			}
-		}
 
-		os.Exit(0)
-	},
-}
+			cfg := generator.Config{
+				Warner: func(message string) {
+					logf("Warning: %s", message)
+				},
+				Capitalizations:    capitalizations,
+				DefaultOutputName:  defaultOutput,
+				DefaultPackageName: defaultPackage,
+				SchemaMappings:     []generator.SchemaMapping{},
+				ResolveExtensions:  resolveExtensions,
+				YAMLExtensions:     yamlExtensions,
+			}
+			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
+				mapping := generator.SchemaMapping{SchemaID: id}
+				if s, ok := schemaPackageMap[id]; ok {
+					mapping.PackageName = s
+				} else {
+					mapping.PackageName = defaultPackage
+				}
+				if s, ok := schemaOutputMap[id]; ok {
+					mapping.OutputName = s
+				}
+				if s, ok := schemaRootTypeMap[id]; ok {
+					mapping.RootType = s
+				}
+				cfg.SchemaMappings = append(cfg.SchemaMappings, mapping)
+			}
+
+			generator, err := generator.New(cfg)
+			if err != nil {
+				abortWithErr(err)
+			}
+
+			for _, fileName := range args {
+				verboseLogf("Loading %s", fileName)
+				if err = generator.DoFile(fileName); err != nil {
+					abortWithErr(err)
+				}
+			}
+
+			for fileName, source := range generator.Sources() {
+				if fileName != "-" {
+					verboseLogf("Writing %s", fileName)
+				}
+
+				if fileName == "-" {
+					if _, err = os.Stdout.Write(source); err != nil {
+						abortWithErr(err)
+					}
+				} else {
+					if err := os.MkdirAll(filepath.Dir(fileName), perm755); err != nil {
+						abortWithErr(err)
+					}
+					w, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm644)
+					if err != nil {
+						abortWithErr(err)
+					}
+					if _, err = w.Write(source); err != nil {
+						abortWithErr(err)
+					}
+					_ = w.Close()
+				}
+			}
+
+			os.Exit(0)
+		},
+	}
+)
 
 func main() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false,
@@ -153,45 +160,53 @@ func abortWithErr(err error) {
 }
 
 func abort(message string) {
-	log("Failed: %s", message)
+	logf("Failed: %s", message)
 	os.Exit(1)
 }
 
 func stringSliceToStringMap(s []string) (map[string]string, error) {
 	result := make(map[string]string, len(s))
+
 	for _, p := range s {
 		i := strings.IndexRune(p, '=')
 		if i == -1 {
-			return nil, fmt.Errorf("flag must be in the format URI=PACKAGE: %q", p)
+			return nil, fmt.Errorf("%w: %q", errFlagFormat, p)
 		}
+
 		result[p[0:i]] = p[i+1:]
 	}
+
 	return result, nil
 }
 
 func allKeys(in ...map[string]string) []string {
 	type dummy struct{}
+
 	keySet := map[string]dummy{}
+
 	for _, m := range in {
 		for k := range m {
 			keySet[k] = dummy{}
 		}
 	}
+
 	result := make([]string, 0, len(keySet))
+
 	for k := range keySet {
 		result = append(result, k)
 	}
+
 	return result
 }
 
-func log(format string, args ...interface{}) {
+func logf(format string, args ...interface{}) {
 	fmt.Fprint(os.Stderr, "gojsonschema: ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprint(os.Stderr, "\n")
 }
 
-func verboseLog(format string, args ...interface{}) {
+func verboseLogf(format string, args ...interface{}) {
 	if verbose {
-		log(format, args...)
+		logf(format, args...)
 	}
 }

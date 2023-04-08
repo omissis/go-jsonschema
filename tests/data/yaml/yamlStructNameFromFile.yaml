@@ -1,0 +1,9 @@
+# mySchema.yaml
+
+"$schema": "http://json-schema.org/draft-04/schema#"
+"$id": "https://example.com/yaml_root_type_name"
+
+type: object
+properties:
+  foo:
+    type: string

@@ -1,0 +1,65 @@
+---
+name: tag
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-beta[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch all tags
+        run: git fetch --force --tags
+      - name: Setup Golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: "^1.19.4"
+      - name: Lint Go files
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.52.2
+          args: -v --color=always --config=.rules/.golangci.yml ./...
+      - name: Run tests
+        run: go test -v -race -covermode=atomic -coverprofile=coverage.out ./...
+      - name: Run GoReleaser for pre-release
+        if: ${{ contains(github.ref_name, '-') }}
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          distribution: goreleaser
+          version: "1.13.1"
+          args: release --debug --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GO_VERSION: "1.19.4"
+      - name: Log in to Docker Hub
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Run GoReleaser for release
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          distribution: goreleaser
+          version: "1.13.1"
+          args: release --debug --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GO_VERSION: "1.19.4"
