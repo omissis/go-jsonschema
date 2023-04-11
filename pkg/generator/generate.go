@@ -15,6 +15,8 @@ import (
 
 type Config struct {
 	SchemaMappings     []SchemaMapping
+	ExtraImports       bool
+	YAMLPackage        string
 	Capitalizations    []string
 	ResolveExtensions  []string
 	YAMLExtensions     []string
@@ -593,38 +595,50 @@ func (g *schemaGenerator) generateDeclaredType(
 				}
 			}
 
+			if g.config.ExtraImports {
+				g.output.file.Package.AddImport(g.config.YAMLPackage, "yaml")
+			}
 			g.output.file.Package.AddImport("encoding/json", "")
-			g.output.file.Package.AddDecl(&codegen.Method{
-				Impl: func(out *codegen.Emitter) {
-					out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-					out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", decl.Name)
-					out.Indent(1)
-					out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-					out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }",
-						varNameRawMap)
-					for _, v := range validators {
-						if v.desc().beforeJSONUnmarshal {
-							v.generate(out)
+
+			formats := []string{"json"}
+			if g.config.ExtraImports {
+				formats = append(formats, "yaml")
+			}
+
+			for _, format := range formats {
+				format := format
+				g.output.file.Package.AddDecl(&codegen.Method{
+					Impl: func(out *codegen.Emitter) {
+						out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(format), format)
+						out.Printlnf("func (j *%s) Unmarshal%s(b []byte) error {", decl.Name, strings.ToUpper(format))
+						out.Indent(1)
+						out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+						out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
+							format, varNameRawMap)
+						for _, v := range validators {
+							if v.desc().beforeJSONUnmarshal {
+								v.generate(out)
+							}
 						}
-					}
 
-					out.Printlnf("type Plain %s", decl.Name)
-					out.Printlnf("var %s Plain", varNamePlainStruct)
-					out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }",
-						varNamePlainStruct)
+						out.Printlnf("type Plain %s", decl.Name)
+						out.Printlnf("var %s Plain", varNamePlainStruct)
+						out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
+							format, varNamePlainStruct)
 
-					for _, v := range validators {
-						if !v.desc().beforeJSONUnmarshal {
-							v.generate(out)
+						for _, v := range validators {
+							if !v.desc().beforeJSONUnmarshal {
+								v.generate(out)
+							}
 						}
-					}
 
-					out.Printlnf("*j = %s(%s)", decl.Name, varNamePlainStruct)
-					out.Printlnf("return nil")
-					out.Indent(-1)
-					out.Printlnf("}")
-				},
-			})
+						out.Printlnf("*j = %s(%s)", decl.Name, varNamePlainStruct)
+						out.Printlnf("return nil")
+						out.Indent(-1)
+						out.Printlnf("}")
+					},
+				})
+			}
 		}
 	}
 
@@ -778,7 +792,8 @@ func (g *schemaGenerator) generateStructType(
 		if isRequired {
 			structField.Tags = fmt.Sprintf(`json:"%s" yaml:"%s"`, name, name)
 		} else {
-			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty"`, name, name)
+			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty"`,
+				name, name)
 		}
 
 		if structField.Comment == "" {
