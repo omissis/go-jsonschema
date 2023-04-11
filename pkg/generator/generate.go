@@ -598,6 +598,7 @@ func (g *schemaGenerator) generateDeclaredType(
 			if g.config.ExtraImports {
 				g.output.file.Package.AddImport(g.config.YAMLPackage, "yaml")
 			}
+
 			g.output.file.Package.AddImport("encoding/json", "")
 
 			formats := []string{"json"}
@@ -607,6 +608,7 @@ func (g *schemaGenerator) generateDeclaredType(
 
 			for _, format := range formats {
 				format := format
+
 				g.output.file.Package.AddDecl(&codegen.Method{
 					Impl: func(out *codegen.Emitter) {
 						out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(format), format)
