@@ -116,7 +116,7 @@ func TestExtraImportsYAML(t *testing.T) {
 
 	cfg := basicConfig
 	cfg.ExtraImports = true
-	testExampleFile(t, cfg, "./data/extraImports/GopkgYAMLv3.json")
+	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3.json")
 }
 
 func TestExtraImportsAnotherYAML(t *testing.T) {
@@ -125,7 +125,7 @@ func TestExtraImportsAnotherYAML(t *testing.T) {
 	cfg := basicConfig
 	cfg.ExtraImports = true
 	cfg.YAMLPackage = "gopkg.in/yaml.v2"
-	testExampleFile(t, cfg, "./data/extraImports/GopkgYAMLv2.json")
+	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv2.json")
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
