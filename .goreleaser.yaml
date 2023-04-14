@@ -53,9 +53,6 @@ dockers:
   - skip_push: auto
     use: buildx
     image_templates:
-      - "omissis/go-jsonschema:latest-amd64"
-      - "omissis/go-jsonschema:{{ .Major }}-amd64"
-      - "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}-amd64"
       - "omissis/go-jsonschema:{{ .Version }}-amd64"
     build_flag_templates:
       - "--target=go-jsonschema"
@@ -68,9 +65,6 @@ dockers:
   - skip_push: auto
     use: buildx
     image_templates:
-      - "omissis/go-jsonschema:latest-arm64v8"
-      - "omissis/go-jsonschema:{{ .Major }}-arm64v8"
-      - "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}-arm64v8"
       - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
     build_flag_templates:
       - "--target=go-jsonschema"
@@ -84,18 +78,18 @@ docker_manifests:
 - skip_push: auto
   name_template: "omissis/go-jsonschema:latest"
   image_templates:
-  - "omissis/go-jsonschema:latest-amd64"
-  - "omissis/go-jsonschema:latest-arm64v8"
+  - "omissis/go-jsonschema:{{ .Version }}-amd64"
+  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
 - skip_push: auto
   name_template: "omissis/go-jsonschema:{{ .Major }}"
   image_templates:
-  - "omissis/go-jsonschema:{{ .Major }}-amd64"
-  - "omissis/go-jsonschema:{{ .Major }}-arm64v8"
+  - "omissis/go-jsonschema:{{ .Version }}-amd64"
+  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
 - skip_push: auto
   name_template: "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}"
   image_templates:
-  - "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}-amd64"
-  - "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}-arm64v8"
+  - "omissis/go-jsonschema:{{ .Version }}-amd64"
+  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
 - skip_push: auto
   name_template: "omissis/go-jsonschema:{{ .Version }}"
   image_templates:
