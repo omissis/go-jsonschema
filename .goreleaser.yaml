@@ -51,8 +51,38 @@ brews:
       bin.install 'go-jsonschema'
 dockers:
   - skip_push: auto
+    use: buildx
     image_templates:
       - "omissis/go-jsonschema:latest"
       - "omissis/go-jsonschema:v{{ .Major }}"
       - "omissis/go-jsonschema:v{{ .Major }}.{{ .Minor }}"
       - "omissis/go-jsonschema:{{ .Tag }}"
+    build_flag_templates:
+      - "--target=go-jsonschema"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64"
+    goarch: amd64
+  - skip_push: auto
+    use: buildx
+    image_templates:
+      - "omissis/go-jsonschema:latest"
+      - "omissis/go-jsonschema:v{{ .Major }}"
+      - "omissis/go-jsonschema:v{{ .Major }}.{{ .Minor }}"
+      - "omissis/go-jsonschema:{{ .Tag }}"
+    build_flag_templates:
+      - "--target=go-jsonschema"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/arm64/v8"
+    goarch: arm64
+docker_manifests:
+- skip_push: auto
+  name_template: "omissis/go-jsonschema:{{ .Version }}"
+  image_templates:
+  - "omissis/go-jsonschema:{{ .Version }}-amd64"
+  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"

@@ -10,8 +10,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/atombender/go-jsonschema/pkg/yamlutils"
 	"github.com/goccy/go-yaml"
+
+	"github.com/atombender/go-jsonschema/pkg/yamlutils"
 )
 
 var errInvalidSchemaRef = fmt.Errorf("schema reference must a file name or HTTP URL")

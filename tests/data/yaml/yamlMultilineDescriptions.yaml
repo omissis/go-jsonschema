@@ -16,4 +16,3 @@ properties:
 
       This may look funky when Go code is generated to a specific line width, though.
     type: string
-

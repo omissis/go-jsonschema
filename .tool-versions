@@ -1,0 +1,8 @@
+adr-tools 3.0.0
+golang 1.20.3
+golangci-lint 1.52.1
+goreleaser 1.17.0
+hadolint 2.12.0
+shellcheck 0.9.0
+shfmt 3.6.0
+yamllint 1.30.0
