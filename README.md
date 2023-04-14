@@ -27,10 +27,11 @@ $ go get github.com/atombender/go-jsonschema/...
 $ go install github.com/atombender/go-jsonschema/cmd/gojsonschema@latest
 ```
 
-* **Install with Bingo**: To install with [Bingo](https://github.com/bwplotka/bingo):
+* **Install with Brew**: To install with [Homebrew](https://brew.sh):
 
 ```shell
-$ bingo get github.com/atombender/go-jsonschema/cmd/gojsonschema
+$ brew tap omissis/go-jsonschema
+$ brew install go-jsonschema
 ```
 
 ## Usage
@@ -38,7 +39,7 @@ $ bingo get github.com/atombender/go-jsonschema/cmd/gojsonschema
 At its most basic:
 
 ```shell
-$ gojsonschema -p main schema.json
+$ go-jsonschema -p main schema.json
 ```
 
 This will write a Go source file to standard output, declared under the package `main`.
@@ -46,7 +47,7 @@ This will write a Go source file to standard output, declared under the package 
 You can generate code for multiple schemas in the same invocation, optionally writing to different files inside different packages:
 
 ```shell
-$ gojsonschema \
+$ go-jsonschema \
   --schema-package=https://example.com/schema1=github.com/myuser/myproject \
    --schema-output=https://example.com/schema1=schema1.go \
   --schema-package=https://example.com/schema2=github.com/myuser/myproject/stuff \
