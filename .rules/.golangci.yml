@@ -65,7 +65,7 @@ linters-settings:
     sections:
       - standard # Standard section: captures all standard packages.
       - default # Default section: contains all imports that could not be matched to another section type.
-      - prefix(github.com/omissis) # Custom section: groups all imports with the specified Prefix.
+      - prefix(github.com/atombender) # Custom section: groups all imports with the specified Prefix.
     skip-generated: true
     custom-order: true
   godot:
@@ -79,7 +79,7 @@ linters-settings:
     lang-version: "1.20"
     extra-rules: true
   goimports:
-    local-prefixes: github.com/omissis
+    local-prefixes: github.com/atombender
   govet:
     check-shadowing: true
   grouper:

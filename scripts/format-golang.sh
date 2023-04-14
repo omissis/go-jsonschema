@@ -14,9 +14,9 @@ echo "formatting with gofumpt.."
 echo "${GOFILES}" | xargs -I {} sh -c 'gofumpt -w -extra {}'
 
 echo "formatting with goimports.."
-goimports -v -w -e -local github.com/omissis main.go
-goimports -v -w -e -local github.com/omissis internal/
+goimports -v -w -e -local github.com/atombender cmd/
+goimports -v -w -e -local github.com/atombender pkg/
 
 echo "formatting with gci.."
 echo "${GOFILES}" | \
-xargs -I {} sh -c 'gci write --skip-generated -s standard -s default -s "Prefix(github.com/omissis)" {}'
+xargs -I {} sh -c 'gci write --skip-generated -s standard -s default -s "Prefix(github.com/atombender)" {}'
