@@ -16,6 +16,7 @@ echo "${GOFILES}" | xargs -I {} sh -c 'gofumpt -w -extra {}'
 echo "formatting with goimports.."
 goimports -v -w -e -local github.com/atombender cmd/
 goimports -v -w -e -local github.com/atombender pkg/
+goimports -v -w -e -local github.com/atombender tests/
 
 echo "formatting with gci.."
 echo "${GOFILES}" | \

@@ -5,9 +5,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
+
+	"github.com/atombender/go-jsonschema/pkg/codegen"
 )
 
 type validator interface {
