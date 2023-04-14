@@ -31,7 +31,7 @@ var (
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
 	rootCmd = &cobra.Command{
-		Use:   "gojsonschema FILE ...",
+		Use:   "go-jsonschema FILE ...",
 		Short: "Generates Go code from JSON Schema files.",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
@@ -201,7 +201,7 @@ func allKeys(in ...map[string]string) []string {
 }
 
 func logf(format string, args ...interface{}) {
-	fmt.Fprint(os.Stderr, "gojsonschema: ")
+	fmt.Fprint(os.Stderr, "go-jsonschema: ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprint(os.Stderr, "\n")
 }
