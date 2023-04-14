@@ -12,7 +12,7 @@ This tool generates Go data types and structs that corresponds to definitions in
 [![GitHub all releases](https://img.shields.io/github/downloads/omissis/go-jsonschema/total?style=flat)](https://github.com/omissis/go-jsonschema)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/y/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema/commits)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=flat)](https://conventionalcommits.org)
-[![Codecov branch](https://img.shields.io/codecov/c/github/omissis/go-jsonschema/main.svg?style=flat)](https://codecov.io/gh/omissis/go-jsonschema)
+[![Codecov](https://img.shields.io/codecov/c/gh/omissis/go-jsonschema?style=flat&token=lPWlXd3MVK)](https://codecov.io/gh/omissis/go-jsonschema)
 [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/omissis/go-jsonschema?style=flat)](https://codeclimate.com/github/omissis/go-jsonschema)
 [![Go Report Card](https://goreportcard.com/badge/github.com/sighupio/furyctl)](https://goreportcard.com/report/github.com/sighupio/furyctl)
 
