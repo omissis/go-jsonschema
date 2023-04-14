@@ -4,7 +4,7 @@ This tool generates Go data types and structs that corresponds to definitions in
 
 ## Badges
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/omissis/go-jsonschema?style=flat-square)](https://github.com/omissis/go-jsonschema/releases/latest)
-[![GitHub Workflow Status (event)](https://img.shields.io/github/workflow/status/omissis/go-jsonschema/development?style=flat-square)](https://github.com/omissis/go-jsonschema/actions?workflow=development)
+[![GitHub Workflow Status (event)](https://img.shields.io/github/actions/workflow/status/omissis/go-jsonschema/development.yaml?style=flat-square)](https://github.com/omissis/go-jsonschema/actions?workflow=development)
 [![License](https://img.shields.io/github/license/omissis/go-jsonschema?style=flat-square)](/LICENSE.md)
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/omissis/go-jsonschema?style=flat-square)](https://tip.golang.org/doc/go1.20)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/omissis/go-jsonschema?style=flat-square)](https://github.com/omissis/go-jsonschema)
