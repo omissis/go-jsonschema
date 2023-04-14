@@ -9,7 +9,6 @@ SHELL := /bin/bash
 
 _DOCKER_FILELINT_IMAGE=cytopia/file-lint:latest-0.8
 _DOCKER_GOLANG_IMAGE=golang:1.20.3
-_DOCKER_GOLANG_IMAGE_TOOLS=omissis/golang-tools:1.20.3 # TODO: review this variable
 _DOCKER_GOLANGCI_LINT_IMAGE=golangci/golangci-lint:v1.52.1
 _DOCKER_HADOLINT_IMAGE=hadolint/hadolint:v2.12.0
 _DOCKER_JSONLINT_IMAGE=cytopia/jsonlint:1.6
@@ -17,6 +16,7 @@ _DOCKER_MAKEFILELINT_IMAGE=cytopia/checkmake:latest-0.5
 _DOCKER_MARKDOWNLINT_IMAGE=davidanson/markdownlint-cli2:v0.6.0
 _DOCKER_SHELLCHECK_IMAGE=koalaman/shellcheck-alpine:v0.9.0
 _DOCKER_SHFMT_IMAGE=mvdan/shfmt:v3-alpine
+_DOCKER_TOOLS_IMAGE=omissis/go-jsonschema:tools-latest
 _DOCKER_YAMLLINT_IMAGE=cytopia/yamllint:1
 
 _PROJECT_DIRECTORY=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -142,14 +142,22 @@ format-shell-docker:
 format-yaml:
 	@scripts/format-yaml.sh
 
-format-yaml-docker:
-	$(call run-script-docker,${_DOCKER_SHFMT_IMAGE},format-yaml)
+format-yaml-docker: docker-tools
+	$(call run-script-docker,${_DOCKER_TOOLS_IMAGE},format-yaml)
+
+.PHONY: format-json format-json-docker
+
+format-json:
+	@scripts/format-json.sh
+
+format-json-docker: docker-tools
+	$(call run-script-docker,${_DOCKER_TOOLS_IMAGE},format-json)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Development Targets
 # ----------------------------------------------------------------------------------------------------------------------
 
-.PHONY: env build-golang-docker-image
+.PHONY: env
 
 env:
 	@echo 'export CGO_ENABLED=0'
@@ -189,8 +197,8 @@ lint-go-docker:
 format-go:
 	@scripts/format-golang.sh
 
-format-go-docker: build-golang-docker-image
-	$(call run-script-docker,${_DOCKER_GOLANG_IMAGE_TOOLS},format-golang)
+format-go-docker: docker-tools
+	$(call run-script-docker,${_DOCKER_TOOLS_IMAGE},format-golang)
 
 .PHONY: upgrade-deps-check-go upgrade-deps-check-go-docker upgrade-deps-go upgrade-deps-go-docker
 
@@ -206,25 +214,13 @@ upgrade-deps-go:
 upgrade-deps-go-docker:
 	$(call run-script-docker,${_DOCKER_GOLANG_IMAGE},upgrade-deps-golang)
 
-.PHONY: test-unit test-unit-docker test-e2e test-e2e-docker test-all test-all-docker show-coverage-go
+.PHONY: test test-docker show-coverage-go
 
-test-unit:
-	@scripts/test-unit.sh
+test:
+	@scripts/test.sh
 
-test-unit-docker:
-	$(call run-script-docker,${_DOCKER_GOLANG_IMAGE},test-unit)
-
-test-e2e:
-	@scripts/test-e2e.sh
-
-test-e2e-docker: build-golang-docker-image
-	$(call run-script-docker,${_DOCKER_GOLANG_IMAGE_TOOLS},test-e2e)
-
-test-all:
-	@scripts/test-all.sh
-
-test-all-docker: build-golang-docker-image
-	$(call run-script-docker,${_DOCKER_GOLANG_IMAGE_TOOLS},test-all)
+test-docker: docker-tools
+	$(call run-script-docker,${_DOCKER_TOOLS_IMAGE},test)
 
 show-coverage-go:
 	@scripts/show-coverage-golang.sh
