@@ -54,9 +54,9 @@ dockers:
     use: buildx
     image_templates:
       - "omissis/go-jsonschema:latest"
-      - "omissis/go-jsonschema:v{{ .Major }}"
-      - "omissis/go-jsonschema:v{{ .Major }}.{{ .Minor }}"
-      - "omissis/go-jsonschema:{{ .Tag }}"
+      - "omissis/go-jsonschema:{{ .Major }}"
+      - "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}"
+      - "omissis/go-jsonschema:{{ .Version }}"
     build_flag_templates:
       - "--target=go-jsonschema"
       - "--label=org.opencontainers.image.created={{.Date}}"
@@ -69,9 +69,9 @@ dockers:
     use: buildx
     image_templates:
       - "omissis/go-jsonschema:latest"
-      - "omissis/go-jsonschema:v{{ .Major }}"
-      - "omissis/go-jsonschema:v{{ .Major }}.{{ .Minor }}"
-      - "omissis/go-jsonschema:{{ .Tag }}"
+      - "omissis/go-jsonschema:{{ .Major }}"
+      - "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}"
+      - "omissis/go-jsonschema:{{ .Version }}"
     build_flag_templates:
       - "--target=go-jsonschema"
       - "--label=org.opencontainers.image.created={{.Date}}"
