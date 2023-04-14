@@ -76,7 +76,7 @@ linters-settings:
     capital: true
     period: true
   gofumpt:
-    lang-version: "1.19"
+    lang-version: "1.20"
     extra-rules: true
   goimports:
     local-prefixes: github.com/omissis
