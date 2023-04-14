@@ -81,7 +81,8 @@ dockers:
       - "--platform=linux/arm64/v8"
     goarch: arm64
 docker_manifests:
-- name_template: "omissis/go-jsonschema:{{ .Version }}"
+- skip_push: auto
+  name_template: "omissis/go-jsonschema:{{ .Version }}"
   image_templates:
   - "omissis/go-jsonschema:{{ .Version }}-amd64"
   - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
