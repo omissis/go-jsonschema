@@ -40,5 +40,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v3
         with:
           distribution: goreleaser
-          version: '1.16.2'
+          version: '1.17.0'
           args: release --debug --snapshot --rm-dist
+        env:
+          GO_VERSION: "1.20.3"
