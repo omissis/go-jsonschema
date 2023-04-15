@@ -48,6 +48,18 @@ func (e *Emitter) Comment(s string) {
 	}
 }
 
+func (e *Emitter) Commentf(s string, args ...interface{}) {
+	s = fmt.Sprintf(s, args...)
+	if s != "" {
+		limit := e.maxLineLength - e.indent
+		lines := strings.Split(wordwrap.WrapString(s, limit), "\n")
+
+		for _, line := range lines {
+			e.Printlnf("// %s", line)
+		}
+	}
+}
+
 func (e *Emitter) Printf(format string, args ...interface{}) {
 	e.checkIndent()
 	fmt.Fprintf(&e.sb, format, args...)

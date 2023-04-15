@@ -15,6 +15,8 @@ import (
 
 var basicConfig = generator.Config{
 	SchemaMappings:     []generator.SchemaMapping{},
+	ExtraImports:       false,
+	YAMLPackage:        "gopkg.in/yaml.v3",
 	DefaultPackageName: "github.com/example/test",
 	DefaultOutputName:  "-",
 	ResolveExtensions:  []string{".json", ".yaml"},
@@ -107,6 +109,23 @@ func TestYamlMultilineDescriptions(t *testing.T) {
 	cfg := basicConfig
 	cfg.YAMLExtensions = []string{"yaml"}
 	testExampleFile(t, cfg, "./data/yaml/yamlMultilineDescriptions.yaml")
+}
+
+func TestExtraImportsYAML(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.ExtraImports = true
+	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3.json")
+}
+
+func TestExtraImportsAnotherYAML(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.ExtraImports = true
+	cfg.YAMLPackage = "gopkg.in/yaml.v2"
+	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv2.json")
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
