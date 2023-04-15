@@ -28,14 +28,14 @@ var (
 	schemaRootTypes   []string
 	capitalizations   []string
 	resolveExtensions []string
-	yamlExtensions    = []string{".yml", ".yaml"}
+	yamlExtensions    []string
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
 	rootCmd = &cobra.Command{
 		Use:   "go-jsonschema FILE ...",
 		Short: "Generates Go code from JSON Schema files.",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			if len(args) == 0 {
 				abort("No arguments specified. Run with --help for usage.")
 			}
@@ -157,7 +157,7 @@ named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.
 	rootCmd.PersistentFlags().StringSliceVar(&resolveExtensions, "resolve-extension", nil,
 		`Add a file extension that is used to resolve schema names, e.g. {"$ref": "./foo"} will
 also look for foo.json if --resolve-extension json is provided.`)
-	rootCmd.PersistentFlags().StringSliceVar(&yamlExtensions, "yaml-extension", nil,
+	rootCmd.PersistentFlags().StringSliceVar(&yamlExtensions, "yaml-extension", []string{".yml", ".yaml"},
 		`Add a file extension that should be recognized as YAML. Default are .yml, .yaml.`)
 
 	abortWithErr(rootCmd.Execute())
