@@ -6,7 +6,7 @@ require (
 	github.com/goccy/go-yaml v1.11.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/sanity-io/litter v1.5.1
+	github.com/sanity-io/litter v1.5.5
 	github.com/spf13/cobra v1.7.0
 )
 
