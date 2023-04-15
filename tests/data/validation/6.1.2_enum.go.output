@@ -89,17 +89,17 @@ var enumValues_A612EnumMyBooleanUntypedEnum = []interface{}{
 	false,
 }
 var enumValues_A612EnumMyIntegerTypedEnum = []interface{}{
-	1,
-	2,
-	3,
+	1.0,
+	2.0,
+	3.0,
 }
 var enumValues_A612EnumMyMixedTypeEnum = []interface{}{
-	42,
+	42.0,
 	"smurf",
 }
 var enumValues_A612EnumMyMixedUntypedEnum = []interface{}{
 	"red",
-	1,
+	1.0,
 	true,
 	nil,
 }
@@ -133,9 +133,9 @@ func (j *A612EnumMyNullUntypedEnum) UnmarshalJSON(b []byte) error {
 }
 
 var enumValues_A612EnumMyNumberTypedEnum = []interface{}{
-	1,
-	2,
-	3,
+	1.0,
+	2.0,
+	3.0,
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -164,9 +164,9 @@ func (j *A612EnumMyNullUntypedEnum) MarshalJSON() ([]byte, error) {
 }
 
 var enumValues_A612EnumMyNumberUntypedEnum = []interface{}{
-	1,
-	2,
-	3,
+	1.0,
+	2.0,
+	3.0,
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
