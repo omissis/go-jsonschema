@@ -96,6 +96,14 @@ func TestBooleanAsSchema(t *testing.T) {
 	testExampleFile(t, cfg, "./data/misc/boolean-as-schema.json")
 }
 
+func TestStructNameFromTitle(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StructNameFromTitle = true
+	testExamples(t, cfg, "./data/nameFromTitle")
+}
+
 func TestYamlStructNameFromFile(t *testing.T) {
 	t.Parallel()
 

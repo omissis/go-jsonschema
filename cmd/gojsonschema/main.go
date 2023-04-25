@@ -18,17 +18,18 @@ const (
 )
 
 var (
-	verbose           bool
-	extraImports      bool
-	yamlPackage       string
-	defaultPackage    string
-	defaultOutput     string
-	schemaPackages    []string
-	schemaOutputs     []string
-	schemaRootTypes   []string
-	capitalizations   []string
-	resolveExtensions []string
-	yamlExtensions    []string
+	verbose             bool
+	extraImports        bool
+	yamlPackage         string
+	defaultPackage      string
+	defaultOutput       string
+	schemaPackages      []string
+	schemaOutputs       []string
+	schemaRootTypes     []string
+	capitalizations     []string
+	resolveExtensions   []string
+	yamlExtensions      []string
+	structNameFromTitle bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
@@ -63,14 +64,15 @@ var (
 				Warner: func(message string) {
 					logf("Warning: %s", message)
 				},
-				ExtraImports:       extraImports,
-				YAMLPackage:        yamlPackage,
-				Capitalizations:    capitalizations,
-				DefaultOutputName:  defaultOutput,
-				DefaultPackageName: defaultPackage,
-				SchemaMappings:     []generator.SchemaMapping{},
-				ResolveExtensions:  resolveExtensions,
-				YAMLExtensions:     yamlExtensions,
+				ExtraImports:        extraImports,
+				YAMLPackage:         yamlPackage,
+				Capitalizations:     capitalizations,
+				DefaultOutputName:   defaultOutput,
+				DefaultPackageName:  defaultPackage,
+				SchemaMappings:      []generator.SchemaMapping{},
+				ResolveExtensions:   resolveExtensions,
+				YAMLExtensions:      yamlExtensions,
+				StructNameFromTitle: structNameFromTitle,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
@@ -159,6 +161,8 @@ named 'id' becomes 'Id'. With --capitalization ID, it will be generated as 'ID'.
 also look for foo.json if --resolve-extension json is provided.`)
 	rootCmd.PersistentFlags().StringSliceVar(&yamlExtensions, "yaml-extension", []string{".yml", ".yaml"},
 		`Add a file extension that should be recognized as YAML. Default are .yml, .yaml.`)
+	rootCmd.PersistentFlags().BoolVarP(&structNameFromTitle, "struct-name-from-title", "t", false,
+		"Use the schema title as the generated struct name")
 
 	abortWithErr(rootCmd.Execute())
 }

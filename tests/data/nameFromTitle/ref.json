@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/ref",
+  "title": "Ext Ref",
+  "type": "object",
+  "properties": {
+    "myThing": {
+      "$ref": "#/$defs/Thing"
+    },
+    "myThing2": {
+      "$ref": "#/$defs/Thing"
+    }
+  },
+  "$defs": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
