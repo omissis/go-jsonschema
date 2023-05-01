@@ -729,6 +729,7 @@ func (g *schemaGenerator) generateType(
 			for _, imprt := range ncg.Package.Imports {
 				g.output.file.Package.AddImport(imprt.QualifiedName, "")
 			}
+
 			return ncg, nil
 		}
 
@@ -891,6 +892,7 @@ func (g *schemaGenerator) generateTypeInline(
 				for _, imprt := range ncg.Package.Imports {
 					g.output.file.Package.AddImport(imprt.QualifiedName, "")
 				}
+
 				return ncg, nil
 			}
 
