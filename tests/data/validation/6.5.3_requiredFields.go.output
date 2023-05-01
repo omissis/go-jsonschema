@@ -2,8 +2,8 @@
 
 package test
 
-import "fmt"
 import "encoding/json"
+import "fmt"
 
 type A653RequiredFieldsMyObject struct {
 	// MyNestedObjectString corresponds to the JSON schema field
