@@ -34,6 +34,7 @@ func isPointerType(t Type) bool {
 
 func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type, error) {
 	var t Type
+
 	switch jsType {
 	case schemas.TypeNameString:
 		switch format {
@@ -51,6 +52,7 @@ func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type,
 					Name: "Addr",
 				},
 			}
+
 		default:
 			t = PrimitiveType{"string"}
 		}
