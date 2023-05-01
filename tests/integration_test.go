@@ -13,18 +13,22 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/generator"
 )
 
-var basicConfig = generator.Config{
-	SchemaMappings:     []generator.SchemaMapping{},
-	ExtraImports:       false,
-	YAMLPackage:        "gopkg.in/yaml.v3",
-	DefaultPackageName: "github.com/example/test",
-	DefaultOutputName:  "-",
-	ResolveExtensions:  []string{".json", ".yaml"},
-	YAMLExtensions:     []string{".yaml", ".yml"},
-	Warner: func(message string) {
-		log.Printf("[from warner] %s", message)
-	},
-}
+var (
+	exitErr *exec.ExitError
+
+	basicConfig = generator.Config{
+		SchemaMappings:     []generator.SchemaMapping{},
+		ExtraImports:       false,
+		YAMLPackage:        "gopkg.in/yaml.v3",
+		DefaultPackageName: "github.com/example/test",
+		DefaultOutputName:  "-",
+		ResolveExtensions:  []string{".json", ".yaml"},
+		YAMLExtensions:     []string{".yaml", ".yml"},
+		Warner: func(message string) {
+			log.Printf("[from warner] %s", message)
+		},
+	}
+)
 
 func TestCore(t *testing.T) {
 	t.Parallel()
@@ -244,8 +248,7 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 		fmt.Sprintf("%s/expected", dir),
 		fmt.Sprintf("%s/actual", dir)).Output()
 
-	var exitErr *exec.ExitError
-	if ok := errors.Is(err, exitErr); !ok {
+	if !errors.As(err, &exitErr) {
 		t.Fatal(err.Error())
 	}
 
