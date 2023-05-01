@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/TestObject",
+  "definitions":
+  {
+    "TestObject":
+    {
+      "required":
+      [
+        "owner",
+        "name"
+      ],
+      "properties":
+      {
+        "owner":
+        {
+          "type": "string"
+        },
+        "name":
+        {
+          "type": "string"
+        },
+        "config":
+        {
+          "patternProperties":
+          {
+            ".*":
+            {
+              "additionalProperties": true
+            }
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}
