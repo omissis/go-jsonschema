@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/refExternalFile",
+  "title": "Ref External File",
+  "type": "object",
+  "properties": {
+    "myExternalThing": {
+      "$ref": "./ref.json#/$defs/Thing"
+    },
+    "someOtherExternalThing": {
+      "$ref": "./ref.json#/$defs/Thing"
+    }
+  }
+}

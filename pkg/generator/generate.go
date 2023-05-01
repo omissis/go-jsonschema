@@ -14,15 +14,16 @@ import (
 )
 
 type Config struct {
-	SchemaMappings     []SchemaMapping
-	ExtraImports       bool
-	YAMLPackage        string
-	Capitalizations    []string
-	ResolveExtensions  []string
-	YAMLExtensions     []string
-	DefaultPackageName string
-	DefaultOutputName  string
-	Warner             func(string)
+	SchemaMappings      []SchemaMapping
+	ExtraImports        bool
+	YAMLPackage         string
+	Capitalizations     []string
+	ResolveExtensions   []string
+	YAMLExtensions      []string
+	DefaultPackageName  string
+	DefaultOutputName   string
+	StructNameFromTitle bool
+	Warner              func(string)
 }
 
 type SchemaMapping struct {
@@ -222,7 +223,11 @@ func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) str
 		}
 	}
 
-	return g.identifierFromFileName(fileName)
+	if g.config.StructNameFromTitle && schema.Title != "" {
+		return g.identifierize(schema.Title)
+	} else {
+		return g.identifierFromFileName(fileName)
+	}
 }
 
 func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
