@@ -32,10 +32,29 @@ func isPointerType(t Type) bool {
 	}
 }
 
-func PrimitiveTypeFromJSONSchemaType(jsType string, pointer bool) (Type, error) {
+func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type, error) {
+	var t Type
 	switch jsType {
 	case schemas.TypeNameString:
-		t := PrimitiveType{"string"}
+		switch format {
+		case "ipv4", "ipv6":
+			t = NamedType{
+				Package: &Package{
+					QualifiedName: "net/netip",
+					Imports: []Import{
+						{
+							QualifiedName: "net/netip",
+						},
+					},
+				},
+				Decl: &TypeDecl{
+					Name: "Addr",
+				},
+			}
+		default:
+			t = PrimitiveType{"string"}
+		}
+
 		if pointer {
 			return WrapTypeInPointer(t), nil
 		}
