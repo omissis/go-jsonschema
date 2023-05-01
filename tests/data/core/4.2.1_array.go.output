@@ -2,8 +2,8 @@
 
 package test
 
-import "fmt"
 import "encoding/json"
+import "fmt"
 
 type A421Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".

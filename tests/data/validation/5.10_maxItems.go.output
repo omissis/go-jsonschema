@@ -2,8 +2,8 @@
 
 package test
 
-import "fmt"
 import "encoding/json"
+import "fmt"
 
 type A510MaxItems struct {
 	// MyNestedArray corresponds to the JSON schema field "myNestedArray".
