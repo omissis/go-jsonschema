@@ -720,9 +720,16 @@ func (g *schemaGenerator) generateType(
 		return codegen.EmptyInterfaceType{}, nil
 
 	default:
-		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
+		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
 		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
+		}
+
+		if ncg, ok := cg.(codegen.NamedType); ok {
+			for _, imprt := range ncg.Package.Imports {
+				g.output.file.Package.AddImport(imprt.QualifiedName, "")
+			}
+			return ncg, nil
 		}
 
 		return cg, nil
@@ -875,9 +882,16 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
-			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], typeShouldBePointer)
+			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
+			}
+
+			if ncg, ok := cg.(codegen.NamedType); ok {
+				for _, imprt := range ncg.Package.Imports {
+					g.output.file.Package.AddImport(imprt.QualifiedName, "")
+				}
+				return ncg, nil
 			}
 
 			return cg, nil
@@ -917,7 +931,7 @@ func (g *schemaGenerator) generateEnumType(
 
 	if len(t.Type) == 1 {
 		var err error
-		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], false); err != nil {
+		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], t.Format, false); err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
 

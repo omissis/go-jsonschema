@@ -4,6 +4,8 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 
 	"github.com/sanity-io/litter"
@@ -74,6 +76,10 @@ func (p *Package) Generate(out *Emitter) {
 	out.Printlnf("package %s", p.Name())
 
 	if len(p.Imports) > 0 {
+		slices.SortStableFunc(p.Imports, func(i, j Import) bool {
+			return i.QualifiedName < j.QualifiedName
+		})
+
 		for _, i := range p.Imports {
 			i.Generate(out)
 		}
