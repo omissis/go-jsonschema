@@ -160,6 +160,12 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	}
 }
 
+func TestRegressions(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/regressions")
+}
+
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Helper()
 
