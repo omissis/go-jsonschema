@@ -29,6 +29,7 @@ var (
 	capitalizations     []string
 	resolveExtensions   []string
 	yamlExtensions      []string
+	tags                []string
 	structNameFromTitle bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
@@ -73,6 +74,7 @@ var (
 				ResolveExtensions:   resolveExtensions,
 				YAMLExtensions:      yamlExtensions,
 				StructNameFromTitle: structNameFromTitle,
+				Tags:                tags,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
@@ -163,6 +165,8 @@ also look for foo.json if --resolve-extension json is provided.`)
 		`Add a file extension that should be recognized as YAML. Default are .yml, .yaml.`)
 	rootCmd.PersistentFlags().BoolVarP(&structNameFromTitle, "struct-name-from-title", "t", false,
 		"Use the schema title as the generated struct name")
+	rootCmd.PersistentFlags().StringSliceVar(&tags, "tags", []string{"json", "yaml", "mapstructure"},
+		`Specify which struct tags to generate. Defaults are json, yaml, mapstructure`)
 
 	abortWithErr(rootCmd.Execute())
 }

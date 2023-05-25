@@ -24,6 +24,7 @@ type Config struct {
 	DefaultOutputName   string
 	StructNameFromTitle bool
 	Warner              func(string)
+	Tags                []string
 }
 
 type SchemaMapping struct {
@@ -804,12 +805,19 @@ func (g *schemaGenerator) generateStructType(
 			SchemaType: prop,
 		}
 
+		tags := ""
+
 		if isRequired {
-			structField.Tags = fmt.Sprintf(`json:"%s" yaml:"%s" mapstructure:"%s"`, name, name, name)
+			for _, tag := range g.config.Tags {
+				tags += fmt.Sprintf(`%s:"%s" `, tag, name)
+			}
 		} else {
-			structField.Tags = fmt.Sprintf(`json:"%s,omitempty" yaml:"%s,omitempty" mapstructure:"%s,omitempty"`,
-				name, name, name)
+			for _, tag := range g.config.Tags {
+				tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
+			}
 		}
+
+		structField.Tags = strings.TrimSpace(tags)
 
 		if structField.Comment == "" {
 			structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
