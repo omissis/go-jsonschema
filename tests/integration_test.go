@@ -27,6 +27,7 @@ var (
 		Warner: func(message string) {
 			log.Printf("[from warner] %s", message)
 		},
+		Tags: []string{"json", "yaml", "mapstructure"},
 	}
 )
 
@@ -138,6 +139,14 @@ func TestExtraImportsAnotherYAML(t *testing.T) {
 	cfg.ExtraImports = true
 	cfg.YAMLPackage = "gopkg.in/yaml.v2"
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv2.json")
+}
+
+func TestTags(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"yaml"}
+	testExampleFile(t, cfg, "./data/misc/tags.json")
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
