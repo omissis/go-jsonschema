@@ -1,6 +1,6 @@
 adr-tools 3.0.0
 golang 1.20.4
-golangci-lint 1.53.0
+golangci-lint 1.53.1
 goreleaser 1.17.1
 hadolint 2.12.0
 shellcheck 0.9.0
