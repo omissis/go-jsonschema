@@ -86,6 +86,14 @@ func TestCrossPackageNoOutput(t *testing.T) {
 	testExampleFile(t, cfg, "./data/crossPackageNoOutput/schema.json")
 }
 
+
+func TestSpecialCharacters(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	testExampleFile(t, cfg, "./data/misc/special-characters.json")
+}
+
 func TestCapitalization(t *testing.T) {
 	t.Parallel()
 
