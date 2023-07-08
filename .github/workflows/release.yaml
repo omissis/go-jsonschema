@@ -48,7 +48,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "1.19.2"
-          args: release --debug --rm-dist
+          args: release --debug --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GO_VERSION: "1.20.5"
