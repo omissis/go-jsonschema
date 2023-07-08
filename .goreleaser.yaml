@@ -38,7 +38,7 @@ release:
   prerelease: auto
 brews:
   - name: go-jsonschema
-    tap:
+    repository:
       owner: omissis
       name: homebrew-go-jsonschema
     skip_upload: auto
