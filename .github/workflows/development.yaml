@@ -41,6 +41,6 @@ jobs:
         with:
           distribution: goreleaser
           version: '1.19.2'
-          args: release --debug --snapshot --rm-dist
+          args: release --debug --snapshot --clean
         env:
           GO_VERSION: "1.20.5"
