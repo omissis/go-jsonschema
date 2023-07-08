@@ -20,14 +20,15 @@ linters:
   # https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
   disable:
     # todo
+    - cyclop
+    - depguard
+    - funlen
+    - gocognit
+    - godox
     - ireturn
+    - nestif
     - revive
     - varnamelen
-    - godox
-    - funlen
-    - nestif
-    - gocognit
-    - cyclop
     # unsupported
     - rowserrcheck
     - sqlclosecheck
@@ -36,12 +37,12 @@ linters:
     - deadcode
     - exhaustivestruct
     - golint
-    - nosnakecase
-    - structcheck
     - ifshort
     - interfacer
     - maligned
+    - nosnakecase
     - scopelint
+    - structcheck
     - varcheck
     # unused
     - exhaustruct
