@@ -833,7 +833,7 @@ func (g *schemaGenerator) generateStructType(
 
 		switch {
 		case prop.Default != nil:
-			structField.DefaultValue = prop.Default
+			structField.DefaultValue = g.defaultPropertyValue(prop)
 
 		default:
 			if isRequired {
@@ -847,6 +847,42 @@ func (g *schemaGenerator) generateStructType(
 	}
 
 	return &structType, nil
+}
+
+func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
+	if prop.AdditionalProperties != nil {
+		if len(prop.AdditionalProperties.Type) == 0 {
+			return map[string]any{}
+		}
+
+		if len(prop.AdditionalProperties.Type) != 1 {
+			g.warner("Additional property has multiple types; will be represented as an empty interface with no validation")
+
+			return map[string]any{}
+		}
+
+		switch prop.AdditionalProperties.Type[0] {
+		case schemas.TypeNameString:
+			return map[string]string{}
+
+		case schemas.TypeNameArray:
+			return map[string][]any{}
+
+		case schemas.TypeNameNumber:
+			return map[string]float64{}
+
+		case schemas.TypeNameInteger:
+			return map[string]int{}
+
+		case schemas.TypeNameBoolean:
+			return map[string]bool{}
+
+		default:
+			return map[string]any{}
+		}
+	}
+
+	return prop.Default
 }
 
 func (g *schemaGenerator) generateTypeInline(
