@@ -53,6 +53,21 @@ func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type,
 				},
 			}
 
+		case "date-time":
+			t = NamedType{
+				Package: &Package{
+					QualifiedName: "time",
+					Imports: []Import{
+						{
+							QualifiedName: "time",
+						},
+					},
+				},
+				Decl: &TypeDecl{
+					Name: "Time",
+				},
+			}
+
 		default:
 			t = PrimitiveType{"string"}
 		}
