@@ -991,6 +991,18 @@ func (g *schemaGenerator) generateEnumType(
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
 
+		//Enforce integer type for enum values
+		if t.Type[0] == "integer" {
+			for i, v := range t.Enum {
+				switch v.(type) {
+				case float64:
+					t.Enum[i] = int(v.(float64))
+				default:
+					return nil, fmt.Errorf("%w %v", errEnumNonPrimitiveVal, v)
+				}
+			}
+		}
+
 		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods.
 	} else {
 		if len(t.Type) > 1 {
