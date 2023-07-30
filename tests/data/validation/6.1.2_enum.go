@@ -89,9 +89,9 @@ var enumValues_A612EnumMyBooleanUntypedEnum = []interface{}{
 	false,
 }
 var enumValues_A612EnumMyIntegerTypedEnum = []interface{}{
-	1.0,
-	2.0,
-	3.0,
+	1,
+	2,
+	3,
 }
 var enumValues_A612EnumMyMixedTypeEnum = []interface{}{
 	42.0,
