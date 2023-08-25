@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://example.com/object",
+  "type": "object",
+  "title": "object",
+  "properties": {
+    "myObject": {
+      "type": "object",
+      "required": [
+        "myTime"
+      ],
+      "properties": {
+        "myTime": {
+          "type": "string",
+          "format": "time"
+        }
+      }
+    }
+  }
+}
