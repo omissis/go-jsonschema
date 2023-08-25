@@ -83,6 +83,21 @@ func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type,
 				},
 			}
 
+		case "time":
+			t = NamedType{
+				Package: &Package{
+					QualifiedName: "types",
+					Imports: []Import{
+						{
+							QualifiedName: "github.com/atombender/go-jsonschema/types",
+						},
+					},
+				},
+				Decl: &TypeDecl{
+					Name: "SerializableTime",
+				},
+			}
+
 		default:
 			t = PrimitiveType{"string"}
 		}

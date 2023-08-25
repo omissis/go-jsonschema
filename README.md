@@ -69,6 +69,18 @@ This will create `schema1.go` (declared as `package myproject`) and `stuff/schem
                  schema $id                  full import URL
 ```
 
+### Special types
+
+In a few cases, special types are used to help with serializing/deserializing
+data frrom JSON. Namely a custom types is provided for the following semantic
+types:
+
+* `SerializableDate`
+* `SerializableTime`
+
+These types are needed because there is no native type provided by Go which
+properly handles them.
+
 ## Status
 
 While not finished, go-jsonschema can be used today. Aside from some minor features, only specific validations remain to be fully implemented.
@@ -138,7 +150,7 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
     - [ ] `oneOf`
     - [ ] `not`
   - [ ] Semantic formats (§7.3)
-    - [ ] Dates and times
+    - [x] Dates and times
     - [ ] Email addresses
     - [ ] Hostnames
     - [ ] IP addresses
