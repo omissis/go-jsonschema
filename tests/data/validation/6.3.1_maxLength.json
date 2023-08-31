@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array",
+  "type": "object",
+  "properties": {
+    "myString": {
+      "type": "string",
+      "maxLength": 5
+    },
+    "myNullableString": {
+      "type": "string",
+      "maxLength": 10
+    }
+  },
+  "required": ["myString"]
+}

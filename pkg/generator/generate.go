@@ -560,36 +560,7 @@ func (g *schemaGenerator) generateDeclaredType(
 				})
 			}
 
-			if _, ok := f.Type.(codegen.NullType); ok {
-				validators = append(validators, &nullTypeValidator{
-					fieldName: f.Name,
-					jsonName:  f.JSONName,
-				})
-			} else {
-				t, arrayDepth := f.Type, 0
-				for v, ok := t.(*codegen.ArrayType); ok; v, ok = t.(*codegen.ArrayType) {
-					arrayDepth++
-					if _, ok := v.Type.(codegen.NullType); ok {
-						validators = append(validators, &nullTypeValidator{
-							fieldName:  f.Name,
-							jsonName:   f.JSONName,
-							arrayDepth: arrayDepth,
-						})
-
-						break
-					} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
-						validators = append(validators, &arrayValidator{
-							fieldName:  f.Name,
-							jsonName:   f.JSONName,
-							arrayDepth: arrayDepth,
-							minItems:   f.SchemaType.MinItems,
-							maxItems:   f.SchemaType.MaxItems,
-						})
-					}
-
-					t = v.Type
-				}
-			}
+			validators = g.structFieldValidators(validators, f, f.Type, false)
 		}
 
 		if len(validators) > 0 {
@@ -651,6 +622,64 @@ func (g *schemaGenerator) generateDeclaredType(
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+func (g *schemaGenerator) structFieldValidators(
+	validators []validator,
+	f codegen.StructField,
+	t codegen.Type,
+	isNillable bool,
+) []validator {
+	switch v := t.(type) {
+	case codegen.NullType:
+		validators = append(validators, &nullTypeValidator{
+			fieldName: f.Name,
+			jsonName:  f.JSONName,
+		})
+
+	case *codegen.PointerType:
+		validators = g.structFieldValidators(validators, f, v.Type, v.IsNillable())
+
+	case codegen.PrimitiveType:
+		if v.Type == schemas.TypeNameString {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 {
+				validators = append(validators, &stringValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					minLength:  f.SchemaType.MinLength,
+					maxLength:  f.SchemaType.MaxLength,
+					isNillable: isNillable,
+				})
+			}
+		}
+
+	case *codegen.ArrayType:
+		arrayDepth := 0
+		for v, ok := t.(*codegen.ArrayType); ok; v, ok = t.(*codegen.ArrayType) {
+			arrayDepth++
+			if _, ok := v.Type.(codegen.NullType); ok {
+				validators = append(validators, &nullTypeValidator{
+					fieldName:  f.Name,
+					jsonName:   f.JSONName,
+					arrayDepth: arrayDepth,
+				})
+
+				break
+			} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+				validators = append(validators, &arrayValidator{
+					fieldName:  f.Name,
+					jsonName:   f.JSONName,
+					arrayDepth: arrayDepth,
+					minItems:   f.SchemaType.MinItems,
+					maxItems:   f.SchemaType.MaxItems,
+				})
+			}
+
+			t = v.Type
+		}
+	}
+
+	return validators
 }
 
 func (g *schemaGenerator) generateType(
@@ -759,7 +788,7 @@ func (g *schemaGenerator) generateStructType(
 		}
 
 		return &codegen.MapType{
-			KeyType:   codegen.PrimitiveType{Type: "string"},
+			KeyType:   codegen.PrimitiveType{Type: schemas.TypeNameString},
 			ValueType: valueType,
 		}, nil
 	}

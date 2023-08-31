@@ -26,6 +26,7 @@ var (
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
+	_ validator = new(stringValidator)
 )
 
 type requiredValidator struct {
@@ -204,6 +205,54 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 }
 
 func (v *arrayValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+type stringValidator struct {
+	jsonName   string
+	fieldName  string
+	minLength  int
+	maxLength  int
+	isNillable bool
+}
+
+func (v *stringValidator) generate(out *codegen.Emitter) {
+	if v.minLength == 0 && v.maxLength == 0 {
+		return
+	}
+
+	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	fieldName := v.jsonName
+
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.minLength != 0 {
+		out.Printlnf(`if %slen(%s%s) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", "%s", %d)`, fieldName, v.minLength)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.maxLength != 0 {
+		out.Printlnf(`if %slen(%s%s) >= %d {`, checkPointer, pointerPrefix, value, v.maxLength)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", "%s", %d)`, fieldName, v.maxLength)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+}
+
+func (v *stringValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
