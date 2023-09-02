@@ -607,44 +607,24 @@ func (g *schemaGenerator) generateDeclaredType(
 
 			g.output.file.Package.AddImport("encoding/json", "")
 
-			formats := []string{"json"}
+			formatters := []formatter{
+				&jsonFormatter{
+					declaredType: decl.Name,
+					validators:   validators,
+				},
+			}
 			if g.config.ExtraImports {
-				formats = append(formats, "yaml")
+				formatters = append(formatters, &yamlFormatter{
+					declaredType: decl.Name,
+					validators:   validators,
+				})
 			}
 
-			for _, format := range formats {
-				format := format
+			for _, formatter := range formatters {
+				formatter := formatter
 
 				g.output.file.Package.AddDecl(&codegen.Method{
-					Impl: func(out *codegen.Emitter) {
-						out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(format), format)
-						out.Printlnf("func (j *%s) Unmarshal%s(b []byte) error {", decl.Name, strings.ToUpper(format))
-						out.Indent(1)
-						out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-						out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
-							format, varNameRawMap)
-						for _, v := range validators {
-							if v.desc().beforeJSONUnmarshal {
-								v.generate(out)
-							}
-						}
-
-						out.Printlnf("type Plain %s", decl.Name)
-						out.Printlnf("var %s Plain", varNamePlainStruct)
-						out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
-							format, varNamePlainStruct)
-
-						for _, v := range validators {
-							if !v.desc().beforeJSONUnmarshal {
-								v.generate(out)
-							}
-						}
-
-						out.Printlnf("*j = %s(%s)", decl.Name, varNamePlainStruct)
-						out.Printlnf("return nil")
-						out.Indent(-1)
-						out.Printlnf("}")
-					},
+					Impl: formatter.generate,
 				})
 			}
 		}
