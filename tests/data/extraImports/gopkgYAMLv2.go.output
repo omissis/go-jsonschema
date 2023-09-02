@@ -42,14 +42,14 @@ func (j *GopkgYAMLv2) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *GopkgYAMLv2) UnmarshalYAML(b []byte) error {
+func (j *GopkgYAMLv2) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var raw map[string]interface{}
-	if err := yaml.Unmarshal(b, &raw); err != nil {
+	if err := unmarshal(&raw); err != nil {
 		return err
 	}
 	type Plain GopkgYAMLv2
 	var plain Plain
-	if err := yaml.Unmarshal(b, &plain); err != nil {
+	if err := unmarshal(&plain); err != nil {
 		return err
 	}
 	if plain.MyNull != nil {
