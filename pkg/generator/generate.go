@@ -16,7 +16,6 @@ import (
 type Config struct {
 	SchemaMappings      []SchemaMapping
 	ExtraImports        bool
-	YAMLPackage         string
 	Capitalizations     []string
 	ResolveExtensions   []string
 	YAMLExtensions      []string
@@ -46,6 +45,8 @@ const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 	interfaceTypeName  = "interface{}"
+
+	YAMLPackage = "gopkg.in/yaml.v3"
 )
 
 var (
@@ -602,7 +603,7 @@ func (g *schemaGenerator) generateDeclaredType(
 			}
 
 			if g.config.ExtraImports {
-				g.output.file.Package.AddImport(g.config.YAMLPackage, "yaml")
+				g.output.file.Package.AddImport(YAMLPackage, "yaml")
 			}
 
 			g.output.file.Package.AddImport("encoding/json", "")

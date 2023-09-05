@@ -20,7 +20,6 @@ const (
 var (
 	verbose             bool
 	extraImports        bool
-	yamlPackage         string
 	defaultPackage      string
 	defaultOutput       string
 	schemaPackages      []string
@@ -66,7 +65,6 @@ var (
 					logf("Warning: %s", message)
 				},
 				ExtraImports:        extraImports,
-				YAMLPackage:         yamlPackage,
 				Capitalizations:     capitalizations,
 				DefaultOutputName:   defaultOutput,
 				DefaultPackageName:  defaultPackage,
@@ -138,9 +136,6 @@ func main() {
 		"Verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&extraImports, "extra-imports", "e", false,
 		"Allow extra imports (non standard library)")
-	rootCmd.PersistentFlags().StringVar(&yamlPackage, "yaml-package", "gopkg.in/yaml.v3",
-		`Name of package to import for YAML support, if needed. Has no effect if
---extra-imports is not set.`)
 	rootCmd.PersistentFlags().StringVarP(&defaultPackage, "package", "p", "",
 		`Default name of package to declare Go files under, unless overridden with
 --schema-package`)

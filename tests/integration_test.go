@@ -19,8 +19,7 @@ var (
 	basicConfig = generator.Config{
 		SchemaMappings:     []generator.SchemaMapping{},
 		ExtraImports:       false,
-		YAMLPackage:        "gopkg.in/yaml.v3",
-		DefaultPackageName: "github.com/atombender/go-jsonschema/test",
+		DefaultPackageName: "github.com/example/test",
 		DefaultOutputName:  "-",
 		ResolveExtensions:  []string{".json", ".yaml"},
 		YAMLExtensions:     []string{".yaml", ".yml"},
@@ -137,15 +136,6 @@ func TestExtraImportsYAML(t *testing.T) {
 	cfg := basicConfig
 	cfg.ExtraImports = true
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3.json")
-}
-
-func TestExtraImportsAnotherYAML(t *testing.T) {
-	t.Parallel()
-
-	cfg := basicConfig
-	cfg.ExtraImports = true
-	cfg.YAMLPackage = "gopkg.in/yaml.v2"
-	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv2.json")
 }
 
 func TestTags(t *testing.T) {

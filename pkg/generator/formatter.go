@@ -58,11 +58,11 @@ type yamlFormatter struct {
 
 func (yf *yamlFormatter) generate(out *codegen.Emitter) {
 	out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
-	out.Printlnf("func (j *%s) Unmarshal%s(unmarshal func(interface{}) error) error {", yf.declaredType,
+	out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", yf.declaredType,
 		strings.ToUpper(formatYAML))
 	out.Indent(1)
 	out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-	out.Printlnf("if err := unmarshal(&%s); err != nil { return err }", varNameRawMap)
+	out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNameRawMap)
 
 	for _, v := range yf.validators {
 		if v.desc().beforeJSONUnmarshal {
@@ -72,7 +72,7 @@ func (yf *yamlFormatter) generate(out *codegen.Emitter) {
 
 	out.Printlnf("type Plain %s", yf.declaredType)
 	out.Printlnf("var %s Plain", varNamePlainStruct)
-	out.Printlnf("if err := unmarshal(&%s); err != nil { return err }", varNamePlainStruct)
+	out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
 	for _, v := range yf.validators {
 		if !v.desc().beforeJSONUnmarshal {
