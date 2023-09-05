@@ -2,13 +2,13 @@ package tests_test
 
 import (
 	"os"
+	"testing"
 
-	test "github.com/atombender/go-jsonschema/tests/data/extraImports"
 	"github.com/magiconair/properties/assert"
 	yamlv2 "gopkg.in/yaml.v2"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	"testing"
+	test "github.com/atombender/go-jsonschema/tests/data/extraImports"
 )
 
 func TestYamlV2Unmarshal(t *testing.T) {

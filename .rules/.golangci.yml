@@ -6,6 +6,7 @@ run:
   timeout: 5m
   skip-files:
     - ".*\\.gen\\.go$"
+    - "tests/data/.*"
   modules-download-mode: readonly
 
 # output configuration options
@@ -444,7 +445,8 @@ issues:
   # To list all excluded by default patterns execute `golangci-lint run --help`
   #
   # Default: []
-  exclude: []
+  exclude:
+    - "local replacement are not allowed: github.com/atombender/go-jsonschema/tests/data"
 
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
