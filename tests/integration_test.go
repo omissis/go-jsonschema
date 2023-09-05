@@ -20,7 +20,7 @@ var (
 		SchemaMappings:     []generator.SchemaMapping{},
 		ExtraImports:       false,
 		YAMLPackage:        "gopkg.in/yaml.v3",
-		DefaultPackageName: "github.com/example/test",
+		DefaultPackageName: "github.com/atombender/go-jsonschema/test",
 		DefaultOutputName:  "-",
 		ResolveExtensions:  []string{".json", ".yaml"},
 		YAMLExtensions:     []string{".yaml", ".yml"},
@@ -56,12 +56,12 @@ func TestCrossPackage(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/example/schema",
+			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/example/other",
+			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/other",
 			OutputName:  "other.go",
 		},
 	}
@@ -75,12 +75,12 @@ func TestCrossPackageNoOutput(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/example/schema",
+			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/example/other",
+			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/other",
 		},
 	}
 	testExampleFile(t, cfg, "./data/crossPackageNoOutput/schema.json")
@@ -205,7 +205,6 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			if outputName == "-" {
 				outputName = strings.TrimSuffix(filepath.Base(fileName), filepath.Ext(fileName)) + ".go"
 			}
-			outputName += ".output"
 
 			goldenFileName := filepath.Join(filepath.Dir(fileName), outputName)
 			t.Logf("Using golden data in %s", mustAbs(goldenFileName))

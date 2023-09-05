@@ -2,7 +2,7 @@
 
 package schema
 
-import other "github.com/example/other"
+import other "github.com/atombender/go-jsonschema/tests/helpers/other"
 
 type Schema struct {
 	// DefInOtherSchema corresponds to the JSON schema field "defInOtherSchema".

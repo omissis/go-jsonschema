@@ -1,0 +1,3 @@
+package schema
+
+func main() {}
