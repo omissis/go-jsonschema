@@ -24,15 +24,15 @@ func (j *A511MinItems) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if len(plain.MyNestedArray) < 5 {
+	if plain.MyNestedArray != nil && len(plain.MyNestedArray) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNestedArray", 5)
 	}
 	for i1 := range plain.MyNestedArray {
-		if len(plain.MyNestedArray[i1]) < 5 {
+		if plain.MyNestedArray[i1] != nil && len(plain.MyNestedArray[i1]) < 5 {
 			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("myNestedArray[%d]", i1), 5)
 		}
 	}
-	if len(plain.MyStringArray) < 5 {
+	if plain.MyStringArray != nil && len(plain.MyStringArray) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "myStringArray", 5)
 	}
 	*j = A511MinItems(plain)

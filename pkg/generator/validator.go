@@ -182,7 +182,7 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 	}
 
 	if v.minItems != 0 {
-		out.Printlnf(`if len(%s) < %d {`, value, v.minItems)
+		out.Printlnf(`if %s != nil && len(%s) < %d {`, value, value, v.minItems)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", %s, %d)`, fieldName, v.minItems)
 		out.Indent(-1)
