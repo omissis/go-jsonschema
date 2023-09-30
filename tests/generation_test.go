@@ -172,6 +172,15 @@ func TestRegressions(t *testing.T) {
 	testExamples(t, basicConfig, "./data/regressions")
 }
 
+func TestOnlyModels(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.OnlyModels = true
+
+	testExamples(t, cfg, "./data/onlyModels")
+}
+
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Helper()
 

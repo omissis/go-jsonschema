@@ -24,6 +24,7 @@ type Config struct {
 	StructNameFromTitle bool
 	Warner              func(string)
 	Tags                []string
+	OnlyModels          bool
 }
 
 type SchemaMapping struct {
@@ -545,6 +546,10 @@ func (g *schemaGenerator) generateDeclaredType(
 
 	g.output.file.Package.AddDecl(&decl)
 
+	if g.config.OnlyModels {
+		return &codegen.NamedType{Decl: &decl}, nil
+	}
+
 	if structType, ok := theType.(*codegen.StructType); ok {
 		var validators []validator
 		for _, f := range structType.RequiredJSONFields {
@@ -1064,57 +1069,58 @@ func (g *schemaGenerator) generateEnumType(
 	g.output.declsByName[enumDecl.Name] = &enumDecl
 	g.output.declsBySchema[t] = &enumDecl
 
-	valueConstant := &codegen.Var{
-		Name:  "enumValues_" + enumDecl.Name,
-		Value: t.Enum,
-	}
-	g.output.file.Package.AddDecl(valueConstant)
+	if !g.config.OnlyModels {
+		valueConstant := &codegen.Var{
+			Name:  "enumValues_" + enumDecl.Name,
+			Value: t.Enum,
+		}
+		g.output.file.Package.AddDecl(valueConstant)
 
-	if wrapInStruct {
+		if wrapInStruct {
+			g.output.file.Package.AddImport("encoding/json", "")
+			g.output.file.Package.AddDecl(&codegen.Method{
+				Impl: func(out *codegen.Emitter) {
+					out.Comment("MarshalJSON implements json.Marshaler.")
+					out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", enumDecl.Name)
+					out.Indent(1)
+					out.Printlnf("return json.Marshal(j.Value)")
+					out.Indent(-1)
+					out.Printlnf("}")
+				},
+			})
+		}
+
+		g.output.file.Package.AddImport("fmt", "")
+		g.output.file.Package.AddImport("reflect", "")
 		g.output.file.Package.AddImport("encoding/json", "")
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: func(out *codegen.Emitter) {
-				out.Comment("MarshalJSON implements json.Marshaler.")
-				out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", enumDecl.Name)
+				out.Comment("UnmarshalJSON implements json.Unmarshaler.")
+				out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
 				out.Indent(1)
-				out.Printlnf("return json.Marshal(j.Value)")
+				out.Printf("var v ")
+				enumType.Generate(out)
+				out.Newline()
+				varName := "v"
+				if wrapInStruct {
+					varName += ".Value"
+				}
+				out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
+				out.Printlnf("var ok bool")
+				out.Printlnf("for _, expected := range %s {", valueConstant.Name)
+				out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
+				out.Printlnf("}")
+				out.Printlnf("if !ok {")
+				out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
+					valueConstant.Name, varName)
+				out.Printlnf("}")
+				out.Printlnf(`*j = %s(v)`, enumDecl.Name)
+				out.Printlnf(`return nil`)
 				out.Indent(-1)
 				out.Printlnf("}")
 			},
 		})
 	}
-
-	g.output.file.Package.AddImport("fmt", "")
-	g.output.file.Package.AddImport("reflect", "")
-	g.output.file.Package.AddImport("encoding/json", "")
-	g.output.file.Package.AddDecl(&codegen.Method{
-		Impl: func(out *codegen.Emitter) {
-			out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-			out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
-			out.Indent(1)
-			out.Printf("var v ")
-			enumType.Generate(out)
-			out.Newline()
-			varName := "v"
-			if wrapInStruct {
-				varName += ".Value"
-			}
-			out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
-			out.Printlnf("var ok bool")
-			out.Printlnf("for _, expected := range %s {", valueConstant.Name)
-			out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
-			out.Printlnf("}")
-			out.Printlnf("if !ok {")
-			out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
-				valueConstant.Name, varName)
-			out.Printlnf("}")
-			out.Printlnf(`*j = %s(v)`, enumDecl.Name)
-			out.Printlnf(`return nil`)
-			out.Indent(-1)
-			out.Printlnf("}")
-		},
-	})
-
 	// TODO: May be aliased string type.
 	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
 		for _, v := range t.Enum {
