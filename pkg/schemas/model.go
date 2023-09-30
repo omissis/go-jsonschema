@@ -116,7 +116,7 @@ type Type struct {
 	Maximum              float64          `json:"maximum,omitempty"`              // Section 5.2.
 	ExclusiveMaximum     float64          `json:"exclusiveMaximum,omitempty"`     // Section 5.3.
 	Minimum              float64          `json:"minimum,omitempty"`              // Section 5.4.
-	ExclusiveMinimum     bool             `json:"exclusiveMinimum,omitempty"`     // Section 5.5.
+	ExclusiveMinimum     float64          `json:"exclusiveMinimum,omitempty"`     // Section 5.5.
 	MaxLength            int              `json:"maxLength,omitempty"`            // Section 5.6.
 	MinLength            int              `json:"minLength,omitempty"`            // Section 5.7.
 	Pattern              string           `json:"pattern,omitempty"`              // Section 5.8.
