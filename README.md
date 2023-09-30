@@ -14,7 +14,7 @@ This tool generates Go data types and structs that corresponds to definitions in
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=flat)](https://conventionalcommits.org)
 [![Codecov](https://img.shields.io/codecov/c/gh/omissis/go-jsonschema?style=flat&token=lPWlXd3MVK)](https://codecov.io/gh/omissis/go-jsonschema)
 [![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/omissis/go-jsonschema?style=flat)](https://codeclimate.com/github/omissis/go-jsonschema)
-[![Go Report Card](https://goreportcard.com/badge/github.com/sighupio/furyctl)](https://goreportcard.com/report/github.com/sighupio/furyctl)
+[![Go Report Card](https://goreportcard.com/badge/github.com/omissis/go-jsonschema)](https://goreportcard.com/report/github.com/omissis/go-jsonschema)
 
 ## Installing
 
