@@ -76,8 +76,16 @@ func (p *Package) Generate(out *Emitter) {
 	out.Printlnf("package %s", p.Name())
 
 	if len(p.Imports) > 0 {
-		slices.SortStableFunc(p.Imports, func(i, j Import) bool {
-			return i.QualifiedName < j.QualifiedName
+		slices.SortStableFunc(p.Imports, func(i, j Import) int {
+			if i.QualifiedName < j.QualifiedName {
+				return -1
+			}
+
+			if i.QualifiedName > j.QualifiedName {
+				return 1
+			}
+
+			return 0
 		})
 
 		for _, i := range p.Imports {
