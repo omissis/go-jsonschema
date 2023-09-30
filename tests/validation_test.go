@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/atombender/go-jsonschema/tests"
 	test "github.com/atombender/go-jsonschema/tests/data/validation"
 )
 
@@ -52,13 +53,7 @@ func TestMaxStringLength(t *testing.T) {
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 
-			if tC.wantErr == nil && err != nil {
-				t.Errorf("got error %v, want nil", err)
-			} else if tC.wantErr != nil && err == nil {
-				t.Errorf("got nil, want error %v", tC.wantErr)
-			} else if tC.wantErr != nil && err != nil && err.Error() != tC.wantErr.Error() {
-				t.Errorf("got error %v, want %v", err, tC.wantErr)
-			}
+			tests.CheckError(t, tC.wantErr, err)
 		})
 	}
 }
@@ -107,13 +102,7 @@ func TestMinStringLength(t *testing.T) {
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 
-			if tC.wantErr == nil && err != nil {
-				t.Errorf("got error %v, want nil", err)
-			} else if tC.wantErr != nil && err == nil {
-				t.Errorf("got nil, want error %v", tC.wantErr)
-			} else if tC.wantErr != nil && err != nil && err.Error() != tC.wantErr.Error() {
-				t.Errorf("got error %v, want %v", err, tC.wantErr)
-			}
+			tests.CheckError(t, tC.wantErr, err)
 		})
 	}
 }
