@@ -20,6 +20,7 @@ const (
 var (
 	verbose             bool
 	extraImports        bool
+	onlyModels          bool
 	defaultPackage      string
 	defaultOutput       string
 	schemaPackages      []string
@@ -73,6 +74,7 @@ var (
 				YAMLExtensions:      yamlExtensions,
 				StructNameFromTitle: structNameFromTitle,
 				Tags:                tags,
+				OnlyModels:          onlyModels,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
@@ -136,6 +138,8 @@ func main() {
 		"Verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&extraImports, "extra-imports", "e", false,
 		"Allow extra imports (non standard library)")
+	rootCmd.PersistentFlags().BoolVar(&onlyModels, "only-models", false,
+		"Generate only models (no unmarshal methods, no validation)")
 	rootCmd.PersistentFlags().StringVarP(&defaultPackage, "package", "p", "",
 		`Default name of package to declare Go files under, unless overridden with
 --schema-package`)
