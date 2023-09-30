@@ -1,6 +1,6 @@
 module github.com/atombender/go-jsonschema/tests/data
 
-go 1.20
+go 1.21
 
 replace (
 	github.com/atombender/go-jsonschema/tests/helpers/other => ../helpers/other
