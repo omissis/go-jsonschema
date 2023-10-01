@@ -40,14 +40,13 @@ type Generator struct {
 	schemaCacheByFileName map[string]*schemas.Schema
 	inScope               map[qualifiedDefinition]struct{}
 	warner                func(string)
+	formatters            []formatter
 }
 
 const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 	interfaceTypeName  = "interface{}"
-
-	YAMLPackage = "gopkg.in/yaml.v3"
 )
 
 var (
@@ -64,12 +63,20 @@ var (
 )
 
 func New(config Config) (*Generator, error) {
+	formatters := []formatter{
+		&jsonFormatter{},
+	}
+	if config.ExtraImports {
+		formatters = append(formatters, &yamlFormatter{})
+	}
+
 	return &Generator{
 		config:                config,
 		outputs:               map[string]*output{},
 		schemaCacheByFileName: map[string]*schemas.Schema{},
 		inScope:               map[qualifiedDefinition]struct{}{},
 		warner:                config.Warner,
+		formatters:            formatters,
 	}, nil
 }
 
@@ -578,30 +585,13 @@ func (g *schemaGenerator) generateDeclaredType(
 				}
 			}
 
-			if g.config.ExtraImports {
-				g.output.file.Package.AddImport(YAMLPackage, "yaml")
-			}
-
-			g.output.file.Package.AddImport("encoding/json", "")
-
-			formatters := []formatter{
-				&jsonFormatter{
-					declaredType: decl.Name,
-					validators:   validators,
-				},
-			}
-			if g.config.ExtraImports {
-				formatters = append(formatters, &yamlFormatter{
-					declaredType: decl.Name,
-					validators:   validators,
-				})
-			}
-
-			for _, formatter := range formatters {
+			for _, formatter := range g.formatters {
 				formatter := formatter
 
+				formatter.addImport(g.output.file)
+
 				g.output.file.Package.AddDecl(&codegen.Method{
-					Impl: formatter.generate,
+					Impl: formatter.generate(decl, validators),
 				})
 			}
 		}
@@ -1076,51 +1066,26 @@ func (g *schemaGenerator) generateEnumType(
 		}
 		g.output.file.Package.AddDecl(valueConstant)
 
-		if wrapInStruct {
-			g.output.file.Package.AddImport("encoding/json", "")
-			g.output.file.Package.AddDecl(&codegen.Method{
-				Impl: func(out *codegen.Emitter) {
-					out.Comment("MarshalJSON implements json.Marshaler.")
-					out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", enumDecl.Name)
-					out.Indent(1)
-					out.Printlnf("return json.Marshal(j.Value)")
-					out.Indent(-1)
-					out.Printlnf("}")
-				},
-			})
-		}
-
 		g.output.file.Package.AddImport("fmt", "")
 		g.output.file.Package.AddImport("reflect", "")
-		g.output.file.Package.AddImport("encoding/json", "")
-		g.output.file.Package.AddDecl(&codegen.Method{
-			Impl: func(out *codegen.Emitter) {
-				out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-				out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", enumDecl.Name)
-				out.Indent(1)
-				out.Printf("var v ")
-				enumType.Generate(out)
-				out.Newline()
-				varName := "v"
-				if wrapInStruct {
-					varName += ".Value"
-				}
-				out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
-				out.Printlnf("var ok bool")
-				out.Printlnf("for _, expected := range %s {", valueConstant.Name)
-				out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
-				out.Printlnf("}")
-				out.Printlnf("if !ok {")
-				out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
-					valueConstant.Name, varName)
-				out.Printlnf("}")
-				out.Printlnf(`*j = %s(v)`, enumDecl.Name)
-				out.Printlnf(`return nil`)
-				out.Indent(-1)
-				out.Printlnf("}")
-			},
-		})
+
+		for _, formatter := range g.formatters {
+			formatter := formatter
+
+			formatter.addImport(g.output.file)
+
+			if wrapInStruct {
+				g.output.file.Package.AddDecl(&codegen.Method{
+					Impl: formatter.enumMarshal(enumDecl),
+				})
+			}
+
+			g.output.file.Package.AddDecl(&codegen.Method{
+				Impl: formatter.enumUnmarshal(enumDecl, enumType, valueConstant, wrapInStruct),
+			})
+		}
 	}
+
 	// TODO: May be aliased string type.
 	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
 		for _, v := range t.Enum {
