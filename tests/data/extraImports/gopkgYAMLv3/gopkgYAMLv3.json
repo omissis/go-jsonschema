@@ -17,6 +17,13 @@
     },
     "myNull": {
       "type": "null"
+    },
+    "myEnum": {
+      "type": "string",
+      "enum": [
+        "x",
+        "y"
+      ]
     }
   }
 }

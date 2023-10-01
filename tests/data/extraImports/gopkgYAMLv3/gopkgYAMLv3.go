@@ -5,10 +5,61 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "reflect"
+
+type GopkgYAMLv3MyEnum string
+
+var enumValues_GopkgYAMLv3MyEnum = []interface{}{
+	"x",
+	"y",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *GopkgYAMLv3MyEnum) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_GopkgYAMLv3MyEnum {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_GopkgYAMLv3MyEnum, v)
+	}
+	*j = GopkgYAMLv3MyEnum(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *GopkgYAMLv3MyEnum) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_GopkgYAMLv3MyEnum {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_GopkgYAMLv3MyEnum, v)
+	}
+	*j = GopkgYAMLv3MyEnum(v)
+	return nil
+}
 
 type GopkgYAMLv3 struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
 	MyBoolean *bool `json:"myBoolean,omitempty" yaml:"myBoolean,omitempty" mapstructure:"myBoolean,omitempty"`
+
+	// MyEnum corresponds to the JSON schema field "myEnum".
+	MyEnum *GopkgYAMLv3MyEnum `json:"myEnum,omitempty" yaml:"myEnum,omitempty" mapstructure:"myEnum,omitempty"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
 	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
@@ -22,6 +73,9 @@ type GopkgYAMLv3 struct {
 	// MyString corresponds to the JSON schema field "myString".
 	MyString *string `json:"myString,omitempty" yaml:"myString,omitempty" mapstructure:"myString,omitempty"`
 }
+
+const GopkgYAMLv3MyEnumX GopkgYAMLv3MyEnum = "x"
+const GopkgYAMLv3MyEnumY GopkgYAMLv3MyEnum = "y"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *GopkgYAMLv3) UnmarshalJSON(b []byte) error {
