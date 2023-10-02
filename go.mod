@@ -3,7 +3,7 @@ module github.com/atombender/go-jsonschema
 go 1.21
 
 require (
-	github.com/atombender/go-jsonschema/tests/data v0.0.0-20231002002915-8cefb6d78711
+	github.com/atombender/go-jsonschema/tests/data v0.0.0-20231002075245-30b7ae04d784
 	github.com/goccy/go-yaml v1.11.2
 	github.com/magiconair/properties v1.8.7
 	github.com/mitchellh/go-wordwrap v1.0.1
