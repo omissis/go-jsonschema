@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 
+	"github.com/atombender/go-jsonschema/internal/x/text"
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
@@ -35,10 +35,11 @@ type SchemaMapping struct {
 }
 
 type Generator struct {
+	caser                 *text.Caser
 	config                Config
+	inScope               map[qualifiedDefinition]struct{}
 	outputs               map[string]*output
 	schemaCacheByFileName map[string]*schemas.Schema
-	inScope               map[qualifiedDefinition]struct{}
 	warner                func(string)
 	formatters            []formatter
 }
@@ -71,10 +72,11 @@ func New(config Config) (*Generator, error) {
 	}
 
 	return &Generator{
+		caser:                 text.NewCaser(config.Capitalizations, config.ResolveExtensions),
 		config:                config,
+		inScope:               map[qualifiedDefinition]struct{}{},
 		outputs:               map[string]*output{},
 		schemaCacheByFileName: map[string]*schemas.Schema{},
-		inScope:               map[qualifiedDefinition]struct{}{},
 		warner:                config.Warner,
 		formatters:            formatters,
 	}, nil
@@ -234,10 +236,10 @@ func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) str
 	}
 
 	if g.config.StructNameFromTitle && schema.Title != "" {
-		return g.identifierize(schema.Title)
-	} else {
-		return g.identifierFromFileName(fileName)
+		return g.caser.Identifierize(schema.Title)
 	}
+
+	return g.caser.IdentifierFromFileName(fileName)
 }
 
 func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
@@ -294,58 +296,10 @@ func (g *Generator) beginOutput(
 
 func (g *Generator) makeEnumConstantName(typeName, value string) string {
 	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
-		return typeName + "_" + g.identifierize(value)
+		return typeName + "_" + g.caser.Identifierize(value)
 	}
 
-	return typeName + g.identifierize(value)
-}
-
-func (g *Generator) identifierFromFileName(fileName string) string {
-	s := filepath.Base(fileName)
-	for _, ext := range g.config.ResolveExtensions {
-		trimmed := strings.TrimSuffix(s, ext)
-		if trimmed != s {
-			s = trimmed
-
-			break
-		}
-	}
-
-	return g.identifierize(s)
-}
-
-func (g *Generator) identifierize(s string) string {
-	if s == "" {
-		return "Blank"
-	}
-
-	// FIXME: Better handling of non-identifier chars.
-	var sb strings.Builder
-	for _, part := range splitIdentifierByCaseAndSeparators(s) {
-		_, _ = sb.WriteString(g.capitalize(part))
-	}
-
-	ident := sb.String()
-
-	if !unicode.IsLetter(rune(ident[0])) {
-		ident = "A" + ident
-	}
-
-	return ident
-}
-
-func (g *Generator) capitalize(s string) string {
-	if len(s) == 0 {
-		return ""
-	}
-
-	for _, c := range g.config.Capitalizations {
-		if strings.EqualFold(c, s) {
-			return c
-		}
-	}
-
-	return strings.ToUpper(s[0:1]) + s[1:]
+	return typeName + g.caser.Identifierize(value)
 }
 
 type schemaGenerator struct {
@@ -363,7 +317,7 @@ func (g *schemaGenerator) generateRootType() error {
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
 
-		_, err := g.generateDeclaredType(def, newNameScope(g.identifierize(name)))
+		_, err := g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
 		if err != nil {
 			return err
 		}
@@ -408,7 +362,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		defName = scope[len(prefix):]
 	}
 
-	var schema *schemas.Schema
+	schema := g.schema
 
 	if fileName != "" {
 		var err error
@@ -417,8 +371,6 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		if err != nil {
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, err)
 		}
-	} else {
-		schema = g.schema
 	}
 
 	qual := qualifiedDefinition{
@@ -441,7 +393,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 			return &codegen.EmptyInterfaceType{}, nil
 		}
 
-		defName = g.identifierize(defName)
+		defName = g.caser.Identifierize(defName)
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -782,7 +734,7 @@ func (g *schemaGenerator) generateStructType(
 		prop := t.Properties[name]
 		isRequired := requiredNames[name]
 
-		fieldName := g.identifierize(name)
+		fieldName := g.caser.Identifierize(name)
 
 		if ext := prop.GoJSONSchemaExtension; ext != nil {
 			for _, pkg := range ext.Imports {
