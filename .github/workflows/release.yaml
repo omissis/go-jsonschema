@@ -36,7 +36,7 @@ jobs:
           version: v1.53.3
           args: -v --color=always --config=.rules/.golangci.yml ./...
       - name: Run tests
-        run: go test -v -race ./...
+        run: ./scripts/test.sh
       - name: Log in to Docker Hub
         if: ${{ !contains(github.ref_name, '-') }}
         uses: docker/login-action@v3

@@ -5,8 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/atombender/go-jsonschema/tests"
-	test "github.com/atombender/go-jsonschema/tests/data/validation"
+	testMaxLength "github.com/atombender/go-jsonschema/tests/data/validation/maxLength"
+	testMinLength "github.com/atombender/go-jsonschema/tests/data/validation/minLength"
+	"github.com/atombender/go-jsonschema/tests/helpers"
 )
 
 func TestMaxStringLength(t *testing.T) {
@@ -30,7 +31,7 @@ func TestMaxStringLength(t *testing.T) {
 		{
 			desc:    "myString not present",
 			data:    `{}`,
-			wantErr: errors.New("field myString in A631MaxLength: required"),
+			wantErr: errors.New("field myString in MaxLength: required"),
 		},
 		{
 			desc:    "myNullableString too long",
@@ -49,11 +50,11 @@ func TestMaxStringLength(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			model := test.A631MaxLength{}
+			model := testMaxLength.MaxLength{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 
-			tests.CheckError(t, tC.wantErr, err)
+			helpers.CheckError(t, tC.wantErr, err)
 		})
 	}
 }
@@ -79,7 +80,7 @@ func TestMinStringLength(t *testing.T) {
 		{
 			desc:    "myString not present",
 			data:    `{}`,
-			wantErr: errors.New("field myString in A632MinLength: required"),
+			wantErr: errors.New("field myString in MinLength: required"),
 		},
 		{
 			desc:    "myNullableString too short",
@@ -98,11 +99,11 @@ func TestMinStringLength(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			model := test.A632MinLength{}
+			model := testMinLength.MinLength{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 
-			tests.CheckError(t, tC.wantErr, err)
+			helpers.CheckError(t, tC.wantErr, err)
 		})
 	}
 }
