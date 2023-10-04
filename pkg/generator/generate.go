@@ -60,6 +60,7 @@ var (
 	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
+	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 )
 
 func New(config Config) (*Generator, error) {
@@ -273,13 +274,27 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, error) {
-	var fileName, scope, defName string
-	if i := strings.IndexRune(ref, '#'); i == -1 {
-		fileName = ref
-	} else {
-		fileName, scope = ref[0:i], ref[i+1:]
+	refType, err := schemas.GetRefType(ref)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errCannotGenerateReferencedType, err)
+	}
+
+	if refType != schemas.RefTypeFile {
+		return nil, fmt.Errorf("%w: %w '%s'", errCannotGenerateReferencedType, errUnsupportedRefFormat, ref)
+	}
+
+	ref = strings.TrimPrefix(ref, "file://")
+
+	fileName := ref
+
+	var scope, defName string
+
+	if i := strings.IndexRune(ref, '#'); i != -1 {
 		var prefix string
+
+		fileName, scope = ref[0:i], ref[i+1:]
 		lowercaseScope := strings.ToLower(scope)
+
 		for _, currentPrefix := range []string{
 			"/$defs/",       // Draft-handrews-json-schema-validation-02.
 			"/definitions/", // Legacy.
@@ -292,28 +307,46 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}
 
 		if len(prefix) == 0 {
-			return nil, fmt.Errorf("%w; must point to definition within file: %q", errUnsupportedRefFormat, ref)
+			return nil, fmt.Errorf(
+				"%w: value must point to definition within file: '%s'",
+				errCannotGenerateReferencedType,
+				ref,
+			)
 		}
+
 		defName = scope[len(prefix):]
 	}
 
 	schema := g.schema
+	sg := g
 
 	if fileName != "" {
-		var err error
+		var serr error
 
-		schema, err = g.fileLoader.Load(fileName, g.schemaFileName)
-		if err != nil {
-			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, err)
+		schema, serr = g.fileLoader.Load(fileName, g.schemaFileName)
+		if serr != nil {
+			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, serr)
 		}
 
-		qualified, err := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
-		if err != nil {
-			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, err)
+		qualified, qerr := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
+		if qerr != nil {
+			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, qerr)
 		}
 
-		if err = g.addFile(qualified, schema); err != nil {
-			return nil, err
+		if ferr := g.addFile(qualified, schema); ferr != nil {
+			return nil, ferr
+		}
+
+		output, oerr := g.findOutputFileForSchemaID(schema.ID)
+		if oerr != nil {
+			return nil, oerr
+		}
+
+		sg = &schemaGenerator{
+			Generator:      g.Generator,
+			schema:         schema,
+			schemaFileName: fileName,
+			output:         output,
 		}
 	}
 
@@ -353,24 +386,6 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		defer func() {
 			delete(g.inScope, qual)
 		}()
-	}
-
-	var sg *schemaGenerator
-
-	if fileName != "" {
-		output, err := g.findOutputFileForSchemaID(schema.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		sg = &schemaGenerator{
-			Generator:      g.Generator,
-			schema:         schema,
-			schemaFileName: fileName,
-			output:         output,
-		}
-	} else {
-		sg = g
 	}
 
 	t, err := sg.generateDeclaredType(def, newNameScope(defName))
