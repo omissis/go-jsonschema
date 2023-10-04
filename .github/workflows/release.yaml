@@ -33,7 +33,7 @@ jobs:
       - name: Lint Go files
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.53.3
+          version: v1.54.2
           args: -v --color=always --config=.rules/.golangci.yml ./...
       - name: Run tests
         run: ./scripts/test.sh
