@@ -34,6 +34,11 @@ $ brew tap omissis/go-jsonschema
 $ brew install go-jsonschema
 ```
 
+## Contributing
+
+This project makes use of [go workspaces](https://go.dev/ref/mod#workspaces) in order to ease testing of the generated code during development while keeping the codebase as tidy and maintainable as possible.
+It is bit of an unusual choice, but it allows to not only test the code-generation logic, but also the generated code itself.
+
 ## Usage
 
 At its most basic:
