@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/format"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/internal/x/text"
@@ -42,6 +41,7 @@ type Generator struct {
 	schemaCacheByFileName map[string]*schemas.Schema
 	warner                func(string)
 	formatters            []formatter
+	fileLoader            schemas.Loader
 }
 
 const (
@@ -55,7 +55,6 @@ var (
 	errArrayPropertyItems             = errors.New("array property must have 'items' set to a type")
 	errEnumArrCannotBeEmpty           = errors.New("enum array cannot be empty")
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
-	errCouldNotResolveSchema          = errors.New("could not resolve schema")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
@@ -71,7 +70,7 @@ func New(config Config) (*Generator, error) {
 		formatters = append(formatters, &yamlFormatter{})
 	}
 
-	return &Generator{
+	generator := &Generator{
 		caser:                 text.NewCaser(config.Capitalizations, config.ResolveExtensions),
 		config:                config,
 		inScope:               map[qualifiedDefinition]struct{}{},
@@ -79,7 +78,14 @@ func New(config Config) (*Generator, error) {
 		schemaCacheByFileName: map[string]*schemas.Schema{},
 		warner:                config.Warner,
 		formatters:            formatters,
-	}, nil
+	}
+
+	generator.fileLoader = schemas.NewCachedLoader(
+		schemas.NewFileLoader(config.ResolveExtensions, config.YAMLExtensions),
+		generator.schemaCacheByFileName,
+	)
+
+	return generator, nil
 }
 
 func (g *Generator) Sources() map[string][]byte {
@@ -134,42 +140,13 @@ func (g *Generator) DoFile(fileName string) error {
 			return fmt.Errorf("error parsing from standard input: %w", err)
 		}
 	} else {
-		schema, err = g.parseFile(fileName)
+		schema, err = g.fileLoader.Load(fileName, "")
 		if err != nil {
 			return fmt.Errorf("error parsing from file %s: %w", fileName, err)
 		}
 	}
 
 	return g.addFile(fileName, schema)
-}
-
-func (g *Generator) parseFile(fileName string) (*schemas.Schema, error) {
-	// TODO: Refactor into some kind of loader.
-	isYAML := false
-
-	for _, yamlExt := range g.config.YAMLExtensions {
-		if strings.HasSuffix(fileName, yamlExt) {
-			isYAML = true
-
-			break
-		}
-	}
-
-	if isYAML {
-		sc, err := schemas.FromYAMLFile(fileName)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing YAML file %s: %w", fileName, err)
-		}
-
-		return sc, nil
-	}
-
-	sc, err := schemas.FromJSONFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing JSON file %s: %w", fileName, err)
-	}
-
-	return sc, nil
 }
 
 func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
@@ -184,48 +161,6 @@ func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
 		schemaFileName: fileName,
 		output:         o,
 	}).generateRootType()
-}
-
-func (g *Generator) loadSchemaFromFile(fileName, parentFileName string) (*schemas.Schema, error) {
-	if !filepath.IsAbs(fileName) {
-		fileName = filepath.Join(filepath.Dir(parentFileName), fileName)
-	}
-
-	exts := append([]string{""}, g.config.ResolveExtensions...)
-	for i, ext := range exts {
-		qualified := fileName + ext
-
-		// Poor man's resolving loop.
-		if i < len(exts)-1 && !fileExists(qualified) {
-			continue
-		}
-
-		var err error
-
-		qualified, err = filepath.EvalSymlinks(qualified)
-		if err != nil {
-			return nil, fmt.Errorf("error resolving symlinks in %s: %w", qualified, err)
-		}
-
-		if schema, ok := g.schemaCacheByFileName[qualified]; ok {
-			return schema, nil
-		}
-
-		schema, err := g.parseFile(qualified)
-		if err != nil {
-			return nil, err
-		}
-
-		g.schemaCacheByFileName[qualified] = schema
-
-		if err = g.addFile(qualified, schema); err != nil {
-			return nil, err
-		}
-
-		return schema, nil
-	}
-
-	return nil, fmt.Errorf("%w %q", errCouldNotResolveSchema, fileName)
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
@@ -367,9 +302,18 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	if fileName != "" {
 		var err error
 
-		schema, err = g.loadSchemaFromFile(fileName, g.schemaFileName)
+		schema, err = g.fileLoader.Load(fileName, g.schemaFileName)
 		if err != nil {
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, err)
+		}
+
+		qualified, err := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
+		if err != nil {
+			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, err)
+		}
+
+		if err = g.addFile(qualified, schema); err != nil {
+			return nil, err
 		}
 	}
 
@@ -1104,10 +1048,4 @@ func (ns nameScope) add(s string) nameScope {
 	result[len(result)-1] = s
 
 	return result
-}
-
-func fileExists(fileName string) bool {
-	_, err := os.Stat(fileName)
-
-	return err == nil || !os.IsNotExist(err)
 }
