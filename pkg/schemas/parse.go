@@ -1,21 +1,15 @@
 package schemas
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
 	"os"
-	"path/filepath"
 
 	"github.com/goccy/go-yaml"
 
 	"github.com/atombender/go-jsonschema/pkg/yamlutils"
 )
-
-var errInvalidSchemaRef = fmt.Errorf("schema reference must a file name or HTTP URL")
 
 func FromJSONFile(fileName string) (*Schema, error) {
 	f, err := os.Open(fileName)
@@ -74,35 +68,4 @@ func FromYAMLReader(r io.Reader) (*Schema, error) {
 	}
 
 	return &schema, nil
-}
-
-type Loader struct {
-	workingDir string
-}
-
-func (l *Loader) Load(fromURL string) (io.ReadCloser, error) {
-	u, err := url.Parse(fromURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %w", err)
-	}
-
-	if u.Scheme == "http" || u.Scheme == "https" {
-		resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fromURL, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create request: %w", err)
-		}
-
-		return resp.Body, nil
-	}
-
-	if (u.Scheme == "" || u.Scheme == "file") && u.Host == "" && u.Path != "" {
-		rc, err := os.Open(filepath.Join(l.workingDir, u.Path))
-		if err != nil {
-			return nil, fmt.Errorf("failed to open file: %w", err)
-		}
-
-		return rc, nil
-	}
-
-	return nil, fmt.Errorf("%w: %q", errInvalidSchemaRef, fromURL)
 }
