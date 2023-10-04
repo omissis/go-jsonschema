@@ -2,6 +2,8 @@
 .envrc
 .idea
 coverage.out
+coverage/
 bin/
 dist/
 vendor/
+go.work
