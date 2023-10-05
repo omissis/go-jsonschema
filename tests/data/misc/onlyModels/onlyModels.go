@@ -2,12 +2,12 @@
 
 package test
 
-type OnlyModel struct {
+type OnlyModels struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
 	MyBoolean *bool `json:"myBoolean,omitempty" yaml:"myBoolean,omitempty" mapstructure:"myBoolean,omitempty"`
 
 	// MyEnum corresponds to the JSON schema field "myEnum".
-	MyEnum *OnlyModelMyEnum `json:"myEnum,omitempty" yaml:"myEnum,omitempty" mapstructure:"myEnum,omitempty"`
+	MyEnum *OnlyModelsMyEnum `json:"myEnum,omitempty" yaml:"myEnum,omitempty" mapstructure:"myEnum,omitempty"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
 	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
@@ -22,7 +22,7 @@ type OnlyModel struct {
 	MyString *string `json:"myString,omitempty" yaml:"myString,omitempty" mapstructure:"myString,omitempty"`
 }
 
-type OnlyModelMyEnum string
+type OnlyModelsMyEnum string
 
-const OnlyModelMyEnumX OnlyModelMyEnum = "x"
-const OnlyModelMyEnumY OnlyModelMyEnum = "y"
+const OnlyModelsMyEnumX OnlyModelsMyEnum = "x"
+const OnlyModelsMyEnumY OnlyModelsMyEnum = "y"
