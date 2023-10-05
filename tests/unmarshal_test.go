@@ -43,7 +43,7 @@ func TestYamlV3Unmarshal(t *testing.T) {
 func TestYamlV3UnmarshalInvalidEnum(t *testing.T) {
 	t.Parallel()
 
-	data, err := os.ReadFile("./data/extraImports/gopkgYAMLv3invalidEnum.yaml")
+	data, err := os.ReadFile("./data/extraImports/gopkgYAMLv3invalidEnum/gopkgYAMLv3invalidEnum.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
