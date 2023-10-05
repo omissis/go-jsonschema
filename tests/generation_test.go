@@ -85,11 +85,11 @@ func TestCrossPackageNoOutput(t *testing.T) {
 	testExampleFile(t, cfg, "./data/crossPackageNoOutput/schema/schema.json")
 }
 
-func TestSpecialCharacters(t *testing.T) {
+func TestBooleanAsSchema(t *testing.T) {
 	t.Parallel()
 
 	cfg := basicConfig
-	testExampleFile(t, cfg, "./data/misc/specialCharacters/specialCharacters.json")
+	testExampleFile(t, cfg, "./data/misc/booleanAsSchema/booleanAsSchema.json")
 }
 
 func TestCapitalization(t *testing.T) {
@@ -100,11 +100,28 @@ func TestCapitalization(t *testing.T) {
 	testExampleFile(t, cfg, "./data/misc/capitalization/capitalization.json")
 }
 
-func TestBooleanAsSchema(t *testing.T) {
+func TestOnlyModels(t *testing.T) {
 	t.Parallel()
 
 	cfg := basicConfig
-	testExampleFile(t, cfg, "./data/misc/booleanAsSchema/booleanAsSchema.json")
+	cfg.OnlyModels = true
+
+	testExampleFile(t, cfg, "./data/misc/onlyModels/onlyModels.json")
+}
+
+func TestSpecialCharacters(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	testExampleFile(t, cfg, "./data/misc/specialCharacters/specialCharacters.json")
+}
+
+func TestTags(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"yaml"}
+	testExampleFile(t, cfg, "./data/misc/tags/tags.json")
 }
 
 func TestStructNameFromTitle(t *testing.T) {
@@ -138,14 +155,6 @@ func TestExtraImportsYAML(t *testing.T) {
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.json")
 }
 
-func TestTags(t *testing.T) {
-	t.Parallel()
-
-	cfg := basicConfig
-	cfg.Tags = []string{"yaml"}
-	testExampleFile(t, cfg, "./data/misc/tags/tags.json")
-}
-
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -170,15 +179,6 @@ func TestRegressions(t *testing.T) {
 	t.Parallel()
 
 	testExamples(t, basicConfig, "./data/regressions")
-}
-
-func TestOnlyModels(t *testing.T) {
-	t.Parallel()
-
-	cfg := basicConfig
-	cfg.OnlyModels = true
-
-	testExamples(t, cfg, "./data/onlyModels")
 }
 
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
