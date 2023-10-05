@@ -4,10 +4,10 @@
   "type": "object",
   "properties": {
     "myExternalThing": {
-      "$ref": "./ref.json#/$defs/Thing"
+      "$ref": "../ref/ref.json#/$defs/Thing"
     },
     "someOtherExternalThing": {
-      "$ref": "./ref.json#/$defs/Thing"
+      "$ref": "../ref/ref.json#/$defs/Thing"
     }
   }
 }
