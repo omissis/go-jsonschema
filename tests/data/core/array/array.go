@@ -5,7 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 
-type A421Array struct {
+type Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".
 	MyArray []interface{} `json:"myArray,omitempty" yaml:"myArray,omitempty" mapstructure:"myArray,omitempty"`
 
@@ -25,21 +25,21 @@ type A421Array struct {
 	MyNumberArray []float64 `json:"myNumberArray,omitempty" yaml:"myNumberArray,omitempty" mapstructure:"myNumberArray,omitempty"`
 
 	// MyObjectArray corresponds to the JSON schema field "myObjectArray".
-	MyObjectArray []A421ArrayMyObjectArrayElem `json:"myObjectArray,omitempty" yaml:"myObjectArray,omitempty" mapstructure:"myObjectArray,omitempty"`
+	MyObjectArray []ArrayMyObjectArrayElem `json:"myObjectArray,omitempty" yaml:"myObjectArray,omitempty" mapstructure:"myObjectArray,omitempty"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
 	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
 }
 
-type A421ArrayMyObjectArrayElem map[string]interface{}
+type ArrayMyObjectArrayElem map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *A421Array) UnmarshalJSON(b []byte) error {
+func (j *Array) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	type Plain A421Array
+	type Plain Array
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
@@ -56,6 +56,6 @@ func (j *A421Array) UnmarshalJSON(b []byte) error {
 			return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNullArray[%d]", i0))
 		}
 	}
-	*j = A421Array(plain)
+	*j = Array(plain)
 	return nil
 }
