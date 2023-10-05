@@ -4,7 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
-import "github.com/atombender/go-jsonschema/types"
+import "github.com/atombender/go-jsonschema/pkg/types"
 
 type DateMyObject struct {
 	// MyDate corresponds to the JSON schema field "myDate".

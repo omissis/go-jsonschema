@@ -74,7 +74,7 @@ func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type,
 					QualifiedName: "types",
 					Imports: []Import{
 						{
-							QualifiedName: "github.com/atombender/go-jsonschema/types",
+							QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
 						},
 					},
 				},
@@ -89,7 +89,7 @@ func PrimitiveTypeFromJSONSchemaType(jsType, format string, pointer bool) (Type,
 					QualifiedName: "types",
 					Imports: []Import{
 						{
-							QualifiedName: "github.com/atombender/go-jsonschema/types",
+							QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
 						},
 					},
 				},
