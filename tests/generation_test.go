@@ -164,6 +164,10 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	}
 
 	for _, file := range fileInfos {
+		if file.IsDir() {
+			testExamples(t, cfg, filepath.Join(dataDir, file.Name()))
+		}
+
 		if strings.HasSuffix(file.Name(), ".json") {
 			fileName := filepath.Join(dataDir, file.Name())
 			if strings.HasSuffix(file.Name(), ".FAIL.json") {
