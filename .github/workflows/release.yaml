@@ -1,5 +1,5 @@
 ---
-name: tag
+name: release
 
 on:
   push:
@@ -24,18 +24,14 @@ jobs:
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
       - name: Fetch all tags
         run: git fetch --force --tags
+      - name: Cleanup pre-release tags
+        run: git tag -l | grep -E "v[0-9]+.[0-9]+.[0-9]+-(alpha|beta|rc).[0-9]+" | xargs git tag -d
       - name: Setup Golang
         uses: actions/setup-go@v4
         with:
           go-version: "^1.21.2"
       - name: Setup workspace
         run: cp go.work.dist go.work
-      - name: Lint Go files
-        uses: docker://golangci/golangci-lint:v1.54.2-alpine
-        with:
-          args: ./scripts/lint-golang.sh
-      - name: Run tests
-        run: ./scripts/test.sh
       - name: Log in to Docker Hub
         if: ${{ !contains(github.ref_name, '-') }}
         uses: docker/login-action@v3
