@@ -32,12 +32,10 @@ jobs:
           go-version: "^1.21.2"
       - name: Setup workspace
         run: cp go.work.dist go.work
-      - name: Setup golangci-lint
-        run: >
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-          sh -s -- -b /usr/local/bin v1.54.2
       - name: Lint Go files
-        run: ./scripts/lint-golang.sh
+        uses: docker://golangci/golangci-lint:v1.54.2-alpine
+        with:
+          args: ./scripts/lint-golang.sh
       - name: Run tests
         run: ./scripts/test.sh
       - name: Log in to Docker Hub
