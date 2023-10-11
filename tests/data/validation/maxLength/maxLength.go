@@ -27,10 +27,10 @@ func (j *MaxLength) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if plain.MyNullableString != nil && len(*plain.MyNullableString) >= 10 {
+	if plain.MyNullableString != nil && len(*plain.MyNullableString) > 10 {
 		return fmt.Errorf("field %s length: must be <= %d", "myNullableString", 10)
 	}
-	if len(plain.MyString) >= 5 {
+	if len(plain.MyString) > 5 {
 		return fmt.Errorf("field %s length: must be <= %d", "myString", 5)
 	}
 	*j = MaxLength(plain)
