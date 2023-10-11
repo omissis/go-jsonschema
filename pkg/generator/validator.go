@@ -244,7 +244,7 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 	}
 
 	if v.maxLength != 0 {
-		out.Printlnf(`if %slen(%s%s) >= %d {`, checkPointer, pointerPrefix, value, v.maxLength)
+		out.Printlnf(`if %slen(%s%s) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", "%s", %d)`, fieldName, v.maxLength)
 		out.Indent(-1)

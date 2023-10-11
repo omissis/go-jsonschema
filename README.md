@@ -122,8 +122,8 @@ While not finished, go-jsonschema can be used today. Aside from some minor featu
     - [ ] `minimum`
     - [ ] `exclusiveMinimum`
   - [ ] String validation (§6.3)
-    - [ ] `maxLength`
-    - [ ] `minLength`
+    - [X] `maxLength`
+    - [X] `minLength`
     - [ ] `pattern`
   - [ ] Array validation (§6.4)
     - [X] `items`

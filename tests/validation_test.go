@@ -24,9 +24,9 @@ func TestMaxStringLength(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			desc:    "myString too long",
+			desc:    "myString has the max allowed length",
 			data:    `{"myString": "hello"}`,
-			wantErr: errors.New("field myString length: must be <= 5"),
+			wantErr: nil,
 		},
 		{
 			desc:    "myString not present",
