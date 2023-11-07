@@ -731,12 +731,19 @@ func (g *schemaGenerator) generateType(
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
 		}
 
-		if ncg, ok := cg.(codegen.NamedType); ok {
-			for _, imprt := range ncg.Package.Imports {
-				g.output.file.Package.AddImport(imprt.QualifiedName, "")
+		addImports := func(typ codegen.Type) {
+			if ncg, ok := typ.(codegen.NamedType); ok {
+				for _, imprt := range ncg.Package.Imports {
+					g.output.file.Package.AddImport(imprt.QualifiedName, "")
+				}
 			}
+		}
 
-			return ncg, nil
+		switch tcg := cg.(type) {
+		case codegen.NamedType:
+			addImports(tcg)
+		case *codegen.PointerType:
+			addImports(tcg.Type)
 		}
 
 		return cg, nil

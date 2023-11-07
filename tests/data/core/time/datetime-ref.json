@@ -1,0 +1,20 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "example of a reference to a date-time formatted string",
+    "type": "object",
+    "properties": {
+      "time": {
+        "$ref": "#/definitions/timedef",
+        "examples": [
+          "2018-04-05T17:31:00Z"
+        ]
+      }
+    },
+    "definitions": {
+      "timedef": {
+        "type": ["string", "null"],
+        "format": "date-time",
+        "minLength": 1
+      }
+    }
+  }

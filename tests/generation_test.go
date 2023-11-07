@@ -36,6 +36,12 @@ func TestCore(t *testing.T) {
 	testExamples(t, basicConfig, "./data/core")
 }
 
+func TestDateTimeRef(t *testing.T) {
+	t.Parallel()
+
+	testExampleFile(t, basicConfig, "./data/core/time/datetime-ref.json")
+}
+
 func TestValidation(t *testing.T) {
 	t.Parallel()
 

@@ -7,7 +7,8 @@ import (
 	"github.com/magiconair/properties/assert"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	// test2 "github.com/atombender/go-jsonschema/tests/data/core/time"
+	test1 "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 )
 
 func TestYamlV3Unmarshal(t *testing.T) {
@@ -18,7 +19,7 @@ func TestYamlV3Unmarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var conf test.GopkgYAMLv3
+	var conf test1.GopkgYAMLv3
 
 	if err := yamlv3.Unmarshal(data, &conf); err != nil {
 		t.Fatal(err)
@@ -28,9 +29,9 @@ func TestYamlV3Unmarshal(t *testing.T) {
 	n := 123.456
 	i := 123
 	b := true
-	e := test.GopkgYAMLv3MyEnumX
+	e := test1.GopkgYAMLv3MyEnumX
 
-	assert.Equal(t, test.GopkgYAMLv3{
+	assert.Equal(t, test1.GopkgYAMLv3{
 		MyString:  &s,
 		MyNumber:  &n,
 		MyInteger: &i,
@@ -48,7 +49,7 @@ func TestYamlV3UnmarshalInvalidEnum(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var conf test.GopkgYAMLv3
+	var conf test1.GopkgYAMLv3
 
 	err = yamlv3.Unmarshal(data, &conf)
 	if err == nil {
@@ -57,3 +58,15 @@ func TestYamlV3UnmarshalInvalidEnum(t *testing.T) {
 
 	assert.Matches(t, err.Error(), "invalid value \\(expected one of .*\\): .*")
 }
+
+// func TestTimeUnmarshal(t *testing.T) {
+// 	t.Parallel()
+
+// 	var conf test2.DatetimeRef
+
+// 	if err := json.Unmarshal([]byte(`{"time":"2023-08-02T17:53:08.614Z"}`), &conf); err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	assert.Equal(t, conf.Time, "2023-08-02 17:53:08.614 +0000 UTC")
+// }
