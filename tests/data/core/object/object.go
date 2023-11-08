@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Object struct {
 	// MyObject corresponds to the JSON schema field "myObject".
@@ -16,9 +17,9 @@ type ObjectMyObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ObjectMyObject) UnmarshalJSON(b []byte) error {
+func (j *ObjectMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
@@ -26,7 +27,25 @@ func (j *ObjectMyObject) UnmarshalJSON(b []byte) error {
 	}
 	type Plain ObjectMyObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = ObjectMyObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ObjectMyObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myString"]; !ok || v == nil {
+		return fmt.Errorf("field myString in ObjectMyObject: required")
+	}
+	type Plain ObjectMyObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = ObjectMyObject(plain)

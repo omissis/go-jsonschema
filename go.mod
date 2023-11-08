@@ -3,7 +3,9 @@ module github.com/atombender/go-jsonschema
 go 1.22
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/goccy/go-yaml v1.11.3
+	github.com/google/go-cmp v0.5.9
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/sanity-io/litter v1.5.5

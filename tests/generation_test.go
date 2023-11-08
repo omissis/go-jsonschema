@@ -18,7 +18,7 @@ var (
 
 	basicConfig = generator.Config{
 		SchemaMappings:     []generator.SchemaMapping{},
-		ExtraImports:       false,
+		ExtraImports:       true,
 		DefaultPackageName: "github.com/example/test",
 		DefaultOutputName:  "-",
 		ResolveExtensions:  []string{".json", ".yaml"},

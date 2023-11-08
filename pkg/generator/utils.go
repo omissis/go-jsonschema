@@ -7,7 +7,7 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-func sortPropertiesByName(props map[string]*schemas.Type) []string {
+func sortedKeys[T any](props map[string]T) []string {
 	names := make([]string, 0, len(props))
 	for name := range props {
 		names = append(names, name)

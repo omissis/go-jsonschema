@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "time"
 
 type DateTime struct {
@@ -17,9 +18,9 @@ type DateTimeMyObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *DateTimeMyObject) UnmarshalJSON(b []byte) error {
+func (j *DateTimeMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myDateTime"]; raw != nil && !ok {
@@ -27,7 +28,25 @@ func (j *DateTimeMyObject) UnmarshalJSON(b []byte) error {
 	}
 	type Plain DateTimeMyObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = DateTimeMyObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *DateTimeMyObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myDateTime"]; !ok || v == nil {
+		return fmt.Errorf("field myDateTime in DateTimeMyObject: required")
+	}
+	type Plain DateTimeMyObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = DateTimeMyObject(plain)

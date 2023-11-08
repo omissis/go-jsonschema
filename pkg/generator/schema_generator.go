@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/atombender/go-jsonschema/pkg/cmputil"
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
@@ -202,11 +205,25 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	}, nil
 }
 
-func (g *schemaGenerator) generateDeclaredType(
-	t *schemas.Type, scope nameScope,
-) (codegen.Type, error) {
+func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		return &codegen.NamedType{Decl: decl}, nil
+	}
+
+	if !g.output.isUniqueTypeName(scope.string()) {
+		odecl := g.output.declsByName[scope.string()]
+
+		if cmp.Equal(odecl.SchemaType, t, cmputil.Opts(*odecl.SchemaType, *t)...) {
+			return &codegen.NamedType{Decl: odecl}, nil
+		}
+
+		if odecl := g.output.declsBySchema[t]; odecl != nil {
+			return &codegen.NamedType{Decl: odecl}, nil
+		}
+
+		if odecl := g.output.getDeclByEqualSchema(scope.string(), t); odecl != nil {
+			return &codegen.NamedType{Decl: odecl}, nil
+		}
 	}
 
 	if t.Enum != nil {
@@ -214,8 +231,9 @@ func (g *schemaGenerator) generateDeclaredType(
 	}
 
 	decl := codegen.TypeDecl{
-		Name:    g.output.uniqueTypeName(scope.string()),
-		Comment: t.Description,
+		Name:       g.output.uniqueTypeName(scope.string()),
+		Comment:    t.Description,
+		SchemaType: t,
 	}
 	g.output.declsBySchema[t] = &decl
 	g.output.declsByName[decl.Name] = &decl
@@ -243,6 +261,15 @@ func (g *schemaGenerator) generateDeclaredType(
 
 	if structType, ok := theType.(*codegen.StructType); ok {
 		var validators []validator
+
+		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
+			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
+
+			g.generateUnmarshaler(decl, validators)
+
+			return &codegen.NamedType{Decl: &decl}, nil
+		}
+
 		for _, f := range structType.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
@@ -260,23 +287,16 @@ func (g *schemaGenerator) generateDeclaredType(
 			validators = g.structFieldValidators(validators, f, f.Type, false)
 		}
 
-		if len(validators) > 0 {
-			for _, v := range validators {
-				if v.desc().hasError {
-					g.output.file.Package.AddImport("fmt", "")
+		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
+			g.generateUnmarshaler(decl, validators)
+		}
 
-					break
-				}
-			}
+		return &codegen.NamedType{Decl: &decl}, nil
+	}
 
-			for _, formatter := range g.formatters {
-				formatter.addImport(g.output.file)
-
-				g.output.file.Package.AddDecl(&codegen.Method{
-					Impl: formatter.generate(decl, validators),
-					Name: decl.GetName() + "_validator",
-				})
-			}
+	if _, ok := theType.(*codegen.MapType); ok {
+		if t.IsSubSchemaTypeElem() {
+			g.generateUnmarshaler(decl, []validator{})
 		}
 	}
 
@@ -341,15 +361,37 @@ func (g *schemaGenerator) structFieldValidators(
 	return validators
 }
 
-func (g *schemaGenerator) generateType(
-	t *schemas.Type,
-	scope nameScope,
-) (codegen.Type, error) {
+func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators []validator) {
+	if g.config.OnlyModels {
+		return
+	}
+
+	for _, v := range validators {
+		if _, ok := v.(*anyOfValidator); ok {
+			g.output.file.Package.AddImport("errors", "")
+		}
+
+		if v.desc().hasError {
+			g.output.file.Package.AddImport("fmt", "")
+
+			break
+		}
+	}
+
+	for _, formatter := range g.formatters {
+		formatter.addImport(g.output.file)
+
+		g.output.file.Package.AddDecl(&codegen.Method{
+			Impl: formatter.generate(g.output, decl, validators),
+			Name: decl.GetName() + "_validator",
+		})
+	}
+}
+
+func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex := 0
 
 	var typeShouldBePointer bool
-
-	two := 2
 
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
@@ -373,7 +415,7 @@ func (g *schemaGenerator) generateType(
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
-	if len(t.Type) == two {
+	if len(t.Type) == 2 {
 		for i, t := range t.Type {
 			if t == "null" {
 				typeShouldBePointer = true
@@ -427,10 +469,7 @@ func (g *schemaGenerator) generateType(
 	}
 }
 
-func (g *schemaGenerator) generateStructType(
-	t *schemas.Type,
-	scope nameScope,
-) (codegen.Type, error) {
+func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if len(t.Properties) == 0 {
 		if len(t.Required) > 0 {
 			g.warner("Object type with no properties has required fields; " +
@@ -442,7 +481,7 @@ func (g *schemaGenerator) generateStructType(
 		var err error
 
 		if t.AdditionalProperties != nil {
-			if valueType, err = g.generateType(t.AdditionalProperties, nil); err != nil {
+			if valueType, err = g.generateType(t.AdditionalProperties, scope.add("Value")); err != nil {
 				return nil, err
 			}
 		}
@@ -462,7 +501,7 @@ func (g *schemaGenerator) generateStructType(
 
 	var structType codegen.StructType
 
-	for _, name := range sortPropertiesByName(t.Properties) {
+	for _, name := range sortedKeys(t.Properties) {
 		prop := t.Properties[name]
 		isRequired := requiredNames[name]
 
@@ -602,19 +641,23 @@ func (g *schemaGenerator) generateStructType(
 		)
 	}
 
+	if t.Default != nil {
+		structType.DefaultValue = g.defaultPropertyValue(t)
+	}
+
 	return &structType, nil
 }
 
 func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	if prop.AdditionalProperties != nil {
 		if len(prop.AdditionalProperties.Type) == 0 {
-			return map[string]any{}
+			return prop.Default
 		}
 
 		if len(prop.AdditionalProperties.Type) != 1 {
 			g.warner("Additional property has multiple types; will be represented as an empty interface with no validation")
 
-			return map[string]any{}
+			return prop.Default
 		}
 
 		switch prop.AdditionalProperties.Type[0] {
@@ -634,19 +677,14 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 			return map[string]bool{}
 
 		default:
-			return map[string]any{}
+			return prop.Default
 		}
 	}
 
 	return prop.Default
 }
 
-func (g *schemaGenerator) generateTypeInline(
-	t *schemas.Type,
-	scope nameScope,
-) (codegen.Type, error) {
-	two := 2
-
+func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if t.Enum == nil && t.Ref == "" {
 		if ext := t.GoJSONSchemaExtension; ext != nil {
 			for _, pkg := range ext.Imports {
@@ -658,11 +696,37 @@ func (g *schemaGenerator) generateTypeInline(
 			}
 		}
 
+		if len(t.AnyOf) > 0 {
+			for i, typ := range t.AnyOf {
+				typ.SetSubSchemaTypeElem()
+
+				if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
+					return nil, err
+				}
+			}
+
+			anyOfType, err := schemas.AnyOf(t.AnyOf)
+			if err != nil {
+				return nil, fmt.Errorf("could not merge anyOf types: %w", err)
+			}
+
+			return g.generateTypeInline(anyOfType, scope)
+		}
+
+		if len(t.AllOf) > 0 {
+			allOfType, err := schemas.AllOf(t.AllOf)
+			if err != nil {
+				return nil, fmt.Errorf("could not merge allOf types: %w", err)
+			}
+
+			return g.generateTypeInline(allOfType, scope)
+		}
+
 		typeIndex := 0
 
 		var typeShouldBePointer bool
 
-		if len(t.Type) == two {
+		if len(t.Type) == 2 {
 			for i, t := range t.Type {
 				if t == "null" {
 					typeShouldBePointer = true
@@ -685,6 +749,10 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
+			if t.IsSubSchemaTypeElem() {
+				return nil, nil
+			}
+
 			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
@@ -722,9 +790,7 @@ func (g *schemaGenerator) generateTypeInline(
 	return g.generateDeclaredType(t, scope)
 }
 
-func (g *schemaGenerator) generateEnumType(
-	t *schemas.Type, scope nameScope,
-) (codegen.Type, error) {
+func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if len(t.Enum) == 0 {
 		return nil, errEnumArrCannotBeEmpty
 	}
@@ -812,8 +878,9 @@ func (g *schemaGenerator) generateEnumType(
 	}
 
 	enumDecl := codegen.TypeDecl{
-		Name: g.output.uniqueTypeName(scope.string()),
-		Type: enumType,
+		Name:       g.output.uniqueTypeName(scope.string()),
+		Type:       enumType,
+		SchemaType: t,
 	}
 	g.output.file.Package.AddDecl(&enumDecl)
 

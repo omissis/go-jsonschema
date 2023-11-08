@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Bar struct {
 	// RefToFoo corresponds to the JSON schema field "refToFoo".
@@ -21,9 +22,9 @@ type Foo struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Foo) UnmarshalJSON(b []byte) error {
+func (j *Foo) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["refToBar"]; raw != nil && !ok {
@@ -31,7 +32,25 @@ func (j *Foo) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Foo
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = Foo(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if v, ok := raw["refToBar"]; !ok || v == nil {
+		return fmt.Errorf("field refToBar in Foo: required")
+	}
+	type Plain Foo
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = Foo(plain)

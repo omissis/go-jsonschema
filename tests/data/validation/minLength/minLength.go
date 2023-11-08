@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type MinLength struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
@@ -14,9 +15,9 @@ type MinLength struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MinLength) UnmarshalJSON(b []byte) error {
+func (j *MinLength) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
@@ -24,7 +25,31 @@ func (j *MinLength) UnmarshalJSON(b []byte) error {
 	}
 	type Plain MinLength
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.MyNullableString != nil && len(*plain.MyNullableString) < 10 {
+		return fmt.Errorf("field %s length: must be >= %d", "myNullableString", 10)
+	}
+	if len(plain.MyString) < 5 {
+		return fmt.Errorf("field %s length: must be >= %d", "myString", 5)
+	}
+	*j = MinLength(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *MinLength) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myString"]; !ok || v == nil {
+		return fmt.Errorf("field myString in MinLength: required")
+	}
+	type Plain MinLength
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.MyNullableString != nil && len(*plain.MyNullableString) < 10 {
