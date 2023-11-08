@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/format"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/internal/x/text"
@@ -58,6 +59,7 @@ var (
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
+	ErrUnsupportedRefExtension        = errors.New("unsupported $ref extension")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
@@ -321,6 +323,11 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	sg := g
 
 	if fileName != "" {
+		fileExt := filepath.Ext(fileName)
+		if fileExt != ".json" {
+			return nil, fmt.Errorf("%w: '%s', only json schema files are allowed", ErrUnsupportedRefExtension, fileExt)
+		}
+
 		var serr error
 
 		schema, serr = g.fileLoader.Load(fileName, g.schemaFileName)
