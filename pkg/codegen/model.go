@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"log"
 	"sort"
 	"strings"
 
@@ -107,6 +108,10 @@ func (p *Package) Generate(out *Emitter) {
 		return false
 	})
 
+	for i, decl := range sorted {
+		log.Printf("Sorted: %+v %+v", i, decl)
+	}
+
 	for i, t := range sorted {
 		if i > 0 {
 			out.Newline()
@@ -168,6 +173,11 @@ func (f Fragment) Generate(out *Emitter) {
 // Method defines a method and how to generate it.
 type Method struct {
 	Impl func(*Emitter)
+	Name string
+}
+
+func (m *Method) GetName() string {
+	return m.Name
 }
 
 func (m *Method) Generate(out *Emitter) {
