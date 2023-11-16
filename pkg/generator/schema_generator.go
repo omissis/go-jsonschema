@@ -279,7 +279,7 @@ func (g *schemaGenerator) generateDeclaredType(
 
 				g.output.file.Package.AddDecl(&codegen.Method{
 					Impl: formatter.generate(decl, validators),
-					Name: "validator_" + decl.GetName(),
+					Name: decl.GetName() + "_validator",
 				})
 			}
 		}
@@ -765,13 +765,13 @@ func (g *schemaGenerator) generateEnumType(
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{
 					Impl: formatter.enumMarshal(enumDecl),
-					Name: "enum_" + enumDecl.GetName(),
+					Name: enumDecl.GetName() + "_enum",
 				})
 			}
 
 			g.output.file.Package.AddDecl(&codegen.Method{
 				Impl: formatter.enumUnmarshal(enumDecl, enumType, valueConstant, wrapInStruct),
-				Name: "enum_" + enumDecl.GetName() + "_unmarshal",
+				Name: enumDecl.GetName() + "_enum_unmarshal",
 			})
 		}
 	}
