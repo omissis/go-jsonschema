@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"log"
 	"sort"
 	"strings"
 
@@ -107,10 +106,6 @@ func (p *Package) Generate(out *Emitter) {
 
 		return false
 	})
-
-	for i, decl := range sorted {
-		log.Printf("Sorted: %+v %+v", i, decl)
-	}
 
 	for i, t := range sorted {
 		if i > 0 {
