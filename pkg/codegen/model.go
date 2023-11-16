@@ -100,7 +100,7 @@ func (p *Package) Generate(out *Emitter) {
 	sort.Slice(sorted, func(i, j int) bool {
 		if a, ok := sorted[i].(Named); ok {
 			if b, ok := sorted[j].(Named); ok {
-				return schemas.RemoveEnumValuesPrefix(a.GetName()) < schemas.RemoveEnumValuesPrefix(b.GetName())
+				return schemas.CleanNameForSorting(a.GetName()) < schemas.CleanNameForSorting(b.GetName())
 			}
 		}
 
