@@ -1,5 +1,7 @@
 package schemas
 
+import "strings"
+
 const (
 	TypeNameString  = "string"
 	TypeNameArray   = "array"
@@ -10,6 +12,10 @@ const (
 	TypeNameNull    = "null"
 )
 
+const (
+	PrefixEnumValue = "enumValues_"
+)
+
 func IsPrimitiveType(t string) bool {
 	switch t {
 	case TypeNameString, TypeNameNumber, TypeNameInteger, TypeNameBoolean, TypeNameNull:
@@ -18,4 +24,11 @@ func IsPrimitiveType(t string) bool {
 	default:
 		return false
 	}
+}
+
+func RemoveEnumValuesPrefix(name string) string {
+	if strings.HasPrefix(name, PrefixEnumValue) {
+		name = strings.TrimPrefix(name, PrefixEnumValue)
+	}
+	return name
 }

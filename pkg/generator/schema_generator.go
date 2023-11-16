@@ -743,7 +743,7 @@ func (g *schemaGenerator) generateEnumType(
 
 	if !g.config.OnlyModels {
 		valueConstant := &codegen.Var{
-			Name:  "enumValues_" + enumDecl.Name,
+			Name:  schemas.PrefixEnumValue + enumDecl.Name,
 			Value: t.Enum,
 		}
 		g.output.file.Package.AddDecl(valueConstant)
