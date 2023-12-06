@@ -24,7 +24,7 @@ jobs:
       - name: Cleanup pre-release tags
         run: git tag -l | grep -E "v[0-9]+.[0-9]+.[0-9]+-(alpha|beta|rc).[0-9]+" | xargs git tag -d
       - name: Setup Golang
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "^1.21.4"
       - name: Setup workspace
