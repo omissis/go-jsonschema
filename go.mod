@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sanity-io/litter v1.5.5
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
+	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611
 )
 
 require (
