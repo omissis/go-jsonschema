@@ -26,7 +26,6 @@ var (
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
-	ErrUnsupportedRefExtension        = errors.New("unsupported $ref extension")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
