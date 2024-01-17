@@ -5,7 +5,9 @@
   "properties": {
     "myObject": {
       "type": "object",
-      "required": ["myString"],
+      "required": [
+        "myString"
+      ],
       "properties": {
         "myString": {
           "type": "string"

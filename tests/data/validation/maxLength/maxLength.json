@@ -12,5 +12,7 @@
       "maxLength": 10
     }
   },
-  "required": ["myString"]
+  "required": [
+    "myString"
+  ]
 }

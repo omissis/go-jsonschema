@@ -12,7 +12,6 @@
     "html": {
       "type": "string"
     },
-
     "url_something": {
       "type": "string"
     },
@@ -22,7 +21,6 @@
     "html_something": {
       "type": "string"
     },
-
     "urlSomethingElse": {
       "type": "string"
     },
@@ -32,7 +30,6 @@
     "htmlSomethingElse": {
       "type": "string"
     },
-
     "url__": {
       "type": "string"
     },

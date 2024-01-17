@@ -3,4 +3,4 @@
 set -e
 set -o errexit -o nounset
 
-markdownlint-cli2-config ".rules/.markdownlint.yaml" "**/*.md"
+markdownlint-cli2 "**/*.md" --config ".rules/.markdownlint.yaml"

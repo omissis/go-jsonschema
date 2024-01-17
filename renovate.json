@@ -6,7 +6,12 @@
   "packageRules": [
     {
       "description": "Update all dependencies up to the minor release level",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "automerge": true
     }
   ]

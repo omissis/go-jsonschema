@@ -1,3 +1,4 @@
+---
 # This file contains all available configuration options
 # with their default values (in comments).
 
@@ -5,14 +6,12 @@
 run:
   timeout: 5m
   skip-files:
-    - ".*\\.gen\\.go$"
-    - "tests/data/.*"
+    - .*\.gen\.go$
+    - tests/data/.*
   modules-download-mode: readonly
-
 # output configuration options
 output:
   sort-results: true
-
 linters:
   # Enable all available linters.
   # Default: false
@@ -48,7 +47,6 @@ linters:
     # unused
     - exhaustruct
     - forbidigo
-
 linters-settings:
   decorder:
     disable-init-func-first-check: false
@@ -104,13 +102,14 @@ linters-settings:
         arguments:
           - maxLitCount: "3"
             allowStrs: '""'
-            allowInts: "0,1,2"
-            allowFloats: "0.0,0.,1.0,1.,2.0,2."
+            allowInts: 0,1,2
+            allowFloats: 0.0,0.,1.0,1.,2.0,2.
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#argument-limit
       - name: argument-limit
         severity: warning
         disabled: false
-        arguments: [4]
+        arguments:
+          - 4
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#atomic
       - name: atomic
         severity: warning
@@ -119,7 +118,11 @@ linters-settings:
       - name: banned-characters
         severity: warning
         disabled: false
-        arguments: ["Ω", "Σ", "σ", "7"]
+        arguments:
+          - Ω
+          - Σ
+          - σ
+          - "7"
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#bare-return
       - name: bare-return
         severity: warning
@@ -140,7 +143,8 @@ linters-settings:
       - name: cognitive-complexity
         severity: warning
         disabled: false
-        arguments: [7]
+        arguments:
+          - 7
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#confusing-naming
       - name: confusing-naming
         severity: warning
@@ -165,7 +169,8 @@ linters-settings:
       - name: cyclomatic
         severity: warning
         disabled: false
-        arguments: [3]
+        arguments:
+          - 3
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#datarace
       - name: datarace
         severity: warning
@@ -179,7 +184,8 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - ["call-chain", "loop"]
+          - - call-chain
+            - loop
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#dot-imports
       - name: dot-imports
         severity: warning
@@ -221,8 +227,8 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - "checkPrivateReceivers"
-          - "sayRepetitiveInsteadOfStutters"
+          - checkPrivateReceivers
+          - sayRepetitiveInsteadOfStutters
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#file-header
       - name: file-header
         severity: warning
@@ -237,12 +243,15 @@ linters-settings:
       - name: function-result-limit
         severity: warning
         disabled: false
-        arguments: [2]
+        arguments:
+          - 2
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#function-length
       - name: function-length
         severity: warning
         disabled: false
-        arguments: [10, 0]
+        arguments:
+          - 10
+          - 0
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#get-return
       - name: get-return
         severity: warning
@@ -268,8 +277,8 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - "crypto/md5"
-          - "crypto/sha1"
+          - crypto/md5
+          - crypto/sha1
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#import-shadowing
       - name: import-shadowing
         severity: warning
@@ -278,12 +287,14 @@ linters-settings:
       - name: line-length-limit
         severity: warning
         disabled: false
-        arguments: [120]
+        arguments:
+          - 120
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#max-public-structs
       - name: max-public-structs
         severity: warning
         disabled: false
-        arguments: [3]
+        arguments:
+          - 3
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#modifies-parameter
       - name: modifies-parameter
         severity: warning
@@ -333,14 +344,14 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - - 'core.WriteError[1].Message'
-            - '/^([^A-Z]|$)/'
+          - - core.WriteError[1].Message
+            - /^([^A-Z]|$)/
             - must not start with a capital letter
-          - - 'fmt.Errorf[0]'
-            - '/(^|[^\.!?])$/'
+          - - fmt.Errorf[0]
+            - /(^|[^\.!?])$/
             - must not end in punctuation
           - - panic
-            - '/^[^\n]*$/'
+            - /^[^\n]*$/
             - must not contain line breaks
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#struct-tag
       - name: struct-tag
@@ -363,10 +374,12 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - ["ID"] # AllowList
-          - ["VM"] # DenyList
+          - - ID
+          - # AllowList
+            - VM
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#var-declaration
-      - name: var-declaration
+      - # DenyList
+        name: var-declaration
         severity: warning
         disabled: false
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unconditional-recursion
@@ -386,8 +399,8 @@ linters-settings:
         severity: warning
         disabled: false
         arguments:
-          - "fmt.Printf"
-          - "myFunction"
+          - fmt.Printf
+          - myFunction
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unnecessary-stmt
       - name: unnecessary-stmt
         severity: warning
@@ -447,7 +460,6 @@ issues:
   # Default: []
   exclude:
     - "local replacement are not allowed: github.com/atombender/go-jsonschema/tests/data"
-
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     # Exclude some linters from running on tests files.
@@ -468,31 +480,25 @@ issues:
     - path: main\.go
       linters:
         - gochecknoglobals
-
   # Independently of option `exclude` we use default exclude patterns,
   # it can be disabled by this option.
   # To list all excluded by default patterns execute `golangci-lint run --help`.
   # Default: true.
   exclude-use-default: true
-
   # If set to true exclude and exclude-rules regular expressions become case-sensitive.
   # Default: false
   exclude-case-sensitive: false
-
   # The list of ids of default excludes to include or disable.
   # Default: []
   include: []
-
   # Maximum issues count per one linter.
   # Set to 0 to disable.
   # Default: 50
   max-issues-per-linter: 50
-
   # Maximum count of issues with the same text.
   # Set to 0 to disable.
   # Default: 3
   max-same-issues: 3
-
   # Show only new issues: if there are unstaged changes or untracked files,
   # only those changes are analyzed, else only changes in HEAD~ are analyzed.
   # It's a super-useful option for integration of golangci-lint into existing large codebase.
@@ -501,7 +507,6 @@ issues:
   #
   # Default: false.
   new: false
-
   # Show only new issues created after git revision `REV`.
   # new-from-rev: HEAD
 
@@ -510,7 +515,6 @@ issues:
 
   # Fix found issues (if it's supported by the linter).
   fix: false
-
 severity:
   # Set the default severity for issues.
   #
@@ -523,11 +527,9 @@ severity:
   #
   # Default value is an empty string.
   default-severity: error
-
   # If set to true `severity-rules` regular expressions become case-sensitive.
   # Default: false
   case-sensitive: true
-
   # When a list of severity rules are provided, severity information will be added to lint issues.
   # Severity rules have the same filtering capability as exclude rules
   # except you are allowed to specify one matcher per severity rule.

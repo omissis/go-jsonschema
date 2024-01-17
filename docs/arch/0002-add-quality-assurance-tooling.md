@@ -21,8 +21,10 @@ We are going to introduce a number of tools and practices to help with most aspe
 - Setting up CI pipelines to ensure all checks are run all the time
 - Keeping a consistent format when redacting commit messages and release notes
 
-In general, we want to automate all aspect of the project development lifecycle and leverage tools to the maximum extent to ensure we can focus our attention on delivering value
+In general, we want to automate all aspect of the project development lifecycle and leverage tools to the maximum extent
+to ensure we can focus our attention on delivering value.
 
 ## Consequences
 
-The project should reach a high level of automation and quality, guaranteed by practices and tools, while keeping maintenance costs at a reasonable level.
+The project should reach a high level of automation and quality, guaranteed by practices and tools,
+while keeping maintenance costs at a reasonable level.
