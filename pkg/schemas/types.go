@@ -27,5 +27,6 @@ func CleanNameForSorting(name string) string {
 	if strings.HasPrefix(name, PrefixEnumValue) {
 		name = strings.TrimPrefix(name, PrefixEnumValue) + "_enumValues" // Append a string for sorting properly
 	}
+
 	return name
 }
