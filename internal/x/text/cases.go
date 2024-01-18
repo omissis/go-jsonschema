@@ -47,7 +47,7 @@ func (c *Caser) Identifierize(s string) string {
 
 	rIdent := []rune(ident)
 	if len(rIdent) > 0 {
-		if !unicode.IsLetter(rIdent[0]) || isNoneCaseSensitiveLetter(rIdent[0]) {
+		if !unicode.IsLetter(rIdent[0]) || isNotCaseSensitiveLetter(rIdent[0]) {
 			ident = "A" + ident
 		}
 	}
@@ -55,7 +55,7 @@ func (c *Caser) Identifierize(s string) string {
 	return ident
 }
 
-func isNoneCaseSensitiveLetter(r rune) bool {
+func isNotCaseSensitiveLetter(r rune) bool {
 	return !unicode.IsUpper(r) && !unicode.IsLower(r)
 }
 
@@ -86,7 +86,7 @@ func splitIdentifierByCaseAndSeparators(s string) []string {
 		stateNothing state = iota
 		stateLower
 		stateUpper
-		stateNonCase
+		stateNoCase
 		stateNumber
 		stateDelimiter
 	)
@@ -114,7 +114,7 @@ func splitIdentifierByCaseAndSeparators(s string) []string {
 			nextState = stateDelimiter
 
 		default: // Non-case sensitive letters.
-			nextState = stateNonCase
+			nextState = stateNoCase
 		}
 
 		if nextState != currState {
