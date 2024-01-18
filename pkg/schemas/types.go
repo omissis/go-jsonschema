@@ -19,3 +19,17 @@ func IsPrimitiveType(t string) bool {
 		return false
 	}
 }
+
+func isPrimitiveTypeList(types []*Type) bool {
+	for _, typ := range types {
+		if len(typ.Type) == 0 {
+			continue
+		}
+
+		if !IsPrimitiveType(typ.Type[0]) {
+			return false
+		}
+	}
+
+	return true
+}

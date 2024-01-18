@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import "github.com/atombender/go-jsonschema/pkg/types"
+import yaml "gopkg.in/yaml.v3"
 
 type DateMyObject struct {
 	// MyDate corresponds to the JSON schema field "myDate".
@@ -12,9 +13,9 @@ type DateMyObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *DateMyObject) UnmarshalJSON(b []byte) error {
+func (j *DateMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if v, ok := raw["myDate"]; !ok || v == nil {
@@ -22,7 +23,25 @@ func (j *DateMyObject) UnmarshalJSON(b []byte) error {
 	}
 	type Plain DateMyObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = DateMyObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *DateMyObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myDate"]; !ok || v == nil {
+		return fmt.Errorf("field myDate in DateMyObject: required")
+	}
+	type Plain DateMyObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = DateMyObject(plain)

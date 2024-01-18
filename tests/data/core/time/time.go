@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import "github.com/atombender/go-jsonschema/pkg/types"
+import yaml "gopkg.in/yaml.v3"
 
 type TimeMyObject struct {
 	// MyTime corresponds to the JSON schema field "myTime".
@@ -12,9 +13,9 @@ type TimeMyObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TimeMyObject) UnmarshalJSON(b []byte) error {
+func (j *TimeMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if v, ok := raw["myTime"]; !ok || v == nil {
@@ -22,7 +23,25 @@ func (j *TimeMyObject) UnmarshalJSON(b []byte) error {
 	}
 	type Plain TimeMyObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = TimeMyObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TimeMyObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myTime"]; !ok || v == nil {
+		return fmt.Errorf("field myTime in TimeMyObject: required")
+	}
+	type Plain TimeMyObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = TimeMyObject(plain)
