@@ -531,6 +531,21 @@ func (g *schemaGenerator) generateStructType(
 		structType.AddField(structField)
 	}
 
+	if t.AdditionalProperties != nil {
+		if valueType, err := g.generateType(t.AdditionalProperties, nil); err != nil {
+			return nil, err
+		} else {
+			structType.AddField(
+				codegen.StructField{
+					Name:         "AdditionalProperties",
+					DefaultValue: map[string]interface{}{},
+					SchemaType:   &schemas.Type{},
+					Type:         valueType,
+				},
+			)
+		}
+	}
+
 	return &structType, nil
 }
 
