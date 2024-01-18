@@ -1,10 +1,11 @@
-FROM golang:1.21.4-alpine3.18 AS tools
+FROM golang:1.21.6-alpine3.18 AS tools
 
 COPY scripts/tools-golang.sh /tmp/tools-golang.sh
 
 RUN /tmp/tools-golang.sh && rm /tmp/tools-golang.sh
 
-RUN apk add jq~=1.6 yq~=4.30
+RUN apk add --no-cache jq~=1.6 yq~=4.33 && \
+    rm -rf /var/cache/apk/* /tmp/*
 
 FROM scratch as go-jsonschema
 

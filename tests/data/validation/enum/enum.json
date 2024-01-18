@@ -4,45 +4,84 @@
   "type": "object",
   "properties": {
     "myStringUntypedEnum": {
-      "enum": ["red", "blue", "green"]
+      "enum": [
+        "red",
+        "blue",
+        "green"
+      ]
     },
     "myNumberUntypedEnum": {
-      "enum": [1, 2, 3]
+      "enum": [
+        1,
+        2,
+        3
+      ]
     },
     "myBooleanUntypedEnum": {
-      "enum": [true, false]
+      "enum": [
+        true,
+        false
+      ]
     },
     "myNullUntypedEnum": {
-      "enum": [null]
+      "enum": [
+        null
+      ]
     },
     "myMixedUntypedEnum": {
-      "enum": ["red", 1, true, null]
+      "enum": [
+        "red",
+        1,
+        true,
+        null
+      ]
     },
-
     "myStringTypedEnum": {
       "type": "string",
-      "enum": ["red", "blue", "green"]
+      "enum": [
+        "red",
+        "blue",
+        "green"
+      ]
     },
     "myNumberTypedEnum": {
       "type": "number",
-      "enum": [1, 2, 3]
+      "enum": [
+        1,
+        2,
+        3
+      ]
     },
     "myIntegerTypedEnum": {
       "type": "integer",
-      "enum": [1, 2, 3]
+      "enum": [
+        1,
+        2,
+        3
+      ]
     },
     "myBooleanTypedEnum": {
       "type": "boolean",
-      "enum": [true, false]
+      "enum": [
+        true,
+        false
+      ]
     },
     "myNullTypedEnum": {
       "type": "null",
-      "enum": [null]
+      "enum": [
+        null
+      ]
     },
-
     "myMixedTypeEnum": {
-      "type": ["string", "number"],
-      "enum": [42, "smurf"]
+      "type": [
+        "string",
+        "number"
+      ],
+      "enum": [
+        42,
+        "smurf"
+      ]
     }
   }
 }

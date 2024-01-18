@@ -32,14 +32,15 @@
     },
     "myObject": {
       "type": "object",
-      "required": ["myNestedObjectString"],
+      "required": [
+        "myNestedObjectString"
+      ],
       "properties": {
         "myNestedObjectString": {
           "type": "string"
         }
       }
     },
-
     "myStringArray": {
       "type": "array",
       "items": {
@@ -74,7 +75,9 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["myNestedObjectString"],
+        "required": [
+          "myNestedObjectString"
+        ],
         "properties": {
           "myNestedObjectString": {
             "type": "string"

@@ -1,49 +1,49 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "id": "https://example.com/special-characters",
-    "type": "object",
-    "properties": {
-        "plainLicenses": {
-            "type": "string",
-            "enum": [
-                "GPL-3.0",
-                "MIT"
-            ]
-        },
-        "plusLicenses": {
-            "type": "string",
-            "enum": [
-                "GPL-3.0+",
-                "MIT+"
-            ]
-        },
-        "plainLicensesRef": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/license"
-            }
-        },
-        "plusLicensesRef": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/license+"
-            }
-        }
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/special-characters",
+  "type": "object",
+  "properties": {
+    "plainLicenses": {
+      "type": "string",
+      "enum": [
+        "GPL-3.0",
+        "MIT"
+      ]
     },
-    "definitions": {
-        "license": {
-            "type": "string",
-            "enum": [
-                "GPL-3.0",
-                "MIT"
-            ]
-        },
-        "license+": {
-            "type": "string",
-            "enum": [
-                "GPL-3.0+",
-                "MIT+"
-            ]
-        }
+    "plusLicenses": {
+      "type": "string",
+      "enum": [
+        "GPL-3.0+",
+        "MIT+"
+      ]
+    },
+    "plainLicensesRef": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/license"
+      }
+    },
+    "plusLicensesRef": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/license+"
+      }
     }
+  },
+  "definitions": {
+    "license": {
+      "type": "string",
+      "enum": [
+        "GPL-3.0",
+        "MIT"
+      ]
+    },
+    "license+": {
+      "type": "string",
+      "enum": [
+        "GPL-3.0+",
+        "MIT+"
+      ]
+    }
+  }
 }

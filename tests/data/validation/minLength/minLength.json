@@ -12,5 +12,7 @@
       "minLength": 10
     }
   },
-  "required": ["myString"]
+  "required": [
+    "myString"
+  ]
 }

@@ -12,29 +12,29 @@ builds:
       - windows
       - darwin
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.gitCommit={{.Commit}} -X main.buildTime={{.Date}} -X main.goVersion={{.Env.GO_VERSION}} -X main.osArch={{.Arch}}
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.gitCommit={{.Commit}}
+      - -X main.buildTime={{.Date}}
+      - -X main.goVersion={{.Env.GO_VERSION}}
+      - -X main.osArch={{.Arch}}
 archives:
-  - name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
+  - name_template: '{{ .ProjectName }}_ {{- title .Os }}_ {{- if eq .Arch "amd64" }}x86_64 {{- else if eq .Arch "386" }}i386 {{- else }}{{ .Arch }}{{ end }}' # yamllint disable-line rule:line-length
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: '{{ incpatch .Version }}-next'
 changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
+      - '^docs:'
+      - '^test:'
 release:
   github:
     owner: omissis
     name: go-jsonschema
-  name_template: "{{ .Tag }}"
+  name_template: '{{ .Tag }}'
   prerelease: auto
 brews:
   - name: go-jsonschema
@@ -43,8 +43,8 @@ brews:
       name: homebrew-go-jsonschema
     skip_upload: auto
     folder: Formula
-    homepage: "https://gihub.com/omissis/go-jsonschema"
-    description: "go-jsonschema binary"
+    homepage: https://gihub.com/omissis/go-jsonschema
+    description: go-jsonschema binary
     test: |
       system "#{bin}/go-jsonschema"
     install: |
@@ -53,45 +53,45 @@ dockers:
   - skip_push: auto
     use: buildx
     image_templates:
-      - "omissis/go-jsonschema:{{ .Version }}-amd64"
+      - omissis/go-jsonschema:{{ .Version }}-amd64
     build_flag_templates:
-      - "--target=go-jsonschema"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--platform=linux/amd64"
+      - --target=go-jsonschema
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.title={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --platform=linux/amd64
     goarch: amd64
   - skip_push: auto
     use: buildx
     image_templates:
-      - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
+      - omissis/go-jsonschema:{{ .Version }}-arm64v8
     build_flag_templates:
-      - "--target=go-jsonschema"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--platform=linux/arm64/v8"
+      - --target=go-jsonschema
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.title={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --platform=linux/arm64/v8
     goarch: arm64
 docker_manifests:
-- skip_push: auto
-  name_template: "omissis/go-jsonschema:latest"
-  image_templates:
-  - "omissis/go-jsonschema:{{ .Version }}-amd64"
-  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
-- skip_push: auto
-  name_template: "omissis/go-jsonschema:{{ .Major }}"
-  image_templates:
-  - "omissis/go-jsonschema:{{ .Version }}-amd64"
-  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
-- skip_push: auto
-  name_template: "omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}"
-  image_templates:
-  - "omissis/go-jsonschema:{{ .Version }}-amd64"
-  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
-- skip_push: auto
-  name_template: "omissis/go-jsonschema:{{ .Version }}"
-  image_templates:
-  - "omissis/go-jsonschema:{{ .Version }}-amd64"
-  - "omissis/go-jsonschema:{{ .Version }}-arm64v8"
+  - skip_push: auto
+    name_template: omissis/go-jsonschema:latest
+    image_templates:
+      - omissis/go-jsonschema:{{ .Version }}-amd64
+      - omissis/go-jsonschema:{{ .Version }}-arm64v8
+  - skip_push: auto
+    name_template: omissis/go-jsonschema:{{ .Major }}
+    image_templates:
+      - omissis/go-jsonschema:{{ .Version }}-amd64
+      - omissis/go-jsonschema:{{ .Version }}-arm64v8
+  - skip_push: auto
+    name_template: omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}
+    image_templates:
+      - omissis/go-jsonschema:{{ .Version }}-amd64
+      - omissis/go-jsonschema:{{ .Version }}-arm64v8
+  - skip_push: auto
+    name_template: omissis/go-jsonschema:{{ .Version }}
+    image_templates:
+      - omissis/go-jsonschema:{{ .Version }}-amd64
+      - omissis/go-jsonschema:{{ .Version }}-arm64v8

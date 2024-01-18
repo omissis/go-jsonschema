@@ -11,7 +11,9 @@ type YamlMultilineDescriptions struct {
 	//
 	Bar *string `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
-	// I'm a multiline description in a folded block. Folded blocks should not have
-	// hard line breaks after parsing. They should also not end in a line break.
+	// I'm a multiline description in a folded block.
+	// Folded blocks should not have hard line breaks after parsing.
+	// They should also not end in a line break.
+	//
 	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }

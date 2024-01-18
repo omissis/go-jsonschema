@@ -6,11 +6,13 @@
   "properties": {
     "myObject": {
       "type": "object",
-      "required": ["myDateTime"],
+      "required": [
+        "myDateTime"
+      ],
       "properties": {
         "myDateTime": {
-        "type": "string",
-        "format": "date-time"
+          "type": "string",
+          "format": "date-time"
         }
       }
     }

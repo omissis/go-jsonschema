@@ -3,4 +3,4 @@
 set -e
 set -o errexit -o nounset
 
-find . -name *.json -type f -exec jq -M . {} > {}.tmp \; -exec mv {}.tmp {} \;
+find . -name "*.json" -type f -exec sh -c 'jq -M . "$1" > "$1".tmp' shell {} \; -exec mv {}.tmp {} \;

@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -92,11 +91,6 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	sg := g
 
 	if fileName != "" {
-		fileExt := filepath.Ext(fileName)
-		if fileExt != ".json" {
-			return nil, fmt.Errorf("%w: '%s', only json schema files are allowed", ErrUnsupportedRefExtension, fileExt)
-		}
-
 		var serr error
 
 		schema, serr = g.fileLoader.Load(fileName, g.schemaFileName)

@@ -1,7 +1,7 @@
 ---
-myString: "example"
+myString: example
 myNumber: 123.456
 myInteger: 123
 myBoolean: true
 myNull: null
-myEnum: "z"
+myEnum: z

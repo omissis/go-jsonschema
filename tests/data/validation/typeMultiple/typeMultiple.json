@@ -4,21 +4,45 @@
   "type": "object",
   "properties": {
     "all": {
-      "type": ["number", "string", "boolean", "null", "object", "array"]
+      "type": [
+        "number",
+        "string",
+        "boolean",
+        "null",
+        "object",
+        "array"
+      ]
     },
     "allPrimitives": {
-      "type": ["number", "string", "boolean", "null"]
+      "type": [
+        "number",
+        "string",
+        "boolean",
+        "null"
+      ]
     },
     "arrayOfAll": {
       "type": "array",
       "items": {
-        "type": ["number", "string", "boolean", "null", "object", "array"]
+        "type": [
+          "number",
+          "string",
+          "boolean",
+          "null",
+          "object",
+          "array"
+        ]
       }
     },
     "arrayOfAllPrimitives": {
       "type": "array",
       "items": {
-        "type": ["number", "string", "boolean", "null"]
+        "type": [
+          "number",
+          "string",
+          "boolean",
+          "null"
+        ]
       }
     }
   }

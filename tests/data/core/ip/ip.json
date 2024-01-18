@@ -6,7 +6,9 @@
   "properties": {
     "myObject": {
       "type": "object",
-      "required": ["myIp"],
+      "required": [
+        "myIp"
+      ],
       "properties": {
         "myIp": {
           "type": "string",

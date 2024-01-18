@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/refExternalFile",
+  "type": "object",
+  "properties": {
+    "myExternalThing": {
+      "$ref": "../../yaml/yamlStructNameFromFile/yamlStructNameFromFile.yaml"
+    },
+    "someOtherExternalThing": {
+      "$ref": "../../yaml/yamlStructNameFromFile/yamlStructNameFromFile.yaml"
+    }
+  }
+}
