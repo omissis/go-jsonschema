@@ -10,9 +10,6 @@ const (
 	TypeNameObject  = "object"
 	TypeNameBoolean = "boolean"
 	TypeNameNull    = "null"
-)
-
-const (
 	PrefixEnumValue = "enumValues_"
 )
 
