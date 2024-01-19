@@ -5,6 +5,11 @@ package test
 import "encoding/json"
 import "fmt"
 
+type Object struct {
+	// MyObject corresponds to the JSON schema field "myObject".
+	MyObject *ObjectMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+}
+
 type ObjectMyObject struct {
 	// MyString corresponds to the JSON schema field "myString".
 	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`
@@ -26,9 +31,4 @@ func (j *ObjectMyObject) UnmarshalJSON(b []byte) error {
 	}
 	*j = ObjectMyObject(plain)
 	return nil
-}
-
-type Object struct {
-	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *ObjectMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }

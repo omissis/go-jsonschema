@@ -6,7 +6,15 @@ import "encoding/json"
 import "fmt"
 import "reflect"
 
+type RefToEnum struct {
+	// MyThing corresponds to the JSON schema field "myThing".
+	MyThing *Thing `json:"myThing,omitempty" yaml:"myThing,omitempty" mapstructure:"myThing,omitempty"`
+}
+
 type Thing string
+
+const ThingX Thing = "x"
+const ThingY Thing = "y"
 
 var enumValues_Thing = []interface{}{
 	"x",
@@ -32,11 +40,3 @@ func (j *Thing) UnmarshalJSON(b []byte) error {
 	*j = Thing(v)
 	return nil
 }
-
-type RefToEnum struct {
-	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing `json:"myThing,omitempty" yaml:"myThing,omitempty" mapstructure:"myThing,omitempty"`
-}
-
-const ThingX Thing = "x"
-const ThingY Thing = "y"

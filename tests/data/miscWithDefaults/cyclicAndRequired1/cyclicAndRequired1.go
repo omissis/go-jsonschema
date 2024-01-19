@@ -5,6 +5,16 @@ package test
 import "encoding/json"
 import "fmt"
 
+type Bar struct {
+	// RefToFoo corresponds to the JSON schema field "refToFoo".
+	RefToFoo *Foo `json:"refToFoo,omitempty" yaml:"refToFoo,omitempty" mapstructure:"refToFoo,omitempty"`
+}
+
+type CyclicAndRequired1 struct {
+	// A corresponds to the JSON schema field "a".
+	A *Foo `json:"a,omitempty" yaml:"a,omitempty" mapstructure:"a,omitempty"`
+}
+
 type Foo struct {
 	// RefToBar corresponds to the JSON schema field "refToBar".
 	RefToBar Bar `json:"refToBar" yaml:"refToBar" mapstructure:"refToBar"`
@@ -26,14 +36,4 @@ func (j *Foo) UnmarshalJSON(b []byte) error {
 	}
 	*j = Foo(plain)
 	return nil
-}
-
-type Bar struct {
-	// RefToFoo corresponds to the JSON schema field "refToFoo".
-	RefToFoo *Foo `json:"refToFoo,omitempty" yaml:"refToFoo,omitempty" mapstructure:"refToFoo,omitempty"`
-}
-
-type CyclicAndRequired1 struct {
-	// A corresponds to the JSON schema field "a".
-	A *Foo `json:"a,omitempty" yaml:"a,omitempty" mapstructure:"a,omitempty"`
 }

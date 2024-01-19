@@ -6,6 +6,11 @@ import "encoding/json"
 import "fmt"
 import "github.com/atombender/go-jsonschema/pkg/types"
 
+type Date struct {
+	// MyObject corresponds to the JSON schema field "myObject".
+	MyObject *DateMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+}
+
 type DateMyObject struct {
 	// MyDate corresponds to the JSON schema field "myDate".
 	MyDate types.SerializableDate `json:"myDate" yaml:"myDate" mapstructure:"myDate"`
@@ -27,9 +32,4 @@ func (j *DateMyObject) UnmarshalJSON(b []byte) error {
 	}
 	*j = DateMyObject(plain)
 	return nil
-}
-
-type Date struct {
-	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *DateMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
