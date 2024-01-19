@@ -6,7 +6,15 @@ import "encoding/json"
 import "fmt"
 import "reflect"
 
+type TypedDefaultEnums struct {
+	// Some corresponds to the JSON schema field "some".
+	Some TypedDefaultEnumsSome `json:"some,omitempty" yaml:"some,omitempty" mapstructure:"some,omitempty"`
+}
+
 type TypedDefaultEnumsSome string
+
+const TypedDefaultEnumsSomeOther TypedDefaultEnumsSome = "other"
+const TypedDefaultEnumsSomeRandom TypedDefaultEnumsSome = "random"
 
 var enumValues_TypedDefaultEnumsSome = []interface{}{
 	"random",
@@ -32,14 +40,6 @@ func (j *TypedDefaultEnumsSome) UnmarshalJSON(b []byte) error {
 	*j = TypedDefaultEnumsSome(v)
 	return nil
 }
-
-type TypedDefaultEnums struct {
-	// Some corresponds to the JSON schema field "some".
-	Some TypedDefaultEnumsSome `json:"some,omitempty" yaml:"some,omitempty" mapstructure:"some,omitempty"`
-}
-
-const TypedDefaultEnumsSomeOther TypedDefaultEnumsSome = "other"
-const TypedDefaultEnumsSomeRandom TypedDefaultEnumsSome = "random"
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TypedDefaultEnums) UnmarshalJSON(b []byte) error {

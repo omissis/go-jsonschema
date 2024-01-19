@@ -5,54 +5,6 @@ package test
 import "encoding/json"
 import "fmt"
 
-type RequiredFieldsMyObject struct {
-	// MyNestedObjectString corresponds to the JSON schema field
-	// "myNestedObjectString".
-	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString" mapstructure:"myNestedObjectString"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *RequiredFieldsMyObject) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if v, ok := raw["myNestedObjectString"]; !ok || v == nil {
-		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObject: required")
-	}
-	type Plain RequiredFieldsMyObject
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = RequiredFieldsMyObject(plain)
-	return nil
-}
-
-type RequiredFieldsMyObjectArrayElem struct {
-	// MyNestedObjectString corresponds to the JSON schema field
-	// "myNestedObjectString".
-	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString" mapstructure:"myNestedObjectString"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *RequiredFieldsMyObjectArrayElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if v, ok := raw["myNestedObjectString"]; !ok || v == nil {
-		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObjectArrayElem: required")
-	}
-	type Plain RequiredFieldsMyObjectArrayElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = RequiredFieldsMyObjectArrayElem(plain)
-	return nil
-}
-
 type RequiredFields struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
 	MyBoolean bool `json:"myBoolean" yaml:"myBoolean" mapstructure:"myBoolean"`
@@ -89,6 +41,54 @@ type RequiredFields struct {
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
 	MyStringArray []string `json:"myStringArray" yaml:"myStringArray" mapstructure:"myStringArray"`
+}
+
+type RequiredFieldsMyObject struct {
+	// MyNestedObjectString corresponds to the JSON schema field
+	// "myNestedObjectString".
+	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString" mapstructure:"myNestedObjectString"`
+}
+
+type RequiredFieldsMyObjectArrayElem struct {
+	// MyNestedObjectString corresponds to the JSON schema field
+	// "myNestedObjectString".
+	MyNestedObjectString string `json:"myNestedObjectString" yaml:"myNestedObjectString" mapstructure:"myNestedObjectString"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *RequiredFieldsMyObjectArrayElem) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myNestedObjectString"]; !ok || v == nil {
+		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObjectArrayElem: required")
+	}
+	type Plain RequiredFieldsMyObjectArrayElem
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = RequiredFieldsMyObjectArrayElem(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *RequiredFieldsMyObject) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if v, ok := raw["myNestedObjectString"]; !ok || v == nil {
+		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObject: required")
+	}
+	type Plain RequiredFieldsMyObject
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = RequiredFieldsMyObject(plain)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

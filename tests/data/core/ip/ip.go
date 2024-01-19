@@ -6,6 +6,11 @@ import "encoding/json"
 import "fmt"
 import "net/netip"
 
+type Ip struct {
+	// MyObject corresponds to the JSON schema field "myObject".
+	MyObject *IpMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+}
+
 type IpMyObject struct {
 	// MyIp corresponds to the JSON schema field "myIp".
 	MyIp netip.Addr `json:"myIp" yaml:"myIp" mapstructure:"myIp"`
@@ -27,9 +32,4 @@ func (j *IpMyObject) UnmarshalJSON(b []byte) error {
 	}
 	*j = IpMyObject(plain)
 	return nil
-}
-
-type Ip struct {
-	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *IpMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
