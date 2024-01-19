@@ -531,7 +531,8 @@ func (g *schemaGenerator) generateStructType(
 		structType.AddField(structField)
 	}
 
-	if t.AdditionalProperties != nil {
+	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
+		// checking .Not here because `false` is unmarshalled to .Not = Type{}
 		if valueType, err := g.generateType(t.AdditionalProperties, nil); err != nil {
 			return nil, err
 		} else {
