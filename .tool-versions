@@ -5,5 +5,5 @@ goreleaser 1.23.0
 hadolint 2.12.0
 markdownlint-cli2 0.12.1
 shellcheck 0.9.0
-shfmt 3.7.0
+shfmt 3.8.0
 yamllint 1.33.0
