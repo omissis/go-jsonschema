@@ -606,7 +606,7 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if len(t.Type) > 1 && !typeShouldBePointer {
-			g.warner("Property has multiple types; will be represented as interface{} with no validation")
+			g.warner(fmt.Sprintf("Property %s has multiple types; will be represented as interface{} with no validation", scope))
 
 			return codegen.EmptyInterfaceType{}, nil
 		}
