@@ -44,6 +44,12 @@
           "null"
         ]
       }
+    },
+    "onlyTwoOptions": {
+      "type": [
+        "number",
+        "boolean"
+      ]
     }
   }
 }

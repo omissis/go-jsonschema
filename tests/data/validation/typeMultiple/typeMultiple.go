@@ -15,4 +15,7 @@ type TypeMultiple struct {
 	// ArrayOfAllPrimitives corresponds to the JSON schema field
 	// "arrayOfAllPrimitives".
 	ArrayOfAllPrimitives []interface{} `json:"arrayOfAllPrimitives,omitempty" yaml:"arrayOfAllPrimitives,omitempty" mapstructure:"arrayOfAllPrimitives,omitempty"`
+
+	// OnlyTwoOptions corresponds to the JSON schema field "onlyTwoOptions".
+	OnlyTwoOptions interface{} `json:"onlyTwoOptions,omitempty" yaml:"onlyTwoOptions,omitempty" mapstructure:"onlyTwoOptions,omitempty"`
 }
