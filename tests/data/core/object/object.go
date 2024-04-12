@@ -21,7 +21,7 @@ func (j *ObjectMyObject) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if v, ok := raw["myString"]; !ok || v == nil {
+	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in ObjectMyObject: required")
 	}
 	type Plain ObjectMyObject

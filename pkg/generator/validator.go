@@ -35,7 +35,10 @@ type requiredValidator struct {
 }
 
 func (v *requiredValidator) generate(out *codegen.Emitter) {
-	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	// The container itself may be null (if the type is ["null", "object"]), in which case
+	// the map will be nil and none of the properties are present. This shouldn't fail
+	// the validation, though, as that's allowed as long as the container is allowed to be null.
+	out.Printlnf(`if _, ok := %s["%s"]; %s != nil && !ok {`, varNameRawMap, v.jsonName, varNameRawMap)
 	out.Indent(1)
 	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
 	out.Indent(-1)

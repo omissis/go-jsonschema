@@ -22,7 +22,7 @@ func (j *TimeMyObject) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if v, ok := raw["myTime"]; !ok || v == nil {
+	if _, ok := raw["myTime"]; raw != nil && !ok {
 		return fmt.Errorf("field myTime in TimeMyObject: required")
 	}
 	type Plain TimeMyObject
