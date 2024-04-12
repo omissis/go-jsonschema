@@ -26,7 +26,7 @@ func (j *Foo) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if v, ok := raw["refToBar"]; !ok || v == nil {
+	if _, ok := raw["refToBar"]; raw != nil && !ok {
 		return fmt.Errorf("field refToBar in Foo: required")
 	}
 	type Plain Foo

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/requiredNullable",
+  "type": "object",
+  "properties": {
+    "myNullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "myNullableStringArray": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "myNullableObject": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "myNestedProp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "myNestedProp"
+      ]
+    }
+  },
+  "required": [
+    "myNullableString",
+    "myNullableStringArray",
+    "myNullableObject"
+  ]
+}

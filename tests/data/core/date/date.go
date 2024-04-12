@@ -22,7 +22,7 @@ func (j *DateMyObject) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if v, ok := raw["myDate"]; !ok || v == nil {
+	if _, ok := raw["myDate"]; raw != nil && !ok {
 		return fmt.Errorf("field myDate in DateMyObject: required")
 	}
 	type Plain DateMyObject
