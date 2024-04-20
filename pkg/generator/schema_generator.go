@@ -144,6 +144,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
+
 		if len(def.Type) == 0 {
 			// Minor hack to make definitions default to being objects.
 			def.Type = schemas.TypeList{schemas.TypeNameObject}
@@ -181,7 +182,6 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	var imp *codegen.Import
 
 	for _, i := range g.output.file.Package.Imports {
-		i := i
 		if i.Name == sg.output.file.Package.Name() && i.QualifiedName == sg.output.file.Package.QualifiedName {
 			imp = &i
 
@@ -267,8 +267,6 @@ func (g *schemaGenerator) generateDeclaredType(
 			}
 
 			for _, formatter := range g.formatters {
-				formatter := formatter
-
 				formatter.addImport(g.output.file)
 
 				g.output.file.Package.AddDecl(&codegen.Method{
@@ -691,22 +689,28 @@ func (g *schemaGenerator) generateEnumType(
 		}
 
 		var primitiveType string
+
 		for _, v := range t.Enum {
 			var valueType string
+
 			if v == nil {
 				valueType = interfaceTypeName
 			} else {
 				switch v.(type) {
 				case string:
 					valueType = "string"
+
 				case float64:
 					valueType = "float64"
+
 				case bool:
 					valueType = "bool"
+
 				default:
 					return nil, fmt.Errorf("%w %v", errEnumNonPrimitiveVal, v)
 				}
 			}
+
 			if primitiveType == "" {
 				primitiveType = valueType
 			} else if primitiveType != valueType {
@@ -715,9 +719,11 @@ func (g *schemaGenerator) generateEnumType(
 				break
 			}
 		}
+
 		if primitiveType == interfaceTypeName {
 			wrapInStruct = true
 		}
+
 		enumType = codegen.PrimitiveType{Type: primitiveType}
 	}
 
@@ -754,8 +760,6 @@ func (g *schemaGenerator) generateEnumType(
 		g.output.file.Package.AddImport("reflect", "")
 
 		for _, formatter := range g.formatters {
-			formatter := formatter
-
 			formatter.addImport(g.output.file)
 
 			if wrapInStruct {

@@ -31,6 +31,7 @@ func (o *output) uniqueTypeName(name string) string {
 
 			return suffixed
 		}
+
 		count++
 	}
 }

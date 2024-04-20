@@ -63,8 +63,6 @@ func TestSerializableTimeUnmarshalJSONReturnsErrorForInvalidString(t *testing.T)
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
-
 		t.Run(fmt.Sprintf("Given '%s' expected UnmarshalJSON to return an error", testCase), func(t *testing.T) {
 			t.Parallel()
 

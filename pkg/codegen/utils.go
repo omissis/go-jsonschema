@@ -1,14 +1,15 @@
 package codegen
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 var (
-	errUnexpectedType        = fmt.Errorf("unexpected type")
-	errUnknownJSONSchemaType = fmt.Errorf("unknown JSON Schema type")
+	errUnexpectedType        = errors.New("unexpected type")
+	errUnknownJSONSchemaType = errors.New("unknown JSON Schema type")
 )
 
 func WrapTypeInPointer(t Type) Type {

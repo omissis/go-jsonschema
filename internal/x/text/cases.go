@@ -124,6 +124,7 @@ func splitIdentifierByCaseAndSeparators(s string) []string {
 				if i > j {
 					result = append(result, runes[j:i])
 				}
+
 				j = i
 			}
 

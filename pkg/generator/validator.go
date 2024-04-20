@@ -62,11 +62,11 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter) {
 	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
 	fieldName := v.jsonName
 
-	var indexes []string
+	indexes := make([]string, v.arrayDepth)
 
-	for i := 0; i < v.arrayDepth; i++ {
+	for i := range v.arrayDepth {
 		index := fmt.Sprintf("i%d", i)
-		indexes = append(indexes, index)
+		indexes[i] = index
 		out.Printlnf(`for %s := range %s {`, index, value)
 		value += fmt.Sprintf("[%s]", index)
 		fieldName += "[%d]"
@@ -85,7 +85,7 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter) {
 	out.Indent(-1)
 	out.Printlnf("}")
 
-	for i := 0; i < v.arrayDepth; i++ {
+	for range v.arrayDepth {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
