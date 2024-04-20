@@ -8,8 +8,8 @@ replace (
 )
 
 require (
-	github.com/atombender/go-jsonschema v0.15.0
-	github.com/atombender/go-jsonschema/tests/helpers/other v0.0.0-20240416182955-738cf5ab9ab4
+	github.com/atombender/go-jsonschema v0.16.0
+	github.com/atombender/go-jsonschema/tests/helpers/other v0.0.0-20240420141435-0b49bf810988
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -17,7 +17,7 @@ require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/goccy/go-yaml v1.11.3 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
