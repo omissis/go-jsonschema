@@ -217,12 +217,16 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				if !os.IsNotExist(err) {
 					t.Fatal(err)
 				}
+
 				goldenData = source
+
 				t.Log("File does not exist; creating it")
+
 				if err = os.WriteFile(goldenFileName, goldenData, 0o655); err != nil {
 					t.Fatal(err)
 				}
 			}
+
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
 				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
 			}
@@ -238,6 +242,7 @@ func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if err := g.DoFile(fileName); err == nil {
 			t.Fatal("Expected test to fail")
 		}

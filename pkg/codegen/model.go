@@ -335,6 +335,7 @@ func (s *StructType) Generate(out *Emitter) {
 
 		f.Generate(out)
 		out.Newline()
+
 		i++
 	}
 

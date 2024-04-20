@@ -4,8 +4,9 @@
 
 # Options for analysis running.
 run:
+  go: "1.22"
   timeout: 5m
-  skip-files:
+  exclude-files:
     - .*\.gen\.go$
     - tests/data/.*
   modules-download-mode: readonly
@@ -27,6 +28,7 @@ linters:
     - godox
     - ireturn
     - nestif
+    - perfsprint
     - revive
     - varnamelen
     # unsupported
@@ -76,12 +78,11 @@ linters-settings:
     capital: true
     period: true
   gofumpt:
-    lang-version: "1.22"
     extra-rules: true
   goimports:
     local-prefixes: github.com/atombender
   govet:
-    check-shadowing: true
+    shadow: true
   grouper:
     const-require-single-const: true
     const-require-grouping: false
@@ -460,6 +461,8 @@ issues:
   # Default: []
   exclude:
     - "local replacement are not allowed: github.com/atombender/go-jsonschema/tests/data"
+    - "exporting a pointer for the loop variable i"
+    - "G601: Implicit memory aliasing in for loop."
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     # Exclude some linters from running on tests files.
