@@ -1,12 +1,15 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
+
+var errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
 
 type schemaGenerator struct {
 	*Generator
@@ -339,7 +342,8 @@ func (g *schemaGenerator) structFieldValidators(
 }
 
 func (g *schemaGenerator) generateType(
-	t *schemas.Type, scope nameScope,
+	t *schemas.Type,
+	scope nameScope,
 ) (codegen.Type, error) {
 	typeIndex := 0
 
@@ -531,20 +535,71 @@ func (g *schemaGenerator) generateStructType(
 		structType.AddField(structField)
 	}
 
+	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
 	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
-		// checking .Not here because `false` is unmarshalled to .Not = Type{}
-		if valueType, err := g.generateType(t.AdditionalProperties, nil); err != nil {
-			return nil, err
-		} else {
-			structType.AddField(
-				codegen.StructField{
-					Name:         "AdditionalProperties",
-					DefaultValue: map[string]interface{}{},
-					SchemaType:   &schemas.Type{},
-					Type:         valueType,
-				},
-			)
+		if len(t.AdditionalProperties.Type) > 1 {
+			return nil, errTooManyTypesForAdditionalProperties
 		}
+
+		var (
+			defaultValue any          = nil
+			fieldType    codegen.Type = codegen.EmptyInterfaceType{}
+		)
+
+		if len(t.AdditionalProperties.Type) == 1 {
+			switch t.AdditionalProperties.Type[0] {
+			case schemas.TypeNameString:
+				defaultValue = map[string]string{}
+				fieldType = codegen.MapType{
+					KeyType:   codegen.PrimitiveType{Type: "string"},
+					ValueType: codegen.PrimitiveType{Type: "string"},
+				}
+
+			case schemas.TypeNameArray:
+				defaultValue = map[string][]any{}
+				fieldType = codegen.MapType{
+					KeyType:   codegen.PrimitiveType{Type: "string"},
+					ValueType: codegen.ArrayType{Type: codegen.EmptyInterfaceType{}},
+				}
+
+			case schemas.TypeNameNumber:
+				defaultValue = map[string]float64{}
+				fieldType = codegen.MapType{
+					KeyType:   codegen.PrimitiveType{Type: "string"},
+					ValueType: codegen.PrimitiveType{Type: "float64"},
+				}
+
+			case schemas.TypeNameInteger:
+				defaultValue = map[string]int{}
+				fieldType = codegen.MapType{
+					KeyType:   codegen.PrimitiveType{Type: "string"},
+					ValueType: codegen.PrimitiveType{Type: "int"},
+				}
+
+			case schemas.TypeNameBoolean:
+				defaultValue = map[string]bool{}
+				fieldType = codegen.MapType{
+					KeyType:   codegen.PrimitiveType{Type: "string"},
+					ValueType: codegen.PrimitiveType{Type: "bool"},
+				}
+
+			default:
+				defaultValue = map[string]any{}
+				fieldType = codegen.MapType{
+					KeyType:   codegen.PrimitiveType{Type: "string"},
+					ValueType: codegen.EmptyInterfaceType{},
+				}
+			}
+		}
+
+		structType.AddField(
+			codegen.StructField{
+				Name:         "AdditionalProperties",
+				DefaultValue: defaultValue,
+				SchemaType:   &schemas.Type{},
+				Type:         fieldType,
+			},
+		)
 	}
 
 	return &structType, nil
