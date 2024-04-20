@@ -2,29 +2,9 @@
 
 package test
 
-import "encoding/json"
-
 type Issue51 struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
-	
-	AdditionalProperties map[string]interface{}
-}
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Issue51) UnmarshalJSON(b []byte) error {
-     var raw map[string]interface{}
-     if err := json.Unmarshal(b, &raw); err != nil {
-             return err
-     }
-     type Plain Issue51
-     var plain Plain
-     if err := json.Unmarshal(b, &plain); err != nil {
-             return err
-     }
-     if v, ok := raw[""]; !ok || v == nil {
-             plain.AdditionalProperties = map[string]int
-     }
-     *j = Issue51(plain)
-     return nil
-}                                                                   }
+	AdditionalProperties interface{}
+}
