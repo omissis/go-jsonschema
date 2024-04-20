@@ -6,6 +6,11 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+type AllOf struct {
+	// Configurations corresponds to the JSON schema field "configurations".
+	Configurations []AllOfConfigurationsElem `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+}
+
 type AllOfConfigurationsElem struct {
 	// Bar corresponds to the JSON schema field "bar".
 	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
@@ -20,10 +25,10 @@ func (j *AllOfConfigurationsElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	if v, ok := raw["bar"]; !ok || v == nil {
+	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AllOfConfigurationsElem: required")
 	}
-	if v, ok := raw["foo"]; !ok || v == nil {
+	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AllOfConfigurationsElem: required")
 	}
 	type Plain AllOfConfigurationsElem
@@ -41,10 +46,10 @@ func (j *AllOfConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if v, ok := raw["bar"]; !ok || v == nil {
+	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AllOfConfigurationsElem: required")
 	}
-	if v, ok := raw["foo"]; !ok || v == nil {
+	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AllOfConfigurationsElem: required")
 	}
 	type Plain AllOfConfigurationsElem
@@ -54,9 +59,4 @@ func (j *AllOfConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = AllOfConfigurationsElem(plain)
 	return nil
-}
-
-type AllOf struct {
-	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []AllOfConfigurationsElem `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 }

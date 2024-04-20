@@ -31,27 +31,45 @@ type AnyOfConfigurationsElem_0 struct {
 	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`
 }
 
-type AnyOfConfigurationsElem_1 struct {
-	// Bar corresponds to the JSON schema field "bar".
-	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *AnyOfConfigurationsElem_1) UnmarshalJSON(value []byte) error {
+func (j *AnyOfConfigurationsElem_0) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	if v, ok := raw["bar"]; !ok || v == nil {
-		return fmt.Errorf("field bar in AnyOfConfigurationsElem_1: required")
+	if _, ok := raw["foo"]; raw != nil && !ok {
+		return fmt.Errorf("field foo in AnyOfConfigurationsElem_0: required")
 	}
-	type Plain AnyOfConfigurationsElem_1
+	type Plain AnyOfConfigurationsElem_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	*j = AnyOfConfigurationsElem_1(plain)
+	*j = AnyOfConfigurationsElem_0(plain)
 	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AnyOfConfigurationsElem_0) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["foo"]; raw != nil && !ok {
+		return fmt.Errorf("field foo in AnyOfConfigurationsElem_0: required")
+	}
+	type Plain AnyOfConfigurationsElem_0
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = AnyOfConfigurationsElem_0(plain)
+	return nil
+}
+
+type AnyOfConfigurationsElem_1 struct {
+	// Bar corresponds to the JSON schema field "bar".
+	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -60,12 +78,30 @@ func (j *AnyOfConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if v, ok := raw["bar"]; !ok || v == nil {
+	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AnyOfConfigurationsElem_1: required")
 	}
 	type Plain AnyOfConfigurationsElem_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = AnyOfConfigurationsElem_1(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AnyOfConfigurationsElem_1) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["bar"]; raw != nil && !ok {
+		return fmt.Errorf("field bar in AnyOfConfigurationsElem_1: required")
+	}
+	type Plain AnyOfConfigurationsElem_1
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = AnyOfConfigurationsElem_1(plain)
@@ -104,24 +140,6 @@ func (j *AnyOfConfigurationsElem_2) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 	*j = AnyOfConfigurationsElem_2(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnyOfConfigurationsElem_0) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if v, ok := raw["foo"]; !ok || v == nil {
-		return fmt.Errorf("field foo in AnyOfConfigurationsElem_0: required")
-	}
-	type Plain AnyOfConfigurationsElem_0
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = AnyOfConfigurationsElem_0(plain)
 	return nil
 }
 
@@ -184,23 +202,5 @@ func (j *AnyOfConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 	*j = AnyOfConfigurationsElem(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AnyOfConfigurationsElem_0) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
-	if v, ok := raw["foo"]; !ok || v == nil {
-		return fmt.Errorf("field foo in AnyOfConfigurationsElem_0: required")
-	}
-	type Plain AnyOfConfigurationsElem_0
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	*j = AnyOfConfigurationsElem_0(plain)
 	return nil
 }

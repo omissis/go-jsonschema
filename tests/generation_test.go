@@ -155,6 +155,12 @@ func TestExtraImportsYAML(t *testing.T) {
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.json")
 }
 
+func TestRegressions(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/regressions")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -177,12 +183,6 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 			}
 		}
 	}
-}
-
-func TestRegressions(t *testing.T) {
-	t.Parallel()
-
-	testExamples(t, basicConfig, "./data/regressions")
 }
 
 func TestSchemaExtensions(t *testing.T) {

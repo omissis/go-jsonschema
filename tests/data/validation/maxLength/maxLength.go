@@ -44,7 +44,7 @@ func (j *MaxLength) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if v, ok := raw["myString"]; !ok || v == nil {
+	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in MaxLength: required")
 	}
 	type Plain MaxLength
