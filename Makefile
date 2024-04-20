@@ -8,8 +8,8 @@ SHELL := /bin/bash
 # ----------------------------------------------------------------------------------------------------------------------
 
 _DOCKER_FILELINT_IMAGE=cytopia/file-lint:latest-0.8
-_DOCKER_GOLANG_IMAGE=golang:1.21.6
-_DOCKER_GOLANGCI_LINT_IMAGE=golangci/golangci-lint:v1.55.2
+_DOCKER_GOLANG_IMAGE=golang:1.22.2
+_DOCKER_GOLANGCI_LINT_IMAGE=golangci/golangci-lint:v1.57.2
 _DOCKER_HADOLINT_IMAGE=hadolint/hadolint:v2.12.0
 _DOCKER_JSONLINT_IMAGE=cytopia/jsonlint:1.6
 _DOCKER_MAKEFILELINT_IMAGE=cytopia/checkmake:latest-0.5
@@ -171,6 +171,27 @@ docker-build:
 
 docker-tools:
 	@scripts/docker-tools.sh
+
+.PHONY: asdf-install-tools asdf-update-tools
+
+asdf-install-tools:
+	@scripts/asdf-add-plugins.sh
+	@asdf install
+
+asdf-update-tools:
+	@scripts/asdf-update-tools.sh
+	@asdf install
+
+.PHONY: golang-check-updates golang-update golang-install-tools
+
+golang-check-update-deps:
+	@scripts/upgrade-deps-check-golang.sh
+
+golang-update-deps:
+	@scripts/upgrade-deps-golang.sh
+
+golang-install-tools:
+	@scripts/golang-install-tools.sh
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Golang Targets

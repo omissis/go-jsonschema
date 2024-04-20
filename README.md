@@ -8,7 +8,7 @@ along with unmarshalling code that validates the input JSON according to the sch
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema/releases/latest)
 [![GitHub Workflow Status (event)](https://img.shields.io/github/actions/workflow/status/omissis/go-jsonschema/development.yaml?style=flat)](https://github.com/omissis/go-jsonschema/actions?workflow=development)
 [![License](https://img.shields.io/github/license/omissis/go-jsonschema?style=flat)](/LICENSE.md)
-[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/omissis/go-jsonschema?style=flat)](https://tip.golang.org/doc/go1.21)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/omissis/go-jsonschema?style=flat)](https://tip.golang.org/doc/go1.22)
 [![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema)
 [![GitHub repo file count (file type)](https://img.shields.io/github/directory-file-count/omissis/go-jsonschema?style=flat)](https://github.com/omissis/go-jsonschema)
 [![GitHub all releases](https://img.shields.io/github/downloads/omissis/go-jsonschema/total?style=flat)](https://github.com/omissis/go-jsonschema)
