@@ -289,13 +289,13 @@ type anyOfValidator struct {
 }
 
 func (v *anyOfValidator) generate(out *codegen.Emitter, format string) {
-	for i := 0; i < v.elemCount; i++ {
+	for i := range v.elemCount {
 		out.Printlnf(`var %s_%d %s_%d`, lowerFirst(v.fieldName), i, upperFirst(v.fieldName), i)
 	}
 
 	out.Printlnf(`var errs []error`)
 
-	for i := 0; i < v.elemCount; i++ {
+	for i := range v.elemCount {
 		out.Printlnf(
 			`if err := %s_%d.Unmarshal%s(value); err != nil {`,
 			lowerFirst(v.fieldName),
