@@ -1,15 +1,15 @@
-#!/bin/sh -x
+#!/bin/sh
 
 set -e
 set -o errexit -o nounset
 
 CHECKMAKE_VERSION="0.2.2"
-GCI_VERSION="v0.12.1"
-GINKGO_VERSION="v2.14.0"
-GO_COVER_TREEMAP_VERSION="v1.3.0"
-GOFUMPT_VERSION="v0.5.0"
-GOIMPORTS_VERSION="v0.17.0"
-GOLANGCI_LINT_VERSION="v1.55.2"
+GCI_VERSION="v0.13.4"
+GINKGO_VERSION="v2.17.1"
+GO_COVER_TREEMAP_VERSION="v1.4.2"
+GOFUMPT_VERSION="v0.6.0"
+GOIMPORTS_VERSION="v0.20.0"
+GOLANGCI_LINT_VERSION="v1.57.2"
 
 go install "github.com/daixiang0/gci@${GCI_VERSION}"
 go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"

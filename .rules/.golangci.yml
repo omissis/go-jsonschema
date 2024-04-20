@@ -76,7 +76,7 @@ linters-settings:
     capital: true
     period: true
   gofumpt:
-    lang-version: "1.21"
+    lang-version: "1.22"
     extra-rules: true
   goimports:
     local-prefixes: github.com/atombender
