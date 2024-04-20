@@ -41,7 +41,7 @@ func (j *TimeMyObject) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if v, ok := raw["myTime"]; !ok || v == nil {
+	if _, ok := raw["myTime"]; raw != nil && !ok {
 		return fmt.Errorf("field myTime in TimeMyObject: required")
 	}
 	type Plain TimeMyObject

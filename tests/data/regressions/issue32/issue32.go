@@ -46,10 +46,10 @@ func (j *TestObject) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if v, ok := raw["name"]; !ok || v == nil {
+	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in TestObject: required")
 	}
-	if v, ok := raw["owner"]; !ok || v == nil {
+	if _, ok := raw["owner"]; raw != nil && !ok {
 		return fmt.Errorf("field owner in TestObject: required")
 	}
 	type Plain TestObject

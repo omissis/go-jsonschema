@@ -41,7 +41,7 @@ func (j *IpMyObject) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if v, ok := raw["myIp"]; !ok || v == nil {
+	if _, ok := raw["myIp"]; raw != nil && !ok {
 		return fmt.Errorf("field myIp in IpMyObject: required")
 	}
 	type Plain IpMyObject
