@@ -201,5 +201,6 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 type GoJSONSchemaExtension struct {
 	Type       *string  `json:"type,omitempty"`
 	Identifier *string  `json:"identifier,omitempty"`
+	Nillable   bool     `json:"nillable,omitempty"`
 	Imports    []string `json:"imports,omitempty"`
 }

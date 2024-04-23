@@ -273,10 +273,11 @@ func (p PrimitiveType) Generate(out *Emitter) {
 }
 
 type CustomNameType struct {
-	Type string
+	Type     string
+	Nillable bool
 }
 
-func (CustomNameType) IsNillable() bool { return false }
+func (p CustomNameType) IsNillable() bool { return p.Nillable }
 
 func (p CustomNameType) Generate(out *Emitter) {
 	out.Printf(p.Type)

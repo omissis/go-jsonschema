@@ -357,7 +357,7 @@ func (g *schemaGenerator) generateType(
 		}
 
 		if ext.Type != nil {
-			return &codegen.CustomNameType{Type: *ext.Type}, nil
+			return &codegen.CustomNameType{Type: *ext.Type, Nillable: ext.Nillable}, nil
 		}
 	}
 
@@ -654,7 +654,7 @@ func (g *schemaGenerator) generateTypeInline(
 			}
 
 			if ext.Type != nil {
-				return &codegen.CustomNameType{Type: *ext.Type}, nil
+				return &codegen.CustomNameType{Type: *ext.Type, Nillable: ext.Nillable}, nil
 			}
 		}
 
