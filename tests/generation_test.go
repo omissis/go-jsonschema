@@ -185,6 +185,12 @@ func TestRegressions(t *testing.T) {
 	testExamples(t, basicConfig, "./data/regressions")
 }
 
+func TestSchemaExtensions(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/schemaExtensions")
+}
+
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 	t.Helper()
 
