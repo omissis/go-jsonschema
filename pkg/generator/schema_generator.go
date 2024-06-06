@@ -603,7 +603,7 @@ func (g *schemaGenerator) generateStructType(
 				DefaultValue: defaultValue,
 				SchemaType:   &schemas.Type{},
 				Type:         fieldType,
-				Tags:         tags,
+				Tags:         strings.TrimSpace(tags),
 			},
 		)
 	}
