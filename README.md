@@ -22,7 +22,7 @@ along with unmarshalling code that validates the input JSON according to the sch
 
 * **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
 
-* **Install from source**: To install with Go 1.16+:
+* **Install from source**: To install with Go 1.22+:
 
 ```shell
 go get github.com/atombender/go-jsonschema/...
