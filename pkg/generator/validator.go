@@ -19,6 +19,7 @@ type validator interface {
 type validatorDesc struct {
 	hasError            bool
 	beforeJSONUnmarshal bool
+	additionalImports   []string
 }
 
 var (
@@ -219,11 +220,12 @@ type stringValidator struct {
 	fieldName  string
 	minLength  int
 	maxLength  int
+	pattern    string
 	isNillable bool
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter) {
-	if v.minLength == 0 && v.maxLength == 0 {
+	if v.minLength == 0 && v.maxLength == 0 && v.pattern == "" {
 		return
 	}
 
@@ -253,11 +255,35 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	if v.pattern != "" {
+		out.Printlnf(`{`)
+		out.Indent(1)
+		out.Printlnf(`re, err := regexp.Compile("%s")`, v.pattern)
+		out.Printlnf(`if err != nil {`)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s pattern invalid: %%s", "%s", "%s")`, fieldName, v.pattern)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+		out.Printlnf(`if %s!re.MatchString(%s%s) {`, checkPointer, pointerPrefix, value)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s pattern does not match: %%s", "%s", "%s")`, fieldName, v.pattern)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+	}
 }
 
 func (v *stringValidator) desc() *validatorDesc {
-	return &validatorDesc{
+	desc := &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+
+	if v.pattern != "" {
+		desc.additionalImports = []string{"regexp"}
+	}
+
+	return desc
 }

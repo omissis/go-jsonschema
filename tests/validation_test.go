@@ -7,6 +7,7 @@ import (
 
 	testMaxLength "github.com/atombender/go-jsonschema/tests/data/validation/maxLength"
 	testMinLength "github.com/atombender/go-jsonschema/tests/data/validation/minLength"
+	testPattern "github.com/atombender/go-jsonschema/tests/data/validation/pattern"
 	testRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 	"github.com/atombender/go-jsonschema/tests/helpers"
 )
@@ -102,6 +103,53 @@ func TestMinStringLength(t *testing.T) {
 			t.Parallel()
 
 			model := testMinLength.MinLength{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestStringPattern(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc:    "no violations",
+			data:    `{"myString": "hello"}`,
+			wantErr: nil,
+		},
+		{
+			desc:    "myString pattern not matching",
+			data:    `{"myString": "hi2"}`,
+			wantErr: errors.New("field myString pattern does not match: ^([a-z][a-z_]*)$"),
+		},
+		{
+			desc:    "myString not present",
+			data:    `{}`,
+			wantErr: errors.New("field myString in Pattern: required"),
+		},
+		{
+			desc:    "myNullableString pattern not matching",
+			data:    `{"myString": "hello","myNullableString": "hi4"}`,
+			wantErr: errors.New("field myNullableString pattern does not match: ^([a-z][a-z_]*)$"),
+		},
+		{
+			desc:    "myString and myNullableString not matching",
+			data:    `{"myString": "hi1","myNullableString": "hello2"}`,
+			wantErr: errors.New("field myNullableString pattern does not match: ^([a-z][a-z_]*)$"),
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testPattern.Pattern{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 

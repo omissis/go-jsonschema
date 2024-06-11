@@ -262,10 +262,13 @@ func (g *schemaGenerator) generateDeclaredType(
 
 		if len(validators) > 0 {
 			for _, v := range validators {
-				if v.desc().hasError {
+				vDesc := v.desc()
+				if vDesc.hasError {
 					g.output.file.Package.AddImport("fmt", "")
+				}
 
-					break
+				for _, i := range vDesc.additionalImports {
+					g.output.file.Package.AddImport(i, "")
 				}
 			}
 
@@ -301,12 +304,13 @@ func (g *schemaGenerator) structFieldValidators(
 
 	case codegen.PrimitiveType:
 		if v.Type == schemas.TypeNameString {
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || f.SchemaType.Pattern != "" {
 				validators = append(validators, &stringValidator{
 					jsonName:   f.JSONName,
 					fieldName:  f.Name,
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
+					pattern:    f.SchemaType.Pattern,
 					isNillable: isNillable,
 				})
 			}

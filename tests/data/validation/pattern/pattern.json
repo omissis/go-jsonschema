@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/stringpattern",
+  "type": "object",
+  "properties": {
+    "myString": {
+      "type": "string",
+      "pattern": "^([a-z][a-z_]*)$"
+    },
+    "myNullableString": {
+      "type": "string",
+      "pattern": "^([a-z][a-z_]*)$"
+    }
+  },
+  "required": [
+    "myString"
+  ]
+}
