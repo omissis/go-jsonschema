@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
@@ -159,10 +160,11 @@ type arrayValidator struct {
 	arrayDepth int
 	minItems   int
 	maxItems   int
+        uniqueItems bool
 }
 
 func (v *arrayValidator) generate(out *codegen.Emitter) {
-	if v.minItems == 0 && v.maxItems == 0 {
+	if v.minItems == 0 && v.maxItems == 0 && !v.uniqueItems {
 		return
 	}
 
@@ -206,13 +208,38 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	if v.uniqueItems {
+		out.Printlnf(`var unique []interface{}`)
+		out.Printlnf(`for i := range %s {`, value)
+		out.Printlnf(`v := &%s[i]`, value)
+		out.Indent(1)
+		out.Printlnf(`for _, u := range unique {`)
+		out.Indent(1)
+		out.Printlnf(`if reflect.DeepEqual(v, u) {`)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: items must be unique", %s)`, fieldName)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+		out.Printlnf(`unique = append(unique, v)`)
+		out.Indent(-1)
+		out.Printlnf(`}`)
+	}
 }
 
 func (v *arrayValidator) desc() *validatorDesc {
-	return &validatorDesc{
+	desc := &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+
+	if v.uniqueItems {
+		desc.additionalImports = []string{"reflect"}
+	}
+
+	return desc
 }
 
 type stringValidator struct {
@@ -283,6 +310,78 @@ func (v *stringValidator) desc() *validatorDesc {
 
 	if v.pattern != "" {
 		desc.additionalImports = []string{"regexp"}
+	}
+
+	return desc
+}
+
+type numericValidator struct {
+	jsonName   string
+	fieldName  string
+	minimum    float64
+	maximum    float64
+	exclusiveMinimum    float64
+	exclusiveMaximum    float64
+	isNillable bool
+}
+
+func (v *numericValidator) generate(out *codegen.Emitter) {
+	if v.minimum == 0 && v.maximum == 0 && v.exclusiveMinimum == 0 && v.exclusiveMaximum == 0 {
+		return
+	}
+
+	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	fieldName := v.jsonName
+
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.minimum != 0 {
+		minimum := strconv.FormatFloat(v.minimum, 'g', -1, 64)
+		out.Printlnf(`if %s%s%s < %s {`, checkPointer, pointerPrefix, value, minimum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: violates mimimum %%s", "%s", "%s")`, fieldName, minimum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.maximum != 0 {
+		maximum := strconv.FormatFloat(v.maximum, 'g', -1, 64)
+		out.Printlnf(`if %s%s%s > %s {`, checkPointer, pointerPrefix, value, maximum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: violates maximum %%s", "%s", "%s")`, fieldName, maximum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.exclusiveMinimum != 0 {
+		exclusiveMinimum := strconv.FormatFloat(v.exclusiveMinimum, 'g', -1, 64)
+		out.Printlnf(`if %s%s%s <= %s {`, checkPointer, pointerPrefix, value, exclusiveMinimum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: violates exclusiveMinimum %%s", "%s", "%s")`, fieldName, exclusiveMinimum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.exclusiveMaximum != 0 {
+		exclusiveMaximum := strconv.FormatFloat(v.exclusiveMaximum, 'g', -1, 64)
+		out.Printlnf(`if %s%s%s >= %s {`, checkPointer, pointerPrefix, value, exclusiveMaximum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: violates exclusiveMaximum %%s", "%s", "%s")`, fieldName, exclusiveMaximum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+}
+
+func (v *numericValidator) desc() *validatorDesc {
+	desc := &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
 	}
 
 	return desc
