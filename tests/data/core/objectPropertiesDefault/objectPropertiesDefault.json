@@ -1,0 +1,104 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "DecoratedPlanner": {
+            "type": "object",
+            "properties": {
+                "decorator": {
+                    "type": "object",
+                    "properties": {
+                        "color": {
+                            "type": "string",
+                            "default": "#ffffff"
+                        },
+                        "theme": {
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "default": {
+                        "theme": null,
+                        "color": "#ffffff"
+                    }
+                },
+                "event": {
+                    "$ref": "#/definitions/Event"
+                }
+            },
+            "additionalProperties": false
+        },
+        "DefaultPlanner": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "$ref": "#/definitions/Event"
+                }
+            },
+            "additionalProperties": false
+        },
+        "Event": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "enum": [
+                        "BIRTHDAY",
+                        "GAME",
+                        "HOLIDAY"
+                    ]
+                },
+                "tags": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "COUNTRY",
+                            "REGION",
+                            "CITY",
+                            "PERSON"
+                        ]
+                    }
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "type": "object",
+    "properties": {
+        "active": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "boolean"
+                }
+            ]
+        },
+        "planners": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "plain": {
+                                "$ref": "#/definitions/DefaultPlanner"
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "decorated": {
+                                "$ref": "#/definitions/DecoratedPlanner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "additionalProperties": false
+}

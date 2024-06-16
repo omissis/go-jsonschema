@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
 type License string
@@ -19,6 +20,26 @@ const License_1_MIT License_1 = "MIT+"
 var enumValues_License_1 = []interface{}{
 	"GPL-3.0+",
 	"MIT+",
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *License_1) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_License_1 {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_License_1, v)
+	}
+	*j = License_1(v)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -44,6 +65,26 @@ func (j *License_1) UnmarshalJSON(b []byte) error {
 var enumValues_License = []interface{}{
 	"GPL-3.0",
 	"MIT",
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *License) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_License {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_License, v)
+	}
+	*j = License(v)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -110,6 +151,26 @@ func (j *SpecialCharactersPlainLicenses) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *SpecialCharactersPlainLicenses) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_SpecialCharactersPlainLicenses {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_SpecialCharactersPlainLicenses, v)
+	}
+	*j = SpecialCharactersPlainLicenses(v)
+	return nil
+}
+
 type SpecialCharactersPlusLicenses string
 
 const SpecialCharactersPlusLicensesGPL30 SpecialCharactersPlusLicenses = "GPL-3.0+"
@@ -124,6 +185,26 @@ var enumValues_SpecialCharactersPlusLicenses = []interface{}{
 func (j *SpecialCharactersPlusLicenses) UnmarshalJSON(b []byte) error {
 	var v string
 	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_SpecialCharactersPlusLicenses {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_SpecialCharactersPlusLicenses, v)
+	}
+	*j = SpecialCharactersPlusLicenses(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *SpecialCharactersPlusLicenses) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
