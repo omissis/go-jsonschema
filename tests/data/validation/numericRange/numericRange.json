@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array",
+  "type": "object",
+  "properties": {
+    "myInteger": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 5
+    },
+    "myNumber": {
+      "type": "number",
+      "minimum": 2.4,
+      "maximum": 5.6
+    }
+  },
+  "required": [
+    "myInteger", "myNumber"
+  ]
+}
