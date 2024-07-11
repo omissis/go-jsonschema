@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -13,7 +15,11 @@ const (
 
 type yamlFormatter struct{}
 
-func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
+func (yf *yamlFormatter) generate(
+	output *output,
+	declType codegen.TypeDecl,
+	validators []validator,
+) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name,
@@ -23,18 +29,26 @@ func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []valida
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNameRawMap)
 
 		for _, v := range validators {
-			if v.desc().beforeJSONUnmarshal {
-				v.generate(out)
+			if v.desc().beforeUnmarshal {
+				v.generate(out, "yaml")
 			}
 		}
 
-		out.Printlnf("type Plain %s", declType.Name)
-		out.Printlnf("var %s Plain", varNamePlainStruct)
+		tp := typePlain
+
+		if tp == declType.Name {
+			for i := 0; !output.isUniqueTypeName(tp) && i < math.MaxInt; i++ {
+				tp = fmt.Sprintf("%s_%d", typePlain, i)
+			}
+		}
+
+		out.Printlnf("type %s %s", tp, declType.Name)
+		out.Printlnf("var %s %s", varNamePlainStruct, tp)
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
 		for _, v := range validators {
-			if !v.desc().beforeJSONUnmarshal {
-				v.generate(out)
+			if !v.desc().beforeUnmarshal {
+				v.generate(out, "yaml")
 			}
 		}
 

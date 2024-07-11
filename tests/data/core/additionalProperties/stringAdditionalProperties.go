@@ -3,6 +3,7 @@
 package test
 
 import "encoding/json"
+import yaml "gopkg.in/yaml.v3"
 
 type StringAdditionalProperties struct {
 	// Name corresponds to the JSON schema field "name".
@@ -12,14 +13,32 @@ type StringAdditionalProperties struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *StringAdditionalProperties) UnmarshalJSON(b []byte) error {
+func (j *StringAdditionalProperties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain StringAdditionalProperties
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if v, ok := raw[""]; !ok || v == nil {
+		plain.AdditionalProperties = map[string]string{}
+	}
+	*j = StringAdditionalProperties(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *StringAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	type Plain StringAdditionalProperties
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {

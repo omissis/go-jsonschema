@@ -26,6 +26,14 @@ package schemas
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
+	"dario.cat/mergo"
+)
+
+var (
+	ErrCannotMergeTypes = fmt.Errorf("cannot merge types")
+	ErrEmptyTypesList   = fmt.Errorf("types list is empty")
 )
 
 // Schema is the root schema.
@@ -106,6 +114,15 @@ func (t *TypeList) UnmarshalJSON(b []byte) error {
 // RFC draft-wright-json-schema-validation-00, section 5.26.
 type Definitions map[string]*Type
 
+type SubSchemaType string
+
+const (
+	SubSchemaTypeAllOf SubSchemaType = "allOf"
+	SubSchemaTypeAnyOf SubSchemaType = "anyOf"
+	SubSchemaTypeOneOf SubSchemaType = "oneOf"
+	SubSchemaTypeNot   SubSchemaType = "not"
+)
+
 // Type represents a JSON Schema object type.
 type Type struct {
 	// RFC draft-wright-json-schema-00.
@@ -133,10 +150,11 @@ type Type struct {
 	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // Section 5.18.
 	Enum                 []interface{}    `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
-	AllOf                []*Type          `json:"allOf,omitempty"`                // Section 5.22.
-	AnyOf                []*Type          `json:"anyOf,omitempty"`                // Section 5.23.
-	OneOf                []*Type          `json:"oneOf,omitempty"`                // Section 5.24.
-	Not                  *Type            `json:"not,omitempty"`                  // Section 5.25.
+	// RFC draft-bhutton-json-schema-01, section 10.
+	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
+	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
+	OneOf []*Type `json:"oneOf,omitempty"` // Section 10.2.1.3.
+	Not   *Type   `json:"not,omitempty"`   // Section 10.2.1.4.
 	// RFC draft-wright-json-schema-validation-00, section 6, 7.
 	Title       string      `json:"title,omitempty"`       // Section 6.1.
 	Description string      `json:"description,omitempty"` // Section 6.1.
@@ -154,6 +172,35 @@ type Type struct {
 	// ExtGoCustomType is the name of a (qualified or not) custom Go type
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
+
+	// SubSchemaType marks the type as being a subschema type.
+	subSchemaType     SubSchemaType
+	subSchemasCount   int
+	subSchemaTypeElem bool
+}
+
+func (value *Type) SetSubSchemaType(sst SubSchemaType) {
+	value.subSchemaType = sst
+}
+
+func (value *Type) GetSubSchemaType() SubSchemaType {
+	return value.subSchemaType
+}
+
+func (value *Type) SetSubSchemasCount(ssc int) {
+	value.subSchemasCount = ssc
+}
+
+func (value *Type) GetSubSchemasCount() int {
+	return value.subSchemasCount
+}
+
+func (value *Type) IsSubSchemaTypeElem() bool {
+	return value.subSchemaTypeElem
+}
+
+func (value *Type) SetSubSchemaTypeElem() {
+	value.subSchemaTypeElem = true
 }
 
 // UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
@@ -194,6 +241,66 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	}
 
 	*value = Type(obj)
+
+	return nil
+}
+
+func AllOf(types []*Type) (*Type, error) {
+	typ, err := MergeTypes(types)
+	if err != nil {
+		return nil, err
+	}
+
+	typ.subSchemaType = SubSchemaTypeAllOf
+
+	return typ, nil
+}
+
+func AnyOf(types []*Type) (*Type, error) {
+	typ, err := MergeTypes(types)
+	if err != nil {
+		return nil, err
+	}
+
+	typ.subSchemaType = SubSchemaTypeAnyOf
+	typ.subSchemasCount = len(types)
+
+	return typ, nil
+}
+
+func MergeTypes(types []*Type) (*Type, error) {
+	if len(types) == 0 {
+		return nil, ErrEmptyTypesList
+	}
+
+	result := &Type{}
+
+	if isPrimitiveTypeList(types) {
+		return result, nil
+	}
+
+	opts := []func(*mergo.Config){
+		mergo.WithAppendSlice,
+		mergo.WithTransformers(typeListTransformer{}),
+	}
+
+	for _, t := range types {
+		if err := mergo.Merge(result, t, opts...); err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrCannotMergeTypes, err)
+		}
+	}
+
+	return result, nil
+}
+
+type typeListTransformer struct{}
+
+func (t typeListTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
+	if typ == reflect.TypeOf(TypeList{}) {
+		return func(dst, src reflect.Value) error {
+			return nil
+		}
+	}
 
 	return nil
 }

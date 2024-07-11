@@ -16,6 +16,7 @@ const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 	interfaceTypeName  = "interface{}"
+	typePlain          = "Plain"
 )
 
 var (
@@ -26,6 +27,7 @@ var (
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
+	ErrUnsupportedRefExtension        = errors.New("unsupported $ref extension")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
@@ -176,10 +178,7 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 	return g.beginOutput(id, g.config.DefaultOutputName, g.config.DefaultPackageName)
 }
 
-func (g *Generator) beginOutput(
-	id string,
-	outputName, packageName string,
-) (*output, error) {
+func (g *Generator) beginOutput(id, outputName, packageName string) (*output, error) {
 	if packageName == "" {
 		return nil, fmt.Errorf("%w: %q", errMapURIToPackageName, id)
 	}
@@ -215,9 +214,15 @@ func (g *Generator) beginOutput(
 }
 
 func (g *Generator) makeEnumConstantName(typeName, value string) string {
-	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
-		return typeName + "_" + g.caser.Identifierize(value)
+	idv := g.caser.Identifierize(value)
+
+	if len(typeName) == 0 {
+		return "Enum" + idv
 	}
 
-	return typeName + g.caser.Identifierize(value)
+	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
+		return typeName + "_" + idv
+	}
+
+	return typeName + idv
 }
