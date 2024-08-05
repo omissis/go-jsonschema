@@ -102,6 +102,9 @@ func (v *nullTypeValidator) desc() *validatorDesc {
 	}
 }
 
+//TODO: Make a durationValidator, so that we can convert the default value from ISO 8601 to time.Duration.
+// We could use https://github.com/sosodev/duration
+
 type defaultValidator struct {
 	jsonName         string
 	fieldName        string
