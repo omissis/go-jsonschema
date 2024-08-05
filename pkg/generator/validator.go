@@ -98,6 +98,9 @@ func (v *nullTypeValidator) desc() *validatorDesc {
 	}
 }
 
+//TODO: Make a durationValidator, so that we can convert the default value from ISO 8601 to time.Duration.
+// We could use https://github.com/sosodev/duration
+
 type defaultValidator struct {
 	jsonName         string
 	fieldName        string
@@ -114,6 +117,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter) {
 
 	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
+	//TODO: This wouldn't work for durations, because we need to convert the duration format.
 	out.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
 	out.Indent(-1)
 	out.Printlnf("}")
