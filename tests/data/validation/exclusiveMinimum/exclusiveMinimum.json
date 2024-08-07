@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array",
+  "type": "object",
+  "properties": {
+    "myInteger": {
+      "type": "integer",
+      "exclusiveMinimum": 5
+    },
+    "myNullableInteger": {
+      "type": "integer",
+      "exclusiveMinimum": 10
+    },
+    "myNumber": {
+      "type": "number",
+      "exclusiveMinimum": 5.6
+    },
+    "myNullableNumber": {
+      "type": "number",
+      "exclusiveMinimum": 10.3
+    }
+  },
+  "required": [
+    "myInteger", "myNumber"
+  ]
+}

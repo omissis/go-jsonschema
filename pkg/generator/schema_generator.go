@@ -262,10 +262,13 @@ func (g *schemaGenerator) generateDeclaredType(
 
 		if len(validators) > 0 {
 			for _, v := range validators {
-				if v.desc().hasError {
+				vDesc := v.desc()
+				if vDesc.hasError {
 					g.output.file.Package.AddImport("fmt", "")
+				}
 
-					break
+				for _, i := range vDesc.additionalImports {
+					g.output.file.Package.AddImport(i, "")
 				}
 			}
 
@@ -281,6 +284,15 @@ func (g *schemaGenerator) generateDeclaredType(
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+func isNumericType(typeName string) bool {
+	return typeName == "int" || typeName == "float64"
+}
+
+func requiresNumericValidator(schemaType *schemas.Type) bool {
+	return schemaType.Minimum != 0 || schemaType.Maximum != 0 || 
+		schemaType.ExclusiveMinimum != 0 || schemaType.ExclusiveMaximum != 0
 }
 
 func (g *schemaGenerator) structFieldValidators(
@@ -301,17 +313,30 @@ func (g *schemaGenerator) structFieldValidators(
 
 	case codegen.PrimitiveType:
 		if v.Type == schemas.TypeNameString {
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || f.SchemaType.Pattern != "" {
 				validators = append(validators, &stringValidator{
 					jsonName:   f.JSONName,
 					fieldName:  f.Name,
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
+					pattern:    f.SchemaType.Pattern,
 					isNillable: isNillable,
 				})
 			}
 		}
-
+		if isNumericType(v.Type) {
+			if requiresNumericValidator(f.SchemaType) {
+				validators = append(validators, &numericValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					minimum:    f.SchemaType.Minimum,
+					maximum:    f.SchemaType.Maximum,
+					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
+					isNillable: isNillable,
+				})
+			}
+		}
 	case *codegen.ArrayType:
 		arrayDepth := 0
 		for v, ok := t.(*codegen.ArrayType); ok; v, ok = t.(*codegen.ArrayType) {
@@ -324,13 +349,14 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 
 				break
-			} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+			} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 || f.SchemaType.UniqueItems {
 				validators = append(validators, &arrayValidator{
 					fieldName:  f.Name,
 					jsonName:   f.JSONName,
 					arrayDepth: arrayDepth,
 					minItems:   f.SchemaType.MinItems,
 					maxItems:   f.SchemaType.MaxItems,
+					uniqueItems: f.SchemaType.UniqueItems,
 				})
 			}
 
