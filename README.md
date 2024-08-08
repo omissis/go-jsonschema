@@ -123,10 +123,10 @@ only specific validations remain to be fully implemented.
     * [ ] `const`
   * [ ] Numeric validation (§6.2)
     * [ ] `multipleOf`
-    * [ ] `maximum`
-    * [ ] `exclusiveMaximum`
-    * [ ] `minimum`
-    * [ ] `exclusiveMinimum`
+    * [x] `maximum`
+    * [x] `exclusiveMaximum`
+    * [x] `minimum`
+    * [x] `exclusiveMinimum`
   * [ ] String validation (§6.3)
     * [X] `maxLength`
     * [X] `minLength`

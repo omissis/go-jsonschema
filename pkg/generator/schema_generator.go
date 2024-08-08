@@ -283,6 +283,26 @@ func (g *schemaGenerator) generateDeclaredType(
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
+func copyFloatPtr(f *float64) *float64 {
+	if f == nil {
+		return nil
+	}
+
+	c := *f
+
+	return &c
+}
+
+func convertToIntPtr(f *float64) *int {
+	if f == nil {
+		return nil
+	}
+
+	i := int(*f)
+
+	return &i
+}
+
 func (g *schemaGenerator) structFieldValidators(
 	validators []validator,
 	f codegen.StructField,
@@ -300,6 +320,7 @@ func (g *schemaGenerator) structFieldValidators(
 		validators = g.structFieldValidators(validators, f, v.Type, v.IsNillable())
 
 	case codegen.PrimitiveType:
+		//TODO: Make this a switch?
 		if v.Type == schemas.TypeNameString {
 			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 {
 				validators = append(validators, &stringValidator{
@@ -308,6 +329,38 @@ func (g *schemaGenerator) structFieldValidators(
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
 					isNillable: isNillable,
+				})
+			}
+		}
+		//TODO: Define "float64" in a central place somewhere
+		if v.Type == "float64" {
+			if f.SchemaType.Minimum != nil || f.SchemaType.Maximum != nil ||
+				f.SchemaType.ExclusiveMinimum != nil || f.SchemaType.ExclusiveMaximum != nil {
+				validators = append(validators, &numberValidator{
+					fieldName:        f.Name,
+					jsonName:         f.JSONName,
+					minimum:          copyFloatPtr(f.SchemaType.Minimum),
+					maximum:          copyFloatPtr(f.SchemaType.Maximum),
+					exclusiveMinimum: copyFloatPtr(f.SchemaType.ExclusiveMinimum),
+					exclusiveMaximum: copyFloatPtr(f.SchemaType.ExclusiveMaximum),
+					isNillable:       isNillable,
+				})
+			}
+		}
+		//TODO: Define "int" in a central place somewhere
+		if v.Type == "int" {
+			if f.SchemaType.Minimum != nil || f.SchemaType.Maximum != nil ||
+				f.SchemaType.ExclusiveMinimum != nil || f.SchemaType.ExclusiveMaximum != nil {
+				validators = append(validators, &integerValidator{
+					fieldName: f.Name,
+					jsonName:  f.JSONName,
+					//TODO: Is it ok to crop the float like this?
+					// Should we allow the users to put in double value in the first place?
+					minimum:          convertToIntPtr(f.SchemaType.Minimum),
+					maximum:          convertToIntPtr(f.SchemaType.Maximum),
+					exclusiveMinimum: convertToIntPtr(f.SchemaType.ExclusiveMinimum),
+					exclusiveMaximum: convertToIntPtr(f.SchemaType.ExclusiveMaximum),
+					isNillable:       isNillable,
 				})
 			}
 		}

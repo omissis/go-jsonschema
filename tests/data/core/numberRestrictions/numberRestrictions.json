@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://example.com/primitives",
+    "type": "object",
+    "properties": {
+      "myNumber": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "myExclusiveNumber": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 100
+      },
+      "myExclusiveNumber2": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100,
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 100
+      },
+      "myInteger": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "myExclusiveInteger": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 100
+      },
+      "myExclusiveInteger2": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 100
+      }
+    }
+  }
+  
