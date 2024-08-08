@@ -27,6 +27,8 @@ var (
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
+	_ validator = new(numberValidator)
+	_ validator = new(integerValidator)
 )
 
 type requiredValidator struct {
@@ -256,6 +258,147 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 }
 
 func (v *stringValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+type numberValidator struct {
+	jsonName         string
+	fieldName        string
+	minimum          *float64
+	maximum          *float64
+	exclusiveMinimum *float64
+	exclusiveMaximum *float64
+	isNillable       bool
+}
+
+func (v *numberValidator) generate(out *codegen.Emitter) {
+	if v.minimum == nil && v.maximum == nil && v.exclusiveMinimum == nil && v.exclusiveMaximum == nil {
+		return
+	}
+
+	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	fieldName := v.jsonName
+
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.minimum != nil {
+		out.Printlnf(`if %s%s%s >= %f {`, checkPointer, pointerPrefix, value, *v.minimum)
+		out.Indent(1)
+		//TODO: How do we make the %d as precise as the Go float64?
+		// Currently it doesn't print all numbers after the decimal.
+		// Does the Json schema spec specify the decimal precision?
+		out.Printlnf(`return fmt.Errorf("field %%s must be >= %%f", "%s", %f)`, fieldName, *v.minimum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.maximum != nil {
+		out.Printlnf(`if %s%s%s <= %f {`, checkPointer, pointerPrefix, value, *v.maximum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be <= %%f", "%s", %f)`, fieldName, *v.maximum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	// The spec allows having both minimum and exclusiveMinimum.
+	if v.exclusiveMinimum != nil {
+		out.Printlnf(`if %s%s%s > %f {`, checkPointer, pointerPrefix, value, *v.exclusiveMinimum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be > %%f", "%s", %f)`, fieldName, *v.exclusiveMinimum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	// The spec allows having both maximum and exclusiveMaximum.
+	if v.exclusiveMaximum != nil {
+		out.Printlnf(`if %s%s%s < %f {`, checkPointer, pointerPrefix, value, *v.exclusiveMaximum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be < %%f", "%s", %f)`, fieldName, *v.exclusiveMaximum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+}
+
+func (v *numberValidator) desc() *validatorDesc {
+	//TODO: What should desc() return? I'm not sure about the below implementation.
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+type integerValidator struct {
+	jsonName         string
+	fieldName        string
+	minimum          *int
+	maximum          *int
+	exclusiveMinimum *int
+	exclusiveMaximum *int
+	isNillable       bool
+}
+
+func (v *integerValidator) generate(out *codegen.Emitter) {
+	if v.minimum == nil && v.maximum == nil && v.exclusiveMinimum == nil && v.exclusiveMaximum == nil {
+		return
+	}
+
+	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	fieldName := v.jsonName
+
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.minimum != nil {
+		out.Printlnf(`if %s%s%s >= %d {`, checkPointer, pointerPrefix, value, *v.minimum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be >= %%d", "%s", %d)`, fieldName, *v.minimum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.maximum != nil {
+		out.Printlnf(`if %s%s%s <= %d {`, checkPointer, pointerPrefix, value, *v.maximum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be <= %%d", "%s", %d)`, fieldName, *v.maximum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	// The spec allows having both minimum and exclusiveMinimum.
+	if v.exclusiveMinimum != nil {
+		out.Printlnf(`if %s%s%s > %d {`, checkPointer, pointerPrefix, value, *v.exclusiveMinimum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be > %%d", "%s", %d)`, fieldName, *v.exclusiveMinimum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	// The spec allows having both maximum and exclusiveMaximum.
+	if v.exclusiveMaximum != nil {
+		out.Printlnf(`if %s%s%s < %d {`, checkPointer, pointerPrefix, value, *v.exclusiveMaximum)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s must be < %%d", "%s", %d)`, fieldName, *v.exclusiveMaximum)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+}
+
+func (v *integerValidator) desc() *validatorDesc {
+	//TODO: What should desc() return? I'm not sure about the below implementation.
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
