@@ -260,27 +260,38 @@ func (g *schemaGenerator) generateDeclaredType(
 			validators = g.structFieldValidators(validators, f, f.Type, false)
 		}
 
-		if len(validators) > 0 {
-			for _, v := range validators {
-				if v.desc().hasError {
-					g.output.file.Package.AddImport("fmt", "")
+		g.addValidatorsToType(validators, decl)
+	} else if primitiveType, ok := theType.(codegen.PrimitiveType); ok {
+		validators := g.structFieldValidators(nil, codegen.StructField{
+			Type:       primitiveType,
+			SchemaType: t,
+		}, primitiveType, false)
 
-					break
-				}
-			}
-
-			for _, formatter := range g.formatters {
-				formatter.addImport(g.output.file)
-
-				g.output.file.Package.AddDecl(&codegen.Method{
-					Impl: formatter.generate(decl, validators),
-					Name: decl.GetName() + "_validator",
-				})
-			}
-		}
+		g.addValidatorsToType(validators, decl)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+func (g *schemaGenerator) addValidatorsToType(validators []validator, decl codegen.TypeDecl) {
+	if len(validators) > 0 {
+		for _, v := range validators {
+			if v.desc().hasError {
+				g.output.file.Package.AddImport("fmt", "")
+
+				break
+			}
+		}
+
+		for _, formatter := range g.formatters {
+			formatter.addImport(g.output.file)
+
+			g.output.file.Package.AddDecl(&codegen.Method{
+				Impl: formatter.generate(decl, validators),
+				Name: decl.GetName() + "_validator",
+			})
+		}
+	}
 }
 
 func (g *schemaGenerator) structFieldValidators(

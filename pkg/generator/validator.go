@@ -19,6 +19,7 @@ type validator interface {
 type validatorDesc struct {
 	hasError            bool
 	beforeJSONUnmarshal bool
+	requiresRawAfter    bool
 }
 
 var (
@@ -59,7 +60,7 @@ type nullTypeValidator struct {
 }
 
 func (v *nullTypeValidator) generate(out *codegen.Emitter) {
-	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 
 	indexes := make([]string, v.arrayDepth)
@@ -95,6 +96,7 @@ func (v *nullTypeValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
+		requiresRawAfter:    true,
 	}
 }
 
@@ -114,7 +116,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter) {
 
 	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+	out.Printlnf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
 	out.Indent(-1)
 	out.Printlnf("}")
 }
@@ -149,6 +151,7 @@ func (v *defaultValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            false,
 		beforeJSONUnmarshal: false,
+		requiresRawAfter:    true,
 	}
 }
 
@@ -165,7 +168,7 @@ func (v *arrayValidator) generate(out *codegen.Emitter) {
 		return
 	}
 
-	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 
 	var indexes []string
@@ -224,7 +227,7 @@ type stringValidator struct {
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter) {
-	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	value := getPlainName(v.fieldName)
 	checkPointer := ""
 	pointerPrefix := ""
 
@@ -278,4 +281,11 @@ func (v *stringValidator) desc() *validatorDesc {
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+}
+
+func getPlainName(fieldName string) string {
+	if fieldName == "" {
+		return varNamePlainStruct
+	}
+	return fmt.Sprintf("%s.%s", varNamePlainStruct, fieldName)
 }

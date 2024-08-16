@@ -13,18 +13,33 @@ const (
 type jsonFormatter struct{}
 
 func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
+	var beforeValidators []validator
+	var afterValidators []validator
+	forceBefore := false
+
+	for _, v := range validators {
+		desc := v.desc()
+		if desc.beforeJSONUnmarshal {
+			beforeValidators = append(beforeValidators, v)
+		} else {
+			afterValidators = append(afterValidators, v)
+			forceBefore = forceBefore || desc.requiresRawAfter
+		}
+	}
+
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatJSON), formatJSON)
 		out.Printlnf("func (j *%s) Unmarshal%s(b []byte) error {", declType.Name, strings.ToUpper(formatJSON))
 		out.Indent(1)
-		out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-		out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
-			formatJSON, varNameRawMap)
 
-		for _, v := range validators {
-			if v.desc().beforeJSONUnmarshal {
-				v.generate(out)
-			}
+		if forceBefore || len(beforeValidators) != 0 {
+			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+			out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
+				formatJSON, varNameRawMap)
+		}
+
+		for _, v := range beforeValidators {
+			v.generate(out)
 		}
 
 		out.Printlnf("type Plain %s", declType.Name)
@@ -32,10 +47,8 @@ func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []valida
 		out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
 			formatJSON, varNamePlainStruct)
 
-		for _, v := range validators {
-			if !v.desc().beforeJSONUnmarshal {
-				v.generate(out)
-			}
+		for _, v := range afterValidators {
+			v.generate(out)
 		}
 
 		out.Printlnf("*j = %s(%s)", declType.Name, varNamePlainStruct)

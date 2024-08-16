@@ -8,6 +8,7 @@ import (
 	testMaxLength "github.com/atombender/go-jsonschema/tests/data/validation/maxLength"
 	testMinLength "github.com/atombender/go-jsonschema/tests/data/validation/minLength"
 	testPattern "github.com/atombender/go-jsonschema/tests/data/validation/pattern"
+	testPrimitiveDefs "github.com/atombender/go-jsonschema/tests/data/validation/primitive_defs"
 	testRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 	"github.com/atombender/go-jsonschema/tests/helpers"
 )
@@ -172,6 +173,36 @@ func TestPattern(t *testing.T) {
 			model := testPattern.Pattern{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestPrimitiveDefs(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc: "no violations",
+			data: `{"myString": "hello"}`,
+		},
+		{
+			desc:    "myString too short",
+			data:    `{"myString": "hi"}`,
+			wantErr: errors.New("field  length: must be >= 5"),
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			prim := testPrimitiveDefs.PrimitiveDefs{}
+
+			err := json.Unmarshal([]byte(tC.data), &prim)
 
 			helpers.CheckError(t, tC.wantErr, err)
 		})
