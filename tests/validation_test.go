@@ -7,6 +7,7 @@ import (
 
 	testMaxLength "github.com/atombender/go-jsonschema/tests/data/validation/maxLength"
 	testMinLength "github.com/atombender/go-jsonschema/tests/data/validation/minLength"
+	testPattern "github.com/atombender/go-jsonschema/tests/data/validation/pattern"
 	testRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 	"github.com/atombender/go-jsonschema/tests/helpers"
 )
@@ -139,6 +140,36 @@ func TestRequiredFields(t *testing.T) {
 			t.Parallel()
 
 			model := testRequiredFields.RequiredNullable{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestPattern(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc: "no violations",
+			data: `{"myString": "0x12345abcde"}`,
+		},
+		{
+			desc:    "myString does not match pattern",
+			data:    `{"myString": "0x123456"}`,
+			wantErr: errors.New("field ^0x[0-9a-f]{10}$ pattern match: must match MyString"),
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testPattern.Pattern{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 

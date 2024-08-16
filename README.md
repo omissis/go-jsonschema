@@ -127,10 +127,10 @@ only specific validations remain to be fully implemented.
     * [ ] `exclusiveMaximum`
     * [ ] `minimum`
     * [ ] `exclusiveMinimum`
-  * [ ] String validation (§6.3)
+  * [X] String validation (§6.3)
     * [X] `maxLength`
     * [X] `minLength`
-    * [ ] `pattern`
+    * [X] `pattern`
   * [ ] Array validation (§6.4)
     * [X] `items`
     * [x] `maxItems`

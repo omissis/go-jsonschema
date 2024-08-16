@@ -220,16 +220,11 @@ type stringValidator struct {
 	minLength  int
 	maxLength  int
 	isNillable bool
+	pattern    string
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter) {
-	if v.minLength == 0 && v.maxLength == 0 {
-		return
-	}
-
 	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
-	fieldName := v.jsonName
-
 	checkPointer := ""
 	pointerPrefix := ""
 
@@ -237,6 +232,29 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 		checkPointer = fmt.Sprintf("%s != nil && ", value)
 		pointerPrefix = "*"
 	}
+
+	if len(v.pattern) != 0 {
+		if v.isNillable {
+			out.Printlnf("if %s != nil {", value)
+			out.Indent(1)
+		}
+		out.Printlnf(`if matched, _ := regexp.MatchString("%s", %s%s); !matched {`, v.pattern, pointerPrefix, value)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", "%s")`, v.pattern, v.fieldName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+		if v.isNillable {
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+	}
+
+	if v.minLength == 0 && v.maxLength == 0 {
+		return
+	}
+
+	fieldName := v.jsonName
 
 	if v.minLength != 0 {
 		out.Printlnf(`if %slen(%s%s) < %d {`, checkPointer, pointerPrefix, value, v.minLength)

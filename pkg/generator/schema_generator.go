@@ -301,14 +301,19 @@ func (g *schemaGenerator) structFieldValidators(
 
 	case codegen.PrimitiveType:
 		if v.Type == schemas.TypeNameString {
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 {
+			hasPattern := len(f.SchemaType.Pattern) != 0
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern {
 				validators = append(validators, &stringValidator{
 					jsonName:   f.JSONName,
 					fieldName:  f.Name,
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
+					pattern:    f.SchemaType.Pattern,
 					isNillable: isNillable,
 				})
+			}
+			if hasPattern {
+				g.output.file.Package.AddImport("regexp", "")
 			}
 		}
 
