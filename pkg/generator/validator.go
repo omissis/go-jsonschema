@@ -28,6 +28,7 @@ var (
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
+	_ validator = new(numericValidator)
 )
 
 type requiredValidator struct {
@@ -281,6 +282,114 @@ func (v *stringValidator) desc() *validatorDesc {
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
+}
+
+type numericValidator struct {
+	jsonName         string
+	fieldName        string
+	isNillable       bool
+	multipleOf       *float64
+	maximum          *float64
+	exclusiveMaximum *any
+	minimum          *float64
+	exclusiveMinimum *any
+	roundToInt       bool
+}
+
+func (v numericValidator) generate(out *codegen.Emitter) {
+	value := getPlainName(v.fieldName)
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.multipleOf != nil {
+		if v.roundToInt {
+			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+		} else {
+			out.Printlnf(`if %s math.Abs(math.Mod(%s%s, %v)) > 1e-10 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+		}
+
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	v.genBoundaryBool(out, checkPointer, pointerPrefix, value, v.maximum, v.exclusiveMaximum, "<")
+	v.genBoundaryBool(out, checkPointer, pointerPrefix, value, v.minimum, v.exclusiveMinimum, ">")
+	v.genExclusiveBoundaryNum(out, checkPointer, pointerPrefix, value, v.exclusiveMaximum, "<")
+	v.genExclusiveBoundaryNum(out, checkPointer, pointerPrefix, value, v.exclusiveMinimum, ">")
+}
+
+func (v *numericValidator) genBoundaryBool(
+	out *codegen.Emitter, checkPointer, pointerPrefix, value string, boundary *float64, exclusive *any, sign string) {
+	if boundary == nil {
+		return
+	}
+
+	// technically, this should be based on schema version, but that information is lost
+	comp := sign
+	if isExclusiveBool(exclusive) {
+		// we're putting the other number first, so we need the = if it's exclusive
+		comp += "="
+	} else {
+		sign += "="
+	}
+
+	out.Printlnf(`if %s%v %s%s %s {`, checkPointer, v.valueOf(*boundary), comp, pointerPrefix, value)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, *boundary)
+	out.Indent(-1)
+	out.Printlnf("}")
+}
+
+func (v *numericValidator) genExclusiveBoundaryNum(
+	out *codegen.Emitter, checkPointer, pointerPrefix, value string, boundary *any, sign string) {
+	if boundary == nil {
+		return
+	}
+
+	boundaryNum, ok := (*boundary).(float64)
+	if !ok {
+		return
+	}
+
+	comp := sign + "="
+	out.Printlnf(`if %s%v %s%s %s {`, checkPointer, v.valueOf(boundaryNum), comp, pointerPrefix, value)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, *boundary)
+	out.Indent(-1)
+	out.Printlnf("}")
+}
+
+func isExclusiveBool(val *any) bool {
+	if val == nil {
+		return false
+	}
+
+	if b, ok := (*val).(bool); ok {
+		return b
+	}
+
+	return false
+}
+
+func (v numericValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+func (v numericValidator) valueOf(val float64) any {
+	if v.roundToInt {
+		return int(val)
+	}
+	return val
 }
 
 func getPlainName(fieldName string) string {

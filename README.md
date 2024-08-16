@@ -122,11 +122,11 @@ only specific validations remain to be fully implemented.
     * [x] `type` (multiple; **note**: partial support, limited validation)
     * [ ] `const`
   * [ ] Numeric validation (§6.2)
-    * [ ] `multipleOf`
-    * [ ] `maximum`
-    * [ ] `exclusiveMaximum`
-    * [ ] `minimum`
-    * [ ] `exclusiveMinimum`
+    * [X] `multipleOf`
+    * [X] `maximum`
+    * [X] `exclusiveMaximum`
+    * [X] `minimum`
+    * [X] `exclusiveMinimum`
   * [X] String validation (§6.3)
     * [X] `maxLength`
     * [X] `minLength`

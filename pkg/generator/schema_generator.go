@@ -326,6 +326,29 @@ func (g *schemaGenerator) structFieldValidators(
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
 			}
+		} else if v.Type == "int" || v.Type == "float64" {
+			if f.SchemaType.MultipleOf != nil ||
+				f.SchemaType.Maximum != nil ||
+				f.SchemaType.ExclusiveMaximum != nil ||
+				f.SchemaType.Minimum != nil ||
+				f.SchemaType.ExclusiveMinimum != nil {
+				validators = append(validators, &numericValidator{
+					jsonName:         f.JSONName,
+					fieldName:        f.Name,
+					isNillable:       isNillable,
+					multipleOf:       f.SchemaType.MultipleOf,
+					maximum:          f.SchemaType.Maximum,
+					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
+					minimum:          f.SchemaType.Minimum,
+					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					roundToInt:       v.Type == "int",
+				})
+			}
+
+			if f.SchemaType.MultipleOf != nil && v.Type == "float64" {
+				g.output.file.Package.AddImport("math", "")
+			}
+
 		}
 
 	case *codegen.ArrayType:
