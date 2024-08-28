@@ -15,7 +15,9 @@ type yamlFormatter struct{}
 
 func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
 	var beforeValidators []validator
+
 	var afterValidators []validator
+
 	forceBefore := false
 
 	for _, v := range validators {

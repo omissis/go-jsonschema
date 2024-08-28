@@ -242,6 +242,7 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 			out.Printlnf("if %s != nil {", value)
 			out.Indent(1)
 		}
+
 		out.Printlnf(`if matched, _ := regexp.MatchString("%s", string(%s%s)); !matched {`, v.pattern, pointerPrefix, value)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", "%s")`, v.pattern, v.fieldName)
@@ -310,7 +311,8 @@ func (v numericValidator) generate(out *codegen.Emitter) {
 		if v.roundToInt {
 			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
 		} else {
-			out.Printlnf(`if %s math.Abs(math.Mod(%s%s, %v)) > 1e-10 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+			out.Printlnf(
+				`if %s math.Abs(math.Mod(%s%s, %v)) > 1e-10 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
 		}
 
 		out.Indent(1)
@@ -326,15 +328,22 @@ func (v numericValidator) generate(out *codegen.Emitter) {
 }
 
 func (v *numericValidator) genBoundaryBool(
-	out *codegen.Emitter, checkPointer, pointerPrefix, value string, boundary *float64, exclusive *any, sign string) {
+	out *codegen.Emitter,
+	checkPointer,
+	pointerPrefix,
+	value string,
+	boundary *float64,
+	exclusive *any,
+	sign string,
+) {
 	if boundary == nil {
 		return
 	}
 
-	// technically, this should be based on schema version, but that information is lost
+	// Technically, this should be based on schema version, but that information is lost.
 	comp := sign
 	if isExclusiveBool(exclusive) {
-		// we're putting the other number first, so we need the = if it's exclusive
+		// We're putting the other number first, so we need the = if it's exclusive.
 		comp += "="
 	} else {
 		sign += "="
@@ -348,7 +357,13 @@ func (v *numericValidator) genBoundaryBool(
 }
 
 func (v *numericValidator) genExclusiveBoundaryNum(
-	out *codegen.Emitter, checkPointer, pointerPrefix, value string, boundary *any, sign string) {
+	out *codegen.Emitter,
+	checkPointer,
+	pointerPrefix,
+	value string,
+	boundary *any,
+	sign string,
+) {
 	if boundary == nil {
 		return
 	}
@@ -389,6 +404,7 @@ func (v numericValidator) valueOf(val float64) any {
 	if v.roundToInt {
 		return int(val)
 	}
+
 	return val
 }
 
@@ -396,5 +412,6 @@ func getPlainName(fieldName string) string {
 	if fieldName == "" {
 		return varNamePlainStruct
 	}
+
 	return fmt.Sprintf("%s.%s", varNamePlainStruct, fieldName)
 }

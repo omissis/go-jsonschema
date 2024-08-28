@@ -14,7 +14,9 @@ type jsonFormatter struct{}
 
 func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
 	var beforeValidators []validator
+
 	var afterValidators []validator
+
 	forceBefore := false
 
 	for _, v := range validators {

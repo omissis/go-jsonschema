@@ -11,6 +11,8 @@ import (
 
 var errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
 
+const float64Type = "float64"
+
 type schemaGenerator struct {
 	*Generator
 	output         *output
@@ -323,10 +325,11 @@ func (g *schemaGenerator) structFieldValidators(
 					isNillable: isNillable,
 				})
 			}
+
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
 			}
-		} else if v.Type == "int" || v.Type == "float64" {
+		} else if v.Type == "int" || v.Type == float64Type {
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
 				f.SchemaType.ExclusiveMaximum != nil ||
@@ -345,10 +348,9 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 			}
 
-			if f.SchemaType.MultipleOf != nil && v.Type == "float64" {
+			if f.SchemaType.MultipleOf != nil && v.Type == float64Type {
 				g.output.file.Package.AddImport("math", "")
 			}
-
 		}
 
 	case *codegen.ArrayType:
@@ -605,7 +607,7 @@ func (g *schemaGenerator) generateStructType(
 				defaultValue = map[string]float64{}
 				fieldType = codegen.MapType{
 					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.PrimitiveType{Type: "float64"},
+					ValueType: codegen.PrimitiveType{Type: float64Type},
 				}
 
 			case schemas.TypeNameInteger:
@@ -811,7 +813,7 @@ func (g *schemaGenerator) generateEnumType(
 					valueType = "string"
 
 				case float64:
-					valueType = "float64"
+					valueType = float64Type
 
 				case bool:
 					valueType = "bool"
