@@ -155,6 +155,13 @@ func TestExtraImportsYAML(t *testing.T) {
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.json")
 }
 
+func TestMinSizeInt(t *testing.T) {
+	t.Parallel()
+	cfg := basicConfig
+	cfg.MinSizedInts = true
+	testExamples(t, cfg, "./data/minSizedInts")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -234,6 +241,9 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
+				writeTo := fmt.Sprintf("/Volumes/RAM/%s", goldenFileName)
+				os.MkdirAll(filepath.Dir(writeTo), 0o755)
+				os.WriteFile(writeTo, source, 0o644)
 				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
 			}
 		}

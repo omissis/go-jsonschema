@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/reference",
+  "type": "object",
+  "definitions": {
+    "bound8": {
+      "type": "integer",
+      "minimum": -128,
+      "maximum": 127
+    },
+    "bound16": {
+      "type": "integer",
+      "minimum": -32768,
+      "maximum": 32767
+    },
+    "bound32": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "bound64": {
+      "type": "integer",
+      "minimum": -9223372036854775808,
+      "maximum": 9223372036854775807
+    },
+    "uBound8": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "uBound16": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "uBound32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "uBound64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    }
+  },
+  "properties": {
+    "i8": {
+      "$ref": "#/definitions/bound8"
+    },
+    "i16": {
+      "$ref": "#/definitions/bound16"
+    },
+    "i32": {
+      "$ref": "#/definitions/bound32"
+    },
+    "i64": {
+      "$ref": "#/definitions/bound64"
+    },
+    "u8": {
+      "$ref": "#/definitions/uBound8"
+    },
+    "u16": {
+      "$ref": "#/definitions/uBound16"
+    },
+    "u32": {
+      "$ref": "#/definitions/uBound32"
+    },
+    "u64": {
+      "$ref": "#/definitions/uBound64"
+    }
+  },
+    "required": [
+        "i8",
+        "i16",
+        "i32",
+        "i64",
+        "u8",
+        "u16",
+        "u32",
+        "u64"
+    ]
+}

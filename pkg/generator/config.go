@@ -12,6 +12,7 @@ type Config struct {
 	Warner              func(string)
 	Tags                []string
 	OnlyModels          bool
+	MinSizedInts        bool
 }
 
 type SchemaMapping struct {

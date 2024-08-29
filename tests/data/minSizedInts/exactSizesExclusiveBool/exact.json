@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/exact",
+  "type": "object",
+  "properties": {
+    "i8": {
+      "type": "integer",
+      "minimum": -129,
+      "maximum": 128,
+        "exclusiveMinimum": true,
+        "exclusiveMaximum": true
+    },
+    "i16": {
+      "type": "integer",
+      "minimum": -32769,
+      "maximum": 32768,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    },
+    "i32": {
+      "type": "integer",
+      "minimum": -2147483649,
+      "maximum": 2147483648,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    },
+    "i64": {
+      "type": "integer",
+      "minimum": -9223372036854775809,
+      "maximum": 9223372036854775808,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    },
+    "u8": {
+      "type": "integer",
+      "minimum": -1,
+      "maximum": 256,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    },
+    "u16": {
+      "type": "integer",
+      "minimum": -1,
+      "maximum": 65536,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": -1,
+      "maximum": 4294967296,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": -1,
+      "maximum": 18446744073709551616,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true
+    }
+  },
+  "required": [
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64"
+  ]
+}

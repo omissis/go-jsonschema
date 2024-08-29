@@ -9,6 +9,7 @@ import (
 	"github.com/sanity-io/litter"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/atombender/go-jsonschema/pkg/mathutils"
 )
 
 type validator interface {
@@ -297,7 +298,7 @@ type numericValidator struct {
 	roundToInt       bool
 }
 
-func (v numericValidator) generate(out *codegen.Emitter) {
+func (v *numericValidator) generate(out *codegen.Emitter) {
 	value := getPlainName(v.fieldName)
 	checkPointer := ""
 	pointerPrefix := ""
@@ -321,19 +322,21 @@ func (v numericValidator) generate(out *codegen.Emitter) {
 		out.Printlnf("}")
 	}
 
-	v.genBoundaryBool(out, checkPointer, pointerPrefix, value, v.maximum, v.exclusiveMaximum, "<")
-	v.genBoundaryBool(out, checkPointer, pointerPrefix, value, v.minimum, v.exclusiveMinimum, ">")
-	v.genExclusiveBoundaryNum(out, checkPointer, pointerPrefix, value, v.exclusiveMaximum, "<")
-	v.genExclusiveBoundaryNum(out, checkPointer, pointerPrefix, value, v.exclusiveMinimum, ">")
+	nMin, nMax, nMinExclusive, nMaxExclusive := mathutils.NormalizeBounds(
+		v.minimum, v.maximum, v.exclusiveMinimum, v.exclusiveMaximum,
+	)
+
+	v.genBoundary(out, checkPointer, pointerPrefix, value, nMax, nMaxExclusive, "<")
+	v.genBoundary(out, checkPointer, pointerPrefix, value, nMin, nMinExclusive, ">")
 }
 
-func (v *numericValidator) genBoundaryBool(
+func (v *numericValidator) genBoundary(
 	out *codegen.Emitter,
 	checkPointer,
 	pointerPrefix,
 	value string,
 	boundary *float64,
-	exclusive *any,
+	exclusive bool,
 	sign string,
 ) {
 	if boundary == nil {
@@ -342,7 +345,7 @@ func (v *numericValidator) genBoundaryBool(
 
 	// Technically, this should be based on schema version, but that information is lost.
 	comp := sign
-	if isExclusiveBool(exclusive) {
+	if exclusive {
 		// We're putting the other number first, so we need the = if it's exclusive.
 		comp += "="
 	} else {
@@ -351,58 +354,21 @@ func (v *numericValidator) genBoundaryBool(
 
 	out.Printlnf(`if %s%v %s%s %s {`, checkPointer, v.valueOf(*boundary), comp, pointerPrefix, value)
 	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, *boundary)
+	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, v.valueOf(*boundary))
 	out.Indent(-1)
 	out.Printlnf("}")
 }
 
-func (v *numericValidator) genExclusiveBoundaryNum(
-	out *codegen.Emitter,
-	checkPointer,
-	pointerPrefix,
-	value string,
-	boundary *any,
-	sign string,
-) {
-	if boundary == nil {
-		return
-	}
-
-	boundaryNum, ok := (*boundary).(float64)
-	if !ok {
-		return
-	}
-
-	comp := sign + "="
-	out.Printlnf(`if %s%v %s%s %s {`, checkPointer, v.valueOf(boundaryNum), comp, pointerPrefix, value)
-	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, *boundary)
-	out.Indent(-1)
-	out.Printlnf("}")
-}
-
-func isExclusiveBool(val *any) bool {
-	if val == nil {
-		return false
-	}
-
-	if b, ok := (*val).(bool); ok {
-		return b
-	}
-
-	return false
-}
-
-func (v numericValidator) desc() *validatorDesc {
+func (v *numericValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: false,
 	}
 }
 
-func (v numericValidator) valueOf(val float64) any {
+func (v *numericValidator) valueOf(val float64) any {
 	if v.roundToInt {
-		return int(val)
+		return int64(val)
 	}
 
 	return val
@@ -414,4 +380,27 @@ func getPlainName(fieldName string) string {
 	}
 
 	return fmt.Sprintf("%s.%s", varNamePlainStruct, fieldName)
+}
+
+func SafePrint(pointers ...interface{}) string {
+	var result string
+	for _, p := range pointers {
+		switch v := p.(type) {
+		case *any:
+			if v == nil || *v == nil {
+				result += "nil "
+			} else {
+				result += fmt.Sprintf("%v ", *v)
+			}
+		case *float64:
+			if v == nil {
+				result += "nil "
+			} else {
+				result += fmt.Sprintf("%v ", *v)
+			}
+		default:
+			result += fmt.Sprintf("%v ", v)
+		}
+	}
+	return result
 }

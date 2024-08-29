@@ -329,7 +329,7 @@ func (g *schemaGenerator) structFieldValidators(
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
 			}
-		} else if v.Type == "int" || v.Type == float64Type {
+		} else if strings.Contains(v.Type, "int") || v.Type == float64Type {
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
 				f.SchemaType.ExclusiveMaximum != nil ||
@@ -344,7 +344,7 @@ func (g *schemaGenerator) structFieldValidators(
 					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
 					minimum:          f.SchemaType.Minimum,
 					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
-					roundToInt:       v.Type == "int",
+					roundToInt:       strings.Contains(v.Type, "int"),
 				})
 			}
 
@@ -451,7 +451,16 @@ func (g *schemaGenerator) generateType(
 		return codegen.EmptyInterfaceType{}, nil
 
 	default:
-		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
+		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
+			t.Type[typeIndex],
+			t.Format,
+			typeShouldBePointer,
+			g.config.MinSizedInts,
+			t.Minimum,
+			t.Maximum,
+			t.ExclusiveMinimum,
+			t.ExclusiveMaximum,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
 		}
@@ -726,7 +735,16 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
-			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
+			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
+				t.Type[typeIndex],
+				t.Format,
+				typeShouldBePointer,
+				g.config.MinSizedInts,
+				t.Minimum,
+				t.Maximum,
+				t.ExclusiveMinimum,
+				t.ExclusiveMaximum,
+			)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
 			}
@@ -776,7 +794,17 @@ func (g *schemaGenerator) generateEnumType(
 
 	if len(t.Type) == 1 {
 		var err error
-		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], t.Format, false); err != nil {
+		enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
+			t.Type[0],
+			t.Format,
+			false,
+			g.config.MinSizedInts,
+			t.Minimum,
+			t.Maximum,
+			t.ExclusiveMinimum,
+			t.ExclusiveMaximum,
+		)
+		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
 
