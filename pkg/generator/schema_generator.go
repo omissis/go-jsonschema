@@ -49,17 +49,6 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, error) {
-	refType, err := schemas.GetRefType(ref)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errCannotGenerateReferencedType, err)
-	}
-
-	if refType != schemas.RefTypeFile {
-		return nil, fmt.Errorf("%w: %w '%s'", errCannotGenerateReferencedType, errUnsupportedRefFormat, ref)
-	}
-
-	ref = strings.TrimPrefix(ref, "file://")
-
 	fileName := ref
 
 	var scope, defName string
@@ -98,7 +87,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	if fileName != "" {
 		var serr error
 
-		schema, serr = g.fileLoader.Load(fileName, g.schemaFileName)
+		schema, serr = g.loader.Load(fileName, g.schemaFileName)
 		if serr != nil {
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, serr)
 		}

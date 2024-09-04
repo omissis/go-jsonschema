@@ -1,5 +1,7 @@
 package generator
 
+import "github.com/atombender/go-jsonschema/pkg/schemas"
+
 type Config struct {
 	SchemaMappings      []SchemaMapping
 	ExtraImports        bool
@@ -13,6 +15,7 @@ type Config struct {
 	Tags                []string
 	OnlyModels          bool
 	MinSizedInts        bool
+	Loader              schemas.Loader
 }
 
 type SchemaMapping struct {
