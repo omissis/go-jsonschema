@@ -201,22 +201,22 @@ func adjustForSignedBounds(nMin, nMax *float64) (string, bool, bool) {
 		return i64, false, false
 
 	case nMin == nil:
-		return i64, false, int64(*nMax) == math.MaxInt64
+		return i64, false, int64(math.Round(*nMax)) == math.MaxInt64
 
 	case nMax == nil:
-		return i64, int64(*nMin) == math.MinInt64, false
+		return i64, int64(math.Round(*nMin)) == math.MinInt64, false
 
 	case *nMin < math.MinInt32 || *nMax > math.MaxInt32:
-		return i64, int64(*nMin) == math.MinInt64, int64(*nMax) == math.MaxInt64
+		return i64, int64(math.Round(*nMin)) == math.MinInt64, int64(math.Round(*nMax)) == math.MaxInt64
 
 	case *nMin < math.MinInt16 || *nMax > math.MaxInt16:
-		return "int32", int32(*nMin) == math.MinInt32, int32(*nMax) == math.MaxInt32
+		return "int32", int32(math.Round(*nMin)) == math.MinInt32, int32(math.Round(*nMax)) == math.MaxInt32
 
 	case *nMin < math.MinInt8 || *nMax > math.MaxInt8:
-		return "int16", int16(*nMin) == math.MinInt16, int16(*nMax) == math.MaxInt16
+		return "int16", int16(math.Round(*nMin)) == math.MinInt16, int16(math.Round(*nMax)) == math.MaxInt16
 
 	default:
-		return "int8", int8(*nMin) == math.MinInt8, int8(*nMax) == math.MaxInt8
+		return "int8", int8(math.Round(*nMin)) == math.MinInt8, int8(math.Round(*nMax)) == math.MaxInt8
 	}
 }
 
@@ -228,15 +228,15 @@ func adjustForUnsignedBounds(nMin, nMax *float64) (string, bool, bool) {
 		return "uint64", removeMin, false
 
 	case *nMax > math.MaxUint32:
-		return "uint64", removeMin, uint64(*nMax) == math.MaxUint64
+		return "uint64", removeMin, uint64(math.Round(*nMax)) == math.MaxUint64
 
 	case *nMax > math.MaxUint16:
-		return "uint32", removeMin, uint32(*nMax) == math.MaxUint32
+		return "uint32", removeMin, uint32(math.Round(*nMax)) == math.MaxUint32
 
 	case *nMax > math.MaxUint8:
-		return "uint16", removeMin, uint16(*nMax) == math.MaxUint16
+		return "uint16", removeMin, uint16(math.Round(*nMax)) == math.MaxUint16
 
 	default:
-		return "uint8", removeMin, uint8(*nMax) == math.MaxUint8
+		return "uint8", removeMin, uint8(math.Round(*nMax)) == math.MaxUint8
 	}
 }
