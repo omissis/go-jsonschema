@@ -783,7 +783,7 @@ func (g *schemaGenerator) generateEnumType(
 
 	if len(t.Type) == 1 {
 		var err error
-		enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
+		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
 			t.Type[0],
 			t.Format,
 			false,
@@ -792,9 +792,7 @@ func (g *schemaGenerator) generateEnumType(
 			&t.Maximum,
 			&t.ExclusiveMinimum,
 			&t.ExclusiveMaximum,
-		)
-
-		if err != nil {
+		); err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
 

@@ -157,8 +157,10 @@ func TestExtraImportsYAML(t *testing.T) {
 
 func TestMinSizeInt(t *testing.T) {
 	t.Parallel()
+
 	cfg := basicConfig
 	cfg.MinSizedInts = true
+
 	testExamples(t, cfg, "./data/minSizedInts")
 }
 

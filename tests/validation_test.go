@@ -156,6 +156,7 @@ func TestRequiredFields(t *testing.T) {
 
 func TestPattern(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -171,6 +172,7 @@ func TestPattern(t *testing.T) {
 			wantErr: errors.New("field ^0x[0-9a-f]{10}$ pattern match: must match MyString"),
 		},
 	}
+
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
@@ -186,6 +188,7 @@ func TestPattern(t *testing.T) {
 
 func TestPrimitiveDefs(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -205,6 +208,7 @@ func TestPrimitiveDefs(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			prim := testPrimitiveDefs.PrimitiveDefs{}
 
 			err := json.Unmarshal([]byte(tC.data), &prim)
@@ -216,6 +220,7 @@ func TestPrimitiveDefs(t *testing.T) {
 
 func TestMultipleOf(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -240,6 +245,7 @@ func TestMultipleOf(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			mo := testMultipleOf.MultipleOf{}
 
 			err := json.Unmarshal([]byte(tC.data), &mo)
@@ -251,6 +257,7 @@ func TestMultipleOf(t *testing.T) {
 
 func TestMaximum(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -279,6 +286,7 @@ func TestMaximum(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			mo := testMaximum.Maximum{}
 
 			err := json.Unmarshal([]byte(tC.data), &mo)
@@ -290,6 +298,7 @@ func TestMaximum(t *testing.T) {
 
 func TestMinimum(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -318,6 +327,7 @@ func TestMinimum(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			mo := testMinimum.Minimum{}
 
 			err := json.Unmarshal([]byte(tC.data), &mo)
@@ -329,6 +339,7 @@ func TestMinimum(t *testing.T) {
 
 func TestExclusiveMaximum(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -375,6 +386,7 @@ func TestExclusiveMaximum(t *testing.T) {
 
 func TestExclusiveMinimum(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc    string
 		data    string
@@ -403,6 +415,7 @@ func TestExclusiveMinimum(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			mo := testExclusiveMinimum.ExclusiveMinimum{}
 
 			err := json.Unmarshal([]byte(tC.data), &mo)

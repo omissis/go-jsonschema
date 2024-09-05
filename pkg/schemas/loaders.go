@@ -225,10 +225,12 @@ func fileExists(fileName string) bool {
 
 func toExtensionSet(items []string) map[string]bool {
 	set := make(map[string]bool, len(items))
+
 	for _, item := range items {
 		if !strings.HasPrefix(item, ".") {
 			item = "." + item
 		}
+
 		set[item] = true
 	}
 
