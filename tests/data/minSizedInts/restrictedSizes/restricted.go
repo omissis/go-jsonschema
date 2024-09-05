@@ -78,12 +78,6 @@ func (j *Restricted) UnmarshalJSON(b []byte) error {
 	if -2147483647 > plain.I32 {
 		return fmt.Errorf("field %s: must be >= %v", "i32", -2147483647)
 	}
-	if 9223372036854775807 < plain.I64 {
-		return fmt.Errorf("field %s: must be <= %v", "i64", 9223372036854775807)
-	}
-	if -9223372036854775808 > plain.I64 {
-		return fmt.Errorf("field %s: must be >= %v", "i64", -9223372036854775808)
-	}
 	if 126 < plain.I8 {
 		return fmt.Errorf("field %s: must be <= %v", "i8", 126)
 	}
@@ -101,9 +95,6 @@ func (j *Restricted) UnmarshalJSON(b []byte) error {
 	}
 	if 1 > plain.U32 {
 		return fmt.Errorf("field %s: must be >= %v", "u32", 1)
-	}
-	if 9223372036854775807 < plain.U64 {
-		return fmt.Errorf("field %s: must be <= %v", "u64", 9223372036854775807)
 	}
 	if 1 > plain.U64 {
 		return fmt.Errorf("field %s: must be >= %v", "u64", 1)

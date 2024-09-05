@@ -381,26 +381,3 @@ func getPlainName(fieldName string) string {
 
 	return fmt.Sprintf("%s.%s", varNamePlainStruct, fieldName)
 }
-
-func SafePrint(pointers ...interface{}) string {
-	var result string
-	for _, p := range pointers {
-		switch v := p.(type) {
-		case *any:
-			if v == nil || *v == nil {
-				result += "nil "
-			} else {
-				result += fmt.Sprintf("%v ", *v)
-			}
-		case *float64:
-			if v == nil {
-				result += "nil "
-			} else {
-				result += fmt.Sprintf("%v ", *v)
-			}
-		default:
-			result += fmt.Sprintf("%v ", v)
-		}
-	}
-	return result
-}

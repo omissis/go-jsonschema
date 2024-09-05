@@ -202,9 +202,6 @@ func (j *U16) UnmarshalJSON(b []byte) error {
 	if 256 < plain {
 		return fmt.Errorf("field %s: must be <= %v", "", 256)
 	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
 	*j = U16(plain)
 	return nil
 }
@@ -221,9 +218,6 @@ func (j *U32) UnmarshalJSON(b []byte) error {
 	if 65536 < plain {
 		return fmt.Errorf("field %s: must be <= %v", "", 65536)
 	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
 	*j = U32(plain)
 	return nil
 }
@@ -239,9 +233,6 @@ func (j *U64) UnmarshalJSON(b []byte) error {
 	}
 	if 4294967296 < plain {
 		return fmt.Errorf("field %s: must be <= %v", "", 4294967296)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
 	}
 	*j = U64(plain)
 	return nil

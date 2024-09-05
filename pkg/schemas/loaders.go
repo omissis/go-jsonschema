@@ -54,7 +54,7 @@ func (l *CachedLoader) Load(uri, parentURI string) (*Schema, error) {
 func NewFileLoader(resolveExtensions, yamlExtensions []string) *FileLoader {
 	return &FileLoader{
 		resolveExtensions: resolveExtensions,
-		yamlExtensions:    toSet(yamlExtensions),
+		yamlExtensions:    toExtensionSet(yamlExtensions),
 	}
 }
 
@@ -101,6 +101,7 @@ func NewDefaultCacheLoader(resolveExtensions, yamlExtensions []string) *CachedLo
 
 func NewDefaultMultiLoader(resolveExtensions, yamlExtensions []string) MultiLoader {
 	httpLoader := NewHTTPLoader(yamlExtensions)
+
 	return MultiLoader{
 		RefTypeFile:  NewFileLoader(resolveExtensions, yamlExtensions),
 		RefTypeHTTP:  httpLoader,
@@ -121,11 +122,16 @@ func (l MultiLoader) Load(uri, parentURI string) (*Schema, error) {
 		return nil, ErrUnsupportedRefFormat
 	}
 
-	return loader.Load(uri, parentURI)
+	schema, err := loader.Load(uri, parentURI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load schema %q: %w", uri, err)
+	}
+
+	return schema, nil
 }
 
 func NewHTTPLoader(yamlExtensions []string) *HTTPLoader {
-	return &HTTPLoader{YAMLExtensions: toSet(yamlExtensions)}
+	return &HTTPLoader{YAMLExtensions: toExtensionSet(yamlExtensions)}
 }
 
 type HTTPLoader struct {
@@ -166,6 +172,7 @@ func (l *HTTPLoader) Load(uri, parentURI string) (*Schema, error) {
 			if l.YAMLExtensions[path.Ext(u.Path)] {
 				return FromYAMLReader(resp.Body)
 			}
+
 			return FromJSONReader(resp.Body)
 		}
 	}
@@ -182,6 +189,8 @@ func QualifiedFileName(fileName, parentFileName string, resolveExtensions []stri
 	if r != RefTypeFile {
 		return fileName[strings.Index(fileName, "://")+3:], nil
 	}
+
+	fileName = strings.TrimPrefix(fileName, "file://")
 
 	if !filepath.IsAbs(fileName) {
 		fileName = filepath.Join(filepath.Dir(parentFileName), fileName)
@@ -214,9 +223,12 @@ func fileExists(fileName string) bool {
 	return err == nil || !os.IsNotExist(err)
 }
 
-func toSet(items []string) map[string]bool {
+func toExtensionSet(items []string) map[string]bool {
 	set := make(map[string]bool, len(items))
 	for _, item := range items {
+		if !strings.HasPrefix(item, ".") {
+			item = "." + item
+		}
 		set[item] = true
 	}
 

@@ -241,9 +241,6 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				writeTo := fmt.Sprintf("/Volumes/RAM/%s", goldenFileName)
-				os.MkdirAll(filepath.Dir(writeTo), 0o755)
-				os.WriteFile(writeTo, source, 0o644)
 				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
 			}
 		}

@@ -7,79 +7,11 @@ import "fmt"
 
 type Bound16 int16
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Bound16) UnmarshalJSON(b []byte) error {
-	type Plain Bound16
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 32767 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 32767)
-	}
-	if -32768 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -32768)
-	}
-	*j = Bound16(plain)
-	return nil
-}
-
 type Bound32 int32
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Bound32) UnmarshalJSON(b []byte) error {
-	type Plain Bound32
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 2147483647 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 2147483647)
-	}
-	if -2147483648 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -2147483648)
-	}
-	*j = Bound32(plain)
-	return nil
-}
 
 type Bound64 int64
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Bound64) UnmarshalJSON(b []byte) error {
-	type Plain Bound64
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 9223372036854775807 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 9223372036854775807)
-	}
-	if -9223372036854775808 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -9223372036854775808)
-	}
-	*j = Bound64(plain)
-	return nil
-}
-
 type Bound8 int8
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Bound8) UnmarshalJSON(b []byte) error {
-	type Plain Bound8
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 127 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 127)
-	}
-	if -128 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", -128)
-	}
-	*j = Bound8(plain)
-	return nil
-}
 
 type Exact struct {
 	// I16 corresponds to the JSON schema field "i16".
@@ -148,76 +80,8 @@ func (j *Exact) UnmarshalJSON(b []byte) error {
 
 type UBound16 uint16
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *UBound16) UnmarshalJSON(b []byte) error {
-	type Plain UBound16
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 65535 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65535)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
-	*j = UBound16(plain)
-	return nil
-}
-
 type UBound32 uint32
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *UBound32) UnmarshalJSON(b []byte) error {
-	type Plain UBound32
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 4294967295 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 4294967295)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
-	*j = UBound32(plain)
-	return nil
-}
 
 type UBound64 uint64
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *UBound64) UnmarshalJSON(b []byte) error {
-	type Plain UBound64
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 9223372036854775807 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 9223372036854775807)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
-	*j = UBound64(plain)
-	return nil
-}
-
 type UBound8 uint8
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *UBound8) UnmarshalJSON(b []byte) error {
-	type Plain UBound8
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if 255 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 255)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
-	*j = UBound8(plain)
-	return nil
-}

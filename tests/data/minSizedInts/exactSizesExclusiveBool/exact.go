@@ -7,28 +7,28 @@ import "fmt"
 
 type Exact struct {
 	// I16 corresponds to the JSON schema field "i16".
-	I16 int32 `json:"i16" yaml:"i16" mapstructure:"i16"`
+	I16 int16 `json:"i16" yaml:"i16" mapstructure:"i16"`
 
 	// I32 corresponds to the JSON schema field "i32".
-	I32 int64 `json:"i32" yaml:"i32" mapstructure:"i32"`
+	I32 int32 `json:"i32" yaml:"i32" mapstructure:"i32"`
 
 	// I64 corresponds to the JSON schema field "i64".
 	I64 int64 `json:"i64" yaml:"i64" mapstructure:"i64"`
 
 	// I8 corresponds to the JSON schema field "i8".
-	I8 int16 `json:"i8" yaml:"i8" mapstructure:"i8"`
+	I8 int8 `json:"i8" yaml:"i8" mapstructure:"i8"`
 
 	// U16 corresponds to the JSON schema field "u16".
-	U16 int32 `json:"u16" yaml:"u16" mapstructure:"u16"`
+	U16 uint16 `json:"u16" yaml:"u16" mapstructure:"u16"`
 
 	// U32 corresponds to the JSON schema field "u32".
-	U32 int64 `json:"u32" yaml:"u32" mapstructure:"u32"`
+	U32 uint32 `json:"u32" yaml:"u32" mapstructure:"u32"`
 
 	// U64 corresponds to the JSON schema field "u64".
-	U64 int64 `json:"u64" yaml:"u64" mapstructure:"u64"`
+	U64 uint64 `json:"u64" yaml:"u64" mapstructure:"u64"`
 
 	// U8 corresponds to the JSON schema field "u8".
-	U8 int16 `json:"u8" yaml:"u8" mapstructure:"u8"`
+	U8 uint8 `json:"u8" yaml:"u8" mapstructure:"u8"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -65,54 +65,6 @@ func (j *Exact) UnmarshalJSON(b []byte) error {
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
-	}
-	if 32769 <= plain.I16 {
-		return fmt.Errorf("field %s: must be < %v", "i16", 32769)
-	}
-	if -32770 >= plain.I16 {
-		return fmt.Errorf("field %s: must be > %v", "i16", -32770)
-	}
-	if 2147483649 <= plain.I32 {
-		return fmt.Errorf("field %s: must be < %v", "i32", 2147483649)
-	}
-	if -2147483650 >= plain.I32 {
-		return fmt.Errorf("field %s: must be > %v", "i32", -2147483650)
-	}
-	if 9223372036854775807 <= plain.I64 {
-		return fmt.Errorf("field %s: must be < %v", "i64", 9223372036854775807)
-	}
-	if -9223372036854775808 >= plain.I64 {
-		return fmt.Errorf("field %s: must be > %v", "i64", -9223372036854775808)
-	}
-	if 129 <= plain.I8 {
-		return fmt.Errorf("field %s: must be < %v", "i8", 129)
-	}
-	if -130 >= plain.I8 {
-		return fmt.Errorf("field %s: must be > %v", "i8", -130)
-	}
-	if 65537 <= plain.U16 {
-		return fmt.Errorf("field %s: must be < %v", "u16", 65537)
-	}
-	if -2 >= plain.U16 {
-		return fmt.Errorf("field %s: must be > %v", "u16", -2)
-	}
-	if 4294967297 <= plain.U32 {
-		return fmt.Errorf("field %s: must be < %v", "u32", 4294967297)
-	}
-	if -2 >= plain.U32 {
-		return fmt.Errorf("field %s: must be > %v", "u32", -2)
-	}
-	if 9223372036854775807 <= plain.U64 {
-		return fmt.Errorf("field %s: must be < %v", "u64", 9223372036854775807)
-	}
-	if -2 >= plain.U64 {
-		return fmt.Errorf("field %s: must be > %v", "u64", -2)
-	}
-	if 257 <= plain.U8 {
-		return fmt.Errorf("field %s: must be < %v", "u8", 257)
-	}
-	if -2 >= plain.U8 {
-		return fmt.Errorf("field %s: must be > %v", "u8", -2)
 	}
 	*j = Exact(plain)
 	return nil

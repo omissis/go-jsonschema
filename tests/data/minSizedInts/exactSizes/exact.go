@@ -66,54 +66,6 @@ func (j *Exact) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if 32767 < plain.I16 {
-		return fmt.Errorf("field %s: must be <= %v", "i16", 32767)
-	}
-	if -32768 > plain.I16 {
-		return fmt.Errorf("field %s: must be >= %v", "i16", -32768)
-	}
-	if 2147483647 < plain.I32 {
-		return fmt.Errorf("field %s: must be <= %v", "i32", 2147483647)
-	}
-	if -2147483648 > plain.I32 {
-		return fmt.Errorf("field %s: must be >= %v", "i32", -2147483648)
-	}
-	if 9223372036854775807 < plain.I64 {
-		return fmt.Errorf("field %s: must be <= %v", "i64", 9223372036854775807)
-	}
-	if -9223372036854775808 > plain.I64 {
-		return fmt.Errorf("field %s: must be >= %v", "i64", -9223372036854775808)
-	}
-	if 127 < plain.I8 {
-		return fmt.Errorf("field %s: must be <= %v", "i8", 127)
-	}
-	if -128 > plain.I8 {
-		return fmt.Errorf("field %s: must be >= %v", "i8", -128)
-	}
-	if 65535 < plain.U16 {
-		return fmt.Errorf("field %s: must be <= %v", "u16", 65535)
-	}
-	if 0 > plain.U16 {
-		return fmt.Errorf("field %s: must be >= %v", "u16", 0)
-	}
-	if 4294967295 < plain.U32 {
-		return fmt.Errorf("field %s: must be <= %v", "u32", 4294967295)
-	}
-	if 0 > plain.U32 {
-		return fmt.Errorf("field %s: must be >= %v", "u32", 0)
-	}
-	if 9223372036854775807 < plain.U64 {
-		return fmt.Errorf("field %s: must be <= %v", "u64", 9223372036854775807)
-	}
-	if 0 > plain.U64 {
-		return fmt.Errorf("field %s: must be >= %v", "u64", 0)
-	}
-	if 255 < plain.U8 {
-		return fmt.Errorf("field %s: must be <= %v", "u8", 255)
-	}
-	if 0 > plain.U8 {
-		return fmt.Errorf("field %s: must be >= %v", "u8", 0)
-	}
 	*j = Exact(plain)
 	return nil
 }

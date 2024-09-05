@@ -445,10 +445,10 @@ func (g *schemaGenerator) generateType(
 			t.Format,
 			typeShouldBePointer,
 			g.config.MinSizedInts,
-			t.Minimum,
-			t.Maximum,
-			t.ExclusiveMinimum,
-			t.ExclusiveMaximum,
+			&t.Minimum,
+			&t.Maximum,
+			&t.ExclusiveMinimum,
+			&t.ExclusiveMaximum,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
@@ -729,10 +729,10 @@ func (g *schemaGenerator) generateTypeInline(
 				t.Format,
 				typeShouldBePointer,
 				g.config.MinSizedInts,
-				t.Minimum,
-				t.Maximum,
-				t.ExclusiveMinimum,
-				t.ExclusiveMaximum,
+				&t.Minimum,
+				&t.Maximum,
+				&t.ExclusiveMinimum,
+				&t.ExclusiveMaximum,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
@@ -788,11 +788,12 @@ func (g *schemaGenerator) generateEnumType(
 			t.Format,
 			false,
 			g.config.MinSizedInts,
-			t.Minimum,
-			t.Maximum,
-			t.ExclusiveMinimum,
-			t.ExclusiveMaximum,
+			&t.Minimum,
+			&t.Maximum,
+			&t.ExclusiveMinimum,
+			&t.ExclusiveMaximum,
 		)
+
 		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
