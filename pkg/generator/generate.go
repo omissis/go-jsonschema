@@ -74,7 +74,7 @@ func New(config Config) (*Generator, error) {
 }
 
 func (g *Generator) Sources() map[string][]byte {
-	var maxLineLength uint = 80
+	var maxLineLength int32 = 80
 
 	sources := make(map[string]*strings.Builder, len(g.outputs))
 

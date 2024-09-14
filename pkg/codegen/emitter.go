@@ -9,12 +9,12 @@ import (
 
 type Emitter struct {
 	sb            strings.Builder
-	maxLineLength uint
+	maxLineLength int32
 	start         bool
-	indent        uint
+	indent        int32
 }
 
-func NewEmitter(maxLineLength uint) *Emitter {
+func NewEmitter(maxLineLength int32) *Emitter {
 	return &Emitter{
 		maxLineLength: maxLineLength,
 		start:         true,
@@ -29,18 +29,23 @@ func (e *Emitter) Bytes() []byte {
 	return []byte(e.sb.String())
 }
 
-func (e *Emitter) Indent(n int) {
-	if int(e.indent)+n < 0 {
+func (e *Emitter) Indent(n int32) {
+	if e.indent+n < 0 {
 		panic("unexpected unbalanced indentation")
 	}
 
-	e.indent += uint(n)
+	e.indent += n
 }
 
 func (e *Emitter) Comment(s string) {
 	if s != "" {
 		limit := e.maxLineLength - e.indent
-		lines := strings.Split(wordwrap.WrapString(s, limit), "\n")
+		if limit < 0 {
+			limit = 0
+		}
+
+		//nolint:gosec // limit is guarded against negative values
+		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
 
 		for _, line := range lines {
 			e.Printlnf("// %s", line)
@@ -52,7 +57,12 @@ func (e *Emitter) Commentf(s string, args ...interface{}) {
 	s = fmt.Sprintf(s, args...)
 	if s != "" {
 		limit := e.maxLineLength - e.indent
-		lines := strings.Split(wordwrap.WrapString(s, limit), "\n")
+		if limit < 0 {
+			limit = 0
+		}
+
+		//nolint:gosec // limit is guarded against negative values
+		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
 
 		for _, line := range lines {
 			e.Printlnf("// %s", line)
@@ -86,6 +96,6 @@ func (e *Emitter) checkIndent() {
 	}
 }
 
-func (e *Emitter) MaxLineLength() uint {
+func (e *Emitter) MaxLineLength() int32 {
 	return e.maxLineLength
 }
