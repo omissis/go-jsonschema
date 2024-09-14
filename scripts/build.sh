@@ -8,6 +8,6 @@ GO_VERSION=$(go version | cut -d ' ' -f 3)
 export GO_VERSION
 
 goreleaser check
-goreleaser release --debug --snapshot --clean
+goreleaser release --verbose --snapshot --clean
 
 unset GO_VERSION

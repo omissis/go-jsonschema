@@ -36,7 +36,7 @@ jobs:
         with:
           distribution: goreleaser
           version: 2.3.1
-          args: release --debug --clean
+          args: release --verbose --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GO_VERSION: 1.22.7
