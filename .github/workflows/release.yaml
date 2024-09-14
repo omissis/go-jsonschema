@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
@@ -35,7 +35,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: 1.25.1
+          version: 2.3.1
           args: release --debug --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
