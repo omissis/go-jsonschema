@@ -2,7 +2,7 @@ module github.com/atombender/go-jsonschema
 
 go 1.22.0
 
-toolchain go1.22.7
+toolchain go1.23.1
 
 require (
 	github.com/goccy/go-yaml v1.12.0
