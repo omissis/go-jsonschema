@@ -15,10 +15,6 @@ type MaxItems struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MaxItems) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
 	type Plain MaxItems
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {

@@ -11,6 +11,8 @@ import (
 
 var errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
 
+const float64Type = "float64"
+
 type schemaGenerator struct {
 	*Generator
 	output         *output
@@ -47,17 +49,6 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, error) {
-	refType, err := schemas.GetRefType(ref)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errCannotGenerateReferencedType, err)
-	}
-
-	if refType != schemas.RefTypeFile {
-		return nil, fmt.Errorf("%w: %w '%s'", errCannotGenerateReferencedType, errUnsupportedRefFormat, ref)
-	}
-
-	ref = strings.TrimPrefix(ref, "file://")
-
 	fileName := ref
 
 	var scope, defName string
@@ -96,7 +87,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	if fileName != "" {
 		var serr error
 
-		schema, serr = g.fileLoader.Load(fileName, g.schemaFileName)
+		schema, serr = g.loader.Load(fileName, g.schemaFileName)
 		if serr != nil {
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, serr)
 		}
@@ -260,27 +251,38 @@ func (g *schemaGenerator) generateDeclaredType(
 			validators = g.structFieldValidators(validators, f, f.Type, false)
 		}
 
-		if len(validators) > 0 {
-			for _, v := range validators {
-				if v.desc().hasError {
-					g.output.file.Package.AddImport("fmt", "")
+		g.addValidatorsToType(validators, decl)
+	} else if primitiveType, ok := theType.(codegen.PrimitiveType); ok {
+		validators := g.structFieldValidators(nil, codegen.StructField{
+			Type:       primitiveType,
+			SchemaType: t,
+		}, primitiveType, false)
 
-					break
-				}
-			}
-
-			for _, formatter := range g.formatters {
-				formatter.addImport(g.output.file)
-
-				g.output.file.Package.AddDecl(&codegen.Method{
-					Impl: formatter.generate(decl, validators),
-					Name: decl.GetName() + "_validator",
-				})
-			}
-		}
+		g.addValidatorsToType(validators, decl)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+func (g *schemaGenerator) addValidatorsToType(validators []validator, decl codegen.TypeDecl) {
+	if len(validators) > 0 {
+		for _, v := range validators {
+			if v.desc().hasError {
+				g.output.file.Package.AddImport("fmt", "")
+
+				break
+			}
+		}
+
+		for _, formatter := range g.formatters {
+			formatter.addImport(g.output.file)
+
+			g.output.file.Package.AddDecl(&codegen.Method{
+				Impl: formatter.generate(decl, validators),
+				Name: decl.GetName() + "_validator",
+			})
+		}
+	}
 }
 
 func (g *schemaGenerator) structFieldValidators(
@@ -301,14 +303,42 @@ func (g *schemaGenerator) structFieldValidators(
 
 	case codegen.PrimitiveType:
 		if v.Type == schemas.TypeNameString {
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 {
+			hasPattern := len(f.SchemaType.Pattern) != 0
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern {
 				validators = append(validators, &stringValidator{
 					jsonName:   f.JSONName,
 					fieldName:  f.Name,
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
+					pattern:    f.SchemaType.Pattern,
 					isNillable: isNillable,
 				})
+			}
+
+			if hasPattern {
+				g.output.file.Package.AddImport("regexp", "")
+			}
+		} else if strings.Contains(v.Type, "int") || v.Type == float64Type {
+			if f.SchemaType.MultipleOf != nil ||
+				f.SchemaType.Maximum != nil ||
+				f.SchemaType.ExclusiveMaximum != nil ||
+				f.SchemaType.Minimum != nil ||
+				f.SchemaType.ExclusiveMinimum != nil {
+				validators = append(validators, &numericValidator{
+					jsonName:         f.JSONName,
+					fieldName:        f.Name,
+					isNillable:       isNillable,
+					multipleOf:       f.SchemaType.MultipleOf,
+					maximum:          f.SchemaType.Maximum,
+					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
+					minimum:          f.SchemaType.Minimum,
+					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					roundToInt:       strings.Contains(v.Type, "int"),
+				})
+			}
+
+			if f.SchemaType.MultipleOf != nil && v.Type == float64Type {
+				g.output.file.Package.AddImport("math", "")
 			}
 		}
 
@@ -410,7 +440,16 @@ func (g *schemaGenerator) generateType(
 		return codegen.EmptyInterfaceType{}, nil
 
 	default:
-		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
+		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
+			t.Type[typeIndex],
+			t.Format,
+			typeShouldBePointer,
+			g.config.MinSizedInts,
+			&t.Minimum,
+			&t.Maximum,
+			&t.ExclusiveMinimum,
+			&t.ExclusiveMaximum,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
 		}
@@ -566,7 +605,7 @@ func (g *schemaGenerator) generateStructType(
 				defaultValue = map[string]float64{}
 				fieldType = codegen.MapType{
 					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.PrimitiveType{Type: "float64"},
+					ValueType: codegen.PrimitiveType{Type: float64Type},
 				}
 
 			case schemas.TypeNameInteger:
@@ -685,7 +724,16 @@ func (g *schemaGenerator) generateTypeInline(
 		}
 
 		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
-			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(t.Type[typeIndex], t.Format, typeShouldBePointer)
+			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
+				t.Type[typeIndex],
+				t.Format,
+				typeShouldBePointer,
+				g.config.MinSizedInts,
+				&t.Minimum,
+				&t.Maximum,
+				&t.ExclusiveMinimum,
+				&t.ExclusiveMaximum,
+			)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
 			}
@@ -735,7 +783,16 @@ func (g *schemaGenerator) generateEnumType(
 
 	if len(t.Type) == 1 {
 		var err error
-		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(t.Type[0], t.Format, false); err != nil {
+		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
+			t.Type[0],
+			t.Format,
+			false,
+			g.config.MinSizedInts,
+			&t.Minimum,
+			&t.Maximum,
+			&t.ExclusiveMinimum,
+			&t.ExclusiveMaximum,
+		); err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
 
@@ -772,7 +829,7 @@ func (g *schemaGenerator) generateEnumType(
 					valueType = "string"
 
 				case float64:
-					valueType = "float64"
+					valueType = float64Type
 
 				case bool:
 					valueType = "bool"

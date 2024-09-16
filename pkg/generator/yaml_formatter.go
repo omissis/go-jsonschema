@@ -14,28 +14,43 @@ const (
 type yamlFormatter struct{}
 
 func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
+	var beforeValidators []validator
+
+	var afterValidators []validator
+
+	forceBefore := false
+
+	for _, v := range validators {
+		desc := v.desc()
+		if desc.beforeJSONUnmarshal {
+			beforeValidators = append(beforeValidators, v)
+		} else {
+			afterValidators = append(afterValidators, v)
+			forceBefore = forceBefore || desc.requiresRawAfter
+		}
+	}
+
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name,
 			strings.ToUpper(formatYAML))
 		out.Indent(1)
-		out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNameRawMap)
 
-		for _, v := range validators {
-			if v.desc().beforeJSONUnmarshal {
-				v.generate(out)
-			}
+		if forceBefore || len(beforeValidators) != 0 {
+			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+			out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNameRawMap)
+		}
+
+		for _, v := range beforeValidators {
+			v.generate(out)
 		}
 
 		out.Printlnf("type Plain %s", declType.Name)
 		out.Printlnf("var %s Plain", varNamePlainStruct)
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
-		for _, v := range validators {
-			if !v.desc().beforeJSONUnmarshal {
-				v.generate(out)
-			}
+		for _, v := range afterValidators {
+			v.generate(out)
 		}
 
 		out.Printlnf("*j = %s(%s)", declType.Name, varNamePlainStruct)

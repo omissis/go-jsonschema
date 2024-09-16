@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/restricted",
+  "type": "object",
+  "properties": {
+    "i8": {
+      "type": "integer",
+      "minimum": -127,
+      "maximum": 126
+    },
+    "i16": {
+      "type": "integer",
+      "minimum": -32767,
+      "maximum": 32766
+    },
+    "i32": {
+      "type": "integer",
+      "minimum": -2147483647,
+      "maximum": 2147483646
+    },
+    "i64": {
+      "type": "integer",
+      "minimum": -9223372036854775807,
+      "maximum": 9223372036854775806
+    },
+    "u8": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 254
+    },
+    "u16": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65534
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967294
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551614
+    }
+  },
+  "required": [
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64"
+  ]
+}

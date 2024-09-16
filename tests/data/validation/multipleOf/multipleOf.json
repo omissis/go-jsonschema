@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/multipleOf",
+  "type": "object",
+  "properties": {
+    "myNumber": {
+      "type": "number",
+      "multipleOf": 1.2
+    },
+    "myInteger": {
+      "type": "integer",
+      "multipleOf": 2
+    },
+    "myNullableNumber": {
+      "type": "number",
+      "multipleOf": 1.2
+    },
+    "myNullableInteger": {
+      "type": "integer",
+      "multipleOf": 2
+    }
+  },
+  "required": [
+    "myNumber",
+    "myInteger"
+  ]
+}

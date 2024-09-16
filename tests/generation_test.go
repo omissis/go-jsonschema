@@ -155,6 +155,15 @@ func TestExtraImportsYAML(t *testing.T) {
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.json")
 }
 
+func TestMinSizeInt(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.MinSizedInts = true
+
+	testExamples(t, cfg, "./data/minSizedInts")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 

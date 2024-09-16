@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -52,18 +53,18 @@ func (l *CachedLoader) Load(uri, parentURI string) (*Schema, error) {
 
 func NewFileLoader(resolveExtensions, yamlExtensions []string) *FileLoader {
 	return &FileLoader{
-		ResolveExtensions: resolveExtensions,
-		YAMLExtensions:    yamlExtensions,
+		resolveExtensions: resolveExtensions,
+		yamlExtensions:    toExtensionSet(yamlExtensions),
 	}
 }
 
 type FileLoader struct {
-	ResolveExtensions []string
-	YAMLExtensions    []string
+	resolveExtensions []string
+	yamlExtensions    map[string]bool
 }
 
 func (l *FileLoader) Load(fileName, parentFileName string) (*Schema, error) {
-	qualified, err := QualifiedFileName(fileName, parentFileName, l.ResolveExtensions)
+	qualified, err := QualifiedFileName(fileName, parentFileName, l.resolveExtensions)
 	if err != nil {
 		return nil, err
 	}
@@ -77,15 +78,13 @@ func (l *FileLoader) Load(fileName, parentFileName string) (*Schema, error) {
 }
 
 func (l *FileLoader) parseFile(fileName string) (*Schema, error) {
-	for _, yamlExt := range l.YAMLExtensions {
-		if strings.HasSuffix(fileName, yamlExt) {
-			sc, err := FromYAMLFile(fileName)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing YAML file %s: %w", fileName, err)
-			}
-
-			return sc, nil
+	if l.yamlExtensions[path.Ext(fileName)] {
+		sc, err := FromYAMLFile(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing YAML file %s: %w", fileName, err)
 		}
+
+		return sc, nil
 	}
 
 	sc, err := FromJSONFile(fileName)
@@ -96,29 +95,71 @@ func (l *FileLoader) parseFile(fileName string) (*Schema, error) {
 	return sc, nil
 }
 
-func NewMultiLoader(workingDir string) *MultiLoader {
-	return &MultiLoader{
-		workingDir: workingDir,
+func NewDefaultCacheLoader(resolveExtensions, yamlExtensions []string) *CachedLoader {
+	return NewCachedLoader(NewDefaultMultiLoader(resolveExtensions, yamlExtensions), map[string]*Schema{})
+}
+
+func NewDefaultMultiLoader(resolveExtensions, yamlExtensions []string) MultiLoader {
+	httpLoader := NewHTTPLoader(yamlExtensions)
+
+	return MultiLoader{
+		RefTypeFile:  NewFileLoader(resolveExtensions, yamlExtensions),
+		RefTypeHTTP:  httpLoader,
+		RefTypeHTTPS: httpLoader,
 	}
 }
 
-type MultiLoader struct {
-	workingDir string
+type MultiLoader map[RefType]Loader
+
+func (l MultiLoader) Load(uri, parentURI string) (*Schema, error) {
+	ref, err := GetRefType(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	loader, ok := l[ref]
+	if !ok {
+		return nil, ErrUnsupportedRefFormat
+	}
+
+	schema, err := loader.Load(uri, parentURI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load schema %q: %w", uri, err)
+	}
+
+	return schema, nil
 }
 
-func (l *MultiLoader) Load(uri, parentURI string) (*Schema, error) {
+func NewHTTPLoader(yamlExtensions []string) *HTTPLoader {
+	return &HTTPLoader{YAMLExtensions: toExtensionSet(yamlExtensions)}
+}
+
+type HTTPLoader struct {
+	YAMLExtensions map[string]bool
+}
+
+func (l *HTTPLoader) Load(uri, parentURI string) (*Schema, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url: %w", err)
 	}
 
 	if u.Scheme == "http" || u.Scheme == "https" {
-		resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, uri, nil)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, u.String(), nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %w", err)
 		}
 
-		defer resp.Body.Close()
+		resp, err := (&http.Client{}).Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to perform request: %w", err)
+		}
+
+		defer func() {
+			if resp != nil && resp.Body != nil {
+				_ = resp.Body.Close()
+			}
+		}()
 
 		switch resp.Header.Get("Content-Type") {
 		case "application/json":
@@ -128,27 +169,11 @@ func (l *MultiLoader) Load(uri, parentURI string) (*Schema, error) {
 			return FromYAMLReader(resp.Body)
 
 		default:
-			return nil, fmt.Errorf("%w: %q", ErrUnsupportedContentType, resp.Header.Get("Content-Type"))
-		}
-	}
+			if l.YAMLExtensions[path.Ext(u.Path)] {
+				return FromYAMLReader(resp.Body)
+			}
 
-	if (u.Scheme == "" || u.Scheme == "file") && u.Host == "" && u.Path != "" {
-		rc, err := os.Open(filepath.Join(l.workingDir, u.Path))
-		if err != nil {
-			return nil, fmt.Errorf("failed to open file: %w", err)
-		}
-
-		defer rc.Close()
-
-		switch filepath.Ext(u.Path) {
-		case ".json":
-			return FromYAMLReader(rc)
-
-		case ".yaml", ".yml":
-			return FromJSONReader(rc)
-
-		default:
-			return nil, fmt.Errorf("%w: %q", ErrUnsupportedFileExtension, filepath.Ext(u.Path))
+			return FromJSONReader(resp.Body)
 		}
 	}
 
@@ -156,6 +181,17 @@ func (l *MultiLoader) Load(uri, parentURI string) (*Schema, error) {
 }
 
 func QualifiedFileName(fileName, parentFileName string, resolveExtensions []string) (string, error) {
+	r, err := GetRefType(fileName)
+	if err != nil {
+		return "", err
+	}
+
+	if r != RefTypeFile {
+		return fileName[strings.Index(fileName, "://")+3:], nil
+	}
+
+	fileName = strings.TrimPrefix(fileName, "file://")
+
 	if !filepath.IsAbs(fileName) {
 		fileName = filepath.Join(filepath.Dir(parentFileName), fileName)
 	}
@@ -185,4 +221,18 @@ func fileExists(fileName string) bool {
 	_, err := os.Stat(fileName)
 
 	return err == nil || !os.IsNotExist(err)
+}
+
+func toExtensionSet(items []string) map[string]bool {
+	set := make(map[string]bool, len(items))
+
+	for _, item := range items {
+		if !strings.HasPrefix(item, ".") {
+			item = "." + item
+		}
+
+		set[item] = true
+	}
+
+	return set
 }
