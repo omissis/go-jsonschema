@@ -123,7 +123,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter) {
 	out.Printlnf("}")
 }
 
-func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen uint) (string, error) {
+func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
 	v.defaultValueType.Generate(tmpEmitter)
 	tmpEmitter.Printlnf("{")

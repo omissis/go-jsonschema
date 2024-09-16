@@ -1,4 +1,5 @@
 ---
+version: 2
 project_name: go-jsonschema
 before:
   hooks:
@@ -23,18 +24,18 @@ archives:
 checksum:
   name_template: checksums.txt
 snapshot:
-  name_template: '{{ incpatch .Version }}-next'
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
 release:
   github:
     owner: omissis
     name: go-jsonschema
-  name_template: '{{ .Tag }}'
+  name_template: "{{ .Tag }}"
   prerelease: auto
 brews:
   - name: go-jsonschema
@@ -42,7 +43,7 @@ brews:
       owner: omissis
       name: homebrew-go-jsonschema
     skip_upload: auto
-    folder: Formula
+    directory: Formula
     homepage: https://gihub.com/omissis/go-jsonschema
     description: go-jsonschema binary
     test: |
