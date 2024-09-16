@@ -1,23 +1,26 @@
 {
-  "$schema": "http://json-schema.org/draft-03/schema#",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "https://example.com/exclusiveMaximum",
   "type": "object",
   "properties": {
     "myNumber": {
       "type": "number",
-      "exclusiveMaximum": 1.2
+      "maximum": 1.2,
+      "exclusiveMaximum": true
     },
     "myInteger": {
       "type": "integer",
-      "exclusiveMaximum": 2
+      "maximum": 2,
+      "exclusiveMaximum": true
     },
     "myNullableNumber": {
-      "type": "number",
-      "exclusiveMaximum": 1.2
+      "maximum": 1.2,
+      "exclusiveMaximum": true
     },
     "myNullableInteger": {
       "type": "integer",
-      "exclusiveMaximum": 2
+      "maximum": 2,
+      "exclusiveMaximum": true
     }
   },
   "required": [

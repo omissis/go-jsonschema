@@ -13,7 +13,7 @@ type ExclusiveMinimumOld struct {
 	MyNullableInteger *int `json:"myNullableInteger,omitempty" yaml:"myNullableInteger,omitempty" mapstructure:"myNullableInteger,omitempty"`
 
 	// MyNullableNumber corresponds to the JSON schema field "myNullableNumber".
-	MyNullableNumber *float64 `json:"myNullableNumber,omitempty" yaml:"myNullableNumber,omitempty" mapstructure:"myNullableNumber,omitempty"`
+	MyNullableNumber interface{} `json:"myNullableNumber,omitempty" yaml:"myNullableNumber,omitempty" mapstructure:"myNullableNumber,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
 	MyNumber float64 `json:"myNumber" yaml:"myNumber" mapstructure:"myNumber"`
@@ -41,9 +41,6 @@ func (j *ExclusiveMinimumOld) UnmarshalJSON(b []byte) error {
 	}
 	if plain.MyNullableInteger != nil && 2 >= *plain.MyNullableInteger {
 		return fmt.Errorf("field %s: must be > %v", "myNullableInteger", 2)
-	}
-	if plain.MyNullableNumber != nil && 1.2 >= *plain.MyNullableNumber {
-		return fmt.Errorf("field %s: must be > %v", "myNullableNumber", 1.2)
 	}
 	if 1.2 >= plain.MyNumber {
 		return fmt.Errorf("field %s: must be > %v", "myNumber", 1.2)

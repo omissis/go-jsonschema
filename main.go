@@ -172,7 +172,7 @@ also look for foo.json if --resolve-extension json is provided.`)
 		&minSizedInts,
 		"min-sized-ints",
 		false,
-		"Uses sized int and unit values based on the min and max values for the field")
+		"Uses sized int and uint values based on the min and max values for the field")
 
 	abortWithErr(rootCmd.Execute())
 }

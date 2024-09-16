@@ -121,7 +121,7 @@ only specific validations remain to be fully implemented.
     * [x] `type` (single)
     * [x] `type` (multiple; **note**: partial support, limited validation)
     * [ ] `const`
-  * [ ] Numeric validation (§6.2)
+  * [X] Numeric validation (§6.2)
     * [X] `multipleOf`
     * [X] `maximum`
     * [X] `exclusiveMaximum`
