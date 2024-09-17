@@ -43,3 +43,12 @@ func isNamedType(t codegen.Type) bool {
 
 	return false
 }
+
+func isMapType(t codegen.Type) bool {
+	switch t.(type) {
+	case *codegen.MapType:
+		return true
+	}
+
+	return false
+}
