@@ -54,7 +54,7 @@ func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []valida
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
 			for _, f := range structType.Fields {
-				if f.Name == "AdditionalProperties" {
+				if f.Name == additionalProperties {
 					out.Printlnf("st := reflect.TypeOf(Plain{})")
 					out.Printlnf("for i := range st.NumField() {")
 					out.Indent(1)
