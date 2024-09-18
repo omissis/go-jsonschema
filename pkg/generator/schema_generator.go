@@ -240,6 +240,12 @@ func (g *schemaGenerator) generateDeclaredType(
 
 		for _, f := range structType.Fields {
 			if f.DefaultValue != nil {
+				if f.Name == "AdditionalProperties" {
+					g.output.file.Package.AddImport("reflect", "")
+					g.output.file.Package.AddImport("strings", "")
+					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+				}
+
 				validators = append(validators, &defaultValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
@@ -637,6 +643,7 @@ func (g *schemaGenerator) generateStructType(
 				DefaultValue: defaultValue,
 				SchemaType:   &schemas.Type{},
 				Type:         fieldType,
+				Tags:         "mapstructure:\",remain\"",
 			},
 		)
 	}

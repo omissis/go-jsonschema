@@ -36,8 +36,7 @@ func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []valida
 
 		if forceBefore || len(beforeValidators) != 0 {
 			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-			out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
-				formatJSON, varNameRawMap)
+			out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }", formatJSON, varNameRawMap)
 		}
 
 		for _, v := range beforeValidators {
@@ -51,6 +50,27 @@ func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []valida
 
 		for _, v := range afterValidators {
 			v.generate(out)
+		}
+
+		if structType, ok := declType.Type.(*codegen.StructType); ok {
+			for _, f := range structType.Fields {
+				if f.Name == "AdditionalProperties" {
+					out.Printlnf("st := reflect.TypeOf(Plain{})")
+					out.Printlnf("for i := range st.NumField() {")
+					out.Indent(1)
+					out.Printlnf("delete(raw, st.Field(i).Name)")
+					out.Printlnf("delete(raw, strings.Split(st.Field(i).Tag.Get(\"json\"), \",\")[0])")
+					out.Indent(-1)
+					out.Printlnf("}")
+					out.Printlnf("if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {")
+					out.Indent(1)
+					out.Printlnf("return err")
+					out.Indent(-1)
+					out.Printlnf("}")
+
+					break
+				}
+			}
 		}
 
 		out.Printlnf("*j = %s(%s)", declType.Name, varNamePlainStruct)
