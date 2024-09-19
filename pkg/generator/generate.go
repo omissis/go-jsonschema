@@ -218,3 +218,7 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 
 	return typeName + g.caser.Identifierize(value)
 }
+
+func (g *Generator) DisableOmitempty() bool {
+	return g.config.DisableOmitempty
+}
