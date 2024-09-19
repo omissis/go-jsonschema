@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
+	"github.com/sosodev/duration"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
@@ -17,10 +18,16 @@ type validator interface {
 	desc() *validatorDesc
 }
 
+type packageImport struct {
+	qualifiedName string
+	alias         string
+}
+
 type validatorDesc struct {
 	hasError            bool
 	beforeJSONUnmarshal bool
 	requiresRawAfter    bool
+	imports             []packageImport
 }
 
 var (
@@ -102,6 +109,9 @@ func (v *nullTypeValidator) desc() *validatorDesc {
 	}
 }
 
+// TODO: Make a durationValidator, so that we can convert the default value from ISO 8601 to time.Duration.
+// We could use https://github.com/sosodev/duration
+
 type defaultValidator struct {
 	jsonName         string
 	fieldName        string
@@ -110,6 +120,42 @@ type defaultValidator struct {
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter) {
+	_, ok := v.defaultValueType.(codegen.DurationType)
+	if v.defaultValueType != nil && ok {
+		defaultDurationISO8601, ok := v.defaultValue.(string)
+		if !ok {
+			// TODO: Return an error instead of panicking?
+			// TODO: Print type name?
+			panic("duration default value must be a string")
+		}
+		if defaultDurationISO8601 == "" {
+			// TODO: What should we do if the default is an empty string?
+			// TODO: Return an error instead of panicking?
+			// TODO: Print type name?
+			panic("duration default value must not be an empty string")
+		}
+		duration, err := duration.Parse(defaultDurationISO8601)
+		if err != nil {
+			// TODO: Return an error instead of panicking?
+			// TODO: Print type name?
+			panic("could not convert duration from ISO8601 to Go format")
+		}
+		defaultValue := "defaultDuration"
+		goDurationStr := duration.ToTimeDuration().String()
+		out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+		out.Indent(1)
+		out.Printlnf("%s, err := time.ParseDuration(\"%s\")", defaultValue, goDurationStr)
+		out.Printlnf("if err != nil {")
+		out.Indent(1)
+		out.Printlnf("return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s:%%w }\", err)", goDurationStr, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+		out.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+		out.Indent(-1)
+		out.Printlnf("}")
+		return
+	}
+
 	defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength())
 	if err != nil {
 		// Fallback to sdump in case we couldn't dump it properly.
@@ -150,10 +196,23 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 }
 
 func (v *defaultValidator) desc() *validatorDesc {
+	var packages []packageImport
+	_, ok := v.defaultValueType.(codegen.DurationType)
+	if v.defaultValueType != nil && ok {
+		defaultDurationISO8601, ok := v.defaultValue.(string)
+		if ok && defaultDurationISO8601 != "" {
+			packages = []packageImport{
+				{qualifiedName: "fmt"},
+				{qualifiedName: "time"},
+			}
+		}
+	}
+
 	return &validatorDesc{
 		hasError:            false,
 		beforeJSONUnmarshal: false,
 		requiresRawAfter:    true,
+		imports:             packages,
 	}
 }
 

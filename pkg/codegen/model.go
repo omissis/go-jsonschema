@@ -262,6 +262,23 @@ func (t NamedType) Generate(out *Emitter) {
 	out.Printf("%s", t.Decl.Name)
 }
 
+// We need special handling when validating durations.
+// Having a dedicated type for durations allows the validator to
+// differentiate between durations and other types.
+type DurationType struct{}
+
+func (t DurationType) GetName() string {
+	return "Duration"
+}
+
+func (t DurationType) IsNillable() bool {
+	return false
+}
+
+func (t DurationType) Generate(out *Emitter) {
+	out.Printf("time.Duration")
+}
+
 type PrimitiveType struct {
 	Type string
 }

@@ -33,6 +33,10 @@ var (
 func TestCore(t *testing.T) {
 	t.Parallel()
 
+	// TODO: Additional duration tests:
+	// * A duration with default = ""
+	// * A schema file with only one duration.
+	//   It shouldn't have a default, so we ca see if "time" is imported.
 	testExamples(t, basicConfig, "./data/core")
 }
 
@@ -243,7 +247,9 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				// TODO: Revert this later
+				// t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				t.Fatalf("Contents different. Actual:\n%s\nDiff:\n%s", string(source), *diff)
 			}
 		}
 	})
