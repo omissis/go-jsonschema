@@ -267,6 +267,10 @@ func (g *schemaGenerator) generateDeclaredType(
 func (g *schemaGenerator) addValidatorsToType(validators []validator, decl codegen.TypeDecl) {
 	if len(validators) > 0 {
 		for _, v := range validators {
+			for _, im := range v.desc().imports {
+				g.output.file.Package.AddImport(im.qualifiedName, im.alias)
+			}
+
 			if v.desc().hasError {
 				g.output.file.Package.AddImport("fmt", "")
 
@@ -460,6 +464,11 @@ func (g *schemaGenerator) generateType(
 			}
 
 			return ncg, nil
+		}
+
+		if dcg, ok := cg.(codegen.DurationType); ok {
+			g.output.file.Package.AddImport("time", "")
+			return dcg, nil
 		}
 
 		return cg, nil
@@ -744,6 +753,11 @@ func (g *schemaGenerator) generateTypeInline(
 				}
 
 				return ncg, nil
+			}
+
+			if dcg, ok := cg.(codegen.DurationType); ok {
+				g.output.file.Package.AddImport("time", "")
+				return dcg, nil
 			}
 
 			return cg, nil

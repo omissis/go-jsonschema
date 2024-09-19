@@ -6,14 +6,15 @@
     "properties": {
       "myObject": {
         "type": "object",
-        "required": [
-          "myDuration"
-        ],
         "properties": {
-          "myDateTime": {
+          "withDefault": {
             "type": "string",
             "format": "duration",
-            "default": "P200MS"
+            "default": "PT20S"
+          },
+          "withoutDefault": {
+            "type": "string",
+            "format": "duration"
           }
         }
       }

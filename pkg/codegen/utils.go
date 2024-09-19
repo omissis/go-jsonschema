@@ -111,21 +111,7 @@ func PrimitiveTypeFromJSONSchemaType(
 			}
 
 		case "duration":
-			t = NamedType{
-				Package: &Package{
-					QualifiedName: "time",
-					Imports: []Import{
-						{
-							//TODO: Should we use the new internal Duration from pkg/types?
-							// Are the Marshal/Unmarshal functions important?
-							QualifiedName: "time",
-						},
-					},
-				},
-				Decl: &TypeDecl{
-					Name: "Duration",
-				},
-			}
+			t = DurationType{}
 
 		default:
 			t = PrimitiveType{"string"}
