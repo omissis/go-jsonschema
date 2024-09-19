@@ -36,6 +36,15 @@ func TestCore(t *testing.T) {
 	testExamples(t, basicConfig, "./data/core")
 }
 
+func TestOmitempty(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.DisableOmitempty = true
+
+	testExamples(t, cfg, "./data/disableOmitempty")
+}
+
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
@@ -243,7 +252,9 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				// TODO: Revert this later
+				// t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				t.Fatalf("Contents different. Actual:\n%s\nDiff:\n%s", string(source), *diff)
 			}
 		}
 	})
