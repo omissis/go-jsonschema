@@ -36,6 +36,13 @@ func TestCore(t *testing.T) {
 	testExamples(t, basicConfig, "./data/core")
 }
 
+// TODO: Remove this later
+func TestDefaulter(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/misc/setdefaults")
+}
+
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
@@ -234,7 +241,9 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				// TODO: Revert this later
+				// t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				t.Fatalf("Contents different. Actual:\n%s\nDiff:\n%s", string(source), *diff)
 			}
 		}
 	})
