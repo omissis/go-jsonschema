@@ -574,6 +574,74 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		structType.AddField(structField)
 	}
 
+	for _, s := range t.AllOf {
+		structFieldType, err := g.generateTypeInline(s, scope)
+		if err != nil {
+			return nil, fmt.Errorf("could not generate type for field: %w", err)
+		}
+
+		//TODO: Support is required?
+		// isRequired := requiredNames[name]
+
+		//TODO: Pick a name for the field
+		// fieldName := g.caser.Identifierize("Test")
+
+		// if ext := prop.GoJSONSchemaExtension; ext != nil {
+		// 	for _, pkg := range ext.Imports {
+		// 		g.output.file.Package.AddImport(pkg, "")
+		// 	}
+
+		// 	if ext.Identifier != nil {
+		// 		fieldName = *ext.Identifier
+		// 	}
+		// }
+
+		// if count, ok := uniqueNames[fieldName]; ok {
+		// 	uniqueNames[fieldName] = count + 1
+		// 	fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
+		// 	g.warner(fmt.Sprintf("Field %q maps to a field by the same name declared "+
+		// 		"in the same struct; it will be declared as %s", name, fieldName))
+		// } else {
+		// 	uniqueNames[fieldName] = 1
+		// }
+
+		structField := codegen.StructField{
+			Name: "",
+			// Comment:    prop.Description,
+			JSONName: "",
+			// SchemaType: prop,
+			Type: structFieldType,
+		}
+
+		tags := ""
+
+		for _, tag := range g.config.Tags {
+			//TODO: Make this work for yaml too. It uses "inline" instead of "squash".
+			tags += fmt.Sprintf(`%s:",squash" `, tag)
+		}
+
+		structField.Tags = strings.TrimSpace(tags)
+
+		// if structField.Comment == "" {
+		// 	structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
+		// 		structField.Name, name)
+		// }
+
+		// switch {
+		// case prop.Default != nil:
+		// 	structField.DefaultValue = g.defaultPropertyValue(prop)
+
+		// default:
+		// 	if isRequired {
+		// 		structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+		// 	} else if !structField.Type.IsNillable() {
+		// 		structField.Type = codegen.WrapTypeInPointer(structField.Type)
+		// 	}
+		// }
+
+		structType.AddField(structField)
+	}
+
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
 	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
 		if len(t.AdditionalProperties.Type) > 1 {
