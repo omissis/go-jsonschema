@@ -1,0 +1,137 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "http://example.com/object",
+    "type": "object",
+    "properties": {
+        "myString": {
+            "type": "string",
+            "default": "hello"
+        },
+        "myStringNoDefault": {
+            "type": "string"
+        },
+        "myNumber": {
+            "type": "number",
+            "default": 11.1
+        },
+        "myNumberNoDefault": {
+            "type": "number"
+        },
+        "myInt": {
+            "type": "integer",
+            "default": 12345
+        },
+        "myIntNoDefault": {
+            "type": "integer"
+        },
+        "myArray": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "default": [
+                    "one",
+                    "two"
+                ]
+            }
+        },
+        "myArrayNoDefault": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "myObject": {
+            "type": "object",
+            "properties": {
+                "myString": {
+                    "type": "string",
+                    "default": "hello"
+                },
+                "myStringNoDefault": {
+                    "type": "string"
+                },
+                "myNumber": {
+                    "type": "number",
+                    "default": 11.1
+                },
+                "myNumberNoDefault": {
+                    "type": "number"
+                },
+                "myInt": {
+                    "type": "integer",
+                    "default": 12345
+                },
+                "myIntNoDefault": {
+                    "type": "integer"
+                },
+                "myArray": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "default": [
+                            "one",
+                            "two"
+                        ]
+                    }
+                },
+                "myArrayNoDefault": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "default": {
+                "myString": "hello",
+                "myNumber": 11.1,
+                "myInt": 12345,
+                "myArray": [
+                    "one",
+                    "two"
+                ]
+            }
+        },
+        "myObjectNoDefault": {
+            "type": "object",
+            "properties": {
+                "myString": {
+                    "type": "string",
+                    "default": "hello"
+                },
+                "myStringNoDefault": {
+                    "type": "string"
+                },
+                "myNumber": {
+                    "type": "number",
+                    "default": 11.1
+                },
+                "myNumberNoDefault": {
+                    "type": "number"
+                },
+                "myInt": {
+                    "type": "integer",
+                    "default": 12345
+                },
+                "myIntNoDefault": {
+                    "type": "integer"
+                },
+                "myArray": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "default": [
+                            "one",
+                            "two"
+                        ]
+                    }
+                },
+                "myArrayNoDefault": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

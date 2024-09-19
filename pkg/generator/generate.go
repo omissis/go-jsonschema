@@ -15,6 +15,7 @@ import (
 const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
+	varNameStructPtr   = "c"
 	interfaceTypeName  = "interface{}"
 	typePlain          = "Plain"
 )
@@ -56,6 +57,9 @@ func New(config Config) (*Generator, error) {
 	if config.ExtraImports {
 		formatters = append(formatters, &yamlFormatter{})
 	}
+
+	//TODO: Make this configurable
+	formatters = append(formatters, &mapstructureFormatter{})
 
 	generator := &Generator{
 		caser:                 text.NewCaser(config.Capitalizations, config.ResolveExtensions),
