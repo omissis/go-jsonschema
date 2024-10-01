@@ -1,5 +1,5 @@
 adr-tools 3.0.0
-golang 1.22.7
+golang 1.23.2
 golangci-lint 1.61.0
 goreleaser 2.3.1
 hadolint 2.12.0
