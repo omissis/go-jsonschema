@@ -10,15 +10,18 @@ type License string
 
 const LicenseGPL30 License = "GPL-3.0"
 const LicenseMIT License = "MIT"
+const LicenseWildcard License = "*"
 
 type License_1 string
 
 const License_1_GPL30 License_1 = "GPL-3.0+"
 const License_1_MIT License_1 = "MIT+"
+const License_1_Wildcard License_1 = "*"
 
 var enumValues_License_1 = []interface{}{
 	"GPL-3.0+",
 	"MIT+",
+	"*",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -44,6 +47,7 @@ func (j *License_1) UnmarshalJSON(b []byte) error {
 var enumValues_License = []interface{}{
 	"GPL-3.0",
 	"MIT",
+	"*",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -84,10 +88,12 @@ type SpecialCharactersPlainLicenses string
 
 const SpecialCharactersPlainLicensesGPL30 SpecialCharactersPlainLicenses = "GPL-3.0"
 const SpecialCharactersPlainLicensesMIT SpecialCharactersPlainLicenses = "MIT"
+const SpecialCharactersPlainLicensesWildcard SpecialCharactersPlainLicenses = "*"
 
 var enumValues_SpecialCharactersPlainLicenses = []interface{}{
 	"GPL-3.0",
 	"MIT",
+	"*",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -114,10 +120,12 @@ type SpecialCharactersPlusLicenses string
 
 const SpecialCharactersPlusLicensesGPL30 SpecialCharactersPlusLicenses = "GPL-3.0+"
 const SpecialCharactersPlusLicensesMIT SpecialCharactersPlusLicenses = "MIT+"
+const SpecialCharactersPlusLicensesWildcard SpecialCharactersPlusLicenses = "*"
 
 var enumValues_SpecialCharactersPlusLicenses = []interface{}{
 	"GPL-3.0+",
 	"MIT+",
+	"*",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
