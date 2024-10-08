@@ -896,6 +896,8 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 }
 
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	typeIndex, typeIsNullable := g.isTypeNullable(t)
+
 	if t.Enum == nil && t.Ref == "" {
 		if ext := t.GoJSONSchemaExtension; ext != nil {
 			for _, pkg := range ext.Imports {
@@ -915,23 +917,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return g.generateAllOfType(t.AllOf, scope)
 		}
 
-		typeIndex := 0
-
-		var typeShouldBePointer bool
-
-		if len(t.Type) == 2 {
-			for i, t := range t.Type {
-				if t == "null" {
-					typeShouldBePointer = true
-
-					continue
-				}
-
-				typeIndex = i
-			}
-		}
-
-		if len(t.Type) > 1 && !typeShouldBePointer {
+		if len(t.Type) > 1 && !typeIsNullable {
 			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as interface{} with no validation", scope))
 
 			return codegen.EmptyInterfaceType{}, nil
@@ -949,7 +935,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
 				t.Type[typeIndex],
 				t.Format,
-				typeShouldBePointer,
+				typeIsNullable,
 				g.config.MinSizedInts,
 				&t.Minimum,
 				&t.Maximum,
@@ -989,7 +975,16 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 	}
 
-	return g.generateDeclaredType(t, scope)
+	dt, err := g.generateDeclaredType(t, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	if typeIsNullable {
+		return codegen.WrapTypeInPointer(dt), nil
+	}
+
+	return dt, nil
 }
 
 func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -1224,4 +1219,26 @@ func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
 	return isCycle, func() {
 		delete(g.inScope, qual)
 	}, nil
+}
+
+// isTypeNullable checks if a type is nullable and returns the index of the type array where to find the actual type.
+func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
+	var (
+		index    int
+		nullable bool
+	)
+
+	if len(t.Type) == 2 {
+		for i, t := range t.Type {
+			if t == "null" {
+				nullable = true
+
+				continue
+			}
+
+			index = i
+		}
+	}
+
+	return index, nullable
 }
