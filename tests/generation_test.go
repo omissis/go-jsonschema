@@ -155,6 +155,14 @@ func TestExtraImportsYAML(t *testing.T) {
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.json")
 }
 
+func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.ExtraImports = true
+	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3AdditionalProperties/gopkgYAMLv3AdditionalProperties.json")
+}
+
 func TestMinSizeInt(t *testing.T) {
 	t.Parallel()
 

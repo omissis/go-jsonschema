@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://example.com/empty_object_properties",
+    "type": "object",
+    "additionalProperties": {
+        "type": "object",
+        "properties": {
+            "property1": {
+                "type": "string"
+            },
+            "property2": {
+                "type": "number"
+            }
+        }
+    },
+    "properties": {
+        "foo": {
+            "type": "string"
+        },
+        "bar": {
+            "type": "string"
+        }
+    }
+}

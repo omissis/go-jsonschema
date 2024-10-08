@@ -53,6 +53,27 @@ func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []valida
 			v.generate(out)
 		}
 
+		if structType, ok := declType.Type.(*codegen.StructType); ok {
+			for _, f := range structType.Fields {
+				if f.Name == "AdditionalProperties" {
+					out.Printlnf("st := reflect.TypeOf(Plain{})")
+					out.Printlnf("for i := range st.NumField() {")
+					out.Indent(1)
+					out.Printlnf("delete(raw, st.Field(i).Name)")
+					out.Printlnf("delete(raw, strings.Split(st.Field(i).Tag.Get(\"json\"), \",\")[0])")
+					out.Indent(-1)
+					out.Printlnf("}")
+					out.Printlnf("if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {")
+					out.Indent(1)
+					out.Printlnf("return err")
+					out.Indent(-1)
+					out.Printlnf("}")
+
+					break
+				}
+			}
+		}
+
 		out.Printlnf("*j = %s(%s)", declType.Name, varNamePlainStruct)
 		out.Printlnf("return nil")
 		out.Indent(-1)
