@@ -984,9 +984,11 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 					return nil, err
 				}
 			}
+
 			if typeShouldBePointer {
 				return codegen.WrapTypeInPointer(codegen.ArrayType{Type: theType}), nil
 			}
+
 			return &codegen.ArrayType{Type: theType}, nil
 		}
 	}
