@@ -98,3 +98,20 @@ func (j *MultipleOf) UnmarshalYAML(value *yaml.Node) error {
 	*j = MultipleOf(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *MultipleOf) Verify() error {
+	if plain.MyInteger%2 != 0 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myInteger", 2.000000)
+	}
+	if plain.MyNullableInteger != nil && *plain.MyNullableInteger%2 != 0 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myNullableInteger", 2.000000)
+	}
+	if plain.MyNullableNumber != nil && math.Abs(math.Mod(*plain.MyNullableNumber, 1.2)) > 1e-10 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myNullableNumber", 1.200000)
+	}
+	if math.Abs(math.Mod(plain.MyNumber, 1.2)) > 1e-10 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myNumber", 1.200000)
+	}
+	return nil
+}

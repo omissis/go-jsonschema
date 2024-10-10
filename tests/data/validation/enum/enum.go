@@ -90,6 +90,16 @@ func (j *EnumMyBooleanTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyBooleanTypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyBooleanTypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyBooleanTypedEnum, v)
+}
+
 type EnumMyBooleanUntypedEnum bool
 
 var enumValues_EnumMyBooleanUntypedEnum = []interface{}{
@@ -135,6 +145,16 @@ func (j *EnumMyBooleanUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = EnumMyBooleanUntypedEnum(v)
 	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyBooleanUntypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyBooleanUntypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyBooleanUntypedEnum, v)
 }
 
 type EnumMyIntegerTypedEnum int
@@ -185,6 +205,16 @@ func (j *EnumMyIntegerTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyIntegerTypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyIntegerTypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyIntegerTypedEnum, v)
+}
+
 type EnumMyMixedTypeEnum struct {
 	Value interface{}
 }
@@ -202,6 +232,16 @@ func (j *EnumMyMixedTypeEnum) MarshalYAML() (interface{}, error) {
 var enumValues_EnumMyMixedTypeEnum = []interface{}{
 	42.0,
 	"smurf",
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyMixedTypeEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyMixedTypeEnum {
+		if reflect.DeepEqual(v.Value, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyMixedTypeEnum, v.Value)
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -313,6 +353,16 @@ func (j *EnumMyMixedUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyMixedUntypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyMixedUntypedEnum {
+		if reflect.DeepEqual(v.Value, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyMixedUntypedEnum, v.Value)
+}
+
 type EnumMyNullTypedEnum struct {
 	Value interface{}
 }
@@ -373,6 +423,16 @@ func (j *EnumMyNullTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = EnumMyNullTypedEnum(v)
 	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyNullTypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyNullTypedEnum {
+		if reflect.DeepEqual(v.Value, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyNullTypedEnum, v.Value)
 }
 
 type EnumMyNullUntypedEnum struct {
@@ -437,6 +497,16 @@ func (j *EnumMyNullUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyNullUntypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyNullUntypedEnum {
+		if reflect.DeepEqual(v.Value, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyNullUntypedEnum, v.Value)
+}
+
 type EnumMyNumberTypedEnum float64
 
 var enumValues_EnumMyNumberTypedEnum = []interface{}{
@@ -485,6 +555,16 @@ func (j *EnumMyNumberTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyNumberTypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyNumberTypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyNumberTypedEnum, v)
+}
+
 type EnumMyNumberUntypedEnum float64
 
 var enumValues_EnumMyNumberUntypedEnum = []interface{}{
@@ -531,6 +611,16 @@ func (j *EnumMyNumberUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = EnumMyNumberUntypedEnum(v)
 	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyNumberUntypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyNumberUntypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyNumberUntypedEnum, v)
 }
 
 type EnumMyStringTypedEnum string
@@ -585,6 +675,16 @@ func (j *EnumMyStringTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyStringTypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyStringTypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyStringTypedEnum, v)
+}
+
 type EnumMyStringUntypedEnum string
 
 const EnumMyStringUntypedEnumBlue EnumMyStringUntypedEnum = "blue"
@@ -595,6 +695,16 @@ var enumValues_EnumMyStringUntypedEnum = []interface{}{
 	"red",
 	"blue",
 	"green",
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain EnumMyStringUntypedEnum) Verify() error {
+	for _, expected := range enumValues_EnumMyStringUntypedEnum {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnumMyStringUntypedEnum, v)
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.

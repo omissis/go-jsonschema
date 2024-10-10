@@ -22,6 +22,7 @@ type Config struct {
 	// an "omitempty" tag will be present for all fields that are not required.
 	DisableOmitempty          bool
 	DisableReadOnlyValidation bool
+	StructVerify              bool
 }
 
 type SchemaMapping struct {

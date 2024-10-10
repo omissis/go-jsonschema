@@ -32,6 +32,7 @@ var (
 	tags                      []string
 	structNameFromTitle       bool
 	minSizedInts              bool
+	structVerify              bool
 	disableReadOnlyValidation bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
@@ -78,6 +79,7 @@ var (
 				Tags:                      tags,
 				OnlyModels:                onlyModels,
 				MinSizedInts:              minSizedInts,
+				StructVerify:              structVerify,
 				DisableReadOnlyValidation: disableReadOnlyValidation,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
@@ -181,6 +183,12 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"Uses sized int and uint values based on the min and max values for the field")
 	rootCmd.PersistentFlags().BoolVar(&disableReadOnlyValidation, "disable-readonly-validation", false,
 		"Do not include validation of readonly fields")
+
+	rootCmd.PersistentFlags().BoolVar(
+		&structVerify,
+		"struct-verify",
+		false,
+		"Add a Verify method to the generated struct that validates the struct against the schema")
 
 	abortWithErr(rootCmd.Execute())
 }

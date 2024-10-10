@@ -51,3 +51,13 @@ func isMapType(t codegen.Type) bool {
 
 	return isMapType
 }
+
+func enumVarName(wrapInStruct bool) string {
+	varName := "v"
+
+	if wrapInStruct {
+		varName += ".Value"
+	}
+
+	return varName
+}
