@@ -31,3 +31,8 @@ func (j *TypedDefault) UnmarshalJSON(b []byte) error {
 	*j = TypedDefault(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *TypedDefault) Verify() error {
+	return nil
+}

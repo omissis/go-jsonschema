@@ -40,6 +40,11 @@ func (j *RequiredNullableMyNullableObject) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain *RequiredNullableMyNullableObject) Verify() error {
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RequiredNullable) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -61,5 +66,14 @@ func (j *RequiredNullable) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = RequiredNullable(plain)
+	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain *RequiredNullable) Verify() error {
+	myNullableObject := plain.MyNullableObject
+	if err := myNullableObject.Verify(); err != nil {
+		return err
+	}
 	return nil
 }
