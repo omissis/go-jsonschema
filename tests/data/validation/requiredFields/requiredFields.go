@@ -73,6 +73,11 @@ func (j *RequiredFieldsMyObjectArrayElem) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain *RequiredFieldsMyObjectArrayElem) Verify() error {
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RequiredFieldsMyObject) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -88,6 +93,11 @@ func (j *RequiredFieldsMyObject) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = RequiredFieldsMyObject(plain)
+	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain *RequiredFieldsMyObject) Verify() error {
 	return nil
 }
 
@@ -141,5 +151,20 @@ func (j *RequiredFields) UnmarshalJSON(b []byte) error {
 		}
 	}
 	*j = RequiredFields(plain)
+	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain *RequiredFields) Verify() error {
+	myObject := plain.MyObject
+	if err := myObject.Verify(); err != nil {
+		return err
+	}
+	myObjectArray := plain.MyObjectArray
+	for _, amyObjectArray := range myObjectArray {
+		if err := amyObjectArray.Verify(); err != nil {
+			return err
+		}
+	}
 	return nil
 }

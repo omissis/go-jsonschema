@@ -105,10 +105,7 @@ func (jf *jsonFormatter) enumUnmarshal(
 		enumType.Generate(out)
 		out.Newline()
 
-		varName := "v"
-		if wrapInStruct {
-			varName += ".Value"
-		}
+		varName := enumVarName(wrapInStruct)
 
 		out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
 		out.Printlnf("var ok bool")

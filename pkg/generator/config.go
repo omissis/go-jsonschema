@@ -16,6 +16,7 @@ type Config struct {
 	OnlyModels          bool
 	MinSizedInts        bool
 	Loader              schemas.Loader
+	StructVerify        bool
 }
 
 type SchemaMapping struct {
