@@ -631,12 +631,18 @@ func (g *schemaGenerator) generateStructType(
 			}
 		}
 
+		tags := ""
+		for _, tag := range g.config.Tags {
+			tags += fmt.Sprintf(`%s:"-" `, tag)
+		}
+
 		structType.AddField(
 			codegen.StructField{
 				Name:         "AdditionalProperties",
 				DefaultValue: defaultValue,
 				SchemaType:   &schemas.Type{},
 				Type:         fieldType,
+				Tags:         strings.TrimSpace(tags),
 			},
 		)
 	}
