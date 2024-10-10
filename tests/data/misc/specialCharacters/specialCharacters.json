@@ -7,14 +7,16 @@
       "type": "string",
       "enum": [
         "GPL-3.0",
-        "MIT"
+        "MIT",
+        "*"
       ]
     },
     "plusLicenses": {
       "type": "string",
       "enum": [
         "GPL-3.0+",
-        "MIT+"
+        "MIT+",
+        "*"
       ]
     },
     "plainLicensesRef": {
@@ -35,14 +37,16 @@
       "type": "string",
       "enum": [
         "GPL-3.0",
-        "MIT"
+        "MIT",
+        "*"
       ]
     },
     "license+": {
       "type": "string",
       "enum": [
         "GPL-3.0+",
-        "MIT+"
+        "MIT+",
+        "*"
       ]
     }
   }
