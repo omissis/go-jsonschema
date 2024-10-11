@@ -175,7 +175,8 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 
 func (g *Generator) beginOutput(
 	id string,
-	outputName, packageName string,
+	outputName,
+	packageName string,
 ) (*output, error) {
 	if packageName == "" {
 		return nil, fmt.Errorf("%w: %q", errMapURIToPackageName, id)
