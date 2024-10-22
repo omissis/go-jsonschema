@@ -5,7 +5,7 @@
   "properties": {
     "myString": {
       "type": "string",
-      "pattern": "^0x[0-9a-f]{10}$"
+      "pattern": "^0x[0-9a-f]{10}\\.$"
     },
     "myNullableString": {
       "type": "string",
