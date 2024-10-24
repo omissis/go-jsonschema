@@ -32,6 +32,7 @@ var (
 	tags                []string
 	structNameFromTitle bool
 	minSizedInts        bool
+	structVerify        bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
@@ -77,6 +78,7 @@ var (
 				Tags:                tags,
 				OnlyModels:          onlyModels,
 				MinSizedInts:        minSizedInts,
+				StructVerify:        structVerify,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
@@ -173,6 +175,12 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"min-sized-ints",
 		false,
 		"Uses sized int and uint values based on the min and max values for the field")
+
+	rootCmd.PersistentFlags().BoolVar(
+		&structVerify,
+		"struct-verify",
+		false,
+		"Add a Verify method to the generated struct that validates the struct against the schema")
 
 	abortWithErr(rootCmd.Execute())
 }
