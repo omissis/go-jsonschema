@@ -244,9 +244,15 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 			out.Indent(1)
 		}
 
-		out.Printlnf(`if matched, _ := regexp.MatchString("%s", string(%s%s)); !matched {`, v.pattern, pointerPrefix, value)
+		out.Printlnf(
+			`if matched, _ := regexp.MatchString(`+"`%s`"+`, string(%s%s)); !matched {`,
+			v.pattern, pointerPrefix, value,
+		)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", "%s")`, v.pattern, v.fieldName)
+		out.Printlnf(
+			`return fmt.Errorf("field %%s pattern match: must match %%s", `+"`%s`"+`, "%s")`,
+			v.pattern, v.fieldName,
+		)
 		out.Indent(-1)
 		out.Printlnf("}")
 
