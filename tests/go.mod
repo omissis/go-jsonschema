@@ -2,7 +2,7 @@ module github.com/atombender/go-jsonschema/tests
 
 go 1.22.0
 
-toolchain go1.22.7
+toolchain go1.22.0
 
 replace (
 	github.com/atombender/go-jsonschema => ../
