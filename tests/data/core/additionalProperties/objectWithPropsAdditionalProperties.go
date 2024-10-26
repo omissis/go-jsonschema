@@ -7,20 +7,23 @@ import "github.com/go-viper/mapstructure/v2"
 import "reflect"
 import "strings"
 
-type ObjectAdditionalProperties struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+type ObjectWithPropsAdditionalProperties struct {
+	// Bar corresponds to the JSON schema field "bar".
+	Bar *string `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+
+	// Foo corresponds to the JSON schema field "foo".
+	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 
 	AdditionalProperties map[string]interface{} `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ObjectAdditionalProperties) UnmarshalJSON(b []byte) error {
+func (j *ObjectWithPropsAdditionalProperties) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	type Plain ObjectAdditionalProperties
+	type Plain ObjectWithPropsAdditionalProperties
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
@@ -36,6 +39,6 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(b []byte) error {
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
 	}
-	*j = ObjectAdditionalProperties(plain)
+	*j = ObjectWithPropsAdditionalProperties(plain)
 	return nil
 }
