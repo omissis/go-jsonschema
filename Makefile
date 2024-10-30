@@ -200,7 +200,7 @@ golang-install-tools:
 .PHONY: tools-go tools-brew
 
 tools-go:
-	@scripts/tools-golang.sh
+	@scripts/golang-install-tools.sh
 
 tools-brew:
 	@scripts/tools-brew.sh

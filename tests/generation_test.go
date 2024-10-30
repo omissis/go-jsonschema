@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/atombender/go-jsonschema/pkg/generator"
 )
 
@@ -248,6 +250,10 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				if err = os.WriteFile(goldenFileName, goldenData, 0o655); err != nil {
 					t.Fatal(err)
 				}
+			}
+
+			if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {
+				t.Errorf("Contents different (left is expected, right is actual):\n%s", diff)
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {

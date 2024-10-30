@@ -164,12 +164,12 @@ func TestPattern(t *testing.T) {
 	}{
 		{
 			desc: "no violations",
-			data: `{"myString": "0x12345abcde"}`,
+			data: `{"myString": "0x12345abcde."}`,
 		},
 		{
 			desc:    "myString does not match pattern",
 			data:    `{"myString": "0x123456"}`,
-			wantErr: errors.New("field ^0x[0-9a-f]{10}$ pattern match: must match MyString"),
+			wantErr: errors.New("field ^0x[0-9a-f]{10}\\.$ pattern match: must match MyString"),
 		},
 	}
 
