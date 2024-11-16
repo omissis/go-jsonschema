@@ -37,6 +37,10 @@ func (c *Caser) Identifierize(s string) string {
 		return "Blank"
 	}
 
+	if s == "*" {
+		return "Wildcard"
+	}
+
 	// FIXME: Better handling of non-identifier chars.
 	var sb strings.Builder
 	for _, part := range splitIdentifierByCaseAndSeparators(s) {

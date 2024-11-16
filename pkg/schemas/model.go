@@ -129,11 +129,11 @@ type Type struct {
 	Version string `json:"$schema,omitempty"` // Section 6.1.
 	Ref     string `json:"$ref,omitempty"`    // Section 7.
 	// RFC draft-wright-json-schema-validation-00, section 5.
-	MultipleOf           float64          `json:"multipleOf,omitempty"`           // Section 5.1.
-	Maximum              float64          `json:"maximum,omitempty"`              // Section 5.2.
-	ExclusiveMaximum     float64          `json:"exclusiveMaximum,omitempty"`     // Section 5.3.
-	Minimum              float64          `json:"minimum,omitempty"`              // Section 5.4.
-	ExclusiveMinimum     float64          `json:"exclusiveMinimum,omitempty"`     // Section 5.5.
+	MultipleOf           *float64         `json:"multipleOf,omitempty"`           // Section 5.1.
+	Maximum              *float64         `json:"maximum,omitempty"`              // Section 5.2.
+	ExclusiveMaximum     *any             `json:"exclusiveMaximum,omitempty"`     // Section 5.3. Changed in draft 4.
+	Minimum              *float64         `json:"minimum,omitempty"`              // Section 5.4.
+	ExclusiveMinimum     *any             `json:"exclusiveMinimum,omitempty"`     // Section 5.5. Changed in draft 4.
 	MaxLength            int              `json:"maxLength,omitempty"`            // Section 5.6.
 	MinLength            int              `json:"minLength,omitempty"`            // Section 5.7.
 	Pattern              string           `json:"pattern,omitempty"`              // Section 5.8.

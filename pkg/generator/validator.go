@@ -9,6 +9,7 @@ import (
 	"github.com/sanity-io/litter"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/atombender/go-jsonschema/pkg/mathutils"
 )
 
 type validator interface {
@@ -17,8 +18,9 @@ type validator interface {
 }
 
 type validatorDesc struct {
-	hasError        bool
-	beforeUnmarshal bool
+	hasError            bool
+	beforeJSONUnmarshal bool
+	requiresRawAfter    bool
 }
 
 var (
@@ -27,6 +29,7 @@ var (
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
+	_ validator = new(numericValidator)
 	_ validator = new(anyOfValidator)
 )
 
@@ -48,8 +51,8 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) {
 
 func (v *requiredValidator) desc() *validatorDesc {
 	return &validatorDesc{
-		hasError:        true,
-		beforeUnmarshal: true,
+		hasError:            true,
+		beforeJSONUnmarshal: true,
 	}
 }
 
@@ -60,7 +63,7 @@ type nullTypeValidator struct {
 }
 
 func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) {
-	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 
 	indexes := make([]string, v.arrayDepth)
@@ -94,8 +97,9 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) {
 
 func (v *nullTypeValidator) desc() *validatorDesc {
 	return &validatorDesc{
-		hasError:        true,
-		beforeUnmarshal: false,
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+		requiresRawAfter:    true,
 	}
 }
 
@@ -111,7 +115,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) {
 
 	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+	out.Printlnf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
 	out.Indent(-1)
 	out.Printlnf("}")
 }
@@ -140,7 +144,7 @@ func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
 	return litter.Sdump(v.defaultValue)
 }
 
-func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen uint) (string, error) {
+func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
 	v.defaultValueType.Generate(tmpEmitter)
 	tmpEmitter.Printlnf("{")
@@ -168,8 +172,9 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen uint) (string, error) 
 
 func (v *defaultValidator) desc() *validatorDesc {
 	return &validatorDesc{
-		hasError:        false,
-		beforeUnmarshal: false,
+		hasError:            false,
+		beforeJSONUnmarshal: false,
+		requiresRawAfter:    true,
 	}
 }
 
@@ -186,7 +191,7 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) {
 		return
 	}
 
-	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 
 	var indexes []string
@@ -241,6 +246,7 @@ type stringValidator struct {
 	minLength  int
 	maxLength  int
 	isNillable bool
+	pattern    string
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter, format string) {
@@ -248,9 +254,8 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 		return
 	}
 
-	value := fmt.Sprintf("%s.%s", varNamePlainStruct, v.fieldName)
+	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
-
 	checkPointer := ""
 	pointerPrefix := ""
 
@@ -258,6 +263,36 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 		checkPointer = fmt.Sprintf("%s != nil && ", value)
 		pointerPrefix = "*"
 	}
+
+	if len(v.pattern) != 0 {
+		if v.isNillable {
+			out.Printlnf("if %s != nil {", value)
+			out.Indent(1)
+		}
+
+		out.Printlnf(
+			`if matched, _ := regexp.MatchString(`+"`%s`"+`, string(%s%s)); !matched {`,
+			v.pattern, pointerPrefix, value,
+		)
+		out.Indent(1)
+		out.Printlnf(
+			`return fmt.Errorf("field %%s pattern match: must match %%s", `+"`%s`"+`, "%s")`,
+			v.pattern, v.fieldName,
+		)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+		if v.isNillable {
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+	}
+
+	if v.minLength == 0 && v.maxLength == 0 {
+		return
+	}
+
+	fieldName := v.jsonName
 
 	if v.minLength != 0 {
 		out.Printlnf(`if %slen(%s%s) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
@@ -281,6 +316,102 @@ func (v *stringValidator) desc() *validatorDesc {
 		hasError:        true,
 		beforeUnmarshal: false,
 	}
+}
+
+type numericValidator struct {
+	jsonName         string
+	fieldName        string
+	isNillable       bool
+	multipleOf       *float64
+	maximum          *float64
+	exclusiveMaximum *any
+	minimum          *float64
+	exclusiveMinimum *any
+	roundToInt       bool
+}
+
+func (v *numericValidator) generate(out *codegen.Emitter, format string) {
+	value := getPlainName(v.fieldName)
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.multipleOf != nil {
+		if v.roundToInt {
+			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+		} else {
+			out.Printlnf(
+				`if %s math.Abs(math.Mod(%s%s, %v)) > 1e-10 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+		}
+
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	nMin, nMax, nMinExclusive, nMaxExclusive := mathutils.NormalizeBounds(
+		v.minimum, v.maximum, v.exclusiveMinimum, v.exclusiveMaximum,
+	)
+
+	v.genBoundary(out, checkPointer, pointerPrefix, value, nMax, nMaxExclusive, "<")
+	v.genBoundary(out, checkPointer, pointerPrefix, value, nMin, nMinExclusive, ">")
+}
+
+func (v *numericValidator) genBoundary(
+	out *codegen.Emitter,
+	checkPointer,
+	pointerPrefix,
+	value string,
+	boundary *float64,
+	exclusive bool,
+	sign string,
+) {
+	if boundary == nil {
+		return
+	}
+
+	// Technically, this should be based on schema version, but that information is lost.
+	comp := sign
+	if exclusive {
+		// We're putting the other number first, so we need the = if it's exclusive.
+		comp += "="
+	} else {
+		sign += "="
+	}
+
+	out.Printlnf(`if %s%v %s%s %s {`, checkPointer, v.valueOf(*boundary), comp, pointerPrefix, value)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %%s: must be %s %%v", "%s", %v)`, sign, v.jsonName, v.valueOf(*boundary))
+	out.Indent(-1)
+	out.Printlnf("}")
+}
+
+func (v *numericValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
+}
+
+func (v *numericValidator) valueOf(val float64) any {
+	if v.roundToInt {
+		return int64(val)
+	}
+
+	return val
+}
+
+func getPlainName(fieldName string) string {
+	if fieldName == "" {
+		return varNamePlainStruct
+	}
+
+	return fmt.Sprintf("%s.%s", varNamePlainStruct, fieldName)
 }
 
 type anyOfValidator struct {

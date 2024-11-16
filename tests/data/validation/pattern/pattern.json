@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array",
+  "type": "object",
+  "properties": {
+    "myString": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{10}\\.$"
+    },
+    "myNullableString": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{10}$"
+    }
+  },
+  "required": [
+    "myString"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/restrictedReferences",
+  "type": "object",
+  "definitions": {
+    "i16l": {
+      "type": "integer",
+      "minimum": -129,
+      "maximum": 127
+    },
+    "i16u": {
+      "type": "integer",
+      "minimum": -128,
+      "maximum": 128
+    },
+    "i32l": {
+      "type": "integer",
+      "minimum": -32769,
+      "maximum": 32767
+    },
+    "i32u": {
+      "type": "integer",
+      "minimum": -32768,
+      "maximum": 32768
+    },
+    "i64l": {
+      "type": "integer",
+      "minimum": -2147483649,
+      "maximum": 2147483647
+    },
+    "i64u": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483648
+    },
+    "u16": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 256
+    },
+    "u32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65536
+    },
+    "u64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967296
+    }
+  },
+  "properties": {
+    "i16l": {
+      "$ref": "#/definitions/i16l"
+    },
+    "i16u": {
+      "$ref": "#/definitions/i16u"
+    },
+    "i32l": {
+      "$ref": "#/definitions/i32l"
+    },
+    "i32u": {
+      "$ref": "#/definitions/i32u"
+    },
+    "i64l": {
+      "$ref": "#/definitions/i64l"
+    },
+    "i64u": {
+      "$ref": "#/definitions/i64u"
+    },
+    "u16": {
+      "$ref": "#/definitions/u16"
+    },
+    "u32": {
+      "$ref": "#/definitions/u32"
+    },
+    "u64": {
+      "$ref": "#/definitions/u64"
+    }
+  },
+  "required": [
+    "i16l",
+    "i16u",
+    "i32l",
+    "i32u",
+    "i64l",
+    "i64u",
+    "u16",
+    "u32",
+    "u64"
+  ]
+}

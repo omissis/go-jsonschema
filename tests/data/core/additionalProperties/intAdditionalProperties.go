@@ -4,12 +4,15 @@ package test
 
 import "encoding/json"
 import yaml "gopkg.in/yaml.v3"
+import "github.com/go-viper/mapstructure/v2"
+import "reflect"
+import "strings"
 
 type IntAdditionalProperties struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 
-	AdditionalProperties map[string]int
+	AdditionalProperties map[string]int `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -43,6 +46,14 @@ func (j *IntAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]int{}
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := range st.NumField() {
+		delete(raw, st.Field(i).Name)
+		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return err
 	}
 	*j = IntAdditionalProperties(plain)
 	return nil

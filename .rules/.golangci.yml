@@ -6,9 +6,6 @@
 run:
   go: "1.22"
   timeout: 5m
-  exclude-files:
-    - .*\.gen\.go$
-    - tests/data/.*
   modules-download-mode: readonly
 # output configuration options
 output:
@@ -36,16 +33,9 @@ linters:
     - sqlclosecheck
     - wastedassign
     # deprecated
-    - deadcode
-    - exhaustivestruct
-    - golint
-    - ifshort
-    - interfacer
-    - maligned
-    - nosnakecase
-    - scopelint
-    - structcheck
-    - varcheck
+    - exportloopref
+    - gomnd
+    - execinquery
     # unused
     - exhaustruct
     - forbidigo
@@ -84,7 +74,13 @@ linters-settings:
   goimports:
     local-prefixes: github.com/atombender
   govet:
-    shadow: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
   grouper:
     const-require-single-const: true
     const-require-grouping: false
@@ -276,7 +272,7 @@ linters-settings:
         severity: warning
         disabled: false
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#imports-blacklist
-      - name: imports-blacklist
+      - name: imports-blocklist
         severity: warning
         disabled: false
         arguments:
@@ -428,8 +424,6 @@ linters-settings:
       - name: waitgroup-by-value
         severity: warning
         disabled: false
-  varcheck:
-    exported-fields: true
   varnamelen:
     check-receiver: true
     check-return: true
@@ -461,21 +455,22 @@ issues:
   # To list all excluded by default patterns execute `golangci-lint run --help`
   #
   # Default: []
-  exclude:
-    - "local replacement are not allowed: github.com/atombender/go-jsonschema/tests/data"
-    - "exporting a pointer for the loop variable i"
-    - "G601: Implicit memory aliasing in for loop."
+  exclude: []
+  exclude-files:
+    - .*\.gen\.go$
+    - tests/data/.*
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go
       linters:
-        - gochecknoglobals
         - cyclop
         - dupl
+        - err113
         - errcheck
         - forcetypeassert
         - funlen
+        - gochecknoglobals
         - goconst
         - gocyclo
         - goerr113

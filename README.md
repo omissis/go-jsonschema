@@ -22,7 +22,7 @@ along with unmarshalling code that validates the input JSON according to the sch
 
 * **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
 
-* **Install from source**: To install with Go 1.16+:
+* **Install from source**: To install with Go 1.22+:
 
 ```shell
 go get github.com/atombender/go-jsonschema/...
@@ -121,16 +121,16 @@ only specific validations remain to be fully implemented.
     * [x] `type` (single)
     * [x] `type` (multiple; **note**: partial support, limited validation)
     * [ ] `const`
-  * [ ] Numeric validation (§6.2)
-    * [ ] `multipleOf`
-    * [ ] `maximum`
-    * [ ] `exclusiveMaximum`
-    * [ ] `minimum`
-    * [ ] `exclusiveMinimum`
-  * [ ] String validation (§6.3)
+  * [X] Numeric validation (§6.2)
+    * [X] `multipleOf`
+    * [X] `maximum`
+    * [X] `exclusiveMaximum`
+    * [X] `minimum`
+    * [X] `exclusiveMinimum`
+  * [X] String validation (§6.3)
     * [X] `maxLength`
     * [X] `minLength`
-    * [ ] `pattern`
+    * [X] `pattern`
   * [ ] Array validation (§6.4)
     * [X] `items`
     * [x] `maxItems`

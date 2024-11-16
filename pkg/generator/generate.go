@@ -26,22 +26,19 @@ var (
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
-	errUnsupportedRefFormat           = errors.New("unsupported $ref format")
-	ErrUnsupportedRefExtension        = errors.New("unsupported $ref extension")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 )
 
 type Generator struct {
-	caser                 *text.Caser
-	config                Config
-	inScope               map[qualifiedDefinition]struct{}
-	outputs               map[string]*output
-	schemaCacheByFileName map[string]*schemas.Schema
-	warner                func(string)
-	formatters            []formatter
-	fileLoader            schemas.Loader
+	caser      *text.Caser
+	config     Config
+	inScope    map[qualifiedDefinition]struct{}
+	outputs    map[string]*output
+	warner     func(string)
+	formatters []formatter
+	loader     schemas.Loader
 }
 
 type qualifiedDefinition struct {
@@ -58,25 +55,24 @@ func New(config Config) (*Generator, error) {
 	}
 
 	generator := &Generator{
-		caser:                 text.NewCaser(config.Capitalizations, config.ResolveExtensions),
-		config:                config,
-		inScope:               map[qualifiedDefinition]struct{}{},
-		outputs:               map[string]*output{},
-		schemaCacheByFileName: map[string]*schemas.Schema{},
-		warner:                config.Warner,
-		formatters:            formatters,
+		caser:      text.NewCaser(config.Capitalizations, config.ResolveExtensions),
+		config:     config,
+		inScope:    map[qualifiedDefinition]struct{}{},
+		outputs:    map[string]*output{},
+		warner:     config.Warner,
+		formatters: formatters,
+		loader:     config.Loader,
 	}
 
-	generator.fileLoader = schemas.NewCachedLoader(
-		schemas.NewFileLoader(config.ResolveExtensions, config.YAMLExtensions),
-		generator.schemaCacheByFileName,
-	)
+	if config.Loader == nil {
+		generator.loader = schemas.NewDefaultCacheLoader(config.ResolveExtensions, config.YAMLExtensions)
+	}
 
 	return generator, nil
 }
 
 func (g *Generator) Sources() map[string][]byte {
-	var maxLineLength uint = 80
+	var maxLineLength int32 = 80
 
 	sources := make(map[string]*strings.Builder, len(g.outputs))
 
@@ -127,7 +123,7 @@ func (g *Generator) DoFile(fileName string) error {
 			return fmt.Errorf("error parsing from standard input: %w", err)
 		}
 	} else {
-		schema, err = g.fileLoader.Load(fileName, "")
+		schema, err = g.loader.Load(fileName, "")
 		if err != nil {
 			return fmt.Errorf("error parsing from file %s: %w", fileName, err)
 		}
@@ -178,7 +174,11 @@ func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {
 	return g.beginOutput(id, g.config.DefaultOutputName, g.config.DefaultPackageName)
 }
 
-func (g *Generator) beginOutput(id, outputName, packageName string) (*output, error) {
+func (g *Generator) beginOutput(
+	id string,
+	outputName,
+	packageName string,
+) (*output, error) {
 	if packageName == "" {
 		return nil, fmt.Errorf("%w: %q", errMapURIToPackageName, id)
 	}

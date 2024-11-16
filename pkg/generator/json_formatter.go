@@ -19,18 +19,34 @@ func (jf *jsonFormatter) generate(
 	declType codegen.TypeDecl,
 	validators []validator,
 ) func(*codegen.Emitter) {
+	var beforeValidators []validator
+
+	var afterValidators []validator
+
+	forceBefore := false
+
+	for _, v := range validators {
+		desc := v.desc()
+		if desc.beforeJSONUnmarshal {
+			beforeValidators = append(beforeValidators, v)
+		} else {
+			afterValidators = append(afterValidators, v)
+			forceBefore = forceBefore || desc.requiresRawAfter
+		}
+	}
+
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatJSON), formatJSON)
 		out.Printlnf("func (j *%s) Unmarshal%s(value []byte) error {", declType.Name, strings.ToUpper(formatJSON))
 		out.Indent(1)
-		out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-		out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }",
-			formatJSON, varNameRawMap)
 
-		for _, v := range validators {
-			if v.desc().beforeUnmarshal {
-				v.generate(out, "json")
-			}
+		if forceBefore || len(beforeValidators) != 0 {
+			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+			out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }", formatJSON, varNameRawMap)
+		}
+
+		for _, v := range beforeValidators {
+			v.generate(out)
 		}
 
 		tp := typePlain
@@ -46,9 +62,28 @@ func (jf *jsonFormatter) generate(
 		out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }",
 			formatJSON, varNamePlainStruct)
 
-		for _, v := range validators {
-			if !v.desc().beforeUnmarshal {
-				v.generate(out, "json")
+		for _, v := range afterValidators {
+			v.generate(out)
+		}
+
+		if structType, ok := declType.Type.(*codegen.StructType); ok {
+			for _, f := range structType.Fields {
+				if f.Name == additionalProperties {
+					out.Printlnf("st := reflect.TypeOf(Plain{})")
+					out.Printlnf("for i := range st.NumField() {")
+					out.Indent(1)
+					out.Printlnf("delete(raw, st.Field(i).Name)")
+					out.Printlnf("delete(raw, strings.Split(st.Field(i).Tag.Get(\"json\"), \",\")[0])")
+					out.Indent(-1)
+					out.Printlnf("}")
+					out.Printlnf("if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {")
+					out.Indent(1)
+					out.Printlnf("return err")
+					out.Indent(-1)
+					out.Printlnf("}")
+
+					break
+				}
 			}
 		}
 

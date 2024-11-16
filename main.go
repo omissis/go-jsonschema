@@ -31,6 +31,7 @@ var (
 	yamlExtensions      []string
 	tags                []string
 	structNameFromTitle bool
+	minSizedInts        bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
@@ -75,6 +76,7 @@ var (
 				StructNameFromTitle: structNameFromTitle,
 				Tags:                tags,
 				OnlyModels:          onlyModels,
+				MinSizedInts:        minSizedInts,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
@@ -166,6 +168,11 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"Use the schema title as the generated struct name")
 	rootCmd.PersistentFlags().StringSliceVar(&tags, "tags", []string{"json", "yaml", "mapstructure"},
 		`Specify which struct tags to generate. Defaults are json, yaml, mapstructure`)
+	rootCmd.PersistentFlags().BoolVar(
+		&minSizedInts,
+		"min-sized-ints",
+		false,
+		"Uses sized int and uint values based on the min and max values for the field")
 
 	abortWithErr(rootCmd.Execute())
 }

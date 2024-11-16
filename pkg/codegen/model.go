@@ -256,11 +256,11 @@ func (t NamedType) IsNillable() bool {
 
 func (t NamedType) Generate(out *Emitter) {
 	if t.Package != nil {
-		out.Printf(t.Package.Name())
+		out.Printf("%s", t.Package.Name())
 		out.Printf(".")
 	}
 
-	out.Printf(t.Decl.Name)
+	out.Printf("%s", t.Decl.Name)
 }
 
 type PrimitiveType struct {
@@ -270,7 +270,7 @@ type PrimitiveType struct {
 func (PrimitiveType) IsNillable() bool { return false }
 
 func (p PrimitiveType) Generate(out *Emitter) {
-	out.Printf(p.Type)
+	out.Printf("%s", p.Type)
 }
 
 type CustomNameType struct {
@@ -281,7 +281,7 @@ type CustomNameType struct {
 func (p CustomNameType) IsNillable() bool { return p.Nillable }
 
 func (p CustomNameType) Generate(out *Emitter) {
-	out.Printf(p.Type)
+	out.Printf("%s", p.Type)
 }
 
 type MapType struct {
