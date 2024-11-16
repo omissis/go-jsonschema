@@ -3,8 +3,8 @@
 package test
 
 import "encoding/json"
-import yaml "gopkg.in/yaml.v3"
 import "github.com/go-viper/mapstructure/v2"
+import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
@@ -28,6 +28,14 @@ func (j *ArrayAdditionalProperties) UnmarshalJSON(value []byte) error {
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string][]interface{}{}
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := range st.NumField() {
+		delete(raw, st.Field(i).Name)
+		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return err
 	}
 	*j = ArrayAdditionalProperties(plain)
 	return nil

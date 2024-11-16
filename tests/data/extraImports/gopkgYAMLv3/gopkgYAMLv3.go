@@ -38,9 +38,9 @@ var enumValues_GopkgYAMLv3MyEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *GopkgYAMLv3MyEnum) UnmarshalJSON(b []byte) error {
+func (j *GopkgYAMLv3MyEnum) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool

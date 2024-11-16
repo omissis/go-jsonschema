@@ -250,10 +250,6 @@ type stringValidator struct {
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter, format string) {
-	if v.minLength == 0 && v.maxLength == 0 {
-		return
-	}
-
 	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 	checkPointer := ""

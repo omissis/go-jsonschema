@@ -103,9 +103,9 @@ func (j *Issue6NameUse_2) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Issue6NameUse_2) UnmarshalJSON(b []byte) error {
+func (j *Issue6NameUse_2) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool

@@ -25,10 +25,10 @@ var enumValues_License_1 = []interface{}{
 	"*",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *License_1) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *License_1) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -45,10 +45,10 @@ func (j *License_1) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *License_1) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *License_1) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -92,9 +92,9 @@ func (j *License) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *License) UnmarshalJSON(b []byte) error {
+func (j *License) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -138,9 +138,9 @@ var enumValues_SpecialCharactersPlainLicenses = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *SpecialCharactersPlainLicenses) UnmarshalJSON(b []byte) error {
+func (j *SpecialCharactersPlainLicenses) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -189,10 +189,10 @@ var enumValues_SpecialCharactersPlusLicenses = []interface{}{
 	"*",
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *SpecialCharactersPlusLicenses) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *SpecialCharactersPlusLicenses) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -209,10 +209,10 @@ func (j *SpecialCharactersPlusLicenses) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *SpecialCharactersPlusLicenses) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SpecialCharactersPlusLicenses) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool

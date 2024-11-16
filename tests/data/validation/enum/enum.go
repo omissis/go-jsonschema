@@ -51,9 +51,9 @@ var enumValues_EnumMyBooleanTypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyBooleanTypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyBooleanTypedEnum) UnmarshalJSON(value []byte) error {
 	var v bool
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -98,9 +98,9 @@ var enumValues_EnumMyBooleanUntypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyBooleanUntypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyBooleanUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v bool
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -146,9 +146,9 @@ var enumValues_EnumMyIntegerTypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyIntegerTypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyIntegerTypedEnum) UnmarshalJSON(value []byte) error {
 	var v int
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -227,11 +227,11 @@ func (j *EnumMyMixedTypeEnum) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyMixedTypeEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyMixedTypeEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
 		Value interface{}
 	}
-	if err := json.Unmarshal(b, &v.Value); err != nil {
+	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
 	}
 	var ok bool
@@ -270,11 +270,11 @@ var enumValues_EnumMyMixedUntypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyMixedUntypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyMixedUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
 		Value interface{}
 	}
-	if err := json.Unmarshal(b, &v.Value); err != nil {
+	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
 	}
 	var ok bool
@@ -332,11 +332,11 @@ var enumValues_EnumMyNullTypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyNullTypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyNullTypedEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
 		Value interface{}
 	}
-	if err := json.Unmarshal(b, &v.Value); err != nil {
+	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
 	}
 	var ok bool
@@ -394,11 +394,11 @@ var enumValues_EnumMyNullUntypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyNullUntypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyNullUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
 		Value interface{}
 	}
-	if err := json.Unmarshal(b, &v.Value); err != nil {
+	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
 	}
 	var ok bool
@@ -446,9 +446,9 @@ var enumValues_EnumMyNumberTypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyNumberTypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyNumberTypedEnum) UnmarshalJSON(value []byte) error {
 	var v float64
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -494,9 +494,9 @@ var enumValues_EnumMyNumberUntypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyNumberUntypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyNumberUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v float64
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -546,9 +546,9 @@ var enumValues_EnumMyStringTypedEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyStringTypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyStringTypedEnum) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -618,9 +618,9 @@ func (j *EnumMyStringUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EnumMyStringUntypedEnum) UnmarshalJSON(b []byte) error {
+func (j *EnumMyStringUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool

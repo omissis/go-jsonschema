@@ -115,10 +115,6 @@ type AnyOfConfigurationsElem_2 struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOfConfigurationsElem_2) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
 	type Plain AnyOfConfigurationsElem_2
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -130,10 +126,6 @@ func (j *AnyOfConfigurationsElem_2) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOfConfigurationsElem_2) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
 	type Plain AnyOfConfigurationsElem_2
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {

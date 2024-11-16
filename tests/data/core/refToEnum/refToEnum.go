@@ -23,9 +23,9 @@ var enumValues_Thing = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Thing) UnmarshalJSON(b []byte) error {
+func (j *Thing) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool

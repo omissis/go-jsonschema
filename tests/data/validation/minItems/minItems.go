@@ -16,10 +16,6 @@ type MinItems struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MinItems) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
 	type Plain MinItems
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -42,10 +38,6 @@ func (j *MinItems) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *MinItems) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
 	type Plain MinItems
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {

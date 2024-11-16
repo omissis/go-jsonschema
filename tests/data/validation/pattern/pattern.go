@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "regexp"
 
 type Pattern struct {
@@ -15,9 +16,9 @@ type Pattern struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Pattern) UnmarshalJSON(b []byte) error {
+func (j *Pattern) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
@@ -25,7 +26,33 @@ func (j *Pattern) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Pattern
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.MyNullableString != nil {
+		if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}$`, string(*plain.MyNullableString)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", `^0x[0-9a-f]{10}$`, "MyNullableString")
+		}
+	}
+	if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}\.$`, string(plain.MyString)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", `^0x[0-9a-f]{10}\.$`, "MyString")
+	}
+	*j = Pattern(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Pattern) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myString"]; raw != nil && !ok {
+		return fmt.Errorf("field myString in Pattern: required")
+	}
+	type Plain Pattern
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.MyNullableString != nil {

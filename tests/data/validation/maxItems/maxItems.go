@@ -16,10 +16,6 @@ type MaxItems struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MaxItems) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
 	type Plain MaxItems
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -42,10 +38,6 @@ func (j *MaxItems) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *MaxItems) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
 	type Plain MaxItems
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {

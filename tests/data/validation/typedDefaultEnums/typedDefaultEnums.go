@@ -23,9 +23,9 @@ var enumValues_TypedDefaultEnumsSome = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TypedDefaultEnumsSome) UnmarshalJSON(b []byte) error {
+func (j *TypedDefaultEnumsSome) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool

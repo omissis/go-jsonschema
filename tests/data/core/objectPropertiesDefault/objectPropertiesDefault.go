@@ -128,9 +128,9 @@ var enumValues_EventName = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EventName) UnmarshalJSON(b []byte) error {
+func (j *EventName) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -202,9 +202,9 @@ func (j *EventTagsElem) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *EventTagsElem) UnmarshalJSON(b []byte) error {
+func (j *EventTagsElem) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -280,10 +280,6 @@ type ObjectPropertiesDefaultPlannersElem_0 struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ObjectPropertiesDefaultPlannersElem_0) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
 	type Plain ObjectPropertiesDefaultPlannersElem_0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
@@ -295,10 +291,6 @@ func (j *ObjectPropertiesDefaultPlannersElem_0) UnmarshalYAML(value *yaml.Node) 
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectPropertiesDefaultPlannersElem_0) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
 	type Plain ObjectPropertiesDefaultPlannersElem_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -315,10 +307,6 @@ type ObjectPropertiesDefaultPlannersElem_1 struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
 	type Plain ObjectPropertiesDefaultPlannersElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -330,10 +318,6 @@ func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalJSON(value []byte) erro
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
 	type Plain ObjectPropertiesDefaultPlannersElem_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
