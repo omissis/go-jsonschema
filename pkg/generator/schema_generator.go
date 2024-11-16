@@ -793,7 +793,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			if t.IsSubSchemaTypeElem() {
-				return nil, nil
+				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a refactor.
 			}
 
 			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(

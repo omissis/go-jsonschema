@@ -19,8 +19,10 @@ func (jf *jsonFormatter) generate(
 	declType codegen.TypeDecl,
 	validators []validator,
 ) func(*codegen.Emitter) {
-	var beforeValidators []validator
-	var afterValidators []validator
+	var (
+		beforeValidators []validator
+		afterValidators  []validator
+	)
 
 	forceBefore := false
 
