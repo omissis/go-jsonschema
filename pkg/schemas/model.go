@@ -83,10 +83,10 @@ type (
 type TypeList []string
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (t *TypeList) UnmarshalJSON(b []byte) error {
-	if len(b) > 0 && b[0] == '[' {
+func (t *TypeList) UnmarshalJSON(value []byte) error {
+	if len(value) > 0 && value[0] == '[' {
 		var s []string
-		if err := json.Unmarshal(b, &s); err != nil {
+		if err := json.Unmarshal(value, &s); err != nil {
 			return fmt.Errorf("failed to unmarshal type list: %w", err)
 		}
 
@@ -96,7 +96,7 @@ func (t *TypeList) UnmarshalJSON(b []byte) error {
 	}
 
 	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
+	if err := json.Unmarshal(value, &s); err != nil {
 		return fmt.Errorf("failed to unmarshal type list: %w", err)
 	}
 

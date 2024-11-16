@@ -20,7 +20,6 @@ func (jf *jsonFormatter) generate(
 	validators []validator,
 ) func(*codegen.Emitter) {
 	var beforeValidators []validator
-
 	var afterValidators []validator
 
 	forceBefore := false
@@ -42,7 +41,7 @@ func (jf *jsonFormatter) generate(
 
 		if forceBefore || len(beforeValidators) != 0 {
 			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-			out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }", formatJSON, varNameRawMap)
+			out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }", formatJSON, varNameRawMap)
 		}
 
 		for _, v := range beforeValidators {
@@ -113,7 +112,7 @@ func (jf *jsonFormatter) enumUnmarshal(
 ) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-		out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", declType.Name)
+		out.Printlnf("func (j *%s) UnmarshalJSON(value []byte) error {", declType.Name)
 		out.Indent(1)
 		out.Printf("var v ")
 		enumType.Generate(out)
@@ -124,7 +123,7 @@ func (jf *jsonFormatter) enumUnmarshal(
 			varName += ".Value"
 		}
 
-		out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
+		out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil { return err }", varName)
 		out.Printlnf("var ok bool")
 		out.Printlnf("for _, expected := range %s {", valueConstant.Name)
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)

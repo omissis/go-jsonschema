@@ -21,7 +21,6 @@ func (yf *yamlFormatter) generate(
 	validators []validator,
 ) func(*codegen.Emitter) {
 	var beforeValidators []validator
-
 	var afterValidators []validator
 
 	forceBefore := false
@@ -38,8 +37,7 @@ func (yf *yamlFormatter) generate(
 
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name,
-			strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 
 		if forceBefore || len(beforeValidators) != 0 {
@@ -98,8 +96,7 @@ func (yf *yamlFormatter) generate(
 func (yf *yamlFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Commentf("Marshal%s implements %s.Marshal.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name,
-			strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printlnf("return %s.Marshal(j.Value)", formatYAML)
 		out.Indent(-1)
@@ -115,8 +112,7 @@ func (yf *yamlFormatter) enumUnmarshal(
 ) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name,
-			strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printf("var v ")
 		enumType.Generate(out)
@@ -133,8 +129,7 @@ func (yf *yamlFormatter) enumUnmarshal(
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
 		out.Printlnf("}")
 		out.Printlnf("if !ok {")
-		out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
-			valueConstant.Name, varName)
+		out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`, valueConstant.Name, varName)
 		out.Printlnf("}")
 		out.Printlnf(`*j = %s(v)`, declType.Name)
 		out.Printlnf(`return nil`)
