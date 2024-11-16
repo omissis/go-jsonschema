@@ -252,8 +252,8 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	var validators []validator
 
-	switch theType.(type) {
-	case codegen.StructType, *codegen.StructType:
+	switch tt := theType.(type) {
+	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
 
@@ -262,11 +262,11 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
-		for _, f := range structType.RequiredJSONFields {
+		for _, f := range tt.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
 
-		for _, f := range structType.Fields {
+		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
 				if f.Name == additionalProperties {
 					g.output.file.Package.AddImport("reflect", "")
@@ -291,9 +291,9 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	case codegen.PrimitiveType, *codegen.PrimitiveType:
 		validators = g.structFieldValidators(nil, codegen.StructField{
-			Type:       primitiveType,
+			Type:       tt,
 			SchemaType: t,
-		}, primitiveType, false)
+		}, tt, false)
 
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
 			g.generateUnmarshaler(decl, validators)
@@ -324,7 +324,7 @@ func (g *schemaGenerator) addValidatorsToType(validators []validator, decl codeg
 			formatter.addImport(g.output.file)
 
 			g.output.file.Package.AddDecl(&codegen.Method{
-				Impl: formatter.generate(decl, validators),
+				Impl: formatter.generate(g.output, decl, validators),
 				Name: decl.GetName() + "_validator",
 			})
 		}

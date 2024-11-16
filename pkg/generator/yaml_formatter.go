@@ -48,7 +48,7 @@ func (yf *yamlFormatter) generate(
 		}
 
 		for _, v := range beforeValidators {
-			v.generate(out)
+			v.generate(out, "yaml")
 		}
 
 		tp := typePlain
@@ -64,7 +64,7 @@ func (yf *yamlFormatter) generate(
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			v.generate(out)
+			v.generate(out, "yaml")
 		}
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {

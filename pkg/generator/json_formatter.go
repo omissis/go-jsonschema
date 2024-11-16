@@ -46,7 +46,7 @@ func (jf *jsonFormatter) generate(
 		}
 
 		for _, v := range beforeValidators {
-			v.generate(out)
+			v.generate(out, "json")
 		}
 
 		tp := typePlain
@@ -63,7 +63,7 @@ func (jf *jsonFormatter) generate(
 			formatJSON, varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			v.generate(out)
+			v.generate(out, "json")
 		}
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {

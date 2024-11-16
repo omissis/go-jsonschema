@@ -235,8 +235,8 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) {
 
 func (v *arrayValidator) desc() *validatorDesc {
 	return &validatorDesc{
-		hasError:        true,
-		beforeUnmarshal: false,
+		hasError:            true,
+		beforeJSONUnmarshal: false,
 	}
 }
 
@@ -292,8 +292,6 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 		return
 	}
 
-	fieldName := v.jsonName
-
 	if v.minLength != 0 {
 		out.Printlnf(`if %slen(%s%s) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
 		out.Indent(1)
@@ -313,8 +311,8 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 
 func (v *stringValidator) desc() *validatorDesc {
 	return &validatorDesc{
-		hasError:        true,
-		beforeUnmarshal: false,
+		hasError:            true,
+		beforeJSONUnmarshal: false,
 	}
 }
 
@@ -448,8 +446,8 @@ func (v *anyOfValidator) generate(out *codegen.Emitter, format string) {
 
 func (v *anyOfValidator) desc() *validatorDesc {
 	return &validatorDesc{
-		hasError:        true,
-		beforeUnmarshal: true,
+		hasError:            true,
+		beforeJSONUnmarshal: true,
 	}
 }
 
