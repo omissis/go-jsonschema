@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Restricted struct {
 	// I16 corresponds to the JSON schema field "i16".
@@ -32,9 +33,9 @@ type Restricted struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Restricted) UnmarshalJSON(b []byte) error {
+func (j *Restricted) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["i16"]; raw != nil && !ok {
@@ -63,7 +64,85 @@ func (j *Restricted) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Restricted
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 32766 < plain.I16 {
+		return fmt.Errorf("field %s: must be <= %v", "i16", 32766)
+	}
+	if -32767 > plain.I16 {
+		return fmt.Errorf("field %s: must be >= %v", "i16", -32767)
+	}
+	if 2147483646 < plain.I32 {
+		return fmt.Errorf("field %s: must be <= %v", "i32", 2147483646)
+	}
+	if -2147483647 > plain.I32 {
+		return fmt.Errorf("field %s: must be >= %v", "i32", -2147483647)
+	}
+	if 126 < plain.I8 {
+		return fmt.Errorf("field %s: must be <= %v", "i8", 126)
+	}
+	if -127 > plain.I8 {
+		return fmt.Errorf("field %s: must be >= %v", "i8", -127)
+	}
+	if 65534 < plain.U16 {
+		return fmt.Errorf("field %s: must be <= %v", "u16", 65534)
+	}
+	if 1 > plain.U16 {
+		return fmt.Errorf("field %s: must be >= %v", "u16", 1)
+	}
+	if 4294967294 < plain.U32 {
+		return fmt.Errorf("field %s: must be <= %v", "u32", 4294967294)
+	}
+	if 1 > plain.U32 {
+		return fmt.Errorf("field %s: must be >= %v", "u32", 1)
+	}
+	if 1 > plain.U64 {
+		return fmt.Errorf("field %s: must be >= %v", "u64", 1)
+	}
+	if 254 < plain.U8 {
+		return fmt.Errorf("field %s: must be <= %v", "u8", 254)
+	}
+	if 1 > plain.U8 {
+		return fmt.Errorf("field %s: must be >= %v", "u8", 1)
+	}
+	*j = Restricted(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Restricted) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["i16"]; raw != nil && !ok {
+		return fmt.Errorf("field i16 in Restricted: required")
+	}
+	if _, ok := raw["i32"]; raw != nil && !ok {
+		return fmt.Errorf("field i32 in Restricted: required")
+	}
+	if _, ok := raw["i64"]; raw != nil && !ok {
+		return fmt.Errorf("field i64 in Restricted: required")
+	}
+	if _, ok := raw["i8"]; raw != nil && !ok {
+		return fmt.Errorf("field i8 in Restricted: required")
+	}
+	if _, ok := raw["u16"]; raw != nil && !ok {
+		return fmt.Errorf("field u16 in Restricted: required")
+	}
+	if _, ok := raw["u32"]; raw != nil && !ok {
+		return fmt.Errorf("field u32 in Restricted: required")
+	}
+	if _, ok := raw["u64"]; raw != nil && !ok {
+		return fmt.Errorf("field u64 in Restricted: required")
+	}
+	if _, ok := raw["u8"]; raw != nil && !ok {
+		return fmt.Errorf("field u8 in Restricted: required")
+	}
+	type Plain Restricted
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if 32766 < plain.I16 {

@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "net/netip"
 
 type Ip struct {
@@ -17,9 +18,9 @@ type IpMyObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *IpMyObject) UnmarshalJSON(b []byte) error {
+func (j *IpMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myIp"]; raw != nil && !ok {
@@ -27,7 +28,25 @@ func (j *IpMyObject) UnmarshalJSON(b []byte) error {
 	}
 	type Plain IpMyObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = IpMyObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *IpMyObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myIp"]; raw != nil && !ok {
+		return fmt.Errorf("field myIp in IpMyObject: required")
+	}
+	type Plain IpMyObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = IpMyObject(plain)

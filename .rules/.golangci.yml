@@ -39,6 +39,9 @@ linters:
     # unused
     - exhaustruct
     - forbidigo
+    - gomnd
+    - mnd
+
 linters-settings:
   decorder:
     disable-init-func-first-check: false

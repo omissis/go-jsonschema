@@ -16,6 +16,7 @@ const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 	interfaceTypeName  = "interface{}"
+	typePlain          = "Plain"
 )
 
 var (
@@ -213,9 +214,15 @@ func (g *Generator) beginOutput(
 }
 
 func (g *Generator) makeEnumConstantName(typeName, value string) string {
-	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
-		return typeName + "_" + g.caser.Identifierize(value)
+	idv := g.caser.Identifierize(value)
+
+	if len(typeName) == 0 {
+		return "Enum" + idv
 	}
 
-	return typeName + g.caser.Identifierize(value)
+	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
+		return typeName + "_" + idv
+	}
+
+	return typeName + idv
 }

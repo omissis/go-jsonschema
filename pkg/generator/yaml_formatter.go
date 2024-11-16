@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -13,10 +15,15 @@ const (
 
 type yamlFormatter struct{}
 
-func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
-	var beforeValidators []validator
-
-	var afterValidators []validator
+func (yf *yamlFormatter) generate(
+	output *output,
+	declType codegen.TypeDecl,
+	validators []validator,
+) func(*codegen.Emitter) {
+	var (
+		beforeValidators []validator
+		afterValidators  []validator
+	)
 
 	forceBefore := false
 
@@ -32,8 +39,7 @@ func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []valida
 
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name,
-			strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 
 		if forceBefore || len(beforeValidators) != 0 {
@@ -42,15 +48,23 @@ func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []valida
 		}
 
 		for _, v := range beforeValidators {
-			v.generate(out)
+			v.generate(out, "yaml")
 		}
 
-		out.Printlnf("type Plain %s", declType.Name)
-		out.Printlnf("var %s Plain", varNamePlainStruct)
+		tp := typePlain
+
+		if tp == declType.Name {
+			for i := 0; !output.isUniqueTypeName(tp) && i < math.MaxInt; i++ {
+				tp = fmt.Sprintf("%s_%d", typePlain, i)
+			}
+		}
+
+		out.Printlnf("type %s %s", tp, declType.Name)
+		out.Printlnf("var %s %s", varNamePlainStruct, tp)
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			v.generate(out)
+			v.generate(out, "yaml")
 		}
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
@@ -84,8 +98,7 @@ func (yf *yamlFormatter) generate(declType codegen.TypeDecl, validators []valida
 func (yf *yamlFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Commentf("Marshal%s implements %s.Marshal.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name,
-			strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printlnf("return %s.Marshal(j.Value)", formatYAML)
 		out.Indent(-1)
@@ -101,8 +114,7 @@ func (yf *yamlFormatter) enumUnmarshal(
 ) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name,
-			strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printf("var v ")
 		enumType.Generate(out)
@@ -119,8 +131,7 @@ func (yf *yamlFormatter) enumUnmarshal(
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)
 		out.Printlnf("}")
 		out.Printlnf("if !ok {")
-		out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
-			valueConstant.Name, varName)
+		out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`, valueConstant.Name, varName)
 		out.Printlnf("}")
 		out.Printlnf(`*j = %s(v)`, declType.Name)
 		out.Printlnf(`return nil`)
