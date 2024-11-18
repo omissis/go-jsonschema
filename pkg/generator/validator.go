@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
+	"github.com/sosodev/duration"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
@@ -17,10 +18,16 @@ type validator interface {
 	desc() *validatorDesc
 }
 
+type packageImport struct {
+	qualifiedName string
+	alias         string
+}
+
 type validatorDesc struct {
 	hasError            bool
 	beforeJSONUnmarshal bool
 	requiresRawAfter    bool
+	imports             []packageImport
 }
 
 var (
@@ -145,18 +152,58 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) {
 }
 
 func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
-	nt, ok := v.defaultValueType.(*codegen.NamedType)
-	if v.defaultValueType != nil && ok {
-		dvm, ok := v.defaultValue.(map[string]any)
-		if ok {
-			namedFields := ""
-			for _, k := range sortedKeys(dvm) {
-				namedFields += fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
+	if v.defaultValueType != nil {
+		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
+			dvm, ok := v.defaultValue.(map[string]any)
+			if ok {
+				namedFields := ""
+				for _, k := range sortedKeys(dvm) {
+					namedFields += fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
+				}
+
+				namedFields += "\n"
+
+				return fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+			}
+		}
+
+		if _, ok := v.defaultValueType.(codegen.DurationType); ok {
+			defaultDurationISO8601, ok := v.defaultValue.(string)
+
+			if !ok {
+				// TODO: Return an error instead of panicking?
+				// TODO: Print type name?
+				panic("duration default value must be a string")
 			}
 
-			namedFields += "\n"
+			if defaultDurationISO8601 == "" {
+				// TODO: What should we do if the default is an empty string?
+				// TODO: Return an error instead of panicking?
+				// TODO: Print type name?
+				panic("duration default value must not be an empty string")
+			}
 
-			return fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+			duration, err := duration.Parse(defaultDurationISO8601)
+			if err != nil {
+				// TODO: Return an error instead of panicking?
+				// TODO: Print type name?
+				panic("could not convert duration from ISO8601 to Go format")
+			}
+
+			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+			defaultValue := "defaultDuration"
+			goDurationStr := duration.ToTimeDuration().String()
+
+			tmpEmitter.Printlnf("%s, err := time.ParseDuration(\"%s\")", defaultValue, goDurationStr)
+			tmpEmitter.Printlnf("if err != nil {")
+			tmpEmitter.Indent(1)
+			tmpEmitter.Printlnf("return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)", goDurationStr, v.jsonName)
+			tmpEmitter.Indent(-1)
+			tmpEmitter.Printlnf("}")
+			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+
+			return tmpEmitter.String()
 		}
 	}
 
@@ -195,10 +242,23 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 }
 
 func (v *defaultValidator) desc() *validatorDesc {
+	var packages []packageImport
+	_, ok := v.defaultValueType.(codegen.DurationType)
+	if v.defaultValueType != nil && ok {
+		defaultDurationISO8601, ok := v.defaultValue.(string)
+		if ok && defaultDurationISO8601 != "" {
+			packages = []packageImport{
+				{qualifiedName: "fmt"},
+				{qualifiedName: "time"},
+			}
+		}
+	}
+
 	return &validatorDesc{
 		hasError:            false,
 		beforeJSONUnmarshal: false,
 		requiresRawAfter:    true,
+		imports:             packages,
 	}
 }
 
