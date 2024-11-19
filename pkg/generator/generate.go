@@ -31,13 +31,14 @@ var (
 )
 
 type Generator struct {
-	caser      *text.Caser
-	config     Config
-	inScope    map[qualifiedDefinition]struct{}
-	outputs    map[string]*output
-	warner     func(string)
-	formatters []formatter
-	loader     schemas.Loader
+	caser        *text.Caser
+	config       Config
+	inScope      map[qualifiedDefinition]struct{}
+	outputs      map[string]*output
+	warner       func(string)
+	formatters   []formatter
+	loader       schemas.Loader
+	minimalNames bool
 }
 
 type qualifiedDefinition struct {
@@ -54,13 +55,14 @@ func New(config Config) (*Generator, error) {
 	}
 
 	generator := &Generator{
-		caser:      text.NewCaser(config.Capitalizations, config.ResolveExtensions),
-		config:     config,
-		inScope:    map[qualifiedDefinition]struct{}{},
-		outputs:    map[string]*output{},
-		warner:     config.Warner,
-		formatters: formatters,
-		loader:     config.Loader,
+		caser:        text.NewCaser(config.Capitalizations, config.ResolveExtensions),
+		config:       config,
+		inScope:      map[qualifiedDefinition]struct{}{},
+		outputs:      map[string]*output{},
+		warner:       config.Warner,
+		formatters:   formatters,
+		loader:       config.Loader,
+		minimalNames: config.MinimalNames,
 	}
 
 	if config.Loader == nil {
@@ -199,7 +201,8 @@ func (g *Generator) beginOutput(
 	}
 
 	output := &output{
-		warner: g.warner,
+		minimalNames: g.minimalNames,
+		warner:       g.warner,
 		file: &codegen.File{
 			FileName: outputName,
 			Package:  pkg,

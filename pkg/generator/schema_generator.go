@@ -205,7 +205,7 @@ func (g *schemaGenerator) generateDeclaredType(
 	}
 
 	decl := codegen.TypeDecl{
-		Name:    g.output.uniqueTypeName(scope.string()),
+		Name:    g.output.uniqueTypeName(scope),
 		Comment: t.Description,
 	}
 	g.output.declsBySchema[t] = &decl
@@ -432,7 +432,7 @@ func (g *schemaGenerator) generateType(
 			return nil, errArrayPropertyItems
 		}
 
-		elemType, err := g.generateType(t.Items, scope.add("Elem"))
+		elemType, err := g.generateType(t.Items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -764,7 +764,7 @@ func (g *schemaGenerator) generateTypeInline(
 			} else {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, scope.add("Elem"))
+				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
@@ -775,6 +775,17 @@ func (g *schemaGenerator) generateTypeInline(
 	}
 
 	return g.generateDeclaredType(t, scope)
+}
+
+// singularScope attempts to create a name scope for an element of a collection. If the parent collection
+// has a plural name like "Actions", then the singular name for the element will be "Action". If the collection
+// is not plural, like "WhateverElse", then the element's name will be "WhateverElseElem".
+func (g *Generator) singularScope(scope nameScope) nameScope {
+	if g.minimalNames && len(scope) > 0 && strings.HasSuffix(scope[len(scope)-1], "s") {
+		return scope[:len(scope)-1].add(strings.TrimSuffix(scope[len(scope)-1], "s"))
+	}
+
+	return scope.add("Elem")
 }
 
 func (g *schemaGenerator) generateEnumType(
@@ -876,7 +887,7 @@ func (g *schemaGenerator) generateEnumType(
 	}
 
 	enumDecl := codegen.TypeDecl{
-		Name: g.output.uniqueTypeName(scope.string()),
+		Name: g.output.uniqueTypeName(scope),
 		Type: enumType,
 	}
 	g.output.file.Package.AddDecl(&enumDecl)
