@@ -174,6 +174,15 @@ func TestMinSizeInt(t *testing.T) {
 	testExamples(t, cfg, "./data/minSizedInts")
 }
 
+func TestDeeplyNestedMinimalNames(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.MinimalNames = true
+
+	testExamples(t, cfg, "./data/deeplyNested")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -252,12 +261,20 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				}
 			}
 
-			if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {
-				t.Errorf("Contents different (left is expected, right is actual):\n%s", diff)
-			}
+			if _, update := os.LookupEnv("UPDATE"); update {
+				t.Logf("Updating file %s", mustAbs(goldenFileName))
 
-			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {
+					t.Errorf("Contents different (left is expected, right is actual):\n%s", diff)
+				}
+
+				if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
+					t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				}
 			}
 		}
 	})
