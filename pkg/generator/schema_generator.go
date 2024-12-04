@@ -321,13 +321,13 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 
 		for _, f := range tt.Fields {
-			if f.DefaultValue != nil {
-				if f.Name == additionalProperties {
-					g.output.file.Package.AddImport("reflect", "")
-					g.output.file.Package.AddImport("strings", "")
-					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-				}
+			if f.Name == additionalProperties {
+				g.output.file.Package.AddImport("reflect", "")
+				g.output.file.Package.AddImport("strings", "")
+				g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+			}
 
+			if f.DefaultValue != nil {
 				validators = append(validators, &defaultValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
