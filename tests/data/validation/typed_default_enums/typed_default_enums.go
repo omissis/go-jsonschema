@@ -41,6 +41,16 @@ func (j *TypedDefaultEnumsSome) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain TypedDefaultEnumsSome) Verify() error {
+	for _, expected := range enumValues_TypedDefaultEnumsSome {
+		if reflect.DeepEqual(v, expected) {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_TypedDefaultEnumsSome, v)
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TypedDefaultEnums) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -56,5 +66,14 @@ func (j *TypedDefaultEnums) UnmarshalJSON(b []byte) error {
 		plain.Some = "random"
 	}
 	*j = TypedDefaultEnums(plain)
+	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain *TypedDefaultEnums) Verify() error {
+	some := plain.Some
+	if err := some.Verify(); err != nil {
+		return err
+	}
 	return nil
 }

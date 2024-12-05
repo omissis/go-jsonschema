@@ -108,10 +108,7 @@ func (yf *yamlFormatter) enumUnmarshal(
 		enumType.Generate(out)
 		out.Newline()
 
-		varName := "v"
-		if wrapInStruct {
-			varName += ".Value"
-		}
+		varName := enumVarName(wrapInStruct)
 
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varName)
 		out.Printlnf("var ok bool")
