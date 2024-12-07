@@ -12,7 +12,10 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-var errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
+var (
+	errEmptyInAnyOf                        = errors.New("canno have empty anyOf array")
+	errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
+)
 
 const float64Type = "float64"
 
@@ -521,7 +524,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 }
 
 func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	if len(t.Properties) == 0 {
+	if len(t.Properties) == 0 && len(t.AllOf) == 0 && len(t.AnyOf) == 0 {
 		if len(t.Required) > 0 {
 			g.warner("Object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
@@ -625,6 +628,14 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		structType.AddField(structField)
 	}
 
+	if len(t.AnyOf) > 0 {
+		return g.generateAnyOfType(t.AnyOf, scope)
+	}
+
+	if len(t.AllOf) > 0 {
+		return g.generateAllOfType(t.AllOf, scope)
+	}
+
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
 	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
 		if len(t.AdditionalProperties.Type) > 1 {
@@ -700,6 +711,46 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	return &structType, nil
 }
 
+func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
+	if len(anyOf) == 0 {
+		return nil, errEmptyInAnyOf
+	}
+
+	rAnyOf, err := g.resolveRefs(anyOf)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, typ := range rAnyOf {
+		typ.SetSubSchemaTypeElem()
+
+		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
+			return nil, err
+		}
+	}
+
+	anyOfType, err := schemas.AnyOf(rAnyOf)
+	if err != nil {
+		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
+	}
+
+	return g.generateTypeInline(anyOfType, scope)
+}
+
+func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
+	rAllOf, err := g.resolveRefs(allOf)
+	if err != nil {
+		return nil, err
+	}
+
+	allOfType, err := schemas.AllOf(rAllOf)
+	if err != nil {
+		return nil, fmt.Errorf("could not merge allOf types: %w", err)
+	}
+
+	return g.generateTypeInline(allOfType, scope)
+}
+
 func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	if prop.AdditionalProperties != nil {
 		if len(prop.AdditionalProperties.Type) == 0 {
@@ -749,39 +800,11 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AnyOf) > 0 {
-			rAnyOf, err := g.resolveRefs(t.AnyOf)
-			if err != nil {
-				return nil, err
-			}
-
-			for i, typ := range rAnyOf {
-				typ.SetSubSchemaTypeElem()
-
-				if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
-					return nil, err
-				}
-			}
-
-			anyOfType, err := schemas.AnyOf(rAnyOf)
-			if err != nil {
-				return nil, fmt.Errorf("could not merge anyOf types: %w", err)
-			}
-
-			return g.generateTypeInline(anyOfType, scope)
+			return g.generateAnyOfType(t.AnyOf, scope)
 		}
 
 		if len(t.AllOf) > 0 {
-			rAllOf, err := g.resolveRefs(t.AllOf)
-			if err != nil {
-				return nil, err
-			}
-
-			allOfType, err := schemas.AllOf(rAllOf)
-			if err != nil {
-				return nil, fmt.Errorf("could not merge allOf types: %w", err)
-			}
-
-			return g.generateTypeInline(allOfType, scope)
+			return g.generateAllOfType(t.AllOf, scope)
 		}
 
 		typeIndex := 0

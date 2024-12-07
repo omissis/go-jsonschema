@@ -1,5 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "id": "https://example.com/objectAllOf",
+    "description": "object with anyOf properties, some with $defs",
+    "type": "object",
     "$defs": {
         "foo": {
             "type": "object",
@@ -13,8 +16,6 @@
             ]
         }
     },
-    "id": "https://example.com/objectAllOf",
-    "type": "object",
     "properties": {
         "configurations": {
             "type": "array",

@@ -7,6 +7,7 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// object with anyOf properties, some with $defs
 type AnyOf2 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
 	Configurations []AnyOf2ConfigurationsElem `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`

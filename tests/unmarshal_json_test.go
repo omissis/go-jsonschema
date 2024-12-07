@@ -99,16 +99,58 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 					}
 				]
 			}`,
-			target: &testAnyOf.AnyOf1{},
+			target: &testAnyOf.AnyOf2{},
 			assertFn: func(target any) {
 				assert.Equal(
 					t,
-					&testAnyOf.AnyOf1{
-						Configurations: []testAnyOf.AnyOf1ConfigurationsElem{
+					&testAnyOf.AnyOf2{
+						Configurations: []testAnyOf.AnyOf2ConfigurationsElem{
 							{Foo: "ciao"},
 							{Bar: 2.0},
 							{Baz: ptr(false)},
 						},
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc:   "anyOf.3 - 1",
+			json:   `{"foo": "ciao"}`,
+			target: &testAnyOf.AnyOf3{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAnyOf.AnyOf3{
+						Foo: "ciao",
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc:   "anyOf.3 - 2",
+			json:   `{"bar": 2.0}`,
+			target: &testAnyOf.AnyOf3{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAnyOf.AnyOf3{
+						Bar: 2.0,
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc:   "anyOf.3 - 3",
+			json:   `{"configurations": ["ciao"]}`,
+			target: &testAnyOf.AnyOf3{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAnyOf.AnyOf3{
+						Configurations: []any{"ciao"},
 					},
 					target,
 				)
@@ -138,7 +180,7 @@ func TestJsonUmarshalAllOf(t *testing.T) {
 		assertFn func(target any)
 	}{
 		{
-			desc: "allOf - 1",
+			desc: "allOf.1 - 1",
 			json: `{
 				"configurations": [
 					{
@@ -147,15 +189,55 @@ func TestJsonUmarshalAllOf(t *testing.T) {
 					}
 				]
 			}`,
-			target: &testAllOf.AllOf{},
+			target: &testAllOf.AllOf1{},
 			assertFn: func(target any) {
 				assert.Equal(
 					t,
-					&testAllOf.AllOf{
-						Configurations: []testAllOf.AllOfConfigurationsElem{
+					&testAllOf.AllOf1{
+						Configurations: []testAllOf.AllOf1ConfigurationsElem{
 							{Foo: "hello", Bar: 2.2},
 						},
 					},
+					target,
+				)
+			},
+		},
+		{
+			desc: "allOf.2 - 1",
+			json: `{
+				"configurations": [
+					{
+						"foo": "hello",
+						"bar": 2.2,
+						"baz": true
+					}
+				]
+			}`,
+			target: &testAllOf.AllOf2{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAllOf.AllOf2{
+						Configurations: []testAllOf.AllOf2ConfigurationsElem{
+							{Foo: "hello", Bar: 2.2, Baz: ptr(true)},
+						},
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc: "allOf.3 - 1",
+			json: `{
+				"foo": "hello",
+				"bar": 2.2,
+				"configurations": ["ciao"]
+			}`,
+			target: &testAllOf.AllOf3{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAllOf.AllOf3{Foo: "hello", Bar: 2.2, Configurations: []any{"ciao"}},
 					target,
 				)
 			},

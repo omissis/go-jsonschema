@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "id": "https://example.com/objectAllOf",
+    "description": "object with anyOf properties",
     "type": "object",
     "properties": {
         "flags": {
