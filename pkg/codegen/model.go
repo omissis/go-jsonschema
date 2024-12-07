@@ -219,6 +219,16 @@ type Type interface {
 	IsNillable() bool
 }
 
+type AliasType struct {
+	Decl
+	Alias string
+	Name  string
+}
+
+func (p AliasType) Generate(out *Emitter) {
+	out.Printf("type %s = %s", p.Alias, p.Name)
+}
+
 type PointerType struct {
 	Type Type
 }

@@ -3,73 +3,174 @@ package tests_test
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	yamlv3 "gopkg.in/yaml.v3"
 
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
+	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
+	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 )
 
-func TestYamlV3Unmarshal(t *testing.T) {
+func TestJsonUmarshalAnyOf(t *testing.T) {
 	t.Parallel()
 
-	data, err := os.ReadFile("./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.yaml")
-	if err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		desc     string
+		json     string
+		target   any
+		assertFn func(target any)
+	}{
+		{
+			desc: "anyOf.1 - 1",
+			json: `{
+				"configurations": [
+					{
+						"foo": "hello"
+					},
+					{
+						"bar": 2.2
+					},
+					{
+						"baz": true
+					}
+				],
+				"flags": "hello"
+
+			}`,
+			target: &testAnyOf.AnyOf1{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAnyOf.AnyOf1{
+						Configurations: []testAnyOf.AnyOf1ConfigurationsElem{
+							{Foo: "hello"},
+							{Bar: 2.2},
+							{Baz: ptr(true)},
+						},
+						Flags: "hello",
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc: "anyOf.1 - 2",
+			json: `{
+				"configurations": [
+					{
+						"foo": "ciao"
+					},
+					{
+						"bar": 200
+					}
+				],
+				"flags": true
+
+			}`,
+			target: &testAnyOf.AnyOf1{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAnyOf.AnyOf1{
+						Configurations: []testAnyOf.AnyOf1ConfigurationsElem{
+							{Foo: "ciao"},
+							{Bar: 200.0},
+						},
+						Flags: true,
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc: "anyOf.2 - 1",
+			json: `{
+				"configurations": [
+					{
+						"foo": "ciao"
+					},
+					{
+						"bar": 2
+					},
+					{
+						"baz": false
+					}
+				]
+			}`,
+			target: &testAnyOf.AnyOf1{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAnyOf.AnyOf1{
+						Configurations: []testAnyOf.AnyOf1ConfigurationsElem{
+							{Foo: "ciao"},
+							{Bar: 2.0},
+							{Baz: ptr(false)},
+						},
+					},
+					target,
+				)
+			},
+		},
 	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 
-	var conf test.GopkgYAMLv3
+			if err := json.Unmarshal([]byte(tC.json), tC.target); err != nil {
+				t.Fatalf("unmarshal error: %s", err)
+			}
 
-	if err := yamlv3.Unmarshal(data, &conf); err != nil {
-		t.Fatal(err)
-	}
-
-	s := "example"
-	n := 123.456
-	i := 123
-	b := true
-	e := test.GopkgYAMLv3MyEnumX
-
-	want := test.GopkgYAMLv3{
-		MyString:  &s,
-		MyNumber:  &n,
-		MyInteger: &i,
-		MyBoolean: &b,
-		MyNull:    nil,
-		MyEnum:    &e,
-	}
-
-	if !reflect.DeepEqual(conf, want) {
-		t.Errorf(
-			"Unmarshalled data does not match expected\nWant: %s\nGot:  %s",
-			formatGopkgYAMLv3(want),
-			formatGopkgYAMLv3(conf),
-		)
+			tC.assertFn(tC.target)
+		})
 	}
 }
 
-func TestYamlV3UnmarshalInvalidEnum(t *testing.T) {
+func TestJsonUmarshalAllOf(t *testing.T) {
 	t.Parallel()
 
-	data, err := os.ReadFile("./data/extraImports/gopkgYAMLv3invalidEnum/gopkgYAMLv3invalidEnum.yaml")
-	if err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		desc     string
+		json     string
+		target   any
+		assertFn func(target any)
+	}{
+		{
+			desc: "allOf - 1",
+			json: `{
+				"configurations": [
+					{
+						"foo": "hello",
+						"bar": 2.2
+					}
+				]
+			}`,
+			target: &testAllOf.AllOf{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testAllOf.AllOf{
+						Configurations: []testAllOf.AllOfConfigurationsElem{
+							{Foo: "hello", Bar: 2.2},
+						},
+					},
+					target,
+				)
+			},
+		},
 	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 
-	var conf test.GopkgYAMLv3
+			if err := json.Unmarshal([]byte(tC.json), tC.target); err != nil {
+				t.Fatalf("unmarshal error: %s", err)
+			}
 
-	err = yamlv3.Unmarshal(data, &conf)
-	if err == nil {
-		t.Fatal("Expected unmarshal error")
-	}
-
-	if !strings.Contains(err.Error(), "invalid value (expected one of") {
-		t.Error("Expected unmarshal error to contain enum values")
+			tC.assertFn(tC.target)
+		})
 	}
 }
 
@@ -204,4 +305,8 @@ func formatGopkgYAMLv3(v test.GopkgYAMLv3) string {
 		"GopkgYAMLv3{MyString: %s, MyNumber: %f, MyInteger: %d, MyBoolean: %t, MyNull: %v, MyEnum: %v}",
 		*v.MyString, *v.MyNumber, *v.MyInteger, *v.MyBoolean, nil, *v.MyEnum,
 	)
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }

@@ -177,6 +177,9 @@ type Type struct {
 	subSchemaType     SubSchemaType
 	subSchemasCount   int
 	subSchemaTypeElem bool
+
+	// flags
+	Dereferenced bool // marks that his type has been dereferenced
 }
 
 func (value *Type) SetSubSchemaType(sst SubSchemaType) {

@@ -198,6 +198,15 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
+		if t.Dereferenced == true {
+			decl := &codegen.AliasType{
+				Alias: scope.string(),
+				Name:  decl.Name,
+			}
+
+			g.output.file.Package.AddDecl(decl)
+		}
+
 		return &codegen.NamedType{Decl: decl}, nil
 	}
 
@@ -740,7 +749,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AnyOf) > 0 {
-			for i, typ := range t.AnyOf {
+			rAnyOf, err := g.resolveRefs(t.AnyOf)
+			if err != nil {
+				return nil, err
+			}
+
+			for i, typ := range rAnyOf {
 				typ.SetSubSchemaTypeElem()
 
 				if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
@@ -748,7 +762,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 				}
 			}
 
-			anyOfType, err := schemas.AnyOf(t.AnyOf)
+			anyOfType, err := schemas.AnyOf(rAnyOf)
 			if err != nil {
 				return nil, fmt.Errorf("could not merge anyOf types: %w", err)
 			}
@@ -757,7 +771,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AllOf) > 0 {
-			allOfType, err := schemas.AllOf(t.AllOf)
+			rAllOf, err := g.resolveRefs(t.AllOf)
+			if err != nil {
+				return nil, err
+			}
+
+			allOfType, err := schemas.AllOf(rAllOf)
 			if err != nil {
 				return nil, fmt.Errorf("could not merge allOf types: %w", err)
 			}
@@ -990,4 +1009,39 @@ func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (co
 	}
 
 	return &codegen.NamedType{Decl: &enumDecl}, nil
+}
+
+func (g *schemaGenerator) resolveRefs(types []*schemas.Type) ([]*schemas.Type, error) {
+	resolvedTypes := make([]*schemas.Type, 0, len(types))
+
+	for _, typ := range types {
+		resolvedType, err := g.resolveRef(typ)
+		if err != nil {
+			return nil, err
+		}
+
+		resolvedTypes = append(resolvedTypes, resolvedType)
+	}
+
+	return resolvedTypes, nil
+}
+
+func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
+	if t.Ref == "" {
+		return t, nil
+	}
+
+	typ, err := g.generateReferencedType(t.Ref)
+	if err != nil {
+		return nil, err
+	}
+
+	ntyp, ok := typ.(*codegen.NamedType)
+	if !ok {
+		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
+	}
+
+	ntyp.Decl.SchemaType.Dereferenced = true
+
+	return ntyp.Decl.SchemaType, nil
 }
