@@ -21,6 +21,14 @@ func (j *MinStr) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Verify checks all fields on the struct match the schema.
+func (plain MinStr) Verify() error {
+	if len(plain) < 5 {
+		return fmt.Errorf("field %s length: must be >= %d", "", 5)
+	}
+	return nil
+}
+
 type PrimitiveDefs struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
 	MyNullableString *MinStr `json:"myNullableString,omitempty" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
@@ -44,5 +52,21 @@ func (j *PrimitiveDefs) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = PrimitiveDefs(plain)
+	return nil
+}
+
+// Verify checks all fields on the struct match the schema.
+func (plain *PrimitiveDefs) Verify() error {
+	myNullableString := plain.MyNullableString
+	if myNullableString != nil {
+		pmyNullableString := myNullableString
+		if err := pmyNullableString.Verify(); err != nil {
+			return err
+		}
+	}
+	myString := plain.MyString
+	if err := myString.Verify(); err != nil {
+		return err
+	}
 	return nil
 }

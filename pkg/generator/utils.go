@@ -45,3 +45,13 @@ func isNamedType(t codegen.Type) bool {
 
 	return false
 }
+
+func enumVarName(wrapInStruct bool) string {
+	varName := "v"
+
+	if wrapInStruct {
+		varName += ".Value"
+	}
+
+	return varName
+}
