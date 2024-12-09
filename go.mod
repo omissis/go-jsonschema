@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
-	github.com/goccy/go-yaml v1.15.7
+	github.com/goccy/go-yaml v1.15.8
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/sanity-io/litter v1.5.5
