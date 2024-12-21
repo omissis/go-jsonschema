@@ -192,12 +192,12 @@ type Type struct {
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
 
 	// SubSchemaType marks the type as being a subschema type.
-	subSchemaType     SubSchemaType
-	subSchemasCount   int
-	subSchemaTypeElem bool
+	subSchemaType     SubSchemaType `json:"-"`
+	subSchemasCount   int           `json:"-"`
+	subSchemaTypeElem bool          `json:"-"`
 
 	// Flags.
-	Dereferenced bool // Marks that his type has been dereferenced.
+	Dereferenced bool `json:"-"` // Marks that his type has been dereferenced.
 }
 
 func (value *Type) SetSubSchemaType(sst SubSchemaType) {
