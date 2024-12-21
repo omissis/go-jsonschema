@@ -201,7 +201,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
-		if t.Dereferenced == true {
+		if t.Dereferenced {
 			decl := &codegen.AliasType{
 				Alias: scope.string(),
 				Name:  decl.Name,
@@ -508,6 +508,7 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 
 		if len(t.AnyOf) != 0 {
 			refType := t.AnyOf[0]
+
 			for k, v := range t.AnyOf {
 				if k == 0 {
 					continue
@@ -523,6 +524,7 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 
 		if len(t.AllOf) != 0 {
 			refType := t.AllOf[0]
+
 			for k, v := range t.AllOf {
 				if k == 0 {
 					continue
