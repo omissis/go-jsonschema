@@ -3,6 +3,9 @@
   "extends": [
     "config:base"
   ],
+  "constraints": {
+    "go": "1.22"
+  },
   "packageRules": [
     {
       "description": "Update all dependencies up to the minor release level",
