@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Minimum struct {
 	// MyInteger corresponds to the JSON schema field "myInteger".
@@ -20,9 +21,9 @@ type Minimum struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Minimum) UnmarshalJSON(b []byte) error {
+func (j *Minimum) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
@@ -33,7 +34,40 @@ func (j *Minimum) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Minimum
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 2 > plain.MyInteger {
+		return fmt.Errorf("field %s: must be >= %v", "myInteger", 2)
+	}
+	if plain.MyNullableInteger != nil && 2 > *plain.MyNullableInteger {
+		return fmt.Errorf("field %s: must be >= %v", "myNullableInteger", 2)
+	}
+	if plain.MyNullableNumber != nil && 1.2 > *plain.MyNullableNumber {
+		return fmt.Errorf("field %s: must be >= %v", "myNullableNumber", 1.2)
+	}
+	if 1.2 > plain.MyNumber {
+		return fmt.Errorf("field %s: must be >= %v", "myNumber", 1.2)
+	}
+	*j = Minimum(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Minimum) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field myInteger in Minimum: required")
+	}
+	if _, ok := raw["myNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field myNumber in Minimum: required")
+	}
+	type Plain Minimum
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if 2 > plain.MyInteger {

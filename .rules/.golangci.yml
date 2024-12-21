@@ -34,11 +34,11 @@ linters:
     - wastedassign
     # deprecated
     - exportloopref
-    - gomnd
-    - execinquery
     # unused
     - exhaustruct
     - forbidigo
+    - mnd
+
 linters-settings:
   decorder:
     disable-init-func-first-check: false
