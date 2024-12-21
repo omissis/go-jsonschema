@@ -600,76 +600,9 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	var structType codegen.StructType
 
 	for _, name := range sortedKeys(t.Properties) {
-		prop := t.Properties[name]
-		isRequired := requiredNames[name]
-
-		fieldName := g.caser.Identifierize(name)
-
-		if ext := prop.GoJSONSchemaExtension; ext != nil {
-			for _, pkg := range ext.Imports {
-				g.output.file.Package.AddImport(pkg, "")
-			}
-
-			if ext.Identifier != nil {
-				fieldName = *ext.Identifier
-			}
+		if err := g.addStructField(&structType, t, scope, name, uniqueNames, requiredNames); err != nil {
+			return nil, err
 		}
-
-		if count, ok := uniqueNames[fieldName]; ok {
-			uniqueNames[fieldName] = count + 1
-			fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
-			g.warner(fmt.Sprintf("Field %q maps to a field by the same name declared "+
-				"in the same struct; it will be declared as %s", name, fieldName))
-		} else {
-			uniqueNames[fieldName] = 1
-		}
-
-		structField := codegen.StructField{
-			Name:       fieldName,
-			Comment:    prop.Description,
-			JSONName:   name,
-			SchemaType: prop,
-		}
-
-		tags := ""
-
-		if isRequired {
-			for _, tag := range g.config.Tags {
-				tags += fmt.Sprintf(`%s:"%s" `, tag, name)
-			}
-		} else {
-			for _, tag := range g.config.Tags {
-				tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
-			}
-		}
-
-		structField.Tags = strings.TrimSpace(tags)
-
-		if structField.Comment == "" {
-			structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
-				structField.Name, name)
-		}
-
-		var err error
-
-		structField.Type, err = g.generateTypeInline(prop, scope.add(structField.Name))
-		if err != nil {
-			return nil, fmt.Errorf("could not generate type for field %q: %w", name, err)
-		}
-
-		switch {
-		case prop.Default != nil:
-			structField.DefaultValue = g.defaultPropertyValue(prop)
-
-		default:
-			if isRequired {
-				structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
-			} else if !structField.Type.IsNillable() {
-				structField.Type = codegen.WrapTypeInPointer(structField.Type)
-			}
-		}
-
-		structType.AddField(structField)
 	}
 
 	if len(t.AnyOf) > 0 {
@@ -753,6 +686,88 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	}
 
 	return &structType, nil
+}
+
+func (g *schemaGenerator) addStructField(
+	structType *codegen.StructType,
+	t *schemas.Type,
+	scope nameScope,
+	name string,
+	uniqueNames map[string]int,
+	requiredNames map[string]bool,
+) error {
+	prop := t.Properties[name]
+	isRequired := requiredNames[name]
+
+	fieldName := g.caser.Identifierize(name)
+
+	if ext := prop.GoJSONSchemaExtension; ext != nil {
+		for _, pkg := range ext.Imports {
+			g.output.file.Package.AddImport(pkg, "")
+		}
+
+		if ext.Identifier != nil {
+			fieldName = *ext.Identifier
+		}
+	}
+
+	if count, ok := uniqueNames[fieldName]; ok {
+		uniqueNames[fieldName] = count + 1
+		fieldName = fmt.Sprintf("%s_%d", fieldName, count+1)
+		g.warner(fmt.Sprintf("Field %q maps to a field by the same name declared "+
+			"in the same struct; it will be declared as %s", name, fieldName))
+	} else {
+		uniqueNames[fieldName] = 1
+	}
+
+	structField := codegen.StructField{
+		Name:       fieldName,
+		Comment:    prop.Description,
+		JSONName:   name,
+		SchemaType: prop,
+	}
+
+	tags := ""
+
+	if isRequired {
+		for _, tag := range g.config.Tags {
+			tags += fmt.Sprintf(`%s:"%s" `, tag, name)
+		}
+	} else {
+		for _, tag := range g.config.Tags {
+			tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
+		}
+	}
+
+	structField.Tags = strings.TrimSpace(tags)
+
+	if structField.Comment == "" {
+		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
+			structField.Name, name)
+	}
+
+	var err error
+
+	structField.Type, err = g.generateTypeInline(prop, scope.add(structField.Name))
+	if err != nil {
+		return fmt.Errorf("could not generate type for field %q: %w", name, err)
+	}
+
+	switch {
+	case prop.Default != nil:
+		structField.DefaultValue = g.defaultPropertyValue(prop)
+
+	default:
+		if isRequired {
+			structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+		} else if !structField.Type.IsNillable() {
+			structField.Type = codegen.WrapTypeInPointer(structField.Type)
+		}
+	}
+
+	structType.AddField(structField)
+
+	return nil
 }
 
 func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {

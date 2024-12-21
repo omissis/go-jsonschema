@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	exitErr *exec.ExitError
+	errExit *exec.ExitError
 
 	basicConfig = generator.Config{
 		SchemaMappings:     []generator.SchemaMapping{},
@@ -306,7 +306,7 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 		fmt.Sprintf("%s/expected", dir),
 		fmt.Sprintf("%s/actual", dir)).Output()
 
-	if !errors.As(err, &exitErr) {
+	if !errors.As(err, &errExit) {
 		t.Fatal(err.Error())
 	}
 
