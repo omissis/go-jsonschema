@@ -434,10 +434,6 @@ func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators 
 }
 
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	typeIndex := 0
-
-	var typeShouldBePointer bool
-
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -456,28 +452,9 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		return g.generateReferencedType(t.Ref)
 	}
 
-	if len(t.Type) == 0 {
-		return codegen.EmptyInterfaceType{}, nil
-	}
+	typeName, typePtr := g.determineTypeName(t)
 
-	if len(t.Type) == 2 {
-		for i, t := range t.Type {
-			if t == "null" {
-				typeShouldBePointer = true
-
-				continue
-			}
-
-			typeIndex = i
-		}
-	} else if len(t.Type) != 1 {
-		// TODO: Support validation for properties with multiple types.
-		g.warner("Property has multiple types; will be represented as interface{} with no validation")
-
-		return codegen.EmptyInterfaceType{}, nil
-	}
-
-	switch t.Type[typeIndex] {
+	switch typeName {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
 			return nil, errArrayPropertyItems
@@ -498,9 +475,9 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 	default:
 		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
-			t.Type[typeIndex],
+			typeName,
 			t.Format,
-			typeShouldBePointer,
+			typePtr,
 			g.config.MinSizedInts,
 			&t.Minimum,
 			&t.Maximum,
@@ -508,7 +485,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 			&t.ExclusiveMaximum,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
+			return nil, fmt.Errorf("invalid type %q: %w", typeName, err)
 		}
 
 		if ncg, ok := cg.(codegen.NamedType); ok {
@@ -521,6 +498,71 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 		return cg, nil
 	}
+}
+
+func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
+	if len(t.Type) == 0 {
+		if len(t.AnyOf) == 0 && len(t.AllOf) == 0 {
+			return schemas.TypeNameNull, false
+		}
+
+		if len(t.AnyOf) != 0 {
+			refType := t.AnyOf[0]
+			for k, v := range t.AnyOf {
+				if k == 0 {
+					continue
+				}
+
+				if !refType.Type.Equals(v.Type) {
+					return schemas.TypeNameNull, false
+				}
+			}
+
+			return g.determineTypeName(refType)
+		}
+
+		if len(t.AllOf) != 0 {
+			refType := t.AllOf[0]
+			for k, v := range t.AllOf {
+				if k == 0 {
+					continue
+				}
+
+				if !refType.Type.Equals(v.Type) {
+					return schemas.TypeNameNull, false
+				}
+			}
+
+			return g.determineTypeName(refType)
+		}
+
+		return schemas.TypeNameNull, false
+	}
+
+	if len(t.Type) == 1 {
+		return t.Type[0], false
+	}
+
+	if len(t.Type) == 2 {
+		tidx := 0
+		isPtr := false
+
+		for k, v := range t.Type {
+			if v == "null" {
+				isPtr = true
+
+				continue
+			}
+
+			tidx = k
+		}
+
+		return t.Type[tidx], isPtr
+	}
+
+	g.warner("Property has multiple types; will be represented as interface{} with no validation")
+
+	return schemas.TypeNameNull, false
 }
 
 func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {

@@ -109,6 +109,24 @@ func (t *TypeList) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+func (t *TypeList) Equals(b TypeList) bool {
+	if t == nil {
+		return false
+	}
+
+	if len(*t) != len(b) {
+		return false
+	}
+
+	for i := range *t {
+		if (*t)[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Definitions hold schema definitions.
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26.
