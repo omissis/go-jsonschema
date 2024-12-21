@@ -329,7 +329,7 @@ type StructType struct {
 	DefaultValue       interface{}
 }
 
-func (StructType) IsNillable() bool { return false }
+func (*StructType) IsNillable() bool { return false }
 
 func (s *StructType) AddField(f StructField) {
 	s.Fields = append(s.Fields, f)
