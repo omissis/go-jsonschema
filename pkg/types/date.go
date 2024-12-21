@@ -9,6 +9,7 @@ import (
 
 var ErrDateNotJSONString = errors.New("cannot parse non-string value as a date")
 
+//nolint:recvcheck // json marshal/unmarshal require value and pointer receivers
 type SerializableDate struct {
 	time.Time
 }
