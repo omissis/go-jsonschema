@@ -34,12 +34,9 @@ linters:
     - wastedassign
     # deprecated
     - exportloopref
-    - gomnd
-    - execinquery
     # unused
     - exhaustruct
     - forbidigo
-    - gomnd
     - mnd
 
 linters-settings:
