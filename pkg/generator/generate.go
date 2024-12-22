@@ -138,12 +138,7 @@ func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
 		return err
 	}
 
-	return (&schemaGenerator{
-		Generator:      g,
-		schema:         schema,
-		schemaFileName: fileName,
-		output:         o,
-	}).generateRootType()
+	return newSchemaGenerator(g, schema, fileName, o).generateRootType()
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {

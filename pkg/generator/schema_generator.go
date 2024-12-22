@@ -19,11 +19,27 @@ var (
 
 const float64Type = "float64"
 
+func newSchemaGenerator(
+	g *Generator,
+	schema *schemas.Schema,
+	fileName string,
+	output *output,
+) *schemaGenerator {
+	return &schemaGenerator{
+		Generator:        g,
+		schema:           schema,
+		schemaFileName:   fileName,
+		output:           output,
+		schemaTypesByRef: make(map[string]*schemas.Type),
+	}
+}
+
 type schemaGenerator struct {
 	*Generator
-	output         *output
-	schema         *schemas.Schema
-	schemaFileName string
+	output           *output
+	schema           *schemas.Schema
+	schemaFileName   string
+	schemaTypesByRef map[string]*schemas.Type
 }
 
 func (g *schemaGenerator) generateRootType() error {
@@ -112,12 +128,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 			return nil, oerr
 		}
 
-		sg = &schemaGenerator{
-			Generator:      g.Generator,
-			schema:         schema,
-			schemaFileName: fileName,
-			output:         output,
-		}
+		sg = newSchemaGenerator(g.Generator, schema, fileName, output)
 	}
 
 	qual := qualifiedDefinition{
@@ -775,10 +786,7 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 		return nil, errEmptyInAnyOf
 	}
 
-	rAnyOf, err := g.resolveRefs(anyOf)
-	if err != nil {
-		return nil, err
-	}
+	rAnyOf := g.resolveRefs(anyOf)
 
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
@@ -797,10 +805,7 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 }
 
 func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	rAllOf, err := g.resolveRefs(allOf)
-	if err != nil {
-		return nil, err
-	}
+	rAllOf := g.resolveRefs(allOf)
 
 	allOfType, err := schemas.AllOf(rAllOf)
 	if err != nil {
@@ -1093,24 +1098,30 @@ func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (co
 	return &codegen.NamedType{Decl: &enumDecl}, nil
 }
 
-func (g *schemaGenerator) resolveRefs(types []*schemas.Type) ([]*schemas.Type, error) {
+func (g *schemaGenerator) resolveRefs(types []*schemas.Type) []*schemas.Type {
 	resolvedTypes := make([]*schemas.Type, 0, len(types))
 
 	for _, typ := range types {
 		resolvedType, err := g.resolveRef(typ)
 		if err != nil {
-			return nil, err
+			g.warner(fmt.Sprintf("Could not resolve ref %q: %v", typ.Ref, err))
+
+			continue
 		}
 
 		resolvedTypes = append(resolvedTypes, resolvedType)
 	}
 
-	return resolvedTypes, nil
+	return resolvedTypes
 }
 
 func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 	if t.Ref == "" {
 		return t, nil
+	}
+
+	if _, ok := g.schemaTypesByRef[t.Ref]; ok {
+		return g.schemaTypesByRef[t.Ref], nil
 	}
 
 	typ, err := g.generateReferencedType(t.Ref)
@@ -1124,6 +1135,8 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 	}
 
 	ntyp.Decl.SchemaType.Dereferenced = true
+
+	g.schemaTypesByRef[t.Ref] = ntyp.Decl.SchemaType
 
 	return ntyp.Decl.SchemaType, nil
 }
