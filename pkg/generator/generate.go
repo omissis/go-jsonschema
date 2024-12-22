@@ -26,6 +26,7 @@ var (
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
+	errCannotResolveRef               = errors.New("cannot resolve reference")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
@@ -138,12 +139,7 @@ func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
 		return err
 	}
 
-	return (&schemaGenerator{
-		Generator:      g,
-		schema:         schema,
-		schemaFileName: fileName,
-		output:         o,
-	}).generateRootType()
+	return newSchemaGenerator(g, schema, fileName, o).generateRootType()
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {

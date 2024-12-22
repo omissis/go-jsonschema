@@ -19,11 +19,27 @@ var (
 
 const float64Type = "float64"
 
+func newSchemaGenerator(
+	g *Generator,
+	schema *schemas.Schema,
+	fileName string,
+	output *output,
+) *schemaGenerator {
+	return &schemaGenerator{
+		Generator:        g,
+		schema:           schema,
+		schemaFileName:   fileName,
+		output:           output,
+		schemaTypesByRef: make(map[string]*schemas.Type),
+	}
+}
+
 type schemaGenerator struct {
 	*Generator
-	output         *output
-	schema         *schemas.Schema
-	schemaFileName string
+	output           *output
+	schema           *schemas.Schema
+	schemaFileName   string
+	schemaTypesByRef map[string]*schemas.Type
 }
 
 func (g *schemaGenerator) generateRootType() error {
@@ -55,6 +71,18 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, error) {
+	if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
+		if decl, ok := schemaOutput.declsByName[ref]; ok {
+			if decl != nil {
+				return decl.Type, nil
+			}
+		}
+	}
+
+	// if ref == "#" {
+	// 	return codegen.EmptyInterfaceType{}, nil
+	// }
+
 	fileName := ref
 
 	var scope, defName string
@@ -112,12 +140,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 			return nil, oerr
 		}
 
-		sg = &schemaGenerator{
-			Generator:      g.Generator,
-			schema:         schema,
-			schemaFileName: fileName,
-			output:         output,
-		}
+		sg = newSchemaGenerator(g.Generator, schema, fileName, output)
 	}
 
 	qual := qualifiedDefinition{
@@ -1099,6 +1122,12 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type) ([]*schemas.Type, e
 	for _, typ := range types {
 		resolvedType, err := g.resolveRef(typ)
 		if err != nil {
+			if errors.Is(err, errCannotResolveRef) {
+				g.warner(fmt.Sprintf("Could not resolve ref %q; skipping it", typ.Ref))
+
+				continue
+			}
+
 			return nil, err
 		}
 
@@ -1109,21 +1138,39 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type) ([]*schemas.Type, e
 }
 
 func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
-	if t.Ref == "" {
-		return t, nil
+	if t.Ref == "" || t.Ref == "#" {
+		return nil, fmt.Errorf("%w: %s is not supported", errCannotResolveRef, t.Ref)
+	}
+
+	if _, ok := g.schemaTypesByRef[t.Ref]; ok {
+		return g.schemaTypesByRef[t.Ref], nil
 	}
 
 	typ, err := g.generateReferencedType(t.Ref)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
 	}
 
-	ntyp, ok := typ.(*codegen.NamedType)
-	if !ok {
-		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
+	ptyp, err := g.extractPointedType(typ)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
 	}
 
-	ntyp.Decl.SchemaType.Dereferenced = true
+	g.schemaTypesByRef[t.Ref] = ptyp.Decl.SchemaType
 
-	return ntyp.Decl.SchemaType, nil
+	return ptyp.Decl.SchemaType, nil
+}
+
+func (g *schemaGenerator) extractPointedType(typ codegen.Type) (*codegen.NamedType, error) {
+	if rtyp, ok := typ.(*codegen.PointerType); ok {
+		if ntyp, ok := rtyp.Type.(*codegen.NamedType); ok {
+			return ntyp, nil
+		}
+	}
+
+	if ntyp, ok := typ.(*codegen.NamedType); ok {
+		return ntyp, nil
+	}
+
+	return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
 }

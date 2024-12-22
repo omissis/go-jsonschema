@@ -290,11 +290,11 @@ func AnyOf(types []*Type) (*Type, error) {
 }
 
 func MergeTypes(types []*Type) (*Type, error) {
-	if len(types) == 0 {
-		return nil, ErrEmptyTypesList
-	}
-
 	result := &Type{}
+
+	if len(types) == 0 {
+		return result, nil
+	}
 
 	if isPrimitiveTypeList(types) {
 		return result, nil
