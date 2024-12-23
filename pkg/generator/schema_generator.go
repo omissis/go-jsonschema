@@ -70,15 +70,35 @@ func (g *schemaGenerator) generateRootType() error {
 	return err
 }
 
-func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, error) {
-	fileName := ref
+func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
+	if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
+		if decl, ok := schemaOutput.declsByName[t.Ref]; ok {
+			if decl != nil {
+				return decl.Type, nil
+			}
+		}
+	}
+
+	if t.Ref == "#" {
+		if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
+			if decl, ok := schemaOutput.declsBySchema[t]; ok {
+				if decl != nil {
+					return decl.Type, nil
+				}
+			}
+		}
+
+		return codegen.EmptyInterfaceType{}, nil
+	}
+
+	fileName := t.Ref
 
 	var scope, defName string
 
-	if i := strings.IndexRune(ref, '#'); i != -1 {
+	if i := strings.IndexRune(t.Ref, '#'); i != -1 {
 		var prefix string
 
-		fileName, scope = ref[0:i], ref[i+1:]
+		fileName, scope = t.Ref[0:i], t.Ref[i+1:]
 		lowercaseScope := strings.ToLower(scope)
 
 		for _, currentPrefix := range []string{
@@ -96,7 +116,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 			return nil, fmt.Errorf(
 				"%w: value must point to definition within file: '%s'",
 				errCannotGenerateReferencedType,
-				ref,
+				t.Ref,
 			)
 		}
 
@@ -111,7 +131,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 		schema, serr = g.loader.Load(fileName, g.schemaFileName)
 		if serr != nil {
-			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", ref, fileName, serr)
+			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", t.Ref, fileName, serr)
 		}
 
 		qualified, qerr := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
@@ -144,7 +164,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 
 		def, ok = schema.Definitions[defName]
 		if !ok {
-			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, ref)
+			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
 		}
 
 		if len(def.Type) == 0 && len(def.Properties) == 0 {
@@ -170,12 +190,12 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}()
 	}
 
-	t, err := sg.generateDeclaredType(def, newNameScope(defName))
+	dt, err := sg.generateDeclaredType(def, newNameScope(defName))
 	if err != nil {
 		return nil, err
 	}
 
-	nt, ok := t.(*codegen.NamedType)
+	nt, ok := dt.(*codegen.NamedType)
 	if !ok {
 		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, t)
 	}
@@ -183,11 +203,11 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 	if isCycle {
 		g.warner(fmt.Sprintf("Cycle detected; must wrap type %s in pointer", nt.Decl.Name))
 
-		t = codegen.WrapTypeInPointer(t)
+		dt = codegen.WrapTypeInPointer(dt)
 	}
 
 	if sg.output.file.Package.QualifiedName == g.output.file.Package.QualifiedName {
-		return t, nil
+		return dt, nil
 	}
 
 	var imp *codegen.Import
@@ -460,7 +480,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	}
 
 	if t.Ref != "" {
-		return g.generateReferencedType(t.Ref)
+		return g.generateReferencedType(t)
 	}
 
 	typeName, typePtr := g.determineTypeName(t)
@@ -1124,14 +1144,14 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 		return g.schemaTypesByRef[t.Ref], nil
 	}
 
-	typ, err := g.generateReferencedType(t.Ref)
+	typ, err := g.generateReferencedType(t)
 	if err != nil {
 		return nil, err
 	}
 
-	ntyp, ok := typ.(*codegen.NamedType)
-	if !ok {
-		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
+	ntyp, err := g.extractPointedType(typ)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
 	}
 
 	ntyp.Decl.SchemaType.Dereferenced = true
@@ -1139,4 +1159,20 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 	g.schemaTypesByRef[t.Ref] = ntyp.Decl.SchemaType
 
 	return ntyp.Decl.SchemaType, nil
+}
+
+func (g *schemaGenerator) extractPointedType(typ codegen.Type) (*codegen.NamedType, error) {
+	if rtyp, ok := typ.(*codegen.PointerType); ok {
+		if ntyp, ok := rtyp.Type.(*codegen.NamedType); ok {
+			return ntyp, nil
+		}
+
+	}
+
+	if ntyp, ok := typ.(*codegen.NamedType); ok {
+		return ntyp, nil
+	}
+
+	return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
+
 }
