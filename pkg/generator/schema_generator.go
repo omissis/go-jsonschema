@@ -233,12 +233,14 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
-			decl := &codegen.AliasType{
-				Alias: scope.string(),
-				Name:  decl.Name,
-			}
+			if decl.Name != scope.string() {
+				decl := &codegen.AliasType{
+					Alias: scope.string(),
+					Name:  decl.Name,
+				}
 
-			g.output.file.Package.AddDecl(decl)
+				g.output.file.Package.AddDecl(decl)
+			}
 		}
 
 		return &codegen.NamedType{Decl: decl}, nil
