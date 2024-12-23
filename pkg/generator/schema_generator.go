@@ -91,36 +91,9 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
-	fileName := t.Ref
-
-	var scope, defName string
-
-	if i := strings.IndexRune(t.Ref, '#'); i != -1 {
-		var prefix string
-
-		fileName, scope = t.Ref[0:i], t.Ref[i+1:]
-		lowercaseScope := strings.ToLower(scope)
-
-		for _, currentPrefix := range []string{
-			"/$defs/",       // Draft-handrews-json-schema-validation-02.
-			"/definitions/", // Legacy.
-		} {
-			if strings.HasPrefix(lowercaseScope, currentPrefix) {
-				prefix = currentPrefix
-
-				break
-			}
-		}
-
-		if len(prefix) == 0 {
-			return nil, fmt.Errorf(
-				"%w: value must point to definition within file: '%s'",
-				errCannotGenerateReferencedType,
-				t.Ref,
-			)
-		}
-
-		defName = scope[len(prefix):]
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, err
 	}
 
 	schema := g.schema
@@ -228,6 +201,42 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		Package: &sg.output.file.Package,
 		Decl:    nt.Decl,
 	}, nil
+}
+
+func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, error) {
+	scope := ""
+	defName := ""
+	fileName := t.Ref
+
+	if i := strings.IndexRune(t.Ref, '#'); i != -1 {
+		var prefix string
+
+		fileName, scope = t.Ref[0:i], t.Ref[i+1:]
+		lowercaseScope := strings.ToLower(scope)
+
+		for _, currentPrefix := range []string{
+			"/$defs/",       // Draft-handrews-json-schema-validation-02.
+			"/definitions/", // Legacy.
+		} {
+			if strings.HasPrefix(lowercaseScope, currentPrefix) {
+				prefix = currentPrefix
+
+				break
+			}
+		}
+
+		if len(prefix) == 0 {
+			return "", "", fmt.Errorf(
+				"%w: value must point to definition within file: '%s'",
+				errCannotGenerateReferencedType,
+				t.Ref,
+			)
+		}
+
+		defName = scope[len(prefix):]
+	}
+
+	return defName, fileName, nil
 }
 
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -1168,7 +1177,6 @@ func (g *schemaGenerator) extractPointedType(typ codegen.Type) (*codegen.NamedTy
 		if ntyp, ok := rtyp.Type.(*codegen.NamedType); ok {
 			return ntyp, nil
 		}
-
 	}
 
 	if ntyp, ok := typ.(*codegen.NamedType); ok {
@@ -1176,5 +1184,4 @@ func (g *schemaGenerator) extractPointedType(typ codegen.Type) (*codegen.NamedTy
 	}
 
 	return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
-
 }
