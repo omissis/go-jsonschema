@@ -32,10 +32,6 @@ var (
 	}
 )
 
-func TestDebug(t *testing.T) {
-	testExampleFile(t, basicConfig, "./data/core/anyOf/anyOf.ref.json")
-}
-
 func TestCore(t *testing.T) {
 	t.Parallel()
 
