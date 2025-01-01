@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Primitives struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
@@ -23,14 +24,32 @@ type Primitives struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Primitives) UnmarshalJSON(b []byte) error {
+func (j *Primitives) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain Primitives
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.MyNull != nil {
+		return fmt.Errorf("field %s: must be null", "myNull")
+	}
+	*j = Primitives(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Primitives) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	type Plain Primitives
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.MyNull != nil {

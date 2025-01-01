@@ -6,4 +6,3 @@ coverage/
 bin/
 dist/
 vendor/
-go.work

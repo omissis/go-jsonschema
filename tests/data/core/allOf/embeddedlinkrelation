@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdevents.dev/0.5.0-draft/schema/links/embeddedlinkrelation",
+  "properties": {
+    "linkType": {
+      "type": "string",
+      "enum": [
+        "RELATION"
+      ]
+    },
+    "linkKind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "contextId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "linkType",
+    "linkKind",
+    "target"
+  ]
+}
+

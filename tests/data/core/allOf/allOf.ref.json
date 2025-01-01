@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "TextContent": {
+            "description": "Text provided to or from an LLM.",
+            "properties": {
+                "text": {
+                    "description": "The text content of the message.",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "text"
+            ],
+            "type": "object"
+        },
+        "CallToolResult": {
+            "description": "The server's response to a tool call",
+            "properties": {
+                "content": {
+                    "items": {
+                        "allOf": [
+                            {
+                                "$ref": "#/definitions/TextContent"
+                            }
+                        ]
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        }
+    }
+}

@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type RequiredNullable struct {
 	// MyNullableObject corresponds to the JSON schema field "myNullableObject".
@@ -23,9 +24,9 @@ type RequiredNullableMyNullableObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *RequiredNullableMyNullableObject) UnmarshalJSON(b []byte) error {
+func (j *RequiredNullableMyNullableObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myNestedProp"]; raw != nil && !ok {
@@ -33,7 +34,25 @@ func (j *RequiredNullableMyNullableObject) UnmarshalJSON(b []byte) error {
 	}
 	type Plain RequiredNullableMyNullableObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = RequiredNullableMyNullableObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RequiredNullableMyNullableObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myNestedProp"]; raw != nil && !ok {
+		return fmt.Errorf("field myNestedProp in RequiredNullableMyNullableObject: required")
+	}
+	type Plain RequiredNullableMyNullableObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = RequiredNullableMyNullableObject(plain)
@@ -41,9 +60,9 @@ func (j *RequiredNullableMyNullableObject) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *RequiredNullable) UnmarshalJSON(b []byte) error {
+func (j *RequiredNullable) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myNullableObject"]; raw != nil && !ok {
@@ -57,7 +76,31 @@ func (j *RequiredNullable) UnmarshalJSON(b []byte) error {
 	}
 	type Plain RequiredNullable
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = RequiredNullable(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RequiredNullable) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myNullableObject"]; raw != nil && !ok {
+		return fmt.Errorf("field myNullableObject in RequiredNullable: required")
+	}
+	if _, ok := raw["myNullableString"]; raw != nil && !ok {
+		return fmt.Errorf("field myNullableString in RequiredNullable: required")
+	}
+	if _, ok := raw["myNullableStringArray"]; raw != nil && !ok {
+		return fmt.Errorf("field myNullableStringArray in RequiredNullable: required")
+	}
+	type Plain RequiredNullable
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = RequiredNullable(plain)

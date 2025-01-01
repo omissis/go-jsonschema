@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type ExclusiveMaximumOld struct {
 	// MyInteger corresponds to the JSON schema field "myInteger".
@@ -20,9 +21,9 @@ type ExclusiveMaximumOld struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ExclusiveMaximumOld) UnmarshalJSON(b []byte) error {
+func (j *ExclusiveMaximumOld) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
@@ -33,7 +34,37 @@ func (j *ExclusiveMaximumOld) UnmarshalJSON(b []byte) error {
 	}
 	type Plain ExclusiveMaximumOld
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if 2 <= plain.MyInteger {
+		return fmt.Errorf("field %s: must be < %v", "myInteger", 2)
+	}
+	if plain.MyNullableInteger != nil && 2 <= *plain.MyNullableInteger {
+		return fmt.Errorf("field %s: must be < %v", "myNullableInteger", 2)
+	}
+	if 1.2 <= plain.MyNumber {
+		return fmt.Errorf("field %s: must be < %v", "myNumber", 1.2)
+	}
+	*j = ExclusiveMaximumOld(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ExclusiveMaximumOld) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field myInteger in ExclusiveMaximumOld: required")
+	}
+	if _, ok := raw["myNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field myNumber in ExclusiveMaximumOld: required")
+	}
+	type Plain ExclusiveMaximumOld
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if 2 <= plain.MyInteger {
