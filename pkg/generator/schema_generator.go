@@ -336,6 +336,13 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 				})
 			}
 
+			if f.SchemaType.ReadOnly {
+				validators = append(validators, &readOnlyValidator{
+					jsonName: f.JSONName,
+					declName: decl.Name,
+				})
+			}
+
 			validators = g.structFieldValidators(validators, f, f.Type, false)
 		}
 

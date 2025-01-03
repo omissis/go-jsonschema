@@ -25,6 +25,7 @@ type validatorDesc struct {
 
 var (
 	_ validator = new(requiredValidator)
+	_ validator = new(readOnlyValidator)
 	_ validator = new(nullTypeValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
@@ -50,6 +51,29 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) {
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+}
+
+type readOnlyValidator struct {
+	jsonName string
+	declName string
+}
+
+func (v *readOnlyValidator) generate(out *codegen.Emitter) {
+	// The container itself may be null (if the type is ["null", "object"]), in which case
+	// the map will be nil and none of the properties are present. This shouldn't fail
+	// the validation, though, as that's allowed as long as the container is allowed to be null.
+	out.Printlnf(`if _, ok := %s["%s"]; %s != nil && ok {`, varNameRawMap, v.jsonName, varNameRawMap)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, v.jsonName, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+}
+
+func (v *readOnlyValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
