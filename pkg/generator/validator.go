@@ -250,8 +250,8 @@ func (v *stringValidator) generate(out *codegen.Emitter) {
 		)
 		out.Indent(1)
 		out.Printlnf(
-			`return fmt.Errorf("field %%s pattern match: must match %%s", `+"`%s`"+`, "%s")`,
-			v.pattern, v.fieldName,
+			`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", `+"`%s`"+`)`,
+			v.fieldName, v.pattern,
 		)
 		out.Indent(-1)
 		out.Printlnf("}")
