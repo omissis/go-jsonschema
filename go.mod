@@ -11,7 +11,7 @@ require (
 	github.com/sanity-io/litter v1.5.6
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/exp v0.0.0-20250128144449-3edf0e91c1ae
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
 )
 
 require (
