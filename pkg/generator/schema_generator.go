@@ -109,7 +109,7 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		sg = &schemaGenerator{
 			Generator:      g.Generator,
 			schema:         schema,
-			schemaFileName: fileName,
+			schemaFileName: qualified,
 			output:         output,
 		}
 	}
