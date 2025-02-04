@@ -17,9 +17,6 @@ var (
 	errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
 )
 
-var replaceJsonCharacters = []string{"\b", "\f", "\n", "\r", "\t"}
-var replaceJsonCharactersBy = []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
-
 const float64Type = "float64"
 
 func newSchemaGenerator(
@@ -379,8 +376,11 @@ func (g *schemaGenerator) structFieldValidators(
 		if v.Type == schemas.TypeNameString {
 			hasPattern := len(f.SchemaType.Pattern) != 0
 			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern {
-				// Double escape the escape characters so we don't effectively parse the escapes within the value
+				// Double escape the escape characters so we don't effectively parse the escapes within the value.
 				escapedPattern := f.SchemaType.Pattern
+
+				replaceJsonCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
+				replaceJsonCharacters := []string{"\b", "\f", "\n", "\r", "\t"}
 				for i, replace := range replaceJsonCharacters {
 					with := replaceJsonCharactersBy[i]
 					escapedPattern = strings.ReplaceAll(escapedPattern, replace, with)
