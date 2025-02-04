@@ -379,11 +379,11 @@ func (g *schemaGenerator) structFieldValidators(
 				// Double escape the escape characters so we don't effectively parse the escapes within the value.
 				escapedPattern := f.SchemaType.Pattern
 
-				replaceJsonCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
+				replaceJSONCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
 
 				replaceJSONCharacters := []string{"\b", "\f", "\n", "\r", "\t"}
 				for i, replace := range replaceJSONCharacters {
-					with := replaceJsonCharactersBy[i]
+					with := replaceJSONCharactersBy[i]
 					escapedPattern = strings.ReplaceAll(escapedPattern, replace, with)
 				}
 
