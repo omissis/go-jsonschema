@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "memory": {
+      "type": "string",
+      "pattern": "^\\d+([tgmk]b)?$",
+      "description": "An escaped character that would otherwise be wrongly used"
+    }
+  }
+}
