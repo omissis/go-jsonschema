@@ -87,6 +87,8 @@ var (
 				}
 				if s, ok := schemaOutputMap[id]; ok {
 					mapping.OutputName = s
+				} else {
+					mapping.OutputName = defaultOutput
 				}
 				if s, ok := schemaRootTypeMap[id]; ok {
 					mapping.RootType = s
