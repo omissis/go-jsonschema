@@ -171,6 +171,15 @@ func TestPattern(t *testing.T) {
 			data:    `{"myString": "0x123456"}`,
 			wantErr: errors.New("field MyString pattern match: must match ^0x[0-9a-f]{10}\\.$"),
 		},
+		{
+			desc: "no violations",
+			data: `{"myEscapedString": "${{SOME_VAR}}", "myString": "0x12345abcde."}`,
+		},
+		{
+			desc:    "myEscapedString does not match pattern",
+			data:    `{"myEscapedString": "${MISSING_CURLY_BRACKET}", "myString": "0x12345abcde."}`,
+			wantErr: errors.New("field MyEscapedString pattern match: must match ^\\$\\{\\{(.|[\\r\\n])*\\}\\}$"),
+		},
 	}
 
 	for _, tC := range testCases {

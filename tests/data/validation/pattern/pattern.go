@@ -7,6 +7,9 @@ import "fmt"
 import "regexp"
 
 type Pattern struct {
+	// MyEscapedString corresponds to the JSON schema field "myEscapedString".
+	MyEscapedString *string `json:"myEscapedString,omitempty" yaml:"myEscapedString,omitempty" mapstructure:"myEscapedString,omitempty"`
+
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
 	MyNullableString *string `json:"myNullableString,omitempty" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
 
@@ -27,6 +30,11 @@ func (j *Pattern) UnmarshalJSON(b []byte) error {
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
+	}
+	if plain.MyEscapedString != nil {
+		if matched, _ := regexp.MatchString(`^\$\{\{(.|[\r\n])*\}\}$`, string(*plain.MyEscapedString)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "MyEscapedString", `^\$\{\{(.|[\r\n])*\}\}$`)
+		}
 	}
 	if plain.MyNullableString != nil {
 		if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}$`, string(*plain.MyNullableString)); !matched {
