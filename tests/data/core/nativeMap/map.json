@@ -1,0 +1,13 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "http://example.com/object",
+    "type": "object",
+    "properties": {
+        "myMap": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "number"
+            }
+        }
+    }
+}
