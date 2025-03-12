@@ -6,10 +6,8 @@ import "encoding/json"
 
 type ObjectAdditionalProperties struct {
 	// Foo corresponds to the JSON schema field "foo".
-	Foo ObjectAdditionalPropertiesFoo `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
+	Foo map[string]string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
-
-type ObjectAdditionalPropertiesFoo map[string]string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectAdditionalProperties) UnmarshalJSON(b []byte) error {

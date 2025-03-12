@@ -7,7 +7,7 @@ import "fmt"
 
 type TestObject struct {
 	// Config corresponds to the JSON schema field "config".
-	Config TestObjectConfig `json:"config,omitempty" yaml:"config,omitempty" mapstructure:"config,omitempty"`
+	Config map[string]interface{} `json:"config,omitempty" yaml:"config,omitempty" mapstructure:"config,omitempty"`
 
 	// Name corresponds to the JSON schema field "name".
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
@@ -15,8 +15,6 @@ type TestObject struct {
 	// Owner corresponds to the JSON schema field "owner".
 	Owner string `json:"owner" yaml:"owner" mapstructure:"owner"`
 }
-
-type TestObjectConfig map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TestObject) UnmarshalJSON(b []byte) error {
