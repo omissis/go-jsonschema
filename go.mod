@@ -2,7 +2,7 @@ module github.com/atombender/go-jsonschema
 
 go 1.23.0
 
-toolchain go1.23.7
+toolchain go1.24.1
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
