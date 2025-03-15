@@ -56,14 +56,14 @@ func FromYAMLReader(r io.Reader) (*Schema, error) {
 
 	yamlutils.FixMapKeys(m)
 
-	b, err := json.Marshal(m)
+	value, err := json.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
 	var schema Schema
 
-	if err = json.Unmarshal(b, &schema); err != nil {
+	if err = json.Unmarshal(value, &schema); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 

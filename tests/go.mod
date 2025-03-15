@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	dario.cat/mergo v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/goccy/go-yaml v1.15.23 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect

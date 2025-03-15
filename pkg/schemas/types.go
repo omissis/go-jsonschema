@@ -30,3 +30,17 @@ func CleanNameForSorting(name string) string {
 
 	return name
 }
+
+func isPrimitiveTypeList(types []*Type) bool {
+	for _, typ := range types {
+		if len(typ.Type) == 0 {
+			continue
+		}
+
+		if !IsPrimitiveType(typ.Type[0]) {
+			return false
+		}
+	}
+
+	return true
+}
