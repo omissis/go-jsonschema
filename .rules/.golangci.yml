@@ -4,7 +4,7 @@
 
 # Options for analysis running.
 run:
-  go: "1.22"
+  go: "1.23"
   timeout: 5m
   modules-download-mode: readonly
 # output configuration options
