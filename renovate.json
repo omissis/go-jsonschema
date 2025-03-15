@@ -4,13 +4,12 @@
     "config:base"
   ],
   "constraints": {
-    "go": "1.22"
+    "go": "1.23"
   },
   "packageRules": [
     {
       "description": "Update all dependencies up to the minor release level",
       "matchUpdateTypes": [
-        "minor",
         "patch",
         "pin",
         "digest"

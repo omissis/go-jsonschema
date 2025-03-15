@@ -8,7 +8,7 @@ SHELL := /bin/bash
 # ----------------------------------------------------------------------------------------------------------------------
 
 _DOCKER_FILELINT_IMAGE=cytopia/file-lint:latest-0.8
-_DOCKER_GOLANG_IMAGE=golang:1.22.8
+_DOCKER_GOLANG_IMAGE=golang:1.23.7
 _DOCKER_GOLANGCI_LINT_IMAGE=golangci/golangci-lint:v1.61.0
 _DOCKER_HADOLINT_IMAGE=hadolint/hadolint:v2.12.0
 _DOCKER_JSONLINT_IMAGE=cytopia/jsonlint:1.6
