@@ -2,7 +2,7 @@ module github.com/atombender/go-jsonschema
 
 go 1.23.0
 
-toolchain go1.24.1
+toolchain go1.23.7
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -12,7 +12,7 @@ require (
 	github.com/sanity-io/litter v1.5.8
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/exp 054e65f0b394
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 )
 
 require gopkg.in/yaml.v3 v3.0.1
