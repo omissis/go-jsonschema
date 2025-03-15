@@ -124,11 +124,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		sg = newSchemaGenerator(g.Generator, schema, fileName, output)
 	}
 
-	qual := qualifiedDefinition{
-		schema: schema,
-		name:   defName,
-	}
-
 	var def *schemas.Type
 
 	if defName != "" {
@@ -155,13 +150,12 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		}
 	}
 
-	_, isCycle := g.inScope[qual]
-	if !isCycle {
-		g.inScope[qual] = struct{}{}
-		defer func() {
-			delete(g.inScope, qual)
-		}()
+	isCycle, cleanupCycle, cycleErr := g.detectCycle(t)
+	if cycleErr != nil {
+		return nil, cycleErr
 	}
+
+	defer cleanupCycle()
 
 	dt, err := sg.generateDeclaredType(def, newNameScope(defName))
 	if err != nil {
@@ -824,6 +818,17 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
 
+		isCycle, cleanupCycle, cycleErr := g.detectCycle(typ)
+		if cycleErr != nil {
+			return nil, cycleErr
+		}
+
+		defer cleanupCycle()
+
+		if isCycle {
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
 		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
 			return nil, err
 		}
@@ -923,7 +928,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.Type) > 1 && !typeShouldBePointer {
-			g.warner(fmt.Sprintf("Property %s has multiple types; will be represented as interface{} with no validation", scope))
+			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as interface{} with no validation", scope))
 
 			return codegen.EmptyInterfaceType{}, nil
 		}
@@ -1188,4 +1193,25 @@ func (g *schemaGenerator) extractPointedType(typ codegen.Type) (*codegen.NamedTy
 	}
 
 	return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, typ)
+}
+
+func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
+	defName, _, err := g.extractRefNames(t)
+	if err != nil {
+		return false, func() {}, err
+	}
+
+	qual := qualifiedDefinition{
+		schema: g.schema,
+		name:   defName,
+	}
+
+	_, isCycle := g.inScope[qual]
+	if !isCycle {
+		g.inScope[qual] = struct{}{}
+	}
+
+	return isCycle, func() {
+		delete(g.inScope, qual)
+	}, nil
 }
