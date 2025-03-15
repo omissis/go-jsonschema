@@ -813,6 +813,8 @@ func (g *schemaGenerator) addStructField(
 }
 
 func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
+	scope.enterSubschema()
+
 	if len(anyOf) == 0 {
 		return nil, errEmptyInAnyOf
 	}
@@ -836,6 +838,8 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 }
 
 func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
+	scope.enterSubschema()
+
 	rAllOf := g.resolveRefs(allOf)
 
 	allOfType, err := schemas.AllOf(rAllOf)
