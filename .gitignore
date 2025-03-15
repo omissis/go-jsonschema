@@ -6,3 +6,4 @@ coverage/
 bin/
 dist/
 vendor/
+output/
