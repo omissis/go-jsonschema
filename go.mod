@@ -12,7 +12,7 @@ require (
 	github.com/sanity-io/litter v1.5.8
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/exp v0.0.0-20250215185904-eff6e970281f
+	golang.org/x/exp 054e65f0b394
 )
 
 require gopkg.in/yaml.v3 v3.0.1
