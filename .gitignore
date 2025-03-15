@@ -6,4 +6,5 @@ coverage/
 bin/
 dist/
 vendor/
+output/
 go.work
