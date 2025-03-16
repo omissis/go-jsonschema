@@ -31,11 +31,11 @@ func (j *Pattern) UnmarshalJSON(value []byte) error {
 	}
 	if plain.MyNullableString != nil {
 		if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}$`, string(*plain.MyNullableString)); !matched {
-			return fmt.Errorf("field %s pattern match: must match %s", `^0x[0-9a-f]{10}$`, "MyNullableString")
+			return fmt.Errorf("field %s pattern match: must match %s", "MyNullableString", `^0x[0-9a-f]{10}$`)
 		}
 	}
 	if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}\.$`, string(plain.MyString)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", `^0x[0-9a-f]{10}\.$`, "MyString")
+		return fmt.Errorf("field %s pattern match: must match %s", "MyString", `^0x[0-9a-f]{10}\.$`)
 	}
 	*j = Pattern(plain)
 	return nil
