@@ -1198,9 +1198,13 @@ func (g *schemaGenerator) extractPointedType(typ codegen.Type) (*codegen.NamedTy
 }
 
 func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
-	defName, _, err := g.extractRefNames(t)
+	defName, filename, err := g.extractRefNames(t)
 	if err != nil {
 		return false, func() {}, err
+	}
+
+	if defName == "" && filename == "" {
+		return false, func() {}, nil
 	}
 
 	qual := qualifiedDefinition{
