@@ -6,4 +6,4 @@ hadolint 2.12.0
 markdownlint-cli2 0.17.2
 shellcheck 0.10.0
 shfmt 3.11.0
-yamllint 1.36.0
+yamllint 1.36.2
