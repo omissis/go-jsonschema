@@ -4,8 +4,6 @@ import (
 	"strings"
 )
 
-const maxUint = ^uint(0)
-
 type nameScope struct {
 	stack []string
 }

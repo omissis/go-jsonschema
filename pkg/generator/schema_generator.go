@@ -814,6 +814,7 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 	rAnyOf := g.resolveRefs(anyOf)
 
 	var isCycle bool
+
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
 
@@ -1204,7 +1205,7 @@ func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
 		return false, func() {}, err
 	}
 
-	if defName == "" && filename == "" && t.Dereferenced == false {
+	if defName == "" && filename == "" && !t.Dereferenced {
 		return false, func() {}, nil
 	}
 
