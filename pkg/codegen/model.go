@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"reflect"
 	"sort"
 	"strings"
 
@@ -39,8 +40,20 @@ type Package struct {
 	Imports       []Import
 }
 
-func (p *Package) AddDecl(t Decl) {
-	p.Decls = append(p.Decls, t)
+func (p *Package) AddDecl(d Decl) {
+	if !p.hasDecl(d) {
+		p.Decls = append(p.Decls, d)
+	}
+}
+
+func (p *Package) hasDecl(d Decl) bool {
+	for _, pd := range p.Decls {
+		if pd == d || reflect.DeepEqual(pd, d) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (p *Package) AddImport(qualifiedName, alias string) {

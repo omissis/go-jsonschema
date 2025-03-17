@@ -43,8 +43,10 @@ type Generator struct {
 }
 
 type qualifiedDefinition struct {
-	schema *schemas.Schema
-	name   string
+	schema     *schemas.Schema
+	schemaType *schemas.Type
+	filename   string
+	name       string
 }
 
 func New(config Config) (*Generator, error) {

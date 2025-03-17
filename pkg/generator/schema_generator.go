@@ -807,32 +807,36 @@ func (g *schemaGenerator) addStructField(
 }
 
 func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	scope.enterSubschema()
-	defer scope.exitSubschema()
-
 	if len(anyOf) == 0 {
 		return nil, errEmptyInAnyOf
 	}
 
 	rAnyOf := g.resolveRefs(anyOf)
 
+	var isCycle bool
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
 
-		isCycle, cleanupCycle, cycleErr := g.detectCycle(typ)
+		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
 		if cycleErr != nil {
 			return nil, cycleErr
 		}
 
 		defer cleanupCycle()
 
-		if isCycle {
-			return codegen.EmptyInterfaceType{}, nil
+		if ic {
+			isCycle = true
+
+			continue
 		}
 
 		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
 			return nil, err
 		}
+	}
+
+	if isCycle {
+		return codegen.EmptyInterfaceType{}, nil
 	}
 
 	anyOfType, err := schemas.AnyOf(rAnyOf)
@@ -844,9 +848,6 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 }
 
 func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	scope.enterSubschema()
-	defer scope.exitSubschema()
-
 	rAllOf := g.resolveRefs(allOf)
 
 	allOfType, err := schemas.AllOf(rAllOf)
@@ -1203,13 +1204,15 @@ func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
 		return false, func() {}, err
 	}
 
-	if defName == "" && filename == "" {
+	if defName == "" && filename == "" && t.Dereferenced == false {
 		return false, func() {}, nil
 	}
 
 	qual := qualifiedDefinition{
-		schema: g.schema,
-		name:   defName,
+		schema:     g.schema,
+		schemaType: t,
+		filename:   filename,
+		name:       defName,
 	}
 
 	_, isCycle := g.inScope[qual]

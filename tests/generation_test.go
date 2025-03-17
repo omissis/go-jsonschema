@@ -180,6 +180,12 @@ func TestMinSizeInt(t *testing.T) {
 	testExamples(t, cfg, "./data/minSizedInts")
 }
 
+func TestSchemaExtensions(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/schemaExtensions")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -202,12 +208,6 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 			}
 		}
 	}
-}
-
-func TestSchemaExtensions(t *testing.T) {
-	t.Parallel()
-
-	testExamples(t, basicConfig, "./data/schemaExtensions")
 }
 
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
