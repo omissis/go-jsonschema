@@ -5,7 +5,7 @@
   "properties": {
     "myNumber": {
       "type": "number",
-      "multipleOf": 1.2
+      "multipleOf": 0.2
     },
     "myInteger": {
       "type": "integer",
@@ -13,7 +13,7 @@
     },
     "myNullableNumber": {
       "type": "number",
-      "multipleOf": 1.2
+      "multipleOf": 0.2
     },
     "myNullableInteger": {
       "type": "integer",
