@@ -19,14 +19,14 @@ type GopkgYAMLv3AdditionalProperties struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(b []byte) error {
+func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain GopkgYAMLv3AdditionalProperties
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {

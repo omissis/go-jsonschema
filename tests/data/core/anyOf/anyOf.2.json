@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "id": "https://example.com/objectAllOf",
+    "description": "object with anyOf properties, some with $defs",
+    "type": "object",
+    "$defs": {
+        "foo": {
+            "type": "object",
+            "properties": {
+                "foo": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "foo"
+            ]
+        }
+    },
+    "properties": {
+        "configurations": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "$ref": "#/$defs/foo"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "bar": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "bar"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "baz": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

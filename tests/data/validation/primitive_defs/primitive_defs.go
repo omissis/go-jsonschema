@@ -4,14 +4,29 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type MinStr string
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MinStr) UnmarshalJSON(b []byte) error {
+func (j *MinStr) UnmarshalJSON(value []byte) error {
 	type Plain MinStr
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if len(plain) < 5 {
+		return fmt.Errorf("field %s length: must be >= %d", "", 5)
+	}
+	*j = MinStr(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
+	type Plain MinStr
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if len(plain) < 5 {
@@ -30,9 +45,9 @@ type PrimitiveDefs struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *PrimitiveDefs) UnmarshalJSON(b []byte) error {
+func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
@@ -40,7 +55,25 @@ func (j *PrimitiveDefs) UnmarshalJSON(b []byte) error {
 	}
 	type Plain PrimitiveDefs
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = PrimitiveDefs(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myString"]; raw != nil && !ok {
+		return fmt.Errorf("field myString in PrimitiveDefs: required")
+	}
+	type Plain PrimitiveDefs
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = PrimitiveDefs(plain)

@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -12,10 +14,15 @@ const (
 
 type jsonFormatter struct{}
 
-func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
-	var beforeValidators []validator
-
-	var afterValidators []validator
+func (jf *jsonFormatter) generate(
+	output *output,
+	declType codegen.TypeDecl,
+	validators []validator,
+) func(*codegen.Emitter) {
+	var (
+		beforeValidators []validator
+		afterValidators  []validator
+	)
 
 	forceBefore := false
 
@@ -31,25 +38,33 @@ func (jf *jsonFormatter) generate(declType codegen.TypeDecl, validators []valida
 
 	return func(out *codegen.Emitter) {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatJSON), formatJSON)
-		out.Printlnf("func (j *%s) Unmarshal%s(b []byte) error {", declType.Name, strings.ToUpper(formatJSON))
+		out.Printlnf("func (j *%s) Unmarshal%s(value []byte) error {", declType.Name, strings.ToUpper(formatJSON))
 		out.Indent(1)
 
 		if forceBefore || len(beforeValidators) != 0 {
 			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
-			out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }", formatJSON, varNameRawMap)
+			out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }", formatJSON, varNameRawMap)
 		}
 
 		for _, v := range beforeValidators {
-			v.generate(out)
+			v.generate(out, "json")
 		}
 
-		out.Printlnf("type Plain %s", declType.Name)
-		out.Printlnf("var %s Plain", varNamePlainStruct)
-		out.Printlnf("if err := %s.Unmarshal(b, &%s); err != nil { return err }",
+		tp := typePlain
+
+		if tp == declType.Name {
+			for i := 0; !output.isUniqueTypeName(tp) && i < math.MaxInt; i++ {
+				tp = fmt.Sprintf("%s_%d", typePlain, i)
+			}
+		}
+
+		out.Printlnf("type %s %s", tp, declType.Name)
+		out.Printlnf("var %s %s", varNamePlainStruct, tp)
+		out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }",
 			formatJSON, varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			v.generate(out)
+			v.generate(out, "json")
 		}
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
@@ -99,7 +114,7 @@ func (jf *jsonFormatter) enumUnmarshal(
 ) func(*codegen.Emitter) {
 	return func(out *codegen.Emitter) {
 		out.Comment("UnmarshalJSON implements json.Unmarshaler.")
-		out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", declType.Name)
+		out.Printlnf("func (j *%s) UnmarshalJSON(value []byte) error {", declType.Name)
 		out.Indent(1)
 		out.Printf("var v ")
 		enumType.Generate(out)
@@ -110,7 +125,7 @@ func (jf *jsonFormatter) enumUnmarshal(
 			varName += ".Value"
 		}
 
-		out.Printlnf("if err := json.Unmarshal(b, &%s); err != nil { return err }", varName)
+		out.Printlnf("if err := json.Unmarshal(value, &%s); err != nil { return err }", varName)
 		out.Printlnf("var ok bool")
 		out.Printlnf("for _, expected := range %s {", valueConstant.Name)
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { ok = true; break }", varName)

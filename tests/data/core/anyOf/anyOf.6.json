@@ -1,0 +1,87 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Foo2": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/Foo2"
+                            },
+                            {
+                                "$ref": "#/definitions/Bar2"
+                            },
+                            {
+                                "$ref": "#/definitions/Baz2"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Bar2": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/Foo2"
+                            },
+                            {
+                                "$ref": "#/definitions/Bar2"
+                            },
+                            {
+                                "$ref": "#/definitions/Baz2"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Baz2": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/Foo2"
+                            },
+                            {
+                                "$ref": "#/definitions/Bar2"
+                            },
+                            {
+                                "$ref": "#/definitions/Baz2"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "type": "object",
+    "properties": {
+        "qux2": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/Foo2"
+                    },
+                    {
+                        "$ref": "#/definitions/Bar2"
+                    },
+                    {
+                        "$ref": "#/definitions/Baz2"
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -38,9 +38,9 @@ var enumValues_GopkgYAMLv3MyEnum = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *GopkgYAMLv3MyEnum) UnmarshalJSON(b []byte) error {
+func (j *GopkgYAMLv3MyEnum) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -78,14 +78,14 @@ func (j *GopkgYAMLv3MyEnum) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *GopkgYAMLv3) UnmarshalJSON(b []byte) error {
+func (j *GopkgYAMLv3) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain GopkgYAMLv3
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if plain.MyNull != nil {

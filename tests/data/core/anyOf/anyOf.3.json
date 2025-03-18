@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/objectAnyOf",
+  "description": "object with anyOf properties as root",
+  "type": "object",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "foo": {
+          "type": "string"
+        }
+      },
+      "required": ["foo"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "bar": {
+          "type": "number"
+        }
+      },
+      "required": ["bar"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "configurations": {
+          "type": "array",
+          "items": {}
+        }
+      }
+    }
+  ]
+}

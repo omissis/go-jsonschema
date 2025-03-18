@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".
@@ -34,14 +35,41 @@ type Array struct {
 type ArrayMyObjectArrayElem map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Array) UnmarshalJSON(b []byte) error {
+func (j *Array) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain Array
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	for i0 := range plain.MyNestedNullArray {
+		for i1 := range plain.MyNestedNullArray[i0] {
+			if plain.MyNestedNullArray[i0][i1] != nil {
+				return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNestedNullArray[%d][%d]", i0, i1))
+			}
+		}
+	}
+	for i0 := range plain.MyNullArray {
+		if plain.MyNullArray[i0] != nil {
+			return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNullArray[%d]", i0))
+		}
+	}
+	*j = Array(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Array) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	type Plain Array
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	for i0 := range plain.MyNestedNullArray {

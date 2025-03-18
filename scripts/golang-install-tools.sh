@@ -9,7 +9,7 @@ GINKGO_VERSION="v2.17.1"
 GO_COVER_TREEMAP_VERSION="v1.4.2"
 GOFUMPT_VERSION="v0.6.0"
 GOIMPORTS_VERSION="v0.20.0"
-GOLANGCI_LINT_VERSION="v1.61.0"
+GOLANGCI_LINT_VERSION="v1.62.2"
 
 go install "github.com/daixiang0/gci@${GCI_VERSION}"
 go install "github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}"

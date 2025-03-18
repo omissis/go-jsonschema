@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "github.com/go-viper/mapstructure/v2"
+import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
@@ -15,14 +16,40 @@ type ArrayAdditionalProperties struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ArrayAdditionalProperties) UnmarshalJSON(b []byte) error {
+func (j *ArrayAdditionalProperties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain ArrayAdditionalProperties
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if v, ok := raw[""]; !ok || v == nil {
+		plain.AdditionalProperties = map[string][]interface{}{}
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := range st.NumField() {
+		delete(raw, st.Field(i).Name)
+		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return err
+	}
+	*j = ArrayAdditionalProperties(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ArrayAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	type Plain ArrayAdditionalProperties
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {

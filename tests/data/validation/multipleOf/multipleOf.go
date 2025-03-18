@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "math"
 
 type MultipleOf struct {
@@ -21,9 +22,9 @@ type MultipleOf struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MultipleOf) UnmarshalJSON(b []byte) error {
+func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
@@ -34,7 +35,40 @@ func (j *MultipleOf) UnmarshalJSON(b []byte) error {
 	}
 	type Plain MultipleOf
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.MyInteger%2 != 0 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myInteger", 2.000000)
+	}
+	if plain.MyNullableInteger != nil && *plain.MyNullableInteger%2 != 0 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myNullableInteger", 2.000000)
+	}
+	if plain.MyNullableNumber != nil && math.Abs(math.Mod(*plain.MyNullableNumber, 1.2)) > 1e-10 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myNullableNumber", 1.200000)
+	}
+	if math.Abs(math.Mod(plain.MyNumber, 1.2)) > 1e-10 {
+		return fmt.Errorf("field %s: must be a multiple of %v", "myNumber", 1.200000)
+	}
+	*j = MultipleOf(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *MultipleOf) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field myInteger in MultipleOf: required")
+	}
+	if _, ok := raw["myNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field myNumber in MultipleOf: required")
+	}
+	type Plain MultipleOf
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.MyInteger%2 != 0 {

@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"reflect"
 	"sort"
 	"strings"
 
@@ -39,8 +40,20 @@ type Package struct {
 	Imports       []Import
 }
 
-func (p *Package) AddDecl(t Decl) {
-	p.Decls = append(p.Decls, t)
+func (p *Package) AddDecl(d Decl) {
+	if !p.hasDecl(d) {
+		p.Decls = append(p.Decls, d)
+	}
+}
+
+func (p *Package) hasDecl(d Decl) bool {
+	for _, pd := range p.Decls {
+		if pd == d || reflect.DeepEqual(pd, d) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (p *Package) AddImport(qualifiedName, alias string) {
@@ -197,9 +210,10 @@ func (i *Import) Generate(out *Emitter) {
 
 // TypeDecl is a "type <name> = <definition>".
 type TypeDecl struct {
-	Name    string
-	Type    Type
-	Comment string
+	Name       string
+	Type       Type
+	Comment    string
+	SchemaType *schemas.Type
 }
 
 func (td *TypeDecl) GetName() string {
@@ -216,6 +230,16 @@ func (td *TypeDecl) Generate(out *Emitter) {
 type Type interface {
 	Decl
 	IsNillable() bool
+}
+
+type AliasType struct {
+	Decl
+	Alias string
+	Name  string
+}
+
+func (p AliasType) Generate(out *Emitter) {
+	out.Printf("type %s = %s", p.Alias, p.Name)
 }
 
 type PointerType struct {
@@ -315,9 +339,10 @@ func (NullType) Generate(out *Emitter) {
 type StructType struct {
 	Fields             []StructField
 	RequiredJSONFields []string
+	DefaultValue       interface{}
 }
 
-func (StructType) IsNillable() bool { return false }
+func (*StructType) IsNillable() bool { return false }
 
 func (s *StructType) AddField(f StructField) {
 	s.Fields = append(s.Fields, f)

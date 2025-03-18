@@ -5,8 +5,10 @@ go 1.23.0
 toolchain go1.23.7
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/goccy/go-yaml v1.15.23
+	github.com/google/go-cmp v0.6.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/sanity-io/litter v1.5.8
@@ -15,7 +17,7 @@ require (
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 )
 
-require gopkg.in/yaml.v3 v3.0.1
+require gopkg.in/yaml.v3 v3.0.1 // indirect
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Bound16 int16
 
@@ -40,9 +41,9 @@ type Exact struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Exact) UnmarshalJSON(b []byte) error {
+func (j *Exact) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["i16"]; raw != nil && !ok {
@@ -71,7 +72,46 @@ func (j *Exact) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Exact
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = Exact(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Exact) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["i16"]; raw != nil && !ok {
+		return fmt.Errorf("field i16 in Exact: required")
+	}
+	if _, ok := raw["i32"]; raw != nil && !ok {
+		return fmt.Errorf("field i32 in Exact: required")
+	}
+	if _, ok := raw["i64"]; raw != nil && !ok {
+		return fmt.Errorf("field i64 in Exact: required")
+	}
+	if _, ok := raw["i8"]; raw != nil && !ok {
+		return fmt.Errorf("field i8 in Exact: required")
+	}
+	if _, ok := raw["u16"]; raw != nil && !ok {
+		return fmt.Errorf("field u16 in Exact: required")
+	}
+	if _, ok := raw["u32"]; raw != nil && !ok {
+		return fmt.Errorf("field u32 in Exact: required")
+	}
+	if _, ok := raw["u64"]; raw != nil && !ok {
+		return fmt.Errorf("field u64 in Exact: required")
+	}
+	if _, ok := raw["u8"]; raw != nil && !ok {
+		return fmt.Errorf("field u8 in Exact: required")
+	}
+	type Plain Exact
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = Exact(plain)

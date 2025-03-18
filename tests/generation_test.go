@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	exitErr *exec.ExitError
+	errExit *exec.ExitError
 
 	basicConfig = generator.Config{
 		SchemaMappings:     []generator.SchemaMapping{},
-		ExtraImports:       false,
+		ExtraImports:       true,
 		DefaultPackageName: "github.com/example/test",
 		DefaultOutputName:  "-",
 		ResolveExtensions:  []string{".json", ".yaml"},
@@ -157,6 +157,12 @@ func TestExtraImportsYAML(t *testing.T) {
 	testExampleFile(t, cfg, "./data/extraImports/gopkgYAMLv3/gopkgYAMLv3.json")
 }
 
+func TestRegressions(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/regressions")
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 
@@ -172,6 +178,12 @@ func TestMinSizeInt(t *testing.T) {
 	cfg.MinSizedInts = true
 
 	testExamples(t, cfg, "./data/minSizedInts")
+}
+
+func TestSchemaExtensions(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/schemaExtensions")
 }
 
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
@@ -196,18 +208,6 @@ func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 			}
 		}
 	}
-}
-
-func TestRegressions(t *testing.T) {
-	t.Parallel()
-
-	testExamples(t, basicConfig, "./data/regressions")
-}
-
-func TestSchemaExtensions(t *testing.T) {
-	t.Parallel()
-
-	testExamples(t, basicConfig, "./data/schemaExtensions")
 }
 
 func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
@@ -306,7 +306,7 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 		fmt.Sprintf("%s/expected", dir),
 		fmt.Sprintf("%s/actual", dir)).Output()
 
-	if !errors.As(err, &exitErr) {
+	if !errors.As(err, &errExit) {
 		t.Fatal(err.Error())
 	}
 

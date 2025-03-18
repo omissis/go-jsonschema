@@ -16,6 +16,7 @@ const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
 	interfaceTypeName  = "interface{}"
+	typePlain          = "Plain"
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
+	errCannotResolveRef               = errors.New("cannot resolve reference")
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
@@ -41,8 +43,10 @@ type Generator struct {
 }
 
 type qualifiedDefinition struct {
-	schema *schemas.Schema
-	name   string
+	schema     *schemas.Schema
+	schemaType *schemas.Type
+	filename   string
+	name       string
 }
 
 func New(config Config) (*Generator, error) {
@@ -137,12 +141,7 @@ func (g *Generator) addFile(fileName string, schema *schemas.Schema) error {
 		return err
 	}
 
-	return (&schemaGenerator{
-		Generator:      g,
-		schema:         schema,
-		schemaFileName: fileName,
-		output:         o,
-	}).generateRootType()
+	return newSchemaGenerator(g, schema, fileName, o).generateRootType()
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
@@ -213,9 +212,15 @@ func (g *Generator) beginOutput(
 }
 
 func (g *Generator) makeEnumConstantName(typeName, value string) string {
-	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
-		return typeName + "_" + g.caser.Identifierize(value)
+	idv := g.caser.Identifierize(value)
+
+	if len(typeName) == 0 {
+		return "Enum" + idv
 	}
 
-	return typeName + g.caser.Identifierize(value)
+	if strings.ContainsAny(typeName[len(typeName)-1:], "0123456789") {
+		return typeName + "_" + idv
+	}
+
+	return typeName + idv
 }
