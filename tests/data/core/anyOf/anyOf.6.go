@@ -7,75 +7,75 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-type AnyOfRef2 struct {
+type AnyOf6 struct {
 	// Qux2 corresponds to the JSON schema field "qux2".
-	Qux2 []AnyOfRef2Qux2Elem `json:"qux2,omitempty" yaml:"qux2,omitempty" mapstructure:"qux2,omitempty"`
+	Qux2 []AnyOf6Qux2Elem `json:"qux2,omitempty" yaml:"qux2,omitempty" mapstructure:"qux2,omitempty"`
 }
 
-type AnyOfRef2Qux2Elem struct {
+type AnyOf6Qux2Elem struct {
 	// Content corresponds to the JSON schema field "content".
 	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnyOfRef2Qux2Elem) UnmarshalYAML(value *yaml.Node) error {
+func (j *AnyOf6Qux2Elem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	var anyOfRef2Qux2Elem_0 AnyOfRef2Qux2Elem_0
-	var anyOfRef2Qux2Elem_1 AnyOfRef2Qux2Elem_1
-	var anyOfRef2Qux2Elem_2 AnyOfRef2Qux2Elem_2
+	var anyOf6Qux2Elem_0 AnyOf6Qux2Elem_0
+	var anyOf6Qux2Elem_1 AnyOf6Qux2Elem_1
+	var anyOf6Qux2Elem_2 AnyOf6Qux2Elem_2
 	var errs []error
-	if err := anyOfRef2Qux2Elem_0.UnmarshalYAML(value); err != nil {
+	if err := anyOf6Qux2Elem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
 	}
-	if err := anyOfRef2Qux2Elem_1.UnmarshalYAML(value); err != nil {
+	if err := anyOf6Qux2Elem_1.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
 	}
-	if err := anyOfRef2Qux2Elem_2.UnmarshalYAML(value); err != nil {
+	if err := anyOf6Qux2Elem_2.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) == 3 {
 		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
 	}
-	type Plain AnyOfRef2Qux2Elem
+	type Plain AnyOf6Qux2Elem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	*j = AnyOfRef2Qux2Elem(plain)
+	*j = AnyOf6Qux2Elem(plain)
 	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *AnyOfRef2Qux2Elem) UnmarshalJSON(value []byte) error {
+func (j *AnyOf6Qux2Elem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	var anyOfRef2Qux2Elem_0 AnyOfRef2Qux2Elem_0
-	var anyOfRef2Qux2Elem_1 AnyOfRef2Qux2Elem_1
-	var anyOfRef2Qux2Elem_2 AnyOfRef2Qux2Elem_2
+	var anyOf6Qux2Elem_0 AnyOf6Qux2Elem_0
+	var anyOf6Qux2Elem_1 AnyOf6Qux2Elem_1
+	var anyOf6Qux2Elem_2 AnyOf6Qux2Elem_2
 	var errs []error
-	if err := anyOfRef2Qux2Elem_0.UnmarshalJSON(value); err != nil {
+	if err := anyOf6Qux2Elem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
 	}
-	if err := anyOfRef2Qux2Elem_1.UnmarshalJSON(value); err != nil {
+	if err := anyOf6Qux2Elem_1.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
 	}
-	if err := anyOfRef2Qux2Elem_2.UnmarshalJSON(value); err != nil {
+	if err := anyOf6Qux2Elem_2.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
 	}
 	if len(errs) == 3 {
 		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
 	}
-	type Plain AnyOfRef2Qux2Elem
+	type Plain AnyOf6Qux2Elem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	*j = AnyOfRef2Qux2Elem(plain)
+	*j = AnyOf6Qux2Elem(plain)
 	return nil
 }
 
@@ -357,9 +357,9 @@ func (j *Foo2) UnmarshalYAML(value *yaml.Node) error {
 type Foo2ContentElem_2 = Baz2
 type Foo2ContentElem_1 = Bar2
 type Bar2ContentElem_0 = Foo2
-type AnyOfRef2Qux2Elem_0 = Foo2
-type AnyOfRef2Qux2Elem_1 = Bar2
-type AnyOfRef2Qux2Elem_2 = Baz2
+type AnyOf6Qux2Elem_0 = Foo2
+type AnyOf6Qux2Elem_1 = Bar2
+type AnyOf6Qux2Elem_2 = Baz2
 type Baz2ContentElem_0 = Foo2
 
 // UnmarshalJSON implements json.Unmarshaler.
