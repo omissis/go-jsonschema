@@ -38,6 +38,15 @@ func TestCore(t *testing.T) {
 	testExamples(t, basicConfig, "./data/core")
 }
 
+func TestOmitempty(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.DisableOmitempty = true
+
+	testExamples(t, cfg, "./data/disableOmitempty")
+}
+
 func TestValidation(t *testing.T) {
 	t.Parallel()
 

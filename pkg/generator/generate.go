@@ -224,3 +224,7 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 
 	return typeName + idv
 }
+
+func (g *Generator) DisableOmitempty() bool {
+	return g.config.DisableOmitempty
+}
