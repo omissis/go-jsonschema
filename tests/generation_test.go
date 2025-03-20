@@ -254,6 +254,16 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 
 			if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {
 				t.Errorf("Contents different (left is expected, right is actual):\n%s", diff)
+
+				// Overwriting the expected file is useful if there are lots of differences
+				// due to a code change you made and you just want to accept the new output.
+				// Simply run "OVERWRITE_EXPECTED_GO_FILE=true make test".
+				if os.Getenv("OVERWRITE_EXPECTED_GO_FILE") == "true" {
+					t.Logf("Writing expected output to %s\n", string(goldenFileName))
+					if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
+						t.Logf("Failed to write to %s\n", string(goldenFileName))
+					}
+				}
 			}
 
 			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
