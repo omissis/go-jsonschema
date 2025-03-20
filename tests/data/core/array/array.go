@@ -26,13 +26,11 @@ type Array struct {
 	MyNumberArray []float64 `json:"myNumberArray,omitempty" yaml:"myNumberArray,omitempty" mapstructure:"myNumberArray,omitempty"`
 
 	// MyObjectArray corresponds to the JSON schema field "myObjectArray".
-	MyObjectArray []ArrayMyObjectArrayElem `json:"myObjectArray,omitempty" yaml:"myObjectArray,omitempty" mapstructure:"myObjectArray,omitempty"`
+	MyObjectArray []map[string]interface{} `json:"myObjectArray,omitempty" yaml:"myObjectArray,omitempty" mapstructure:"myObjectArray,omitempty"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
 	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
 }
-
-type ArrayMyObjectArrayElem map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Array) UnmarshalJSON(value []byte) error {
