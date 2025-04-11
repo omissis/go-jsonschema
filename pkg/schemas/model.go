@@ -187,6 +187,12 @@ type Type struct {
 	Definitions      Definitions      `json:"$defs,omitempty"`
 	DependentSchemas map[string]*Type `json:"dependentSchemas,omitempty"`
 
+	// TODO: add correct section where "readOnly" is mentioned in the spec
+	//       I'm not sure which section I should put here, but I did notice in the 2020-12 validation schema changelog,
+	//       under the "draft-handrews-json-schema-validation-00" item it mentions "readOnly" as having been moved
+	//       from hyper-schema to validation meta-data...
+	ReadOnly bool `json:"readOnly,omitempty"`
+
 	// ExtGoCustomType is the name of a (qualified or not) custom Go type
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
