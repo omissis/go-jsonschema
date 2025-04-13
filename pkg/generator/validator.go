@@ -335,7 +335,6 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) {
 	}
 
 	if v.multipleOf != nil {
-
 		if v.roundToInt {
 			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
 			out.Indent(1)
@@ -348,6 +347,7 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) {
 			} else {
 				out.Printlnf("{")
 			}
+
 			out.Indent(1)
 			out.Printlnf("remainder := math.Mod(%s%s, %v)", pointerPrefix, value, v.valueOf(*v.multipleOf))
 			out.Printlnf(
