@@ -30,12 +30,28 @@ func (t *SerializableTime) UnmarshalJSON(data []byte) error {
 
 	timeWithoutQuotes := stringifiedData[1 : len(stringifiedData)-1]
 
-	parsedTime, err := time.Parse(time.TimeOnly, timeWithoutQuotes)
+	// RFC 3339 full-time layouts.
+	layouts := []string{
+		"15:04:05",       // Time without offset.
+		"15:04:05Z07:00", // Time with offset. Works with ..Z, ..+09:00 ...
+	}
+
+	var parsedTime time.Time
+
+	var err error
+
+	for _, layout := range layouts {
+		parsedTime, err = time.Parse(layout, timeWithoutQuotes)
+		if err == nil {
+			t.Time = parsedTime
+
+			return nil
+		}
+	}
+
 	if err != nil {
 		return fmt.Errorf("unable to parse time from JSON: %w", err)
 	}
-
-	t.Time = parsedTime
 
 	return nil
 }
