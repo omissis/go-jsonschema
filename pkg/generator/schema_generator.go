@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	errEmptyInAnyOf                        = errors.New("canno have empty anyOf array")
+	errEmptyInAnyOf                        = errors.New("cannot have empty anyOf array")
 	errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
 )
 
