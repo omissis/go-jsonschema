@@ -2,10 +2,9 @@ package codegen
 
 import (
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 

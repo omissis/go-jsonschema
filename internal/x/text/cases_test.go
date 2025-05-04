@@ -3,8 +3,9 @@ package text_test
 import (
 	"testing"
 
-	"github.com/atombender/go-jsonschema/internal/x/text"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/atombender/go-jsonschema/internal/x/text"
 )
 
 func TestNewCaser(t *testing.T) {
