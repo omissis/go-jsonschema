@@ -25,15 +25,19 @@ codecov:
 coverage:
   status:
     project:
-      default:
-        enabled: false
+      app:
         target: auto
-        threshold: 0.25% # Optional: fail only if coverage drops more than this
+        paths: "!tests/"
+      tests:
+        target: auto
+        paths: "tests/"
     patch:
       enabled: true
       target: auto
-      threshold: 0.25% # Optional: fail only if coverage drops more than this
+      threshold: 0.25%
+      only_pulls: true
     changes:
       enabled: true
       target: auto
-      threshold: 0.25% # Optional: fail only if coverage drops more than this
+      threshold: 0.25%
+      only_pulls: true
