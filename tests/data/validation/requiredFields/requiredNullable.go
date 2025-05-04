@@ -8,7 +8,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type RequiredNullable struct {
 	// MyNullableObject corresponds to the JSON schema field "myNullableObject".
-	MyNullableObject RequiredNullableMyNullableObject `json:"myNullableObject" yaml:"myNullableObject" mapstructure:"myNullableObject"`
+	MyNullableObject *RequiredNullableMyNullableObject `json:"myNullableObject" yaml:"myNullableObject" mapstructure:"myNullableObject"`
 
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
 	MyNullableString *string `json:"myNullableString" yaml:"myNullableString" mapstructure:"myNullableString"`

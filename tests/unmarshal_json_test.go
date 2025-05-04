@@ -11,7 +11,47 @@ import (
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
+
+func TestJsonUnmarshalValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc     string
+		json     string
+		target   any
+		assertFn func(target any)
+	}{
+		{
+			desc:   "requiredFields - nullable",
+			json:   `{"myNullableObject": null, "myNullableString": null, "myNullableStringArray": null}`,
+			target: &testValudationRequiredFields.RequiredNullable{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testValudationRequiredFields.RequiredNullable{
+						MyNullableObject:      nil,
+						MyNullableString:      nil,
+						MyNullableStringArray: nil,
+					},
+					target,
+				)
+			},
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			if err := json.Unmarshal([]byte(tC.json), tC.target); err != nil {
+				t.Fatalf("unmarshal error: %s", err)
+			}
+
+			tC.assertFn(tC.target)
+		})
+	}
+}
 
 func TestJsonUmarshalAnyOf(t *testing.T) {
 	t.Parallel()
