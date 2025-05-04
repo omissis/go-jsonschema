@@ -7,6 +7,8 @@ import (
 )
 
 func TestNewCaser(t *testing.T) {
+	t.Parallel()
+
 	capitalizations := []string{"ID", "URL"}
 	resolveExtensions := []string{".go", ".txt"}
 
@@ -18,6 +20,8 @@ func TestNewCaser(t *testing.T) {
 }
 
 func TestIdentifierFromFileName(t *testing.T) {
+	t.Parallel()
+
 	caser := NewCaser(nil, []string{".go", ".txt"})
 
 	tests := []struct {
@@ -31,12 +35,16 @@ func TestIdentifierFromFileName(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		t.Parallel()
+
 		result := caser.IdentifierFromFileName(test.fileName)
 		assert.Equal(t, test.expected, result)
 	}
 }
 
 func TestIdentifierize(t *testing.T) {
+	t.Parallel()
+
 	caser := NewCaser(nil, nil)
 
 	tests := []struct {
@@ -52,12 +60,16 @@ func TestIdentifierize(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		t.Parallel()
+
 		result := caser.Identifierize(test.input)
 		assert.Equal(t, test.expected, result)
 	}
 }
 
 func TestCapitalize(t *testing.T) {
+	t.Parallel()
+
 	caser := NewCaser([]string{"ID", "URL"}, nil)
 
 	tests := []struct {
@@ -71,12 +83,16 @@ func TestCapitalize(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		t.Parallel()
+
 		result := caser.Capitalize(test.input)
 		assert.Equal(t, test.expected, result)
 	}
 }
 
 func TestSplitIdentifierByCaseAndSeparators(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    string
 		expected []string
@@ -88,6 +104,8 @@ func TestSplitIdentifierByCaseAndSeparators(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		t.Parallel()
+
 		result := splitIdentifierByCaseAndSeparators(test.input)
 		assert.Equal(t, test.expected, result)
 	}
