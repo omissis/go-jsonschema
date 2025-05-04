@@ -10,6 +10,10 @@
     "myNullableString": {
       "type": "string",
       "pattern": "^0x[0-9a-f]{10}$"
+    },
+    "myEscapedString": {
+      "type": "string",
+      "pattern": "^\\$\\{\\{(.|[\r\n])*\\}\\}$"
     }
   },
   "required": [
