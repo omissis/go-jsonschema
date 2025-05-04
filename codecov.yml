@@ -1,0 +1,34 @@
+ignore:
+  - "**/*.json"
+  - "**/*.md"
+  - "**/*.mod"
+  - "**/*.sum"
+  - "**/*.yaml"
+  - "**/*.yml"
+  - "**/*_test.go"
+  - "**/Dockerfile"
+  - "**/LICENSE"
+  - "**/Makefile"
+  - ".github/"
+  - ".rules/"
+  - ".vscode/"
+  - "coverage/"
+  - "dist/"
+  - "docs/"
+  - "output/"
+  - "scripts/"
+  - "tests/"
+codecov:
+  require_ci_to_pass: true
+  branch: main
+
+coverage:
+  status:
+    project:
+      default:
+        enabled: true
+        base: main
+        target: auto
+        threshold: 0.1% # Optional: fail only if coverage drops more than this
+    patch: true
+    changes: true
