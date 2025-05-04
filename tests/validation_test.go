@@ -231,6 +231,10 @@ func TestMultipleOf(t *testing.T) {
 			data: `{"myInteger": 10, "myNumber": 2.4}`,
 		},
 		{
+			desc: "no violations bigger number",
+			data: `{"myInteger": 10, "myNumber": 482.6}`,
+		},
+		{
 			desc:    "myInt not a multiple of 2",
 			data:    `{"myInteger": 11, "myNumber": 2.4}`,
 			wantErr: errors.New("field myInteger: must be a multiple of 2"),
@@ -238,7 +242,7 @@ func TestMultipleOf(t *testing.T) {
 		{
 			desc:    "myNumber not a multiple of 1.2",
 			data:    `{"myInteger": 10, "myNumber": 2.5}`,
-			wantErr: errors.New("field myNumber: must be a multiple of 1.2"),
+			wantErr: errors.New("field myNumber: must be a multiple of 0.2"),
 		},
 	}
 

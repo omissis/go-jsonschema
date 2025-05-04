@@ -337,15 +337,29 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) {
 	if v.multipleOf != nil {
 		if v.roundToInt {
 			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+			out.Indent(1)
+			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+			out.Indent(-1)
+			out.Printlnf("}")
 		} else {
-			out.Printlnf(
-				`if %s math.Abs(math.Mod(%s%s, %v)) > 1e-10 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
-		}
+			if v.isNillable {
+				out.Printlnf(`if %s != nil {`, value)
+			} else {
+				out.Printlnf("{")
+			}
 
-		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
-		out.Indent(-1)
-		out.Printlnf("}")
+			out.Indent(1)
+			out.Printlnf("remainder := math.Mod(%s%s, %v)", pointerPrefix, value, v.valueOf(*v.multipleOf))
+			out.Printlnf(
+				`if !(math.Abs(remainder) < 1e-10 || math.Abs(remainder - %v) < 1e-10) {`, v.valueOf(*v.multipleOf))
+			out.Indent(1)
+			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+			out.Indent(-1)
+			out.Printlnf("}")
+
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
 	}
 
 	nMin, nMax, nMinExclusive, nMaxExclusive := mathutils.NormalizeBounds(
