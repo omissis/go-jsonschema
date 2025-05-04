@@ -4,7 +4,5 @@ package test
 
 type ObjectEmpty struct {
 	// Foo corresponds to the JSON schema field "foo".
-	Foo ObjectEmptyFoo `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
+	Foo map[string]interface{} `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
-
-type ObjectEmptyFoo map[string]interface{}
