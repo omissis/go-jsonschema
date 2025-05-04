@@ -285,20 +285,13 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 		return nil, true
 	}
 
-	dir, err := os.MkdirTemp("", "test")
-	if err != nil {
+	dir := t.TempDir()
+
+	if err := os.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0o644); err != nil {
 		t.Fatal(err.Error())
 	}
 
-	defer func() {
-		_ = os.RemoveAll(dir)
-	}()
-
-	if err = os.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0o644); err != nil {
-		t.Fatal(err.Error())
-	}
-
-	if err = os.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0o644); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0o644); err != nil {
 		t.Fatal(err.Error())
 	}
 
