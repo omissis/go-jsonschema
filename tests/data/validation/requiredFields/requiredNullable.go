@@ -15,7 +15,7 @@ type RequiredNullable struct {
 
 	// MyNullableStringArray corresponds to the JSON schema field
 	// "myNullableStringArray".
-	MyNullableStringArray []string `json:"myNullableStringArray" yaml:"myNullableStringArray" mapstructure:"myNullableStringArray"`
+	MyNullableStringArray *[]string `json:"myNullableStringArray" yaml:"myNullableStringArray" mapstructure:"myNullableStringArray"`
 }
 
 type RequiredNullableMyNullableObject struct {
