@@ -18,6 +18,7 @@ ignore:
   - "output/"
   - "scripts/"
   - "tests/"
+
 codecov:
   require_ci_to_pass: true
   branch: main
@@ -27,7 +28,7 @@ coverage:
     project:
       default:
         enabled: true
-        base: main
+        base: auto
         target: auto
         threshold: 0.1% # Optional: fail only if coverage drops more than this
     patch: true
