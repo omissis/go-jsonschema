@@ -22,15 +22,15 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
-          go-version: ^1.23.7
+          go-version: ^1.23.8
       - name: Setup workspace
         run: cp go.work.dist go.work
       - name: Run GoReleaser for release
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: 2.8.1
+          version: 2.9.0
           args: release --verbose --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GO_VERSION: 1.23.7
+          GO_VERSION: 1.23.8
