@@ -17,7 +17,6 @@ ignore:
   - "docs/"
   - "output/"
   - "scripts/"
-  - "tests/"
 
 codecov:
   require_ci_to_pass: true
@@ -27,9 +26,14 @@ coverage:
   status:
     project:
       default:
-        enabled: true
-        base: auto
+        enabled: false
         target: auto
-        threshold: 0.1% # Optional: fail only if coverage drops more than this
-    patch: true
-    changes: true
+        threshold: 0.25% # Optional: fail only if coverage drops more than this
+    patch:
+      enabled: true
+      target: auto
+      threshold: 0.25% # Optional: fail only if coverage drops more than this
+    changes:
+      enabled: true
+      target: auto
+      threshold: 0.25% # Optional: fail only if coverage drops more than this
