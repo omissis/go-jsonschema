@@ -1,8 +1,9 @@
-package text
+package text_test
 
 import (
 	"testing"
 
+	"github.com/atombender/go-jsonschema/internal/x/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,17 +13,15 @@ func TestNewCaser(t *testing.T) {
 	capitalizations := []string{"ID", "URL"}
 	resolveExtensions := []string{".go", ".txt"}
 
-	caser := NewCaser(capitalizations, resolveExtensions)
+	caser := text.NewCaser(capitalizations, resolveExtensions)
 
 	assert.NotNil(t, caser)
-	assert.Equal(t, capitalizations, caser.capitalizations)
-	assert.Equal(t, resolveExtensions, caser.resolveExtensions)
 }
 
 func TestIdentifierFromFileName(t *testing.T) {
 	t.Parallel()
 
-	caser := NewCaser(nil, []string{".go", ".txt"})
+	caser := text.NewCaser(nil, []string{".go", ".txt"})
 
 	tests := []struct {
 		fileName string
@@ -35,8 +34,6 @@ func TestIdentifierFromFileName(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Parallel()
-
 		result := caser.IdentifierFromFileName(test.fileName)
 		assert.Equal(t, test.expected, result)
 	}
@@ -45,7 +42,7 @@ func TestIdentifierFromFileName(t *testing.T) {
 func TestIdentifierize(t *testing.T) {
 	t.Parallel()
 
-	caser := NewCaser(nil, nil)
+	caser := text.NewCaser(nil, nil)
 
 	tests := []struct {
 		input    string
@@ -56,12 +53,12 @@ func TestIdentifierize(t *testing.T) {
 		{"example", "Example"},
 		{"example_test", "ExampleTest"},
 		{"exampleTest", "ExampleTest"},
+		{"ExampleTest", "ExampleTest"},
 		{"123example", "A123Example"},
+		{"example123Test", "Example123Test"},
 	}
 
 	for _, test := range tests {
-		t.Parallel()
-
 		result := caser.Identifierize(test.input)
 		assert.Equal(t, test.expected, result)
 	}
@@ -70,7 +67,7 @@ func TestIdentifierize(t *testing.T) {
 func TestCapitalize(t *testing.T) {
 	t.Parallel()
 
-	caser := NewCaser([]string{"ID", "URL"}, nil)
+	caser := text.NewCaser([]string{"ID", "URL"}, nil)
 
 	tests := []struct {
 		input    string
@@ -83,30 +80,7 @@ func TestCapitalize(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Parallel()
-
 		result := caser.Capitalize(test.input)
-		assert.Equal(t, test.expected, result)
-	}
-}
-
-func TestSplitIdentifierByCaseAndSeparators(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		input    string
-		expected []string
-	}{
-		{"exampleTest", []string{"example", "Test"}},
-		{"example_test", []string{"example", "test"}},
-		{"ExampleTest", []string{"Example", "Test"}},
-		{"example123Test", []string{"example", "123", "Test"}},
-	}
-
-	for _, test := range tests {
-		t.Parallel()
-
-		result := splitIdentifierByCaseAndSeparators(test.input)
 		assert.Equal(t, test.expected, result)
 	}
 }
