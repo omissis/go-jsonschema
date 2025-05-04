@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "regexp"
 
 type Issue378 struct {
@@ -12,10 +13,26 @@ type Issue378 struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Issue378) UnmarshalJSON(b []byte) error {
+func (j *Issue378) UnmarshalJSON(value []byte) error {
 	type Plain Issue378
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.Memory != nil {
+		if matched, _ := regexp.MatchString(`^\d+([tgmk]b)?$`, string(*plain.Memory)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "Memory", `^\d+([tgmk]b)?$`)
+		}
+	}
+	*j = Issue378(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Issue378) UnmarshalYAML(value *yaml.Node) error {
+	type Plain Issue378
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.Memory != nil {
