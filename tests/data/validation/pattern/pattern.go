@@ -32,6 +32,11 @@ func (j *Pattern) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
+	if plain.MyEscapedString != nil {
+		if matched, _ := regexp.MatchString(`^\$\{\{(.|[\r\n])*\}\}$`, string(*plain.MyEscapedString)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "MyEscapedString", `^\$\{\{(.|[\r\n])*\}\}$`)
+		}
+	}
 	if plain.MyNullableString != nil {
 		if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}$`, string(*plain.MyNullableString)); !matched {
 			return fmt.Errorf("field %s pattern match: must match %s", "MyNullableString", `^0x[0-9a-f]{10}$`)
