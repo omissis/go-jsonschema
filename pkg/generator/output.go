@@ -56,8 +56,8 @@ func (o *output) isUniqueTypeName(name string) bool {
 // TODO: we should check for schema equality on name collisions here to deduplicate identifiers.
 func (o *output) uniqueTypeName(scope nameScope) string {
 	if o.minimalNames {
-		for i := len(scope) - 1; i >= 0; i-- {
-			name := scope[i:].string()
+		for i := scope.len() - 1; i >= 0; i-- {
+			name := scope.stringFrom(i)
 
 			v, ok := o.declsByName[name]
 			if !ok || (ok && v.Type == nil) {

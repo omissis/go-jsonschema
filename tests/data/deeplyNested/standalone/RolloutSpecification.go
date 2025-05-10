@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "regexp"
 
 // The details of applications to be deployed.
@@ -20,9 +21,9 @@ type Applications struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Applications) UnmarshalJSON(b []byte) error {
+func (j *Applications) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["actions"]; raw != nil && !ok {
@@ -36,7 +37,31 @@ func (j *Applications) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Applications
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = Applications(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Applications) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["actions"]; raw != nil && !ok {
+		return fmt.Errorf("field actions in Applications: required")
+	}
+	if _, ok := raw["applyAcrossServiceResources"]; raw != nil && !ok {
+		return fmt.Errorf("field applyAcrossServiceResources in Applications: required")
+	}
+	if _, ok := raw["names"]; raw != nil && !ok {
+		return fmt.Errorf("field names in Applications: required")
+	}
+	type Plain Applications
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = Applications(plain)
@@ -57,9 +82,9 @@ type ApplyAcrossServiceResources struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ApplyAcrossServiceResources) UnmarshalJSON(b []byte) error {
+func (j *ApplyAcrossServiceResources) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["definitionName"]; raw != nil && !ok {
@@ -70,7 +95,28 @@ func (j *ApplyAcrossServiceResources) UnmarshalJSON(b []byte) error {
 	}
 	type Plain ApplyAcrossServiceResources
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = ApplyAcrossServiceResources(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ApplyAcrossServiceResources) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["definitionName"]; raw != nil && !ok {
+		return fmt.Errorf("field definitionName in ApplyAcrossServiceResources: required")
+	}
+	if _, ok := raw["names"]; raw != nil && !ok {
+		return fmt.Errorf("field names in ApplyAcrossServiceResources: required")
+	}
+	type Plain ApplyAcrossServiceResources
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = ApplyAcrossServiceResources(plain)
@@ -85,9 +131,9 @@ type BuildSource struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *BuildSource) UnmarshalJSON(b []byte) error {
+func (j *BuildSource) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["parameters"]; raw != nil && !ok {
@@ -95,7 +141,25 @@ func (j *BuildSource) UnmarshalJSON(b []byte) error {
 	}
 	type Plain BuildSource
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = BuildSource(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *BuildSource) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["parameters"]; raw != nil && !ok {
+		return fmt.Errorf("field parameters in BuildSource: required")
+	}
+	type Plain BuildSource
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = BuildSource(plain)
@@ -121,10 +185,10 @@ type Email struct {
 	To string `json:"to" yaml:"to" mapstructure:"to"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Email) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := value.Decode(&raw); err != nil {
 		return err
 	}
 	if _, ok := raw["to"]; raw != nil && !ok {
@@ -132,7 +196,25 @@ func (j *Email) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Email
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = Email(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Email) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["to"]; raw != nil && !ok {
+		return fmt.Errorf("field to in Email: required")
+	}
+	type Plain Email
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Email(plain)
@@ -157,10 +239,10 @@ type IncidentOptions struct {
 	When []string `json:"when,omitempty" yaml:"when,omitempty" mapstructure:"when,omitempty"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Incident) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := value.Decode(&raw); err != nil {
 		return err
 	}
 	if _, ok := raw["properties"]; raw != nil && !ok {
@@ -171,7 +253,28 @@ func (j *Incident) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Incident
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = Incident(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Incident) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["properties"]; raw != nil && !ok {
+		return fmt.Errorf("field properties in Incident: required")
+	}
+	if _, ok := raw["providerType"]; raw != nil && !ok {
+		return fmt.Errorf("field providerType in Incident: required")
+	}
+	type Plain Incident
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Incident(plain)
@@ -199,16 +302,32 @@ type Options struct {
 	When []string `json:"when,omitempty" yaml:"when,omitempty" mapstructure:"when,omitempty"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Options) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Options) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Options
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.Verbosity != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^All$|^SummaryOnly$|^Compact$)`, string(*plain.Verbosity)); !matched {
-			return fmt.Errorf("field %s pattern match: must match %s", `(?i)(^All$|^SummaryOnly$|^Compact$)`, "Verbosity")
+			return fmt.Errorf("field %s pattern match: must match %s", "Verbosity", `(?i)(^All$|^SummaryOnly$|^Compact$)`)
+		}
+	}
+	*j = Options(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Options) UnmarshalJSON(value []byte) error {
+	type Plain Options
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.Verbosity != nil {
+		if matched, _ := regexp.MatchString(`(?i)(^All$|^SummaryOnly$|^Compact$)`, string(*plain.Verbosity)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "Verbosity", `(?i)(^All$|^SummaryOnly$|^Compact$)`)
 		}
 	}
 	*j = Options(plain)
@@ -241,9 +360,9 @@ type OrchestratedStep struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *OrchestratedStep) UnmarshalJSON(b []byte) error {
+func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
@@ -254,7 +373,7 @@ func (j *OrchestratedStep) UnmarshalJSON(b []byte) error {
 	}
 	type Plain OrchestratedStep
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if len(plain.Name) < 1 {
@@ -264,7 +383,37 @@ func (j *OrchestratedStep) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("field %s length: must be >= %d", "targetName", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, string(plain.TargetType)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", `(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, "TargetType")
+		return fmt.Errorf("field %s pattern match: must match %s", "TargetType", `(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`)
+	}
+	*j = OrchestratedStep(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in OrchestratedStep: required")
+	}
+	if _, ok := raw["targetType"]; raw != nil && !ok {
+		return fmt.Errorf("field targetType in OrchestratedStep: required")
+	}
+	type Plain OrchestratedStep
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if len(plain.Name) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
+	}
+	if plain.TargetName != nil && len(*plain.TargetName) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "targetName", 1)
+	}
+	if matched, _ := regexp.MatchString(`(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, string(plain.TargetType)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "TargetType", `(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`)
 	}
 	*j = OrchestratedStep(plain)
 	return nil
@@ -279,9 +428,9 @@ type Parameters struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Parameters) UnmarshalJSON(b []byte) error {
+func (j *Parameters) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["versionFile"]; raw != nil && !ok {
@@ -289,7 +438,25 @@ func (j *Parameters) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Parameters
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = Parameters(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Parameters) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["versionFile"]; raw != nil && !ok {
+		return fmt.Errorf("field versionFile in Parameters: required")
+	}
+	type Plain Parameters
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = Parameters(plain)
@@ -312,9 +479,9 @@ type Properties struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Properties) UnmarshalJSON(b []byte) error {
+func (j *Properties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["connectorId"]; raw != nil && !ok {
@@ -325,17 +492,48 @@ func (j *Properties) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Properties
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if plain.CorrelateBy != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^rollout$)`, string(*plain.CorrelateBy)); !matched {
-			return fmt.Errorf("field %s pattern match: must match %s", `(?i)(^rollout$)`, "CorrelateBy")
+			return fmt.Errorf("field %s pattern match: must match %s", "CorrelateBy", `(?i)(^rollout$)`)
 		}
 	}
 	if plain.Environment != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^Dogfood$|^Int$|^Ppe$|^Prod$|^Staging$|^Test$)`, string(*plain.Environment)); !matched {
-			return fmt.Errorf("field %s pattern match: must match %s", `(?i)(^Dogfood$|^Int$|^Ppe$|^Prod$|^Staging$|^Test$)`, "Environment")
+			return fmt.Errorf("field %s pattern match: must match %s", "Environment", `(?i)(^Dogfood$|^Int$|^Ppe$|^Prod$|^Staging$|^Test$)`)
+		}
+	}
+	*j = Properties(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["connectorId"]; raw != nil && !ok {
+		return fmt.Errorf("field connectorId in Properties: required")
+	}
+	if _, ok := raw["routingId"]; raw != nil && !ok {
+		return fmt.Errorf("field routingId in Properties: required")
+	}
+	type Plain Properties
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if plain.CorrelateBy != nil {
+		if matched, _ := regexp.MatchString(`(?i)(^rollout$)`, string(*plain.CorrelateBy)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "CorrelateBy", `(?i)(^rollout$)`)
+		}
+	}
+	if plain.Environment != nil {
+		if matched, _ := regexp.MatchString(`(?i)(^Dogfood$|^Int$|^Ppe$|^Prod$|^Staging$|^Test$)`, string(*plain.Environment)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "Environment", `(?i)(^Dogfood$|^Int$|^Ppe$|^Prod$|^Staging$|^Test$)`)
 		}
 	}
 	*j = Properties(plain)
@@ -372,9 +570,9 @@ type RolloutMetadata struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *RolloutMetadata) UnmarshalJSON(b []byte) error {
+func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["buildSource"]; raw != nil && !ok {
@@ -391,14 +589,47 @@ func (j *RolloutMetadata) UnmarshalJSON(b []byte) error {
 	}
 	type Plain RolloutMetadata
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if len(plain.Name) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^Major$|^Minor$|^Hotfix$)`, string(plain.RolloutType)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", `(?i)(^Major$|^Minor$|^Hotfix$)`, "RolloutType")
+		return fmt.Errorf("field %s pattern match: must match %s", "RolloutType", `(?i)(^Major$|^Minor$|^Hotfix$)`)
+	}
+	*j = RolloutMetadata(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RolloutMetadata) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["buildSource"]; raw != nil && !ok {
+		return fmt.Errorf("field buildSource in RolloutMetadata: required")
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in RolloutMetadata: required")
+	}
+	if _, ok := raw["rolloutType"]; raw != nil && !ok {
+		return fmt.Errorf("field rolloutType in RolloutMetadata: required")
+	}
+	if _, ok := raw["serviceModelPath"]; raw != nil && !ok {
+		return fmt.Errorf("field serviceModelPath in RolloutMetadata: required")
+	}
+	type Plain RolloutMetadata
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if len(plain.Name) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
+	}
+	if matched, _ := regexp.MatchString(`(?i)(^Major$|^Minor$|^Hotfix$)`, string(plain.RolloutType)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "RolloutType", `(?i)(^Major$|^Minor$|^Hotfix$)`)
 	}
 	*j = RolloutMetadata(plain)
 	return nil
@@ -415,9 +646,9 @@ type RolloutPolicyReference struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *RolloutPolicyReference) UnmarshalJSON(b []byte) error {
+func (j *RolloutPolicyReference) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
@@ -428,7 +659,28 @@ func (j *RolloutPolicyReference) UnmarshalJSON(b []byte) error {
 	}
 	type Plain RolloutPolicyReference
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = RolloutPolicyReference(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RolloutPolicyReference) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in RolloutPolicyReference: required")
+	}
+	if _, ok := raw["version"]; raw != nil && !ok {
+		return fmt.Errorf("field version in RolloutPolicyReference: required")
+	}
+	type Plain RolloutPolicyReference
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = RolloutPolicyReference(plain)
@@ -449,9 +701,9 @@ type RolloutSpecification struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *RolloutSpecification) UnmarshalJSON(b []byte) error {
+func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["contentVersion"]; raw != nil && !ok {
@@ -465,11 +717,38 @@ func (j *RolloutSpecification) UnmarshalJSON(b []byte) error {
 	}
 	type Plain RolloutSpecification
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if matched, _ := regexp.MatchString(`^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`, string(plain.ContentVersion)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", `^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`, "ContentVersion")
+		return fmt.Errorf("field %s pattern match: must match %s", "ContentVersion", `^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`)
+	}
+	*j = RolloutSpecification(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RolloutSpecification) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["contentVersion"]; raw != nil && !ok {
+		return fmt.Errorf("field contentVersion in RolloutSpecification: required")
+	}
+	if _, ok := raw["orchestratedSteps"]; raw != nil && !ok {
+		return fmt.Errorf("field orchestratedSteps in RolloutSpecification: required")
+	}
+	if _, ok := raw["rolloutMetadata"]; raw != nil && !ok {
+		return fmt.Errorf("field rolloutMetadata in RolloutSpecification: required")
+	}
+	type Plain RolloutSpecification
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`, string(plain.ContentVersion)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "ContentVersion", `^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`)
 	}
 	*j = RolloutSpecification(plain)
 	return nil
