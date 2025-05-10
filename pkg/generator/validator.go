@@ -62,7 +62,7 @@ type readOnlyValidator struct {
 	declName string
 }
 
-func (v *readOnlyValidator) generate(out *codegen.Emitter) {
+func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) {
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
