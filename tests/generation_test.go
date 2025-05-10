@@ -291,7 +291,7 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				t.Logf("Updating file %s", mustAbs(goldenFileName))
 
 				if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
-					t.Fatalf("Failed to write to %s: %w\n", goldenFileName, err)
+					t.Fatalf("Failed to write to %s: %s\n", goldenFileName, err.Error())
 				}
 			} else {
 				if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {

@@ -276,7 +276,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	decl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope.string()),
+		Name:       g.output.uniqueTypeName(scope),
 		Comment:    t.Description,
 		SchemaType: t,
 	}
@@ -1030,8 +1030,9 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 // has a plural name like "Actions", then the singular name for the element will be "Action". If the collection
 // is not plural, like "WhateverElse", then the element's name will be "WhateverElseElem".
 func (g *Generator) singularScope(scope nameScope) nameScope {
-	if g.minimalNames && len(scope) > 0 && strings.HasSuffix(scope[len(scope)-1], "s") {
-		return scope[:len(scope)-1].add(strings.TrimSuffix(scope[len(scope)-1], "s"))
+	last, ok := scope.last()
+	if g.minimalNames && ok && strings.HasSuffix(last, "s") {
+		return scope.add(strings.TrimSuffix(last, "s"))
 	}
 
 	return scope.add("Elem")
@@ -1136,7 +1137,7 @@ func (g *schemaGenerator) generateEnumType(
 	}
 
 	enumDecl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope.string()),
+		Name:       g.output.uniqueTypeName(scope),
 		Type:       enumType,
 		SchemaType: t,
 	}
