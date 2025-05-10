@@ -70,6 +70,10 @@ func (yf *yamlFormatter) generate(
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
 			for _, f := range structType.Fields {
 				if f.Name == "AdditionalProperties" {
+					output.file.Package.AddImport("reflect", "")
+					output.file.Package.AddImport("strings", "")
+					output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+
 					out.Printlnf("st := reflect.TypeOf(Plain{})")
 					out.Printlnf("for i := range st.NumField() {")
 					out.Indent(1)
