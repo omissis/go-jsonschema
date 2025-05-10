@@ -14,7 +14,10 @@ import (
 	testMultipleOf "github.com/atombender/go-jsonschema/tests/data/validation/multipleOf"
 	testPattern "github.com/atombender/go-jsonschema/tests/data/validation/pattern"
 	testPrimitiveDefs "github.com/atombender/go-jsonschema/tests/data/validation/primitive_defs"
+	testReadOnlyFields "github.com/atombender/go-jsonschema/tests/data/validation/readOnly"
+	testReadOnlyAndRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/readOnlyAndRequired"
 	testRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
+	testReadOnlyValidationDisabledFields "github.com/atombender/go-jsonschema/tests/data/validationDisabled/readOnly"
 	"github.com/atombender/go-jsonschema/tests/helpers"
 )
 
@@ -146,6 +149,97 @@ func TestRequiredFields(t *testing.T) {
 			t.Parallel()
 
 			model := testRequiredFields.RequiredNullable{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestReadOnlyFields(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc:    "object without readOnly property passes validation",
+			data:    `{"myString": "abc"}`,
+			wantErr: nil,
+		},
+		{
+			desc:    "object with readOnly property fails validation",
+			data:    `{"myString": "abc", "myReadOnlyString": "abc"}`,
+			wantErr: errors.New("field myReadOnlyString in ReadOnly: read only"),
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testReadOnlyFields.ReadOnly{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestReadOnlyFieldsNoValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc:    "object with readOnly property and disabled validation",
+			data:    `{"myString": "abc", "myReadOnlyString": "abc"}`,
+			wantErr: nil,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testReadOnlyValidationDisabledFields.ReadOnlyNoValidation{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestReadOnlyAndRequiredFields(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc:    "object with property that is both required and readOnly fails validation if given",
+			data:    `{"myReadOnlyRequiredString": "abc"}`,
+			wantErr: errors.New("field myReadOnlyRequiredString in ReadOnlyAndRequired: read only"),
+		},
+		{
+			desc:    "object with property that is both required and readOnly fails validation if not given",
+			data:    `{}`,
+			wantErr: errors.New("field myReadOnlyRequiredString in ReadOnlyAndRequired: required"),
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testReadOnlyAndRequiredFields.ReadOnlyAndRequired{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 

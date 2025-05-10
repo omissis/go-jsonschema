@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/array",
+  "type": "object",
+  "properties": {
+    "myReadOnlyString": {
+      "type": "string",
+      "readOnly": true
+    },
+    "myString": {
+      "type": "string"
+    }
+  },
+  "required": [ "myString" ]
+}

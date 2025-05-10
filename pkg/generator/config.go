@@ -20,7 +20,8 @@ type Config struct {
 	// an "omitempty" tag will never be present in generated struct fields.
 	// When DisableOmitempty is set to false,
 	// an "omitempty" tag will be present for all fields that are not required.
-	DisableOmitempty bool
+	DisableOmitempty          bool
+	DisableReadOnlyValidation bool
 }
 
 type SchemaMapping struct {
