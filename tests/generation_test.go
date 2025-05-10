@@ -53,6 +53,15 @@ func TestValidation(t *testing.T) {
 	testExamples(t, basicConfig, "./data/validation")
 }
 
+func TestValidationDisabledReadOnly(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.DisableReadOnlyValidation = true
+
+	testExamples(t, cfg, "./data/validationDisabled/readOnly")
+}
+
 func TestMiscWithDefaults(t *testing.T) {
 	t.Parallel()
 

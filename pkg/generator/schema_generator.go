@@ -336,7 +336,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 				})
 			}
 
-			if f.SchemaType.ReadOnly {
+			if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
 				validators = append(validators, &readOnlyValidator{
 					jsonName: f.JSONName,
 					declName: decl.Name,

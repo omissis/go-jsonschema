@@ -17,6 +17,7 @@ import (
 	testReadOnlyFields "github.com/atombender/go-jsonschema/tests/data/validation/readOnly"
 	testReadOnlyAndRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/readOnlyAndRequired"
 	testRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
+	testReadOnlyValidationDisabledFields "github.com/atombender/go-jsonschema/tests/data/validationDisabled/readOnly"
 	"github.com/atombender/go-jsonschema/tests/helpers"
 )
 
@@ -180,6 +181,33 @@ func TestReadOnlyFields(t *testing.T) {
 			t.Parallel()
 
 			model := testReadOnlyFields.ReadOnly{}
+
+			err := json.Unmarshal([]byte(tC.data), &model)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+func TestReadOnlyFieldsNoValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc:    "object with readOnly property and disabled validation",
+			data:    `{"myString": "abc", "myReadOnlyString": "abc"}`,
+			wantErr: nil,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			model := testReadOnlyValidationDisabledFields.ReadOnlyNoValidation{}
 
 			err := json.Unmarshal([]byte(tC.data), &model)
 
