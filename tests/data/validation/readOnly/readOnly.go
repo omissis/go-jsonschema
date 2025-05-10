@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type ReadOnly struct {
 	// MyReadOnlyString corresponds to the JSON schema field "myReadOnlyString".
@@ -14,9 +15,9 @@ type ReadOnly struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ReadOnly) UnmarshalJSON(b []byte) error {
+func (j *ReadOnly) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
@@ -27,7 +28,28 @@ func (j *ReadOnly) UnmarshalJSON(b []byte) error {
 	}
 	type Plain ReadOnly
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = ReadOnly(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ReadOnly) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["myString"]; raw != nil && !ok {
+		return fmt.Errorf("field myString in ReadOnly: required")
+	}
+	if _, ok := raw["myReadOnlyString"]; raw != nil && ok {
+		return fmt.Errorf("field myReadOnlyString in ReadOnly: read only")
+	}
+	type Plain ReadOnly
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = ReadOnly(plain)
