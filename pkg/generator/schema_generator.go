@@ -310,7 +310,6 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
-
 			g.generateUnmarshaler(decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
@@ -321,12 +320,6 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 
 		for _, f := range tt.Fields {
-			if f.Name == additionalProperties {
-				g.output.file.Package.AddImport("reflect", "")
-				g.output.file.Package.AddImport("strings", "")
-				g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-			}
-
 			if f.DefaultValue != nil {
 				validators = append(validators, &defaultValidator{
 					jsonName:         f.JSONName,
