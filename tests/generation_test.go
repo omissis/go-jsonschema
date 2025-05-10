@@ -268,9 +268,10 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				// due to a code change you made and you just want to accept the new output.
 				// Simply run "OVERWRITE_EXPECTED_GO_FILE=true make test".
 				if os.Getenv("OVERWRITE_EXPECTED_GO_FILE") == "true" {
-					t.Logf("Writing expected output to %s\n", string(goldenFileName))
+					t.Logf("Writing expected output to %s\n", goldenFileName)
+
 					if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
-						t.Logf("Failed to write to %s\n", string(goldenFileName))
+						t.Logf("Failed to write to %s\n", goldenFileName)
 					}
 				}
 			}
