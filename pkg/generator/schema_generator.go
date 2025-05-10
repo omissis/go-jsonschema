@@ -112,7 +112,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, qerr)
 		}
 
-		if ferr := g.addFile(qualified, schema); ferr != nil {
+		if ferr := g.AddFile(qualified, schema); ferr != nil {
 			return nil, ferr
 		}
 
