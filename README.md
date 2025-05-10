@@ -74,6 +74,15 @@ Note the flag format:
                  schema $id                  full import URL
 ```
 
+### Regenerating tests' golden files
+
+It sometimes happen that new features or bug fixes to the library require regenerating the tests' golden files, here's how to do it:
+
+```
+export OVERWRITE_EXPECTED_GO_FILE="true"
+make test
+```
+
 ### Special types
 
 In a few cases, special types are used to help with serializing/deserializing

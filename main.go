@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	perm755 = 0o755
 	perm644 = 0o644
+	perm755 = 0o755
 )
 
 var (
