@@ -20,7 +20,6 @@ type validator interface {
 
 type packageImport struct {
 	qualifiedName string
-	alias         string
 }
 
 type validatorDesc struct {
@@ -142,16 +141,16 @@ type defaultValidator struct {
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter, format string) {
-	defaultValue := v.dumpDefaultValue(out)
+	defaultValue := v.dumpDefaultValueAssignment(out)
 
 	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Printlnf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
+	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
 	out.Printlnf("}")
 }
 
-func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
+func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) any {
 	if v.defaultValueType != nil {
 		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
 			dvm, ok := v.defaultValue.(map[string]any)
@@ -163,7 +162,9 @@ func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
 
 				namedFields += "\n"
 
-				return fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+
+				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
 			}
 		}
 
@@ -198,7 +199,11 @@ func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
 			tmpEmitter.Printlnf("%s, err := time.ParseDuration(\"%s\")", defaultValue, goDurationStr)
 			tmpEmitter.Printlnf("if err != nil {")
 			tmpEmitter.Indent(1)
-			tmpEmitter.Printlnf("return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)", goDurationStr, v.jsonName)
+			tmpEmitter.Printlnf(
+				"return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)",
+				goDurationStr,
+				v.jsonName,
+			)
 			tmpEmitter.Indent(-1)
 			tmpEmitter.Printlnf("}")
 			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
@@ -208,11 +213,11 @@ func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
 	}
 
 	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
-		return defaultValue
+		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
 	}
 
 	// Fallback to sdump in case we couldn't dump it properly.
-	return litter.Sdump(v.defaultValue)
+	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue))
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
@@ -243,6 +248,7 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 
 func (v *defaultValidator) desc() *validatorDesc {
 	var packages []packageImport
+
 	_, ok := v.defaultValueType.(codegen.DurationType)
 	if v.defaultValueType != nil && ok {
 		defaultDurationISO8601, ok := v.defaultValue.(string)

@@ -362,31 +362,6 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
-func (g *schemaGenerator) addValidatorsToType(validators []validator, decl codegen.TypeDecl) {
-	if len(validators) > 0 {
-		for _, v := range validators {
-			for _, im := range v.desc().imports {
-				g.output.file.Package.AddImport(im.qualifiedName, im.alias)
-			}
-
-			if v.desc().hasError {
-				g.output.file.Package.AddImport("fmt", "")
-
-				break
-			}
-		}
-
-		for _, formatter := range g.formatters {
-			formatter.addImport(g.output.file)
-
-			g.output.file.Package.AddDecl(&codegen.Method{
-				Impl: formatter.generate(g.output, decl, validators),
-				Name: decl.GetName() + "_validator",
-			})
-		}
-	}
-}
-
 func (g *schemaGenerator) structFieldValidators(
 	validators []validator,
 	f codegen.StructField,
@@ -494,6 +469,10 @@ func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators 
 			g.output.file.Package.AddImport("errors", "")
 		}
 
+		for _, pkg := range v.desc().imports {
+			g.output.file.Package.AddImport(pkg.qualifiedName, "")
+		}
+
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 
@@ -576,6 +555,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 		if dcg, ok := cg.(codegen.DurationType); ok {
 			g.output.file.Package.AddImport("time", "")
+
 			return dcg, nil
 		}
 
@@ -1003,6 +983,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 			if dcg, ok := cg.(codegen.DurationType); ok {
 				g.output.file.Package.AddImport("time", "")
+
 				return dcg, nil
 			}
 

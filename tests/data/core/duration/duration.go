@@ -4,6 +4,7 @@ package test
 
 import "encoding/json"
 import "fmt"
+import yaml "gopkg.in/yaml.v3"
 import "time"
 
 type Duration struct {
@@ -20,14 +21,14 @@ type DurationMyObject struct {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *DurationMyObject) UnmarshalJSON(b []byte) error {
+func (j *DurationMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain DurationMyObject
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw["withDefault"]; !ok || v == nil {
@@ -36,6 +37,30 @@ func (j *DurationMyObject) UnmarshalJSON(b []byte) error {
 			return fmt.Errorf("failed to parse the \"20s\" default value for field withDefault: %w", err)
 		}
 		plain.WithDefault = defaultDuration
+
+	}
+	*j = DurationMyObject(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *DurationMyObject) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	type Plain DurationMyObject
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if v, ok := raw["withDefault"]; !ok || v == nil {
+		defaultDuration, err := time.ParseDuration("20s")
+		if err != nil {
+			return fmt.Errorf("failed to parse the \"20s\" default value for field withDefault: %w", err)
+		}
+		plain.WithDefault = defaultDuration
+
 	}
 	*j = DurationMyObject(plain)
 	return nil

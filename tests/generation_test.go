@@ -32,6 +32,12 @@ var (
 	}
 )
 
+func TestDebug(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/core/duration")
+}
+
 func TestCore(t *testing.T) {
 	t.Parallel()
 
