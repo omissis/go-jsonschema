@@ -121,20 +121,17 @@ func (v verifyFormatter) enumUnmarshal(
 	wrapInStruct bool,
 ) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
-		varName := enumVarName(wrapInStruct)
-
 		out.Comment("Verify checks all fields on the struct match the schema.")
-		out.Printlnf("func (%s %s) Verify() error {", varNamePlainStruct, declType.Name)
+		out.Printlnf("func (j %s) Verify() error {", declType.Name)
 		out.Indent(1)
 		out.Printlnf("for _, expected := range %s {", valueConstant.Name)
 		out.Indent(1)
-		out.Printlnf("if reflect.DeepEqual(%s, expected) { return nil }", varName)
+		out.Printlnf("if reflect.DeepEqual(j, expected) { return nil }")
 		out.Indent(-1)
 		out.Printlnf("}")
 		out.Printlnf(
-			`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
+			`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, j)`,
 			valueConstant.Name,
-			varName,
 		)
 		out.Indent(-1)
 		out.Printlnf("}")

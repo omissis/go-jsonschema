@@ -63,13 +63,13 @@ func (j *TypedDefaultEnumsSome) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // Verify checks all fields on the struct match the schema.
-func (plain TypedDefaultEnumsSome) Verify() error {
+func (j TypedDefaultEnumsSome) Verify() error {
 	for _, expected := range enumValues_TypedDefaultEnumsSome {
-		if reflect.DeepEqual(v, expected) {
+		if reflect.DeepEqual(j, expected) {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_TypedDefaultEnumsSome, v)
+	return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_TypedDefaultEnumsSome, j)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
