@@ -110,6 +110,9 @@ func PrimitiveTypeFromJSONSchemaType(
 				},
 			}
 
+		case "duration":
+			t = DurationType{}
+
 		default:
 			t = PrimitiveType{"string"}
 		}

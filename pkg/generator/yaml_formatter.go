@@ -19,7 +19,7 @@ func (yf *yamlFormatter) generate(
 	output *output,
 	declType codegen.TypeDecl,
 	validators []validator,
-) func(*codegen.Emitter) {
+) func(*codegen.Emitter) error {
 	var (
 		beforeValidators []validator
 		afterValidators  []validator
@@ -37,7 +37,7 @@ func (yf *yamlFormatter) generate(
 		}
 	}
 
-	return func(out *codegen.Emitter) {
+	return func(out *codegen.Emitter) error {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
@@ -48,7 +48,9 @@ func (yf *yamlFormatter) generate(
 		}
 
 		for _, v := range beforeValidators {
-			v.generate(out, "yaml")
+			if err := v.generate(out, "yaml"); err != nil {
+				return fmt.Errorf("cannot generate before validators: %w", err)
+			}
 		}
 
 		tp := typePlain
@@ -64,16 +66,14 @@ func (yf *yamlFormatter) generate(
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			v.generate(out, "yaml")
+			if err := v.generate(out, "yaml"); err != nil {
+				return fmt.Errorf("cannot generate after validators: %w", err)
+			}
 		}
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
 			for _, f := range structType.Fields {
 				if f.Name == "AdditionalProperties" {
-					output.file.Package.AddImport("reflect", "")
-					output.file.Package.AddImport("strings", "")
-					output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-
 					out.Printlnf("st := reflect.TypeOf(Plain{})")
 					out.Printlnf("for i := range st.NumField() {")
 					out.Indent(1)
@@ -96,17 +96,21 @@ func (yf *yamlFormatter) generate(
 		out.Printlnf("return nil")
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (yf *yamlFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {
+func (yf *yamlFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
 		out.Commentf("Marshal%s implements %s.Marshal.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printlnf("return %s.Marshal(j.Value)", formatYAML)
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
@@ -115,13 +119,17 @@ func (yf *yamlFormatter) enumUnmarshal(
 	enumType codegen.Type,
 	valueConstant *codegen.Var,
 	wrapInStruct bool,
-) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {
+) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printf("var v ")
-		enumType.Generate(out)
+
+		if err := enumType.Generate(out); err != nil {
+			return fmt.Errorf("cannot unmarshal enum content: %w", err)
+		}
+
 		out.Newline()
 
 		varName := "v"
@@ -141,9 +149,23 @@ func (yf *yamlFormatter) enumUnmarshal(
 		out.Printlnf(`return nil`)
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (yf *yamlFormatter) addImport(out *codegen.File) {
+func (yf *yamlFormatter) addImport(out *codegen.File, declType codegen.TypeDecl) {
 	out.Package.AddImport(YAMLPackage, "yaml")
+
+	if structType, ok := declType.Type.(*codegen.StructType); ok {
+		for _, f := range structType.Fields {
+			if f.Name == additionalProperties {
+				out.Package.AddImport("reflect", "")
+				out.Package.AddImport("strings", "")
+				out.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+
+				return
+			}
+		}
+	}
 }

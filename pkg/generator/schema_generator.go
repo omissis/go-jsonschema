@@ -321,6 +321,12 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
+				if f.Name == additionalProperties {
+					g.output.file.Package.AddImport("reflect", "")
+					g.output.file.Package.AddImport("strings", "")
+					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+				}
+
 				validators = append(validators, &defaultValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
@@ -469,6 +475,10 @@ func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators 
 			g.output.file.Package.AddImport("errors", "")
 		}
 
+		for _, pkg := range v.desc().imports {
+			g.output.file.Package.AddImport(pkg.qualifiedName, "")
+		}
+
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 
@@ -477,7 +487,7 @@ func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators 
 	}
 
 	for _, formatter := range g.formatters {
-		formatter.addImport(g.output.file)
+		formatter.addImport(g.output.file, decl)
 
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: formatter.generate(g.output, decl, validators),
@@ -547,6 +557,12 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 			}
 
 			return ncg, nil
+		}
+
+		if dcg, ok := cg.(codegen.DurationType); ok {
+			g.output.file.Package.AddImport("time", "")
+
+			return dcg, nil
 		}
 
 		return cg, nil
@@ -971,6 +987,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 				return ncg, nil
 			}
 
+			if dcg, ok := cg.(codegen.DurationType); ok {
+				g.output.file.Package.AddImport("time", "")
+
+				return dcg, nil
+			}
+
 			return cg, nil
 		}
 
@@ -1121,7 +1143,7 @@ func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (co
 		g.output.file.Package.AddImport("reflect", "")
 
 		for _, formatter := range g.formatters {
-			formatter.addImport(g.output.file)
+			formatter.addImport(g.output.file, enumDecl)
 
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{

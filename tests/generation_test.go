@@ -243,11 +243,16 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			t.Fatal(err)
 		}
 
-		if len(g.Sources()) == 0 {
+		sources, err := g.Sources()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(sources) == 0 {
 			t.Fatal("Expected sources to contain something")
 		}
 
-		for outputName, source := range g.Sources() {
+		for outputName, source := range sources {
 			if outputName == "-" {
 				outputName = strings.TrimSuffix(filepath.Base(fileName), filepath.Ext(fileName)) + ".go"
 			}

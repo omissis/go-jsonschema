@@ -7,20 +7,26 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
+	"github.com/sosodev/duration"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
 )
 
 type validator interface {
-	generate(out *codegen.Emitter, format string)
+	generate(out *codegen.Emitter, format string) error
 	desc() *validatorDesc
+}
+
+type packageImport struct {
+	qualifiedName string
 }
 
 type validatorDesc struct {
 	hasError            bool
 	beforeJSONUnmarshal bool
 	requiresRawAfter    bool
+	imports             []packageImport
 }
 
 var (
@@ -32,6 +38,8 @@ var (
 	_ validator = new(stringValidator)
 	_ validator = new(numericValidator)
 	_ validator = new(anyOfValidator)
+
+	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
 
 type requiredValidator struct {
@@ -39,7 +47,7 @@ type requiredValidator struct {
 	declName string
 }
 
-func (v *requiredValidator) generate(out *codegen.Emitter, format string) {
+func (v *requiredValidator) generate(out *codegen.Emitter, format string) error {
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
@@ -48,6 +56,8 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) {
 	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
@@ -62,7 +72,7 @@ type readOnlyValidator struct {
 	declName string
 }
 
-func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) {
+func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) error {
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
@@ -71,6 +81,8 @@ func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) {
 	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, v.jsonName, v.declName)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
 func (v *readOnlyValidator) desc() *validatorDesc {
@@ -86,7 +98,7 @@ type nullTypeValidator struct {
 	arrayDepth int
 }
 
-func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) {
+func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) error {
 	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 
@@ -117,6 +129,8 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	return nil
 }
 
 func (v *nullTypeValidator) desc() *validatorDesc {
@@ -134,43 +148,91 @@ type defaultValidator struct {
 	defaultValue     interface{}
 }
 
-func (v *defaultValidator) generate(out *codegen.Emitter, format string) {
-	defaultValue := v.dumpDefaultValue(out)
+func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
+	defaultValue, err := v.dumpDefaultValueAssignment(out)
+	if err != nil {
+		return fmt.Errorf("cannot generate default validator: %w", err)
+	}
 
 	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
-	out.Printlnf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
+	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
-func (v *defaultValidator) dumpDefaultValue(out *codegen.Emitter) any {
-	nt, ok := v.defaultValueType.(*codegen.NamedType)
-	if v.defaultValueType != nil && ok {
-		dvm, ok := v.defaultValue.(map[string]any)
-		if ok {
-			namedFields := ""
-			for _, k := range sortedKeys(dvm) {
-				namedFields += fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
+func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any, error) {
+	if v.defaultValueType != nil {
+		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
+			dvm, ok := v.defaultValue.(map[string]any)
+			if ok {
+				namedFields := ""
+				for _, k := range sortedKeys(dvm) {
+					namedFields += fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
+				}
+
+				namedFields += "\n"
+
+				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+
+				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
+			}
+		}
+
+		if _, ok := v.defaultValueType.(codegen.DurationType); ok {
+			defaultDurationISO8601, ok := v.defaultValue.(string)
+
+			if !ok {
+				return nil, errors.New(fmt.Sprintf("duration default value must be a string, %T given", v.defaultValue))
 			}
 
-			namedFields += "\n"
+			if defaultDurationISO8601 == "" {
+				return nil, errors.New("duration default value must not be an empty string")
+			}
 
-			return fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+			duration, err := duration.Parse(defaultDurationISO8601)
+			if err != nil {
+				return nil, errors.New("could not convert duration from ISO8601 to Go format")
+			}
+
+			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+			defaultValue := "defaultDuration"
+			goDurationStr := duration.ToTimeDuration().String()
+
+			tmpEmitter.Printlnf("%s, err := time.ParseDuration(\"%s\")", defaultValue, goDurationStr)
+			tmpEmitter.Printlnf("if err != nil {")
+			tmpEmitter.Indent(1)
+			tmpEmitter.Printlnf(
+				"return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)",
+				goDurationStr,
+				v.jsonName,
+			)
+			tmpEmitter.Indent(-1)
+			tmpEmitter.Printlnf("}")
+			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+
+			return tmpEmitter.String(), nil
 		}
 	}
 
 	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
-		return defaultValue
+		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 	}
 
 	// Fallback to sdump in case we couldn't dump it properly.
-	return litter.Sdump(v.defaultValue)
+	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue)), nil
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
-	v.defaultValueType.Generate(tmpEmitter)
+
+	if err := v.defaultValueType.Generate(tmpEmitter); err != nil {
+		return "", fmt.Errorf("%w: %w", ErrCannotDumpDefaultSlice, err)
+	}
+
 	tmpEmitter.Printlnf("{")
 
 	kind := reflect.ValueOf(v.defaultValue).Kind()
@@ -195,10 +257,24 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 }
 
 func (v *defaultValidator) desc() *validatorDesc {
+	var packages []packageImport
+
+	_, ok := v.defaultValueType.(codegen.DurationType)
+	if v.defaultValueType != nil && ok {
+		defaultDurationISO8601, ok := v.defaultValue.(string)
+		if ok && defaultDurationISO8601 != "" {
+			packages = []packageImport{
+				{qualifiedName: "fmt"},
+				{qualifiedName: "time"},
+			}
+		}
+	}
+
 	return &validatorDesc{
 		hasError:            false,
 		beforeJSONUnmarshal: false,
 		requiresRawAfter:    true,
+		imports:             packages,
 	}
 }
 
@@ -210,9 +286,9 @@ type arrayValidator struct {
 	maxItems   int
 }
 
-func (v *arrayValidator) generate(out *codegen.Emitter, format string) {
+func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 	if v.minItems == 0 && v.maxItems == 0 {
-		return
+		return nil
 	}
 
 	value := getPlainName(v.fieldName)
@@ -255,6 +331,8 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	return nil
 }
 
 func (v *arrayValidator) desc() *validatorDesc {
@@ -273,7 +351,7 @@ type stringValidator struct {
 	pattern    string
 }
 
-func (v *stringValidator) generate(out *codegen.Emitter, format string) {
+func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 	checkPointer := ""
@@ -309,7 +387,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 	}
 
 	if v.minLength == 0 && v.maxLength == 0 {
-		return
+		return nil
 	}
 
 	if v.minLength != 0 {
@@ -327,6 +405,8 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	return nil
 }
 
 func (v *stringValidator) desc() *validatorDesc {
@@ -348,7 +428,7 @@ type numericValidator struct {
 	roundToInt       bool
 }
 
-func (v *numericValidator) generate(out *codegen.Emitter, format string) {
+func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 	value := getPlainName(v.fieldName)
 	checkPointer := ""
 	pointerPrefix := ""
@@ -392,6 +472,8 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) {
 
 	v.genBoundary(out, checkPointer, pointerPrefix, value, nMax, nMaxExclusive, "<")
 	v.genBoundary(out, checkPointer, pointerPrefix, value, nMin, nMinExclusive, ">")
+
+	return nil
 }
 
 func (v *numericValidator) genBoundary(
@@ -451,7 +533,7 @@ type anyOfValidator struct {
 	elemCount int
 }
 
-func (v *anyOfValidator) generate(out *codegen.Emitter, format string) {
+func (v *anyOfValidator) generate(out *codegen.Emitter, format string) error {
 	for i := range v.elemCount {
 		out.Printlnf(`var %s_%d %s_%d`, lowerFirst(v.fieldName), i, upperFirst(v.fieldName), i)
 	}
@@ -476,6 +558,8 @@ func (v *anyOfValidator) generate(out *codegen.Emitter, format string) {
 	out.Printlnf(`return fmt.Errorf("all validators failed: %%s", errors.Join(errs...))`)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
 func (v *anyOfValidator) desc() *validatorDesc {

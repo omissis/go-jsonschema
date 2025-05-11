@@ -12,13 +12,15 @@ const (
 	formatJSON = "json"
 )
 
+var ErrCannotUnmarshalEnum = fmt.Errorf("cannot unmarshal enum")
+
 type jsonFormatter struct{}
 
 func (jf *jsonFormatter) generate(
 	output *output,
 	declType codegen.TypeDecl,
 	validators []validator,
-) func(*codegen.Emitter) {
+) func(*codegen.Emitter) error {
 	var (
 		beforeValidators []validator
 		afterValidators  []validator
@@ -36,7 +38,7 @@ func (jf *jsonFormatter) generate(
 		}
 	}
 
-	return func(out *codegen.Emitter) {
+	return func(out *codegen.Emitter) error {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatJSON), formatJSON)
 		out.Printlnf("func (j *%s) Unmarshal%s(value []byte) error {", declType.Name, strings.ToUpper(formatJSON))
 		out.Indent(1)
@@ -47,7 +49,9 @@ func (jf *jsonFormatter) generate(
 		}
 
 		for _, v := range beforeValidators {
-			v.generate(out, "json")
+			if err := v.generate(out, "json"); err != nil {
+				return fmt.Errorf("cannot generate before validators: %w", err)
+			}
 		}
 
 		tp := typePlain
@@ -64,16 +68,14 @@ func (jf *jsonFormatter) generate(
 			formatJSON, varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			v.generate(out, "json")
+			if err := v.generate(out, "json"); err != nil {
+				return fmt.Errorf("cannot generate after validators: %w", err)
+			}
 		}
 
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
 			for _, f := range structType.Fields {
 				if f.Name == additionalProperties {
-					output.file.Package.AddImport("reflect", "")
-					output.file.Package.AddImport("strings", "")
-					output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-
 					out.Printlnf("st := reflect.TypeOf(Plain{})")
 					out.Printlnf("for i := range st.NumField() {")
 					out.Indent(1)
@@ -96,17 +98,21 @@ func (jf *jsonFormatter) generate(
 		out.Printlnf("return nil")
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (jf *jsonFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {
+func (jf *jsonFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
 		out.Commentf("Marshal%s implements %s.Marshaler.", strings.ToUpper(formatJSON), formatJSON)
 		out.Printlnf("func (j *%s) Marshal%s() ([]byte, error) {", declType.Name, strings.ToUpper(formatJSON))
 		out.Indent(1)
 		out.Printlnf("return %s.Marshal(j.Value)", formatJSON)
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
@@ -115,13 +121,17 @@ func (jf *jsonFormatter) enumUnmarshal(
 	enumType codegen.Type,
 	valueConstant *codegen.Var,
 	wrapInStruct bool,
-) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {
+) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
 		out.Comment("UnmarshalJSON implements json.Unmarshaler.")
 		out.Printlnf("func (j *%s) UnmarshalJSON(value []byte) error {", declType.Name)
 		out.Indent(1)
 		out.Printf("var v ")
-		enumType.Generate(out)
+
+		if err := enumType.Generate(out); err != nil {
+			return fmt.Errorf("%w: %w", ErrCannotUnmarshalEnum, err)
+		}
+
 		out.Newline()
 
 		varName := "v"
@@ -142,9 +152,23 @@ func (jf *jsonFormatter) enumUnmarshal(
 		out.Printlnf(`return nil`)
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (jf *jsonFormatter) addImport(out *codegen.File) {
+func (jf *jsonFormatter) addImport(out *codegen.File, declType codegen.TypeDecl) {
 	out.Package.AddImport("encoding/json", "")
+
+	if structType, ok := declType.Type.(*codegen.StructType); ok {
+		for _, f := range structType.Fields {
+			if f.Name == additionalProperties {
+				out.Package.AddImport("reflect", "")
+				out.Package.AddImport("strings", "")
+				out.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+
+				return
+			}
+		}
+	}
 }

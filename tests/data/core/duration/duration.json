@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "http://example.com/object",
+    "type": "object",
+    "title": "object",
+    "properties": {
+      "myObject": {
+        "type": "object",
+        "properties": {
+          "withDefault": {
+            "type": "string",
+            "format": "duration",
+            "default": "PT20S"
+          },
+          "withoutDefault": {
+            "type": "string",
+            "format": "duration"
+          }
+        }
+      }
+    }
+  }
+  
