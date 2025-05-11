@@ -110,7 +110,12 @@ var (
 				}
 			}
 
-			for fileName, source := range generator.Sources() {
+			sources, err := generator.Sources()
+			if err != nil {
+				abortWithErr(err)
+			}
+
+			for fileName, source := range sources {
 				if fileName != "-" {
 					verboseLogf("Writing %s", fileName)
 				}

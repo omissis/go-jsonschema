@@ -30,6 +30,7 @@ var (
 	errConflictSameFile               = errors.New("conflict: same file")
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
+	errCannotGenerateSources          = errors.New("cannot generate sources")
 )
 
 type Generator struct {
@@ -74,7 +75,7 @@ func New(config Config) (*Generator, error) {
 	return generator, nil
 }
 
-func (g *Generator) Sources() map[string][]byte {
+func (g *Generator) Sources() (map[string][]byte, error) {
 	var maxLineLength int32 = 80
 
 	sources := make(map[string]*strings.Builder, len(g.outputs))
@@ -85,7 +86,10 @@ func (g *Generator) Sources() map[string][]byte {
 		}
 
 		emitter := codegen.NewEmitter(maxLineLength)
-		output.file.Generate(emitter)
+
+		if err := output.file.Generate(emitter); err != nil {
+			return nil, fmt.Errorf("%w: %w", errCannotGenerateSources, err)
+		}
 
 		sb, ok := sources[output.file.FileName]
 		if !ok {
@@ -112,7 +116,7 @@ func (g *Generator) Sources() map[string][]byte {
 		result[f] = src
 	}
 
-	return result
+	return result, nil
 }
 
 func (g *Generator) DoFile(fileName string) error {

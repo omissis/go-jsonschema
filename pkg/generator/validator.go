@@ -14,7 +14,7 @@ import (
 )
 
 type validator interface {
-	generate(out *codegen.Emitter, format string)
+	generate(out *codegen.Emitter, format string) error
 	desc() *validatorDesc
 }
 
@@ -38,6 +38,8 @@ var (
 	_ validator = new(stringValidator)
 	_ validator = new(numericValidator)
 	_ validator = new(anyOfValidator)
+
+	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
 
 type requiredValidator struct {
@@ -45,7 +47,7 @@ type requiredValidator struct {
 	declName string
 }
 
-func (v *requiredValidator) generate(out *codegen.Emitter, format string) {
+func (v *requiredValidator) generate(out *codegen.Emitter, format string) error {
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
@@ -54,6 +56,8 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) {
 	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
@@ -68,7 +72,7 @@ type readOnlyValidator struct {
 	declName string
 }
 
-func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) {
+func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) error {
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
@@ -77,6 +81,8 @@ func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) {
 	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, v.jsonName, v.declName)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
 func (v *readOnlyValidator) desc() *validatorDesc {
@@ -92,7 +98,7 @@ type nullTypeValidator struct {
 	arrayDepth int
 }
 
-func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) {
+func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) error {
 	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 
@@ -123,6 +129,8 @@ func (v *nullTypeValidator) generate(out *codegen.Emitter, format string) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	return nil
 }
 
 func (v *nullTypeValidator) desc() *validatorDesc {
@@ -140,17 +148,22 @@ type defaultValidator struct {
 	defaultValue     interface{}
 }
 
-func (v *defaultValidator) generate(out *codegen.Emitter, format string) {
-	defaultValue := v.dumpDefaultValueAssignment(out)
+func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
+	defaultValue, err := v.dumpDefaultValueAssignment(out)
+	if err != nil {
+		return fmt.Errorf("cannot generate default validator: %w", err)
+	}
 
 	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
 	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
-func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) any {
+func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any, error) {
 	if v.defaultValueType != nil {
 		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
 			dvm, ok := v.defaultValue.(map[string]any)
@@ -164,7 +177,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) any 
 
 				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
 
-				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
+				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 			}
 		}
 
@@ -172,23 +185,16 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) any 
 			defaultDurationISO8601, ok := v.defaultValue.(string)
 
 			if !ok {
-				// TODO: Return an error instead of panicking?
-				// TODO: Print type name?
-				panic("duration default value must be a string")
+				return nil, errors.New(fmt.Sprintf("duration default value must be a string, %T given", v.defaultValue))
 			}
 
 			if defaultDurationISO8601 == "" {
-				// TODO: What should we do if the default is an empty string?
-				// TODO: Return an error instead of panicking?
-				// TODO: Print type name?
-				panic("duration default value must not be an empty string")
+				return nil, errors.New("duration default value must not be an empty string")
 			}
 
 			duration, err := duration.Parse(defaultDurationISO8601)
 			if err != nil {
-				// TODO: Return an error instead of panicking?
-				// TODO: Print type name?
-				panic("could not convert duration from ISO8601 to Go format")
+				return nil, errors.New("could not convert duration from ISO8601 to Go format")
 			}
 
 			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
@@ -208,21 +214,25 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) any 
 			tmpEmitter.Printlnf("}")
 			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
 
-			return tmpEmitter.String()
+			return tmpEmitter.String(), nil
 		}
 	}
 
 	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
-		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue)
+		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 	}
 
 	// Fallback to sdump in case we couldn't dump it properly.
-	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue))
+	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue)), nil
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
-	v.defaultValueType.Generate(tmpEmitter)
+
+	if err := v.defaultValueType.Generate(tmpEmitter); err != nil {
+		return "", fmt.Errorf("%w: %w", ErrCannotDumpDefaultSlice, err)
+	}
+
 	tmpEmitter.Printlnf("{")
 
 	kind := reflect.ValueOf(v.defaultValue).Kind()
@@ -276,9 +286,9 @@ type arrayValidator struct {
 	maxItems   int
 }
 
-func (v *arrayValidator) generate(out *codegen.Emitter, format string) {
+func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 	if v.minItems == 0 && v.maxItems == 0 {
-		return
+		return nil
 	}
 
 	value := getPlainName(v.fieldName)
@@ -321,6 +331,8 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	return nil
 }
 
 func (v *arrayValidator) desc() *validatorDesc {
@@ -339,7 +351,7 @@ type stringValidator struct {
 	pattern    string
 }
 
-func (v *stringValidator) generate(out *codegen.Emitter, format string) {
+func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	value := getPlainName(v.fieldName)
 	fieldName := v.jsonName
 	checkPointer := ""
@@ -375,7 +387,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 	}
 
 	if v.minLength == 0 && v.maxLength == 0 {
-		return
+		return nil
 	}
 
 	if v.minLength != 0 {
@@ -393,6 +405,8 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
+
+	return nil
 }
 
 func (v *stringValidator) desc() *validatorDesc {
@@ -414,7 +428,7 @@ type numericValidator struct {
 	roundToInt       bool
 }
 
-func (v *numericValidator) generate(out *codegen.Emitter, format string) {
+func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 	value := getPlainName(v.fieldName)
 	checkPointer := ""
 	pointerPrefix := ""
@@ -458,6 +472,8 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) {
 
 	v.genBoundary(out, checkPointer, pointerPrefix, value, nMax, nMaxExclusive, "<")
 	v.genBoundary(out, checkPointer, pointerPrefix, value, nMin, nMinExclusive, ">")
+
+	return nil
 }
 
 func (v *numericValidator) genBoundary(
@@ -517,7 +533,7 @@ type anyOfValidator struct {
 	elemCount int
 }
 
-func (v *anyOfValidator) generate(out *codegen.Emitter, format string) {
+func (v *anyOfValidator) generate(out *codegen.Emitter, format string) error {
 	for i := range v.elemCount {
 		out.Printlnf(`var %s_%d %s_%d`, lowerFirst(v.fieldName), i, upperFirst(v.fieldName), i)
 	}
@@ -542,6 +558,8 @@ func (v *anyOfValidator) generate(out *codegen.Emitter, format string) {
 	out.Printlnf(`return fmt.Errorf("all validators failed: %%s", errors.Join(errs...))`)
 	out.Indent(-1)
 	out.Printlnf("}")
+
+	return nil
 }
 
 func (v *anyOfValidator) desc() *validatorDesc {

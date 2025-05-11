@@ -7,12 +7,12 @@ import (
 type formatter interface {
 	addImport(out *codegen.File)
 
-	generate(output *output, declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter)
-	enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter)
+	generate(output *output, declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) error
+	enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) error
 	enumUnmarshal(
 		declType codegen.TypeDecl,
 		enumType codegen.Type,
 		valueConstant *codegen.Var,
 		wrapInStruct bool,
-	) func(*codegen.Emitter)
+	) func(*codegen.Emitter) error
 }
