@@ -74,10 +74,6 @@ func (yf *yamlFormatter) generate(
 		if structType, ok := declType.Type.(*codegen.StructType); ok {
 			for _, f := range structType.Fields {
 				if f.Name == "AdditionalProperties" {
-					output.file.Package.AddImport("reflect", "")
-					output.file.Package.AddImport("strings", "")
-					output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
-
 					out.Printlnf("st := reflect.TypeOf(Plain{})")
 					out.Printlnf("for i := range st.NumField() {")
 					out.Indent(1)
@@ -158,6 +154,18 @@ func (yf *yamlFormatter) enumUnmarshal(
 	}
 }
 
-func (yf *yamlFormatter) addImport(out *codegen.File) {
+func (yf *yamlFormatter) addImport(out *codegen.File, declType codegen.TypeDecl) {
 	out.Package.AddImport(YAMLPackage, "yaml")
+
+	if structType, ok := declType.Type.(*codegen.StructType); ok {
+		for _, f := range structType.Fields {
+			if f.Name == "AdditionalProperties" {
+				out.Package.AddImport("reflect", "")
+				out.Package.AddImport("strings", "")
+				out.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
+
+				return
+			}
+		}
+	}
 }

@@ -487,7 +487,7 @@ func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators 
 	}
 
 	for _, formatter := range g.formatters {
-		formatter.addImport(g.output.file)
+		formatter.addImport(g.output.file, decl)
 
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: formatter.generate(g.output, decl, validators),
@@ -1143,7 +1143,7 @@ func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (co
 		g.output.file.Package.AddImport("reflect", "")
 
 		for _, formatter := range g.formatters {
-			formatter.addImport(g.output.file)
+			formatter.addImport(g.output.file, enumDecl)
 
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{
