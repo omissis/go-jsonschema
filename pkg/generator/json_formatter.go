@@ -162,7 +162,7 @@ func (jf *jsonFormatter) addImport(out *codegen.File, declType codegen.TypeDecl)
 
 	if structType, ok := declType.Type.(*codegen.StructType); ok {
 		for _, f := range structType.Fields {
-			if f.Name == "AdditionalProperties" {
+			if f.Name == additionalProperties {
 				out.Package.AddImport("reflect", "")
 				out.Package.AddImport("strings", "")
 				out.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
