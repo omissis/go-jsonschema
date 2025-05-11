@@ -58,6 +58,10 @@ func New(config Config) (*Generator, error) {
 		formatters = append(formatters, &yamlFormatter{})
 	}
 
+	if config.StructVerify {
+		formatters = append(formatters, &verifyFormatter{})
+	}
+
 	generator := &Generator{
 		caser:      text.NewCaser(config.Capitalizations, config.ResolveExtensions),
 		config:     config,

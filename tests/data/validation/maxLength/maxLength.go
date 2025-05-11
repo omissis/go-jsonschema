@@ -61,3 +61,14 @@ func (j *MaxLength) UnmarshalYAML(value *yaml.Node) error {
 	*j = MaxLength(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *MaxLength) Verify() error {
+	if plain.MyNullableString != nil && len(*plain.MyNullableString) > 10 {
+		return fmt.Errorf("field %s length: must be <= %d", "myNullableString", 10)
+	}
+	if len(plain.MyString) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "myString", 5)
+	}
+	return nil
+}

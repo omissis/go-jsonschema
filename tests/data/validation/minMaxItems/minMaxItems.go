@@ -75,3 +75,28 @@ func (j *MinMaxItems) UnmarshalYAML(value *yaml.Node) error {
 	*j = MinMaxItems(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *MinMaxItems) Verify() error {
+	if plain.MyNestedArray != nil && len(plain.MyNestedArray) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "myNestedArray", 1)
+	}
+	if len(plain.MyNestedArray) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "myNestedArray", 5)
+	}
+	for i1 := range plain.MyNestedArray {
+		if plain.MyNestedArray[i1] != nil && len(plain.MyNestedArray[i1]) < 1 {
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("myNestedArray[%d]", i1), 1)
+		}
+		if len(plain.MyNestedArray[i1]) > 5 {
+			return fmt.Errorf("field %s length: must be <= %d", fmt.Sprintf("myNestedArray[%d]", i1), 5)
+		}
+	}
+	if plain.MyStringArray != nil && len(plain.MyStringArray) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "myStringArray", 1)
+	}
+	if len(plain.MyStringArray) > 3 {
+		return fmt.Errorf("field %s length: must be <= %d", "myStringArray", 3)
+	}
+	return nil
+}

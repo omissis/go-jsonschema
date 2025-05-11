@@ -50,7 +50,10 @@ func TestOmitempty(t *testing.T) {
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
-	testExamples(t, basicConfig, "./data/validation")
+	cfg := basicConfig
+	cfg.StructVerify = true
+
+	testExamples(t, cfg, "./data/validation")
 }
 
 func TestValidationDisabledReadOnly(t *testing.T) {

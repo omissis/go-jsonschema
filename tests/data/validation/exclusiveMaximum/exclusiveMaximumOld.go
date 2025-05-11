@@ -79,3 +79,17 @@ func (j *ExclusiveMaximumOld) UnmarshalYAML(value *yaml.Node) error {
 	*j = ExclusiveMaximumOld(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *ExclusiveMaximumOld) Verify() error {
+	if 2 <= plain.MyInteger {
+		return fmt.Errorf("field %s: must be < %v", "myInteger", 2)
+	}
+	if plain.MyNullableInteger != nil && 2 <= *plain.MyNullableInteger {
+		return fmt.Errorf("field %s: must be < %v", "myNullableInteger", 2)
+	}
+	if 1.2 <= plain.MyNumber {
+		return fmt.Errorf("field %s: must be < %v", "myNumber", 1.2)
+	}
+	return nil
+}
