@@ -82,13 +82,18 @@ func (j *Pattern) UnmarshalYAML(value *yaml.Node) error {
 
 // Verify checks all fields on the struct match the schema.
 func (plain *Pattern) Verify() error {
+	if plain.MyEscapedString != nil {
+		if matched, _ := regexp.MatchString(`^\$\{\{(.|[\r\n])*\}\}$`, string(*plain.MyEscapedString)); !matched {
+			return fmt.Errorf("field %s pattern match: must match %s", "MyEscapedString", `^\$\{\{(.|[\r\n])*\}\}$`)
+		}
+	}
 	if plain.MyNullableString != nil {
 		if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}$`, string(*plain.MyNullableString)); !matched {
-			return fmt.Errorf("field %s pattern match: must match %s", `^0x[0-9a-f]{10}$`, "MyNullableString")
+			return fmt.Errorf("field %s pattern match: must match %s", "MyNullableString", `^0x[0-9a-f]{10}$`)
 		}
 	}
 	if matched, _ := regexp.MatchString(`^0x[0-9a-f]{10}\.$`, string(plain.MyString)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", `^0x[0-9a-f]{10}\.$`, "MyString")
+		return fmt.Errorf("field %s pattern match: must match %s", "MyString", `^0x[0-9a-f]{10}\.$`)
 	}
 	return nil
 }

@@ -115,8 +115,11 @@ func (j *RequiredNullable) UnmarshalYAML(value *yaml.Node) error {
 // Verify checks all fields on the struct match the schema.
 func (plain *RequiredNullable) Verify() error {
 	myNullableObject := plain.MyNullableObject
-	if err := myNullableObject.Verify(); err != nil {
-		return err
+	if myNullableObject != nil {
+		pmyNullableObject := myNullableObject
+		if err := pmyNullableObject.Verify(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

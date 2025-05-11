@@ -53,3 +53,8 @@ func (j *ReadOnlyAndRequired) UnmarshalYAML(value *yaml.Node) error {
 	*j = ReadOnlyAndRequired(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *ReadOnlyAndRequired) Verify() error {
+	return nil
+}

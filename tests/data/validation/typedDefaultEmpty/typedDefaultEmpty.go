@@ -45,3 +45,8 @@ func (j *TypedDefaultEmpty) UnmarshalYAML(value *yaml.Node) error {
 	*j = TypedDefaultEmpty(plain)
 	return nil
 }
+
+// Verify checks all fields on the struct match the schema.
+func (plain *TypedDefaultEmpty) Verify() error {
+	return nil
+}
