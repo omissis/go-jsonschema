@@ -236,8 +236,8 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 	tmpEmitter.Printlnf("{")
 
 	kind := reflect.ValueOf(v.defaultValue).Kind()
-	switch kind {
-	case reflect.Slice:
+
+	if kind == reflect.Slice {
 		df, ok := v.defaultValue.([]interface{})
 		if !ok {
 			return "", errors.New("invalid default value")
@@ -246,8 +246,7 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 		for _, value := range df {
 			tmpEmitter.Printlnf("%s,", litter.Sdump(value))
 		}
-
-	default:
+	} else {
 		return "", errors.New("didn't find a slice to dump")
 	}
 

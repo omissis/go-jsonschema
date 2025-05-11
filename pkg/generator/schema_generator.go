@@ -56,7 +56,7 @@ func (g *schemaGenerator) generateRootType() error {
 		}
 	}
 
-	if len(g.schema.ObjectAsType.Type) == 0 {
+	if len(g.schema.Type) == 0 {
 		return nil
 	}
 

@@ -140,7 +140,7 @@ func TestRequiredFields(t *testing.T) {
 		},
 		{
 			desc:    "required properties may have a non-null value",
-			data:    `{ "myNullableObject": { "myNestedProp": "世界" }, "myNullableStringArray": ["hello"], "myNullableString": "world" }`,
+			data:    `{ "myNullableObject": { "myNestedProp": "foobar" }, "myNullableStringArray": ["hello"], "myNullableString": "world" }`,
 			wantErr: nil,
 		},
 	}
