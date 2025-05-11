@@ -1,17 +1,30 @@
 package generator
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 )
 
+var (
+	ErrCannotGeneratePointerVerificationCode = errors.New("cannot generate pointer verification code")
+	ErrCannotGenerateMapVerificationCode     = errors.New("cannot generate map verification code")
+	ErrCannotGenerateSelfVerificationCode    = errors.New("cannot generate self-verification code")
+	ErrCannotGenerateArrayVerificationCode   = errors.New("cannot generate array verification code")
+)
+
 type verifyFormatter struct{}
 
-func (v verifyFormatter) addImport(_ *codegen.File) {}
+func (v verifyFormatter) addImport(_ *codegen.File, _ codegen.TypeDecl) {}
 
-func (v verifyFormatter) generate(declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {
+func (v verifyFormatter) generate(
+	_ *output,
+	declType codegen.TypeDecl,
+	validators []validator,
+) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
 		var prefix string
 		switch declType.Type.(type) {
 		// No need to dereference the struct just to verify it.
@@ -32,7 +45,9 @@ func (v verifyFormatter) generate(declType codegen.TypeDecl, validators []valida
 				continue
 			}
 
-			va.generate(out)
+			if err := va.generate(out, ""); err != nil {
+				return fmt.Errorf("%w: %w", ErrCannotGenerateSelfVerificationCode, err)
+			}
 		}
 
 		if stct, ok := declType.Type.(*codegen.StructType); ok {
@@ -40,7 +55,10 @@ func (v verifyFormatter) generate(declType codegen.TypeDecl, validators []valida
 				name := strings.ToLower(field.Name[0:1]) + field.Name[1:]
 				if verifyEmit := v.verifyType(field.Type, name); verifyEmit != nil {
 					out.Printlnf("%s := %s", name, getPlainName(field.Name))
-					verifyEmit(out)
+
+					if err := verifyEmit(out); err != nil {
+						return fmt.Errorf("%w: %w", ErrCannotGenerateSelfVerificationCode, err)
+					}
 				}
 			}
 		}
@@ -48,10 +66,12 @@ func (v verifyFormatter) generate(declType codegen.TypeDecl, validators []valida
 		out.Printlnf("return nil")
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (v verifyFormatter) verifyType(tpe codegen.Type, access string) func(*codegen.Emitter) {
+func (v verifyFormatter) verifyType(tpe codegen.Type, access string) func(*codegen.Emitter) error {
 	// For some types, pointers are sometimes used and sometime not.
 	switch utpe := tpe.(type) {
 	case *codegen.ArrayType:
@@ -61,12 +81,14 @@ func (v verifyFormatter) verifyType(tpe codegen.Type, access string) func(*codeg
 		return v.verifyArray(utpe, access)
 
 	case codegen.CustomNameType, *codegen.CustomNameType, codegen.NamedType, *codegen.NamedType, *codegen.StructType:
-		return func(out *codegen.Emitter) {
+		return func(out *codegen.Emitter) error {
 			out.Printlnf("if err := %s.Verify(); err != nil {", access)
 			out.Indent(1)
 			out.Printlnf("return err")
 			out.Indent(-1)
 			out.Printlnf("}")
+
+			return nil
 		}
 
 	case *codegen.MapType:
@@ -86,8 +108,10 @@ func (v verifyFormatter) verifyType(tpe codegen.Type, access string) func(*codeg
 	}
 }
 
-func (v verifyFormatter) enumMarshal(_ codegen.TypeDecl) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {}
+func (v verifyFormatter) enumMarshal(_ codegen.TypeDecl) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
+		return nil
+	}
 }
 
 func (v verifyFormatter) enumUnmarshal(
@@ -95,8 +119,8 @@ func (v verifyFormatter) enumUnmarshal(
 	_ codegen.Type,
 	valueConstant *codegen.Var,
 	wrapInStruct bool,
-) func(*codegen.Emitter) {
-	return func(out *codegen.Emitter) {
+) func(*codegen.Emitter) error {
+	return func(out *codegen.Emitter) error {
 		varName := enumVarName(wrapInStruct)
 
 		out.Comment("Verify checks all fields on the struct match the schema.")
@@ -107,14 +131,19 @@ func (v verifyFormatter) enumUnmarshal(
 		out.Printlnf("if reflect.DeepEqual(%s, expected) { return nil }", varName)
 		out.Indent(-1)
 		out.Printlnf("}")
-		out.Printlnf(`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
-			valueConstant.Name, varName)
+		out.Printlnf(
+			`return fmt.Errorf("invalid value (expected one of %%#v): %%#v", %s, %s)`,
+			valueConstant.Name,
+			varName,
+		)
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (v verifyFormatter) verifyArray(tpe codegen.ArrayType, access string) func(*codegen.Emitter) {
+func (v verifyFormatter) verifyArray(tpe codegen.ArrayType, access string) func(*codegen.Emitter) error {
 	aaccess := "a" + access
 
 	verifyFn := v.verifyType(tpe.Type, aaccess)
@@ -122,16 +151,22 @@ func (v verifyFormatter) verifyArray(tpe codegen.ArrayType, access string) func(
 		return nil
 	}
 
-	return func(out *codegen.Emitter) {
+	return func(out *codegen.Emitter) error {
 		out.Printlnf("for _, %s := range %s {", aaccess, access)
 		out.Indent(1)
-		verifyFn(out)
+
+		if err := verifyFn(out); err != nil {
+			return fmt.Errorf("%w: %w", ErrCannotGenerateArrayVerificationCode, err)
+		}
+
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (v verifyFormatter) verifyMap(tpe codegen.MapType, access string) func(*codegen.Emitter) {
+func (v verifyFormatter) verifyMap(tpe codegen.MapType, access string) func(*codegen.Emitter) error {
 	keyAccess := "k" + access
 	valueAccess := "v" + access
 	verifyKeyFn := v.verifyType(tpe.KeyType, keyAccess)
@@ -149,24 +184,30 @@ func (v verifyFormatter) verifyMap(tpe codegen.MapType, access string) func(*cod
 		valueAccess = "_"
 	}
 
-	return func(out *codegen.Emitter) {
+	return func(out *codegen.Emitter) error {
 		out.Printlnf("for %s, %s := range %s {", keyAccess, valueAccess, access)
 		out.Indent(1)
 
 		if verifyKeyFn != nil {
-			verifyKeyFn(out)
+			if err := verifyKeyFn(out); err != nil {
+				return fmt.Errorf("%w: %w", ErrCannotGenerateMapVerificationCode, err)
+			}
 		}
 
 		if verifyValueFn != nil {
-			verifyValueFn(out)
+			if err := verifyValueFn(out); err != nil {
+				return fmt.Errorf("%w: %w", ErrCannotGenerateMapVerificationCode, err)
+			}
 		}
 
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
 
-func (v verifyFormatter) verifyPointer(tpe codegen.PointerType, access string) func(*codegen.Emitter) {
+func (v verifyFormatter) verifyPointer(tpe codegen.PointerType, access string) func(*codegen.Emitter) error {
 	var prefix string
 	switch tpe.Type.(type) {
 	// Access the verify and fields without copying it.
@@ -184,12 +225,18 @@ func (v verifyFormatter) verifyPointer(tpe codegen.PointerType, access string) f
 		return nil
 	}
 
-	return func(out *codegen.Emitter) {
+	return func(out *codegen.Emitter) error {
 		out.Printlnf("if %s != nil {", access)
 		out.Printlnf("%s := %s%s", paccess, prefix, access)
 		out.Indent(1)
-		verifyFn(out)
+
+		if err := verifyFn(out); err != nil {
+			return fmt.Errorf("%w: %w", ErrCannotGeneratePointerVerificationCode, err)
+		}
+
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		return nil
 	}
 }
