@@ -128,7 +128,7 @@ func splitIdentifierByCaseAndSeparators(s string) []string {
 		if nextState != currState {
 			if currState == stateDelimiter {
 				j = i
-			} else if !(currState == stateUpper && nextState == stateLower) {
+			} else if currState != stateUpper || nextState != stateLower {
 				if i > j {
 					result = append(result, runes[j:i])
 				}
