@@ -204,6 +204,15 @@ func TestSchemaExtensions(t *testing.T) {
 	testExamples(t, basicConfig, "./data/schemaExtensions")
 }
 
+func TestDeeplyNestedMinimalNames(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.MinimalNames = true
+
+	testExamples(t, cfg, "./data/deeplyNested")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -275,23 +284,23 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 				}
 			}
 
-			if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {
-				t.Errorf("Contents different (left is expected, right is actual):\n%s", diff)
+			// Overwriting the expected file is useful if there are lots of differences
+			// due to a code change you made and you just want to accept the new output.
+			// Simply run "OVERWRITE_EXPECTED_GO_FILE=true make test".
+			if os.Getenv("OVERWRITE_EXPECTED_GO_FILE") == "true" {
+				t.Logf("Updating file %s", mustAbs(goldenFileName))
 
-				// Overwriting the expected file is useful if there are lots of differences
-				// due to a code change you made and you just want to accept the new output.
-				// Simply run "OVERWRITE_EXPECTED_GO_FILE=true make test".
-				if os.Getenv("OVERWRITE_EXPECTED_GO_FILE") == "true" {
-					t.Logf("Writing expected output to %s\n", goldenFileName)
-
-					if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
-						t.Logf("Failed to write to %s\n", goldenFileName)
-					}
+				if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
+					t.Fatalf("Failed to write to %s: %s\n", goldenFileName, err.Error())
 				}
-			}
+			} else {
+				if diff := cmp.Diff(string(goldenData), string(source)); diff != "" {
+					t.Errorf("Contents different (left is expected, right is actual):\n%s", diff)
+				}
 
-			if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
-				t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				if diff, ok := diffStrings(t, string(goldenData), string(source)); !ok {
+					t.Fatalf("Contents different (left is expected, right is actual):\n%s", *diff)
+				}
 			}
 		}
 	})

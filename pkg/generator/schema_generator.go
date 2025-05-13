@@ -276,7 +276,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	decl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope.string()),
+		Name:       g.output.uniqueTypeName(scope),
 		Comment:    t.Description,
 		SchemaType: t,
 	}
@@ -523,7 +523,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 			return nil, errArrayPropertyItems
 		}
 
-		elemType, err := g.generateType(t.Items, scope.add("Elem"))
+		elemType, err := g.generateType(t.Items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -1004,7 +1004,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			} else {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, scope.add("Elem"))
+				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
@@ -1026,7 +1026,21 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 	return dt, nil
 }
 
-func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+// singularScope attempts to create a name scope for an element of a collection. If the parent collection
+// has a plural name like "Actions", then the singular name for the element will be "Action". If the collection
+// is not plural, like "WhateverElse", then the element's name will be "WhateverElseElem".
+func (g *Generator) singularScope(scope nameScope) nameScope {
+	last, ok := scope.last()
+	if g.minimalNames && ok && strings.HasSuffix(last, "s") {
+		return scope.add(strings.TrimSuffix(last, "s"))
+	}
+
+	return scope.add("Elem")
+}
+
+func (g *schemaGenerator) generateEnumType(
+	t *schemas.Type, scope nameScope,
+) (codegen.Type, error) {
 	if len(t.Enum) == 0 {
 		return nil, errEnumArrCannotBeEmpty
 	}
@@ -1123,7 +1137,7 @@ func (g *schemaGenerator) generateEnumType(t *schemas.Type, scope nameScope) (co
 	}
 
 	enumDecl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope.string()),
+		Name:       g.output.uniqueTypeName(scope),
 		Type:       enumType,
 		SchemaType: t,
 	}

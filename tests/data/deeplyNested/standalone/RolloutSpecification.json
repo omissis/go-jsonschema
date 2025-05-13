@@ -1,0 +1,282 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Rollout Specification",
+    "description": "A document that declares what actions are to be taken as part of an update to an Azure Service. ",
+    "type": "object",
+    "properties": {
+
+        "contentVersion": {
+            "description": "The version of the schema that a document conforms to.",
+            "type": "string",
+            "pattern": "^([0-9]+\\.)?([0-9]+\\.)?([0-9]+\\.)?([0-9]+){1}$"
+        },
+
+        "rolloutMetadata": {
+            "description": "The metadata associated with this particular rollout.",
+            "type": "object",
+            "properties": {
+                "serviceModelPath": {
+                    "description": "The path relative to the Service Group Root that points to the service model of the service that is being updated as part of this rollout.",
+                    "type": "string"
+                },
+                "parameterReplacementsPath": {
+                    "description": "The path relative to the Service Group Root that points to the parameter replacements file.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "The user-specified name of this particular rollout.",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "rolloutType": {
+                    "description": "The scope of this particular rollout.",
+                    "type": "string",
+                    "pattern": "(?i)(^Major$|^Minor$|^Hotfix$)"
+                },
+                "buildSource": {
+                    "description": "The location of the build to use for this particular rollout.",
+                    "type": "object",
+                    "properties": {
+                        "parameters": {
+                            "type": "object",
+                            "description": "The parameters that define how to access and/or prepare the build from this build source.",
+                            "properties": {
+                                "versionFile": {
+                                    "type": "string",
+                                    "description": "The path relative to the Service Group Root which points to the file whose contents represent the version of the build being deployed. "
+                                }
+                            },
+                            "required": [ "versionFile" ]
+                        }
+                    },
+                    "required": [ "parameters" ]
+                },
+                "notification": {
+                    "type": "object",
+                    "description": "Notification definitions",
+                    "properties": {
+                        "email": {
+                            "type": "object",
+                            "description": "Email Notification definitions",
+                            "properties": {
+                                "to": {
+                                    "type": "string",
+                                    "description": "To email addresses list separator with ',;'"
+                                },
+                                "cc": {
+                                    "type": "string",
+                                    "description": "Cc email addresses list separator with ',;'"
+                                },
+                                "options": {
+                                    "type": "object",
+                                    "description": "Conditions of when to sending the email, default will send on all start, error, complete events",
+                                    "properties": {
+                                        "when": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "pattern": "(onStart|onError|onComplete)"
+                                            }
+                                        },
+                                        "verbosity": {
+                                            "type": "string",
+                                            "description": "'All': All rollout information, default behavior, SummaryOnly': Only has summary table, no resource deployment details, Compact': Only show rows of failed resource operations.",
+                                            "pattern": "(?i)(^All$|^SummaryOnly$|^Compact$)"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [ "to" ]
+                        },
+                        "incident": {
+                            "type": "object",
+                            "description": "Incident notification definitions",
+                            "properties": {
+                                "providerType": {
+                                    "type": "string",
+                                    "description": "The incident provider type"
+                                },
+                                "properties": {
+                                    "type": "object",
+                                    "description": "The incident properties",
+                                    "properties": {
+                                        "connectorId": {
+                                            "type": "string",
+                                            "description": "The connector Id for ICM"
+                                        },
+                                        "routingId": {
+                                            "type": "string",
+                                            "description": "The routing Id for ICM"
+                                        },
+                                        "environment": {
+                                            "type": "string",
+                                            "description": "The environment of the incidents raising location.",
+                                            "pattern": "(?i)(^Dogfood$|^Int$|^Ppe$|^Prod$|^Staging$|^Test$)"
+                                        },
+                                        "correlateBy": {
+                                            "type": "string",
+                                            "description": "The incident correlation type.",
+                                            "pattern": "(?i)(^rollout$)"
+                                        }
+                                    },
+                                    "required": [ "connectorId", "routingId" ]
+                                },
+                                "options": {
+                                    "type": "object",
+                                    "description": "Conditions of when to create incidents, default will send on every error",
+                                    "properties": {
+                                        "when": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "pattern": "(?i)(^onLastAutoRestart$|^onValidationRollout$)"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [ "providerType", "properties" ]
+                        }
+                    }
+                },
+                "rolloutPolicyReferences": {
+                    "description": "List of rollout policy references to use for the rollout.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "description": "Policy reference details.",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "The name of the policy."
+                            },
+                            "version": {
+                                "type": "string",
+                                "description": "The version of the policy to use. Specify '*' to use the latest registered version of the policy."
+                            }
+                        },
+                        "required": [ "name", "version" ]
+                    }
+                },
+                "configuration": {
+                    "description": "Option to use configuration specification file directly in rollout.",
+                    "type": "object",
+                    "properties": {
+                        "serviceScope": {
+                            "type": "object",
+                            "description": "Service scope configuration setting",
+                            "properties": {
+                                "specPath": {
+                                    "type": "string",
+                                    "description": "The path relative to the Service Group Root that points to the service scope configuration specification."
+                                }
+                            },
+                            "serviceGroupScope": {
+                                "type": "object",
+                                "description": "Service Group scope configuration setting",
+                                "properties": {
+                                    "specPath": {
+                                        "type": "string",
+                                        "description": "The path relative to the Service Group Root that points to the service group scope configuration specification."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "required": [ "serviceModelPath", "name", "rolloutType", "buildSource" ]
+        },
+
+        "orchestratedSteps": {
+            "description": "The exact sequence of steps that must be executed as part of this rollout. ",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "description": "An individual deployment step in the rollout of an Azure service. ",
+                "properties": {
+                    "name": {
+                        "description": "The name of the rollout step.",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "targetType": {
+                        "description": "The type of the intended target of this rollout.",
+                        "type": "string",
+                        "pattern": "(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)"
+                    },
+                    "targetName": {
+                        "description": "The unique identifier of the target that is to be updated.",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "actions": {
+                        "description": "The actions that must take place as part of this step. The actions will be executed in the order that they are declared. The action names must be unique. If this is an Extension action, the name of the extension must exist in the 'Extensions' block in  RolloutParameters.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "(?i)^(deploy|(mdmHealthCheck|restHealthCheck|extension|shell|register|wait)\/+[\\w\\W]+)"
+                        },
+                        "uniqueItems": true
+                    },
+                    "dependsOn": {
+                        "description": "The names of the rollout steps that must be executed prior to the current step being executed.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "description": "The name of an individual rollout step that the current step depends on. "
+                        }
+                    },
+                    "applications": {
+                        "description": "The details of applications to be deployed.",
+                        "type": "object",
+                        "properties": {
+                            "names": {
+                                "description": "The list of the application instance names..",
+                                "type": "array",
+                                "items": {
+                                    "description": "The application instance name.",
+                                    "type": "string"
+                                }
+                            },
+                            "actions": {
+                                "description": "The list of actions to be performed.",
+                                "type": "array",
+                                "items": {
+                                    "description": "The action names. Valid value is AppDeploy.",
+                                    "type": "string"
+                                }
+                            },
+                            "applyAcrossServiceResources": {
+                                "description": "The details of the service resources across which the application has to be deployed.",
+                                "type": "object",
+                                "properties": {
+                                    "definitionName": {
+                                        "description": "The service resource definition name.",
+                                        "type": "string"
+                                    },
+                                    "deployArmResources": {
+                                        "description": "Indicates if the cluster has to be deployed before application deployment.",
+                                        "type": "boolean"
+                                    },
+                                    "names": {
+                                        "description": "The list of service resource instance names.",
+                                        "type": "array",
+                                        "items": {
+                                            "description": "The service resource instance name.",
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "required": [ "definitionName", "names" ]
+                            }
+                        },
+                        "required": [ "names", "actions", "applyAcrossServiceResources" ]
+                    }
+                },
+                "required": [ "name", "targetType" ]
+            }
+        }
+    },
+    "required": [ "contentVersion", "rolloutMetadata", "orchestratedSteps" ]
+}

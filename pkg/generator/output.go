@@ -11,6 +11,7 @@ import (
 )
 
 type output struct {
+	minimalNames  bool
 	file          *codegen.File
 	declsByName   map[string]*codegen.TypeDecl
 	declsBySchema map[*schemas.Type]*codegen.TypeDecl
@@ -49,14 +50,31 @@ func (o *output) isUniqueTypeName(name string) bool {
 	return !ok || (ok && v.Type == nil)
 }
 
-func (o *output) uniqueTypeName(name string) string {
-	v, ok := o.declsByName[name]
+// uniqueTypeName finds the shortest identifier in a name scope that yields a unique type name.
+// If a given suffix on the name scope is not unique, more context from the scope is added. If the
+// entire context does not yield a unique name, a numeric suffix is used.
+// TODO: we should check for schema equality on name collisions here to deduplicate identifiers.
+func (o *output) uniqueTypeName(scope nameScope) string {
+	if o.minimalNames {
+		for i := scope.len() - 1; i >= 0; i-- {
+			name := scope.stringFrom(i)
 
+			v, ok := o.declsByName[name]
+			if !ok || (ok && v.Type == nil) {
+				// An identifier using the current amount of name context is unique, use it.
+				return name
+			}
+		}
+	}
+
+	// If we can't make a unique name with the entire context, attempt a numeric suffix.
+	count := 1
+	name := scope.string()
+
+	v, ok := o.declsByName[name]
 	if !ok || (ok && v.Type == nil) {
 		return name
 	}
-
-	count := 1
 
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
