@@ -3,7 +3,7 @@ golang 1.23.8
 golangci-lint 2.1.6
 goreleaser 2.9.0
 hadolint 2.12.0
-markdownlint-cli2 0.18.0
+markdownlint-cli2 0.18.1
 shellcheck 0.10.0
 shfmt 3.11.0
 yamllint 1.37.1
