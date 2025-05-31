@@ -93,7 +93,7 @@ func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
 
 type Iota struct {
 	// DESCRIPTION
-	Kappa *Title `json:"kappa,omitempty" yaml:"kappa,omitempty" mapstructure:"kappa,omitempty"`
+	Kappa *TITLE `json:"kappa,omitempty" yaml:"kappa,omitempty" mapstructure:"kappa,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
@@ -164,6 +164,14 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// DESCRIPTION
+type TITLE struct {
+	// Lambda corresponds to the JSON schema field "lambda".
+	Lambda []IotaKappaLambdaElem `json:"lambda,omitempty" yaml:"lambda,omitempty" mapstructure:"lambda,omitempty"`
+
+	AdditionalProperties interface{} `mapstructure:",remain"`
+}
+
 type Theta int
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -198,12 +206,4 @@ func (j *Theta) UnmarshalJSON(value []byte) error {
 	}
 	*j = Theta(plain)
 	return nil
-}
-
-// DESCRIPTION
-type Title struct {
-	// Lambda corresponds to the JSON schema field "lambda".
-	Lambda []IotaKappaLambdaElem `json:"lambda,omitempty" yaml:"lambda,omitempty" mapstructure:"lambda,omitempty"`
-
-	AdditionalProperties interface{} `mapstructure:",remain"`
 }

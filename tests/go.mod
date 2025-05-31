@@ -25,5 +25,4 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sanity-io/litter v1.5.8 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
-	golang.org/x/text v0.25.0 // indirect
 )

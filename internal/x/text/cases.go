@@ -60,7 +60,24 @@ func (c *Caser) Identifierize(s string) string {
 		return "Undefined"
 	}
 
+	if isGoKeyword(ident) {
+		return "A" + ident
+	}
+
 	return ident
+}
+
+func isGoKeyword(s string) bool {
+	switch s {
+	case "break", "default", "func", "interface", "select",
+		"case", "defer", "go", "map", "struct",
+		"chan", "else", "goto", "package", "switch",
+		"const", "fallthrough", "if", "range", "type",
+		"continue", "for", "import", "return", "var":
+		return true
+	default:
+		return false
+	}
 }
 
 func isNotCaseSensitiveLetter(r rune) bool {
