@@ -1,0 +1,132 @@
+{
+  "additionalProperties": true,
+  "definitions": {
+    "alpha": {
+      "additionalProperties": true,
+      "properties": {
+        "eta": {
+          "$ref": "#/definitions/eta"
+        },
+        "beta": {
+          "$ref": "#/definitions/beta"
+        }
+      },
+      "type": "object"
+    },
+    "beta": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/beta/definitions/gamma"
+        },
+        {
+          "$ref": "#/definitions/beta/definitions/delta"
+        }
+      ],
+      "definitions": {
+        "gamma": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "epsilon": {
+              "$ref": "#/definitions/beta/definitions/epsilon"
+            },
+            "theta": {
+              "$ref": "#/definitions/theta"
+            },
+            "route": {
+              "type": "string"
+            },
+            "commType": {
+              "type": "string",
+              "const": "HTTP"
+            },
+            "zeta": {
+              "$ref": "#/definitions/beta/definitions/zeta"
+            }
+          },
+          "required": ["epsilon", "theta", "route", "commType", "zeta"]
+        },
+        "delta": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "epsilon": {
+              "$ref": "#/definitions/beta/definitions/epsilon"
+            },
+            "theta": {
+              "$ref": "#/definitions/theta"
+            },
+            "commType": {
+              "type": "string",
+              "const": "GRPC"
+            },
+            "zeta": {
+              "$ref": "#/definitions/beta/definitions/zeta"
+            }
+          },
+          "required": ["epsilon", "theta", "commType", "zeta"]
+        },
+        "epsilon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "zeta": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60
+        }
+      }
+    },
+    "eta": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "epsilon": {
+          "type": "string"
+        },
+        "theta": {
+          "$ref": "#/definitions/theta"
+        }
+      },
+      "required": ["epsilon", "theta"]
+    },
+    "theta": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "iota": {
+      "additionalProperties": true,
+      "properties": {
+        "kappa": {
+          "title": "TITLE",
+          "description": "DESCRIPTION",
+          "additionalProperties": true,
+          "properties": {
+            "lambda": {
+              "items": {
+                "additionalProperties": true,
+                "properties": {
+                  "sigma": {
+                    "$ref": "#/definitions/alpha"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "iota": {
+      "$ref": "#/definitions/iota"
+    }
+  },
+  "required": ["iota"],
+  "type": "object"
+}
