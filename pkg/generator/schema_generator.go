@@ -239,6 +239,7 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 	return defName, fileName, nil
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
@@ -276,6 +277,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	name := g.output.uniqueTypeName(scope)
+
 	if g.config.StructNameFromTitle && t.Title != "" {
 		structName, err := toStructName(t.Title)
 		if err != nil {

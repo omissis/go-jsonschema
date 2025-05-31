@@ -7,10 +7,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/atombender/go-jsonschema/pkg/codegen"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 const additionalProperties = "AdditionalProperties"
@@ -18,14 +19,6 @@ const additionalProperties = "AdditionalProperties"
 var (
 	alnumOnlyRegex               = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 	errCannotConvertToStructName = errors.New("cannot convert to struct name")
-	goKeywords                   = map[string]bool{
-		"break": true, "default": true, "func": true, "interface": true,
-		"select": true, "case": true, "defer": true, "go": true, "map": true,
-		"struct": true, "chan": true, "else": true, "goto": true, "package": true,
-		"switch": true, "const": true, "fallthrough": true, "if": true, "range": true,
-		"type": true, "continue": true, "for": true, "import": true, "return": true,
-		"var": true,
-	}
 )
 
 func sortedKeys[T any](props map[string]T) []string {
@@ -87,9 +80,22 @@ func toStructName(s string) (string, error) {
 		return "", errCannotConvertToStructName
 	}
 
-	if goKeywords[strings.ToLower(result)] {
+	if isGoKeyword(strings.ToLower(result)) {
 		return "", errCannotConvertToStructName
 	}
 
 	return result, nil
+}
+
+func isGoKeyword(s string) bool {
+	switch s {
+	case "break", "default", "func", "interface", "select",
+		"case", "defer", "go", "map", "struct",
+		"chan", "else", "goto", "package", "switch",
+		"const", "fallthrough", "if", "range", "type",
+		"continue", "for", "import", "return", "var":
+		return true
+	default:
+		return false
+	}
 }
