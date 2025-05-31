@@ -34,6 +34,7 @@ var (
 	minSizedInts              bool
 	minimalNames              bool
 	disableReadOnlyValidation bool
+	disableCustomTypesForMaps bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
@@ -81,6 +82,7 @@ var (
 				MinSizedInts:              minSizedInts,
 				MinimalNames:              minimalNames,
 				DisableReadOnlyValidation: disableReadOnlyValidation,
+				DisableCustomTypesForMaps: disableCustomTypesForMaps,
 			}
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
@@ -185,6 +187,8 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"Do not include validation of readonly fields")
 	rootCmd.PersistentFlags().BoolVar(&minimalNames, "minimal-names", false,
 		"Uses the shortest possible names")
+	rootCmd.PersistentFlags().BoolVar(&disableCustomTypesForMaps, "disable-custom-types-for-maps", false,
+		"Do not generate custom types when generating maps")
 
 	abortWithErr(rootCmd.Execute())
 }

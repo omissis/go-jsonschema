@@ -62,6 +62,15 @@ func TestValidationDisabledReadOnly(t *testing.T) {
 	testExamples(t, cfg, "./data/validationDisabled/readOnly")
 }
 
+func TestDisableCustomTypesForMaps(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.DisableCustomTypesForMaps = true
+
+	testExamples(t, cfg, "./data/disableCustomTypesForMaps")
+}
+
 func TestMiscWithDefaults(t *testing.T) {
 	t.Parallel()
 

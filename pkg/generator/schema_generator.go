@@ -164,7 +164,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 
 	// We need this in order to handle cases when
 	// generateDeclaredType outputs a MapType and not a NamedType.
-	if isMapType(dt) {
+	if isMapType(dt) && g.config.DisableCustomTypesForMaps {
 		return dt, nil
 	}
 
@@ -288,7 +288,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return nil, err
 	}
 
-	if isNamedType(theType) || isMapType(theType) {
+	if isNamedType(theType) || (isMapType(theType) && g.config.DisableCustomTypesForMaps) {
 		// Don't declare named types under a new name.
 		delete(g.output.declsBySchema, t)
 		delete(g.output.declsByName, decl.Name)
