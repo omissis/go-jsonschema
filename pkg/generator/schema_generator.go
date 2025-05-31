@@ -275,8 +275,18 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateEnumType(t, scope)
 	}
 
+	name := g.output.uniqueTypeName(scope)
+	if g.config.StructNameFromTitle && t.Title != "" {
+		structName, err := toStructName(t.Title)
+		if err != nil {
+			g.warner(fmt.Sprintf("Cannot generate struct name from title '%s'", t.Title))
+		} else {
+			name = structName
+		}
+	}
+
 	decl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope),
+		Name:       name,
 		Comment:    t.Description,
 		SchemaType: t,
 	}
