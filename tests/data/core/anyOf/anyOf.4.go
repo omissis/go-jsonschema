@@ -22,7 +22,7 @@ type AnyOf4Elem struct {
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags map[string]interface{} `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
 	Target EmbeddedlinkrelationTarget `json:"target" yaml:"target" mapstructure:"target"`
@@ -99,7 +99,7 @@ type Embeddedlinkend struct {
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags map[string]interface{} `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 // When consuming a CDEvent, you are consuming a parent event. So, when looking at
@@ -107,27 +107,6 @@ type Embeddedlinkend struct {
 type EmbeddedlinkendFrom struct {
 	// ContextId corresponds to the JSON schema field "contextId".
 	ContextId string `json:"contextId" yaml:"contextId" mapstructure:"contextId"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *EmbeddedlinkendFrom) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["contextId"]; raw != nil && !ok {
-		return fmt.Errorf("field contextId in EmbeddedlinkendFrom: required")
-	}
-	type Plain EmbeddedlinkendFrom
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if len(plain.ContextId) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
-	}
-	*j = EmbeddedlinkendFrom(plain)
-	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -151,32 +130,33 @@ func (j *EmbeddedlinkendFrom) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *EmbeddedlinkendFrom) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["contextId"]; raw != nil && !ok {
+		return fmt.Errorf("field contextId in EmbeddedlinkendFrom: required")
+	}
+	type Plain EmbeddedlinkendFrom
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if len(plain.ContextId) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
+	}
+	*j = EmbeddedlinkendFrom(plain)
+	return nil
+}
+
 type EmbeddedlinkendLinkType string
 
 const EmbeddedlinkendLinkTypeEND EmbeddedlinkendLinkType = "END"
 
 var enumValues_EmbeddedlinkendLinkType = []interface{}{
 	"END",
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *EmbeddedlinkendLinkType) UnmarshalJSON(value []byte) error {
-	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_EmbeddedlinkendLinkType {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EmbeddedlinkendLinkType, v)
-	}
-	*j = EmbeddedlinkendLinkType(v)
-	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -200,22 +180,26 @@ func (j *EmbeddedlinkendLinkType) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Embeddedlinkend) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
+func (j *EmbeddedlinkendLinkType) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
-	if _, ok := raw["linkType"]; raw != nil && !ok {
-		return fmt.Errorf("field linkType in Embeddedlinkend: required")
+	var ok bool
+	for _, expected := range enumValues_EmbeddedlinkendLinkType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
 	}
-	type Plain Embeddedlinkend
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EmbeddedlinkendLinkType, v)
 	}
-	*j = Embeddedlinkend(plain)
+	*j = EmbeddedlinkendLinkType(v)
 	return nil
 }
+
+type EmbeddedlinkendTags map[string]interface{}
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Embeddedlinkend) UnmarshalYAML(value *yaml.Node) error {
@@ -235,6 +219,24 @@ func (j *Embeddedlinkend) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Embeddedlinkend) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["linkType"]; raw != nil && !ok {
+		return fmt.Errorf("field linkType in Embeddedlinkend: required")
+	}
+	type Plain Embeddedlinkend
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = Embeddedlinkend(plain)
+	return nil
+}
+
 type Embeddedlinkpath struct {
 	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
 	// the 'from' key, this is the parent's parent.
@@ -244,7 +246,7 @@ type Embeddedlinkpath struct {
 	LinkType EmbeddedlinkpathLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags map[string]interface{} `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkpathTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 // When consuming a CDEvent, you are consuming a parent event. So, when looking at
@@ -252,27 +254,6 @@ type Embeddedlinkpath struct {
 type EmbeddedlinkpathFrom struct {
 	// ContextId corresponds to the JSON schema field "contextId".
 	ContextId string `json:"contextId" yaml:"contextId" mapstructure:"contextId"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *EmbeddedlinkpathFrom) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["contextId"]; raw != nil && !ok {
-		return fmt.Errorf("field contextId in EmbeddedlinkpathFrom: required")
-	}
-	type Plain EmbeddedlinkpathFrom
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	if len(plain.ContextId) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
-	}
-	*j = EmbeddedlinkpathFrom(plain)
-	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -287,6 +268,27 @@ func (j *EmbeddedlinkpathFrom) UnmarshalYAML(value *yaml.Node) error {
 	type Plain EmbeddedlinkpathFrom
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if len(plain.ContextId) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
+	}
+	*j = EmbeddedlinkpathFrom(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *EmbeddedlinkpathFrom) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["contextId"]; raw != nil && !ok {
+		return fmt.Errorf("field contextId in EmbeddedlinkpathFrom: required")
+	}
+	type Plain EmbeddedlinkpathFrom
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if len(plain.ContextId) < 1 {
@@ -344,6 +346,8 @@ func (j *EmbeddedlinkpathLinkType) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+type EmbeddedlinkpathTags map[string]interface{}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Embeddedlinkpath) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -394,7 +398,7 @@ type Embeddedlinkrelation struct {
 	LinkType EmbeddedlinkrelationLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags map[string]interface{} `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkrelationTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
 	Target EmbeddedlinkrelationTarget `json:"target" yaml:"target" mapstructure:"target"`
@@ -406,6 +410,26 @@ const EmbeddedlinkrelationLinkTypeRELATION EmbeddedlinkrelationLinkType = "RELAT
 
 var enumValues_EmbeddedlinkrelationLinkType = []interface{}{
 	"RELATION",
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *EmbeddedlinkrelationLinkType) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_EmbeddedlinkrelationLinkType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EmbeddedlinkrelationLinkType, v)
+	}
+	*j = EmbeddedlinkrelationLinkType(v)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -428,25 +452,7 @@ func (j *EmbeddedlinkrelationLinkType) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *EmbeddedlinkrelationLinkType) UnmarshalYAML(value *yaml.Node) error {
-	var v string
-	if err := value.Decode(&v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_EmbeddedlinkrelationLinkType {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EmbeddedlinkrelationLinkType, v)
-	}
-	*j = EmbeddedlinkrelationLinkType(v)
-	return nil
-}
+type EmbeddedlinkrelationTags map[string]interface{}
 
 type EmbeddedlinkrelationTarget struct {
 	// ContextId corresponds to the JSON schema field "contextId".

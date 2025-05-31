@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://example.com/refToPrimitive",
+    "type": "object",
+    "properties": {
+      "myThing": {
+        "$ref": "#/$defs/Thing"
+      }
+    },
+    "$defs": {
+      "Thing": {
+        "type": "object",
+        "additionalProperties": {
+            "type": "number"
+        }
+      }
+  }
+}
