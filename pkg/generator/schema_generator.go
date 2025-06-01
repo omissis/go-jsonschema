@@ -239,6 +239,7 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 	return defName, fileName, nil
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
@@ -275,8 +276,14 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateEnumType(t, scope)
 	}
 
+	name := g.output.uniqueTypeName(scope)
+
+	if g.config.StructNameFromTitle && t.Title != "" {
+		name = g.caser.Identifierize(t.Title)
+	}
+
 	decl := codegen.TypeDecl{
-		Name:       g.output.uniqueTypeName(scope),
+		Name:       name,
 		Comment:    t.Description,
 		SchemaType: t,
 	}
