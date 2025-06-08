@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdevents.dev/0.5.0-draft/schema/links/linkend",
+  "properties": {
+    "linkType": {
+      "type": "string",
+      "enum": [
+        "END"
+      ]
+    },
+    "from": {
+      "description": "When consuming a CDEvent, you are consuming a parent event. So, when looking at the 'from' key, this is the parent's parent.",
+      "type": "object",
+      "properties": {
+        "contextId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "contextId"
+      ]
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "linkType"
+  ]
+}

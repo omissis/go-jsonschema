@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "id": "https://example.com/objectAllOf",
+    "type": "object",
+    "description": "Test case for allOf combining multiple external schema references with additional inline properties. Demonstrates complex schema merging with conflicting enum constraints, different required field sets, and additional metadata. Tests CDEvents-style link schema composition with custom extensions.",
+    "allOf": [
+        {
+            "$ref": "linkend"
+        },
+        {
+            "$ref": "linkpath"
+        },
+        {
+            "$ref": "linkrelation"
+        },
+        {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "version": {
+                            "type": "string"
+                        },
+                        "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                },
+                "additionalData": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -56,7 +56,10 @@ func (g *schemaGenerator) generateRootType() error {
 		}
 	}
 
-	if len(g.schema.ObjectAsType.Type) == 0 {
+	if len(g.schema.ObjectAsType.Type) == 0 &&
+		len(g.schema.ObjectAsType.AllOf) == 0 &&
+		len(g.schema.ObjectAsType.AnyOf) == 0 &&
+		len(g.schema.ObjectAsType.Properties) == 0 {
 		return nil
 	}
 
@@ -1120,6 +1123,12 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type) ([]*schemas.Type, e
 	resolvedTypes := make([]*schemas.Type, 0, len(types))
 
 	for _, typ := range types {
+		// If the type has no $ref, include it as-is (inline schema)
+		if typ.Ref == "" {
+			resolvedTypes = append(resolvedTypes, typ)
+			continue
+		}
+
 		resolvedType, err := g.resolveRef(typ)
 		if err != nil {
 			if errors.Is(err, errCannotResolveRef) {
