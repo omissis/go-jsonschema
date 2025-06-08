@@ -82,10 +82,6 @@ func (g *schemaGenerator) generateReferencedType(ref string) (codegen.Type, erro
 		}
 	}
 
-	// if ref == "#" {
-	// 	return codegen.EmptyInterfaceType{}, nil
-	// }
-
 	fileName := ref
 
 	var scope, defName string
@@ -1123,9 +1119,10 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type) ([]*schemas.Type, e
 	resolvedTypes := make([]*schemas.Type, 0, len(types))
 
 	for _, typ := range types {
-		// If the type has no $ref, include it as-is (inline schema)
+		// If the type has no $ref, include it as-is (inline schema).
 		if typ.Ref == "" {
 			resolvedTypes = append(resolvedTypes, typ)
+
 			continue
 		}
 
