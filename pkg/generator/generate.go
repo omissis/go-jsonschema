@@ -158,17 +158,28 @@ func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {
+	var name string
+
 	for _, m := range g.config.SchemaMappings {
 		if m.SchemaID == schema.ID && m.RootType != "" {
-			return m.RootType
+			name = m.RootType
+			// Don't apply prefix to explicitly mapped root types
+			return name
 		}
 	}
 
 	if g.config.StructNameFromTitle && schema.Title != "" {
-		return g.caser.Identifierize(schema.Title)
+		name = g.caser.Identifierize(schema.Title)
+	} else {
+		name = g.caser.IdentifierFromFileName(fileName)
 	}
 
-	return g.caser.IdentifierFromFileName(fileName)
+	// Apply prefix if configured
+	if g.config.StructNamePrefix != "" {
+		name = g.config.StructNamePrefix + name
+	}
+
+	return name
 }
 
 func (g *Generator) findOutputFileForSchemaID(id string) (*output, error) {

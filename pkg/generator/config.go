@@ -47,6 +47,8 @@ type Config struct {
 	DisableCustomTypesForMaps bool
 	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
 	AliasSingleAllOfAnyOfRefs bool
+	// StructNamePrefix configures the generator to prefix all generated struct names with the specified string.
+	StructNamePrefix string
 }
 
 type SchemaMapping struct {
