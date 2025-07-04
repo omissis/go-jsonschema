@@ -272,8 +272,8 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-func AllOf(types []*Type) (*Type, error) {
-	typ, err := MergeTypes(types)
+func AllOf(types []*Type, baseType *Type) (*Type, error) {
+	typ, err := MergeTypes(types, baseType)
 	if err != nil {
 		return nil, err
 	}
@@ -283,8 +283,8 @@ func AllOf(types []*Type) (*Type, error) {
 	return typ, nil
 }
 
-func AnyOf(types []*Type) (*Type, error) {
-	typ, err := MergeTypes(types)
+func AnyOf(types []*Type, baseType *Type) (*Type, error) {
+	typ, err := MergeTypes(types, baseType)
 	if err != nil {
 		return nil, err
 	}
@@ -295,14 +295,18 @@ func AnyOf(types []*Type) (*Type, error) {
 	return typ, nil
 }
 
-func MergeTypes(types []*Type) (*Type, error) {
+func MergeTypes(types []*Type, baseType *Type) (*Type, error) {
 	if len(types) == 0 {
 		return nil, ErrEmptyTypesList
 	}
 
 	result := &Type{}
+	if baseType != nil {
+		copy := *baseType
+		result = &copy
+	}
 
-	if isPrimitiveTypeList(types) {
+	if isPrimitiveTypeList(types, result.Type) {
 		return result, nil
 	}
 
