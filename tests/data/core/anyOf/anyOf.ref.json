@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/ref",
+  "title": "Ext Ref",
+  "type": "object",
+  "anyOf": [
+    {
+      "$ref": "#/definitions/Policy"
+    }
+  ],
+  "definitions": {
+    "Policy": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Offer"
+        },
+        {
+          "$ref": "#/definitions/Agreement"
+        }
+      ]
+    },
+    "Offer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Agreement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
