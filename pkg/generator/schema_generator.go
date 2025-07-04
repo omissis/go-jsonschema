@@ -689,11 +689,11 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	}
 
 	if len(t.AnyOf) > 0 {
-		return g.generateAnyOfType(t.AnyOf, scope)
+		return g.generateAnyOfType(t, scope)
 	}
 
 	if len(t.AllOf) > 0 {
-		return g.generateAllOfType(t.AllOf, scope)
+		return g.generateAllOfType(t, scope)
 	}
 
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
@@ -853,13 +853,13 @@ func (g *schemaGenerator) addStructField(
 	return nil
 }
 
-func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	if len(anyOf) == 0 {
+func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if len(t.AnyOf) == 0 {
 		return nil, errEmptyInAnyOf
 	}
 
 	isCycle := false
-	rAnyOf, hasNull := g.resolveRefs(anyOf, false)
+	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
@@ -890,21 +890,25 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
-	anyOfType, err := schemas.AnyOf(rAnyOf)
+	anyOfType, err := schemas.AnyOf(rAnyOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
 	}
 
+	anyOfType.AnyOf = nil
+
 	return g.generateTypeInline(anyOfType, scope)
 }
 
-func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	rAllOf, _ := g.resolveRefs(allOf, true)
+func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
-	allOfType, err := schemas.AllOf(rAllOf)
+	allOfType, err := schemas.AllOf(rAllOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge allOf types: %w", err)
 	}
+
+	allOfType.AllOf = nil
 
 	return g.generateTypeInline(allOfType, scope)
 }
@@ -960,11 +964,11 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AnyOf) > 0 {
-			return g.generateAnyOfType(t.AnyOf, scope)
+			return g.generateAnyOfType(t, scope)
 		}
 
 		if len(t.AllOf) > 0 {
-			return g.generateAllOfType(t.AllOf, scope)
+			return g.generateAllOfType(t, scope)
 		}
 
 		if len(t.Type) == 2 && typeIsNullable {

@@ -7,6 +7,7 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// object with anyOf properties as root
 type AnyOf3 struct {
 	// Bar corresponds to the JSON schema field "bar".
 	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
