@@ -1,11 +1,11 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
 	"github.com/sosodev/duration"
 
@@ -185,7 +185,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 			defaultDurationISO8601, ok := v.defaultValue.(string)
 
 			if !ok {
-				return nil, errors.New(fmt.Sprintf("duration default value must be a string, %T given", v.defaultValue))
+				return nil, fmt.Errorf("duration default value must be a string, %T given", v.defaultValue)
 			}
 
 			if defaultDurationISO8601 == "" {
