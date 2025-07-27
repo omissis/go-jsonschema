@@ -39,6 +39,7 @@ var (
 // Schema is the root schema.
 type Schema struct {
 	*ObjectAsType
+
 	ID          string      `json:"$id"` // RFC draft-wright-json-schema-01, section-9.2.
 	LegacyID    string      `json:"id"`  // RFC draft-wright-json-schema-00, section 4.5.
 	Definitions Definitions `json:"$defs,omitempty"`
@@ -47,7 +48,9 @@ type Schema struct {
 // UnmarshalJSON implements json.Unmarshaler for Schema struct.
 func (s *Schema) UnmarshalJSON(data []byte) error {
 	var unmarshSchema unmarshalerSchema
-	if err := json.Unmarshal(data, &unmarshSchema); err != nil {
+
+	err := json.Unmarshal(data, &unmarshSchema)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal schema: %w", err)
 	}
 
@@ -61,7 +64,8 @@ func (s *Schema) UnmarshalJSON(data []byte) error {
 		Definitions Definitions `json:"definitions,omitempty"`
 	}
 
-	if err := json.Unmarshal(data, &legacySchema); err != nil {
+	err = json.Unmarshal(data, &legacySchema)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal schema: %w", err)
 	}
 
@@ -86,7 +90,9 @@ type TypeList []string
 func (t *TypeList) UnmarshalJSON(value []byte) error {
 	if len(value) > 0 && value[0] == '[' {
 		var s []string
-		if err := json.Unmarshal(value, &s); err != nil {
+
+		err := json.Unmarshal(value, &s)
+		if err != nil {
 			return fmt.Errorf("failed to unmarshal type list: %w", err)
 		}
 
@@ -96,7 +102,9 @@ func (t *TypeList) UnmarshalJSON(value []byte) error {
 	}
 
 	var s string
-	if err := json.Unmarshal(value, &s); err != nil {
+
+	err := json.Unmarshal(value, &s)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal type list: %w", err)
 	}
 
@@ -234,7 +242,9 @@ func (value *Type) SetSubSchemaTypeElem() {
 // and `false` is equivalent to `{"not": {}}`.
 func (value *Type) UnmarshalJSON(raw []byte) error {
 	var b bool
-	if err := json.Unmarshal(raw, &b); err == nil {
+
+	err := json.Unmarshal(raw, &b)
+	if err == nil {
 		if b {
 			*value = Type{}
 		} else {
@@ -245,7 +255,9 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	}
 
 	var obj ObjectAsType
-	if err := json.Unmarshal(raw, &obj); err != nil {
+
+	err = json.Unmarshal(raw, &obj)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
 	}
 
@@ -255,7 +267,9 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		Dependencies map[string]*Type `json:"dependencies,omitempty"`
 		Definitions  Definitions      `json:"definitions,omitempty"` // Section 5.26.
 	}{}
-	if err := json.Unmarshal(raw, &legacyObj); err != nil {
+
+	err = json.Unmarshal(raw, &legacyObj)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
 	}
 
@@ -312,7 +326,8 @@ func MergeTypes(types []*Type) (*Type, error) {
 	}
 
 	for _, t := range types {
-		if err := mergo.Merge(result, t, opts...); err != nil {
+		err := mergo.Merge(result, t, opts...)
+		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrCannotMergeTypes, err)
 		}
 	}

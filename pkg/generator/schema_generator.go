@@ -36,6 +36,7 @@ func newSchemaGenerator(
 
 type schemaGenerator struct {
 	*Generator
+
 	output           *output
 	schema           *schemas.Schema
 	schemaFileName   string
@@ -112,7 +113,8 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, qerr)
 		}
 
-		if ferr := g.AddFile(qualified, schema); ferr != nil {
+		ferr := g.AddFile(qualified, schema)
+		if ferr != nil {
 			return nil, ferr
 		}
 
@@ -655,7 +657,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		var err error
 
 		if t.AdditionalProperties != nil {
-			if valueType, err = g.generateType(t.AdditionalProperties, scope.add("Value")); err != nil {
+			valueType, err = g.generateType(t.AdditionalProperties, scope.add("Value"))
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -676,7 +679,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	var structType codegen.StructType
 
 	for _, name := range sortedKeys(t.Properties) {
-		if err := g.addStructField(&structType, t, scope, name, uniqueNames, requiredNames); err != nil {
+		err := g.addStructField(&structType, t, scope, name, uniqueNames, requiredNames)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -871,7 +875,8 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 			continue
 		}
 
-		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
+		_, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i)))
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -1058,7 +1063,8 @@ func (g *schemaGenerator) generateEnumType(
 
 	if len(t.Type) == 1 {
 		var err error
-		if enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
+
+		enumType, err = codegen.PrimitiveTypeFromJSONSchemaType(
 			t.Type[0],
 			t.Format,
 			false,
@@ -1067,7 +1073,8 @@ func (g *schemaGenerator) generateEnumType(
 			&t.Maximum,
 			&t.ExclusiveMinimum,
 			&t.ExclusiveMaximum,
-		); err != nil {
+		)
+		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}
 

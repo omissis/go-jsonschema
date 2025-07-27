@@ -44,7 +44,8 @@ func TestJsonUnmarshalValidation(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if err := json.Unmarshal([]byte(tC.json), tC.target); err != nil {
+			err := json.Unmarshal([]byte(tC.json), tC.target)
+			if err != nil {
 				t.Fatalf("unmarshal error: %s", err)
 			}
 
@@ -201,7 +202,8 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if err := json.Unmarshal([]byte(tC.json), tC.target); err != nil {
+			err := json.Unmarshal([]byte(tC.json), tC.target)
+			if err != nil {
 				t.Fatalf("unmarshal error: %s", err)
 			}
 
@@ -287,7 +289,8 @@ func TestJsonUmarshalAllOf(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if err := json.Unmarshal([]byte(tC.json), tC.target); err != nil {
+			err := json.Unmarshal([]byte(tC.json), tC.target)
+			if err != nil {
 				t.Fatalf("unmarshal error: %s", err)
 			}
 
@@ -413,7 +416,8 @@ func TestJSONUnmarshalAdditionalProperties(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if err := tC.target.UnmarshalJSON([]byte(tC.json)); err != nil {
+			err := tC.target.UnmarshalJSON([]byte(tC.json))
+			if err != nil {
 				t.Fatalf("unmarshal error: %s", err)
 			}
 

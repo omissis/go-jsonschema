@@ -26,7 +26,7 @@ jobs:
       - name: Download golangci-lint installer
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh -o /tmp/install-golangci-lint.sh
       - name: Install golangci-lint
-        run: sh /tmp/install-golangci-lint.sh -b /usr/local/bin v2.1.6
+        run: sh /tmp/install-golangci-lint.sh -b /usr/local/bin v2.3.0
       - name: Lint Go files
         run: ./scripts/lint-golang.sh
       - name: Run tests

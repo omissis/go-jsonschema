@@ -218,7 +218,8 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		}
 	}
 
-	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
+	defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength())
+	if err == nil {
 		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 	}
 
@@ -229,7 +230,8 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
 
-	if err := v.defaultValueType.Generate(tmpEmitter); err != nil {
+	err := v.defaultValueType.Generate(tmpEmitter)
+	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrCannotDumpDefaultSlice, err)
 	}
 

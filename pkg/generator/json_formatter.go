@@ -49,7 +49,8 @@ func (jf *jsonFormatter) generate(
 		}
 
 		for _, v := range beforeValidators {
-			if err := v.generate(out, "json"); err != nil {
+			err := v.generate(out, "json")
+			if err != nil {
 				return fmt.Errorf("cannot generate before validators: %w", err)
 			}
 		}
@@ -68,7 +69,8 @@ func (jf *jsonFormatter) generate(
 			formatJSON, varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			if err := v.generate(out, "json"); err != nil {
+			err := v.generate(out, "json")
+			if err != nil {
 				return fmt.Errorf("cannot generate after validators: %w", err)
 			}
 		}
@@ -128,7 +130,8 @@ func (jf *jsonFormatter) enumUnmarshal(
 		out.Indent(1)
 		out.Printf("var v ")
 
-		if err := enumType.Generate(out); err != nil {
+		err := enumType.Generate(out)
+		if err != nil {
 			return fmt.Errorf("%w: %w", ErrCannotUnmarshalEnum, err)
 		}
 

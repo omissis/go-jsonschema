@@ -35,7 +35,9 @@ func TestSerializableDateUnmarshalsFromJSON(t *testing.T) {
 	input := "\"2023-01-02\""
 
 	var date types.SerializableDate
-	if err := json.Unmarshal([]byte(input), &date); err != nil {
+
+	err := json.Unmarshal([]byte(input), &date)
+	if err != nil {
 		t.Fatalf("Unable to unmarshal %s to a SerializableDate: %s", input, err)
 	}
 
@@ -64,7 +66,9 @@ func TestSerializableDateUnmarshalJSONReturnsErrorForInvalidString(t *testing.T)
 			t.Parallel()
 
 			var date types.SerializableDate
-			if err := date.UnmarshalJSON([]byte(testCase)); err == nil {
+
+			err := date.UnmarshalJSON([]byte(testCase))
+			if err == nil {
 				t.Fatalf("Expected an error but got '%s'", date)
 			}
 		})
@@ -75,7 +79,9 @@ func TestSerializableDateUnmarshalJSONDoesNothingWhenGivenNull(t *testing.T) {
 	t.Parallel()
 
 	var date types.SerializableDate
-	if err := date.UnmarshalJSON([]byte("null")); err != nil {
+
+	err := date.UnmarshalJSON([]byte("null"))
+	if err != nil {
 		t.Fatalf("Given 'null' expected UnmarshalJSON to be no-op but got an error: %v", err)
 	}
 

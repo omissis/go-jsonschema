@@ -109,7 +109,9 @@ var (
 
 			for _, fileName := range args {
 				verboseLogf("Loading %s", fileName)
-				if err = generator.DoFile(fileName); err != nil {
+
+				err = generator.DoFile(fileName)
+				if err != nil {
 					abortWithErr(err)
 				}
 			}
@@ -125,18 +127,21 @@ var (
 				}
 
 				if fileName == "-" {
-					if _, err = os.Stdout.Write(source); err != nil {
+					_, err = os.Stdout.Write(source)
+					if err != nil {
 						abortWithErr(err)
 					}
 				} else {
-					if err := os.MkdirAll(filepath.Dir(fileName), perm755); err != nil {
+					err := os.MkdirAll(filepath.Dir(fileName), perm755)
+					if err != nil {
 						abortWithErr(err)
 					}
 					w, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm644)
 					if err != nil {
 						abortWithErr(err)
 					}
-					if _, err = w.Write(source); err != nil {
+					_, err = w.Write(source)
+					if err != nil {
 						abortWithErr(err)
 					}
 					_ = w.Close()

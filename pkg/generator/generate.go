@@ -89,7 +89,8 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 
 		emitter := codegen.NewEmitter(maxLineLength)
 
-		if err := output.file.Generate(emitter); err != nil {
+		err := output.file.Generate(emitter)
+		if err != nil {
 			return nil, fmt.Errorf("%w: %w", errCannotGenerateSources, err)
 		}
 

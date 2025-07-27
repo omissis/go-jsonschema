@@ -21,7 +21,8 @@ func TestYamlV3Unmarshal(t *testing.T) {
 
 	var conf test.GopkgYAMLv3
 
-	if err := yamlv3.Unmarshal(data, &conf); err != nil {
+	err = yamlv3.Unmarshal(data, &conf)
+	if err != nil {
 		t.Fatal(err)
 	}
 

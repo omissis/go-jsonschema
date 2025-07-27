@@ -26,7 +26,9 @@ func FromJSONFile(fileName string) (*Schema, error) {
 
 func FromJSONReader(r io.Reader) (*Schema, error) {
 	var schema Schema
-	if err := json.NewDecoder(r).Decode(&schema); err != nil {
+
+	err := json.NewDecoder(r).Decode(&schema)
+	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 
@@ -50,7 +52,8 @@ func FromYAMLReader(r io.Reader) (*Schema, error) {
 	// Marshal to JSON first because YAML decoder doesn't understand JSON tags.
 	var m map[string]interface{}
 
-	if err := yaml.NewDecoder(r).Decode(&m); err != nil {
+	err := yaml.NewDecoder(r).Decode(&m)
+	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)
 	}
 
@@ -63,7 +66,8 @@ func FromYAMLReader(r io.Reader) (*Schema, error) {
 
 	var schema Schema
 
-	if err = json.Unmarshal(value, &schema); err != nil {
+	err = json.Unmarshal(value, &schema)
+	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 

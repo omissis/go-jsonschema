@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -257,7 +258,8 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			t.Fatal(err)
 		}
 
-		if err := g.DoFile(fileName); err != nil {
+		err = g.DoFile(fileName)
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -288,7 +290,8 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 
 				t.Log("File does not exist; creating it")
 
-				if err = os.WriteFile(goldenFileName, goldenData, 0o655); err != nil {
+				err = os.WriteFile(goldenFileName, goldenData, 0o655)
+				if err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -299,7 +302,8 @@ func testExampleFile(t *testing.T, cfg generator.Config, fileName string) {
 			if os.Getenv("OVERWRITE_EXPECTED_GO_FILE") == "true" {
 				t.Logf("Updating file %s", mustAbs(goldenFileName))
 
-				if err = os.WriteFile(goldenFileName, source, 0o655); err != nil {
+				err = os.WriteFile(goldenFileName, source, 0o655)
+				if err != nil {
 					t.Fatalf("Failed to write to %s: %s\n", goldenFileName, err.Error())
 				}
 			} else {
@@ -324,7 +328,8 @@ func testFailingExampleFile(t *testing.T, cfg generator.Config, fileName string)
 			t.Fatal(err)
 		}
 
-		if err := g.DoFile(fileName); err == nil {
+		err = g.DoFile(fileName)
+		if err == nil {
 			t.Fatal("Expected test to fail")
 		}
 	})
@@ -339,15 +344,17 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 
 	dir := t.TempDir()
 
-	if err := os.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0o644); err != nil {
+	err := os.WriteFile(fmt.Sprintf("%s/expected", dir), []byte(expected), 0o644)
+	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	if err := os.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0o644); err != nil {
+	err = os.WriteFile(fmt.Sprintf("%s/actual", dir), []byte(actual), 0o644)
+	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	out, err := exec.Command("diff", "--side-by-side",
+	out, err := exec.CommandContext(context.Background(), "diff", "--side-by-side",
 		fmt.Sprintf("%s/expected", dir),
 		fmt.Sprintf("%s/actual", dir)).Output()
 

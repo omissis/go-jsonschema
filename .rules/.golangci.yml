@@ -24,6 +24,7 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
+    - wsl
   settings:
     govet:
       settings:
@@ -61,9 +62,6 @@ linters:
     paths:
       - .*\.gen\.go$
       - tests/data/.*
-      - third_party$
-      - builtin$
-      - examples$
 issues:
   max-issues-per-linter: 50
   max-same-issues: 3
@@ -98,6 +96,3 @@ formatters:
     paths:
       - .*\.gen\.go$
       - tests/data/.*
-      - third_party$
-      - builtin$
-      - examples$

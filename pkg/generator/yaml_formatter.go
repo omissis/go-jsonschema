@@ -48,7 +48,8 @@ func (yf *yamlFormatter) generate(
 		}
 
 		for _, v := range beforeValidators {
-			if err := v.generate(out, "yaml"); err != nil {
+			err := v.generate(out, "yaml")
+			if err != nil {
 				return fmt.Errorf("cannot generate before validators: %w", err)
 			}
 		}
@@ -66,7 +67,8 @@ func (yf *yamlFormatter) generate(
 		out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNamePlainStruct)
 
 		for _, v := range afterValidators {
-			if err := v.generate(out, "yaml"); err != nil {
+			err := v.generate(out, "yaml")
+			if err != nil {
 				return fmt.Errorf("cannot generate after validators: %w", err)
 			}
 		}
@@ -126,7 +128,8 @@ func (yf *yamlFormatter) enumUnmarshal(
 		out.Indent(1)
 		out.Printf("var v ")
 
-		if err := enumType.Generate(out); err != nil {
+		err := enumType.Generate(out)
+		if err != nil {
 			return fmt.Errorf("cannot unmarshal enum content: %w", err)
 		}
 

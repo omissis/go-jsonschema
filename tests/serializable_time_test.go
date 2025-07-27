@@ -38,7 +38,9 @@ func TestSerializableTimeUnmarshalsFromJSON(t *testing.T) {
 	input := "\"" + now.Format("15:04:05") + "\""
 
 	var timeValue types.SerializableTime
-	if err := json.Unmarshal([]byte(input), &timeValue); err != nil {
+
+	err := json.Unmarshal([]byte(input), &timeValue)
+	if err != nil {
 		t.Fatalf("Unable to unmarshal %s to a SerializableTime: %s", input, err)
 	}
 
@@ -67,7 +69,9 @@ func TestSerializableTimeUnmarshalJSONReturnsErrorForInvalidString(t *testing.T)
 			t.Parallel()
 
 			var timeValue types.SerializableTime
-			if err := timeValue.UnmarshalJSON([]byte(testCase)); err == nil {
+
+			err := timeValue.UnmarshalJSON([]byte(testCase))
+			if err == nil {
 				t.Fatalf("Expected an error but got '%s'", timeValue)
 			}
 		})
@@ -78,7 +82,9 @@ func TestSerializableTimeUnmarshalJSONDoesNothingWhenGivenNull(t *testing.T) {
 	t.Parallel()
 
 	var timeValue types.SerializableTime
-	if err := timeValue.UnmarshalJSON([]byte("null")); err != nil {
+
+	err := timeValue.UnmarshalJSON([]byte("null"))
+	if err != nil {
 		t.Fatalf("Given 'null' expected UnmarshalJSON to be no-op but got an error: %v", err)
 	}
 
