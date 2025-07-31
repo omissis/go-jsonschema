@@ -645,6 +645,7 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 
 func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	mergedType := t
+
 	if len(t.AllOf) > 0 {
 		// Process allOf directly if current type is empty
 		if len(t.Properties) == 0 && t.AdditionalProperties == nil && len(t.Required) == 0 {
