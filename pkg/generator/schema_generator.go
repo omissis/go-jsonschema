@@ -644,8 +644,36 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 }
 
 func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	if len(t.Properties) == 0 && len(t.AllOf) == 0 && len(t.AnyOf) == 0 {
-		if len(t.Required) > 0 {
+	mergedType := t
+	if len(t.AllOf) > 0 {
+		// Process allOf directly if current type is empty
+		if len(t.Properties) == 0 && t.AdditionalProperties == nil && len(t.Required) == 0 {
+			return g.generateAllOfType(t.AllOf, scope)
+		}
+
+		// Merge allOf with current type
+		resolvedAllOf := g.resolveRefs(t.AllOf)
+		typesToMerge := make([]*schemas.Type, 0, len(resolvedAllOf)+1)
+		typesToMerge = append(typesToMerge, resolvedAllOf...)
+
+		baseType := &schemas.Type{
+			Properties:           t.Properties,
+			AdditionalProperties: t.AdditionalProperties,
+			Required:             t.Required,
+			Type:                 t.Type,
+		}
+		typesToMerge = append(typesToMerge, baseType)
+
+		mergedResult, err := schemas.MergeTypes(typesToMerge)
+		if err != nil {
+			return nil, fmt.Errorf("could not merge allOf types with current type: %w", err)
+		}
+
+		mergedType = mergedResult
+	}
+
+	if len(mergedType.Properties) == 0 && len(mergedType.AllOf) == 0 && len(mergedType.AnyOf) == 0 {
+		if len(mergedType.Required) > 0 {
 			g.warner("Object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
 		}
@@ -654,8 +682,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 
 		var err error
 
-		if t.AdditionalProperties != nil {
-			if valueType, err = g.generateType(t.AdditionalProperties, scope.add("Value")); err != nil {
+		if mergedType.AdditionalProperties != nil {
+			if valueType, err = g.generateType(mergedType.AdditionalProperties, scope.add("Value")); err != nil {
 				return nil, err
 			}
 		}
@@ -666,32 +694,28 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		}, nil
 	}
 
-	requiredNames := make(map[string]bool, len(t.Properties))
-	for _, r := range t.Required {
+	requiredNames := make(map[string]bool, len(mergedType.Properties))
+	for _, r := range mergedType.Required {
 		requiredNames[r] = true
 	}
 
-	uniqueNames := make(map[string]int, len(t.Properties))
+	uniqueNames := make(map[string]int, len(mergedType.Properties))
 
 	var structType codegen.StructType
 
-	for _, name := range sortedKeys(t.Properties) {
-		if err := g.addStructField(&structType, t, scope, name, uniqueNames, requiredNames); err != nil {
+	for _, name := range sortedKeys(mergedType.Properties) {
+		if err := g.addStructField(&structType, mergedType, scope, name, uniqueNames, requiredNames); err != nil {
 			return nil, err
 		}
 	}
 
-	if len(t.AnyOf) > 0 {
-		return g.generateAnyOfType(t.AnyOf, scope)
-	}
-
-	if len(t.AllOf) > 0 {
-		return g.generateAllOfType(t.AllOf, scope)
+	if len(mergedType.AnyOf) > 0 {
+		return g.generateAnyOfType(mergedType.AnyOf, scope)
 	}
 
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
-	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
-		if len(t.AdditionalProperties.Type) > 1 {
+	if mergedType.AdditionalProperties != nil && mergedType.AdditionalProperties.Not == nil {
+		if len(mergedType.AdditionalProperties.Type) > 1 {
 			return nil, errTooManyTypesForAdditionalProperties
 		}
 
@@ -700,8 +724,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			fieldType    codegen.Type = codegen.EmptyInterfaceType{}
 		)
 
-		if len(t.AdditionalProperties.Type) == 1 {
-			switch t.AdditionalProperties.Type[0] {
+		if len(mergedType.AdditionalProperties.Type) == 1 {
+			switch mergedType.AdditionalProperties.Type[0] {
 			case schemas.TypeNameString:
 				defaultValue = map[string]string{}
 				fieldType = codegen.MapType{
@@ -757,8 +781,8 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		)
 	}
 
-	if t.Default != nil {
-		structType.DefaultValue = g.defaultPropertyValue(t)
+	if mergedType.Default != nil {
+		structType.DefaultValue = g.defaultPropertyValue(mergedType)
 	}
 
 	return &structType, nil
