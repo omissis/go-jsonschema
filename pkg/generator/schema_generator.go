@@ -72,10 +72,17 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
-	if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
-		if decl, ok := schemaOutput.declsByName[t.Ref]; ok {
-			if decl != nil {
-				return decl.Type, nil
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, err
+	}
+
+	if fileName == "" {
+		if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
+			if decl, ok := schemaOutput.declsByName[defName]; ok {
+				if decl != nil {
+					return &codegen.NamedType{Decl: decl}, nil
+				}
 			}
 		}
 	}
@@ -90,11 +97,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		}
 
 		return codegen.EmptyInterfaceType{}, nil
-	}
-
-	defName, fileName, err := g.extractRefNames(t)
-	if err != nil {
-		return nil, err
 	}
 
 	schema := g.schema
