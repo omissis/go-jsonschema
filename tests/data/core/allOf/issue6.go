@@ -6,9 +6,19 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "time"
 
 // Base definition for all elements in a resource.
-type Element interface{}
+type Element struct {
+	// Additional content defined by implementations.
+	Extension []string `json:"extension,omitempty" yaml:"extension,omitempty" mapstructure:"extension,omitempty"`
+
+	// Unique id for the element within a resource (for internal references).
+	Id *string `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id,omitempty"`
+
+	// Name for the element
+	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+}
 
 // see http://hl7.org/fhir/json.html#schema for information about the FHIR Json
 // Schemas
@@ -20,7 +30,7 @@ type Issue6 struct {
 // A human's name with the ability to identify parts and usage.
 type Issue6Name struct {
 	// Extensions for family
-	Family Element `json:"_family,omitempty" yaml:"_family,omitempty" mapstructure:"_family,omitempty"`
+	Family *Element `json:"_family,omitempty" yaml:"_family,omitempty" mapstructure:"_family,omitempty"`
 
 	// Extensions for given
 	Given []Element `json:"_given,omitempty" yaml:"_given,omitempty" mapstructure:"_given,omitempty"`
@@ -32,10 +42,10 @@ type Issue6Name struct {
 	Suffix []Element `json:"_suffix,omitempty" yaml:"_suffix,omitempty" mapstructure:"_suffix,omitempty"`
 
 	// Extensions for text
-	Text Element `json:"_text,omitempty" yaml:"_text,omitempty" mapstructure:"_text,omitempty"`
+	Text *Element `json:"_text,omitempty" yaml:"_text,omitempty" mapstructure:"_text,omitempty"`
 
 	// Extensions for use
-	Use Element `json:"_use,omitempty" yaml:"_use,omitempty" mapstructure:"_use,omitempty"`
+	Use *Element `json:"_use,omitempty" yaml:"_use,omitempty" mapstructure:"_use,omitempty"`
 
 	// The part of a name that links to the genealogy. In some cultures (e.g. Eritrea)
 	// the family name of a son is the first name of his father.
@@ -45,7 +55,7 @@ type Issue6Name struct {
 	Given_2 []string `json:"given,omitempty" yaml:"given,omitempty" mapstructure:"given,omitempty"`
 
 	// Indicates the period of time when this name was valid for the named person.
-	Period Period `json:"period,omitempty" yaml:"period,omitempty" mapstructure:"period,omitempty"`
+	Period *Period `json:"period,omitempty" yaml:"period,omitempty" mapstructure:"period,omitempty"`
 
 	// Part of the name that is acquired as a title due to academic, legal, employment
 	// or nobility status, etc. and that appears at the start of the name.
@@ -123,4 +133,11 @@ func (j *Issue6NameUse_2) UnmarshalJSON(value []byte) error {
 }
 
 // Something
-type Period interface{}
+type Period struct {
+	// The end of the period. If the end of the period is missing, it means that the
+	// period is ongoing.
+	End *time.Time `json:"end,omitempty" yaml:"end,omitempty" mapstructure:"end,omitempty"`
+
+	// The start of the period. The boundary is inclusive.
+	Start *time.Time `json:"start,omitempty" yaml:"start,omitempty" mapstructure:"start,omitempty"`
+}
