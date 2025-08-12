@@ -54,8 +54,15 @@ func (p *Package) AddDecl(d Decl) {
 }
 
 func (p *Package) hasDecl(d Decl) bool {
+	n1, ok1 := d.(Named)
+
 	for _, pd := range p.Decls {
 		if pd == d || reflect.DeepEqual(pd, d) {
+			return true
+		}
+
+		n2, ok2 := pd.(Named)
+		if ok1 && ok2 && n1.GetName() == n2.GetName() {
 			return true
 		}
 	}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "title": "RootSchema",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/definitions/RootObject"
+    }
+  ],
+  "definitions": {
+    "RootObject": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ExtraProps"
+        }
+      ],
+      "properties": {
+        "foo": {
+        }
+      },
+      "required": [
+        "foo"
+      ]
+    },
+    "ExtraProps": {
+      "type": "object",
+      "properties": {
+        "bar": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
