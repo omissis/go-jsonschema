@@ -6,6 +6,7 @@ import (
 
 type formatter interface {
 	addImport(out *codegen.File, declType *codegen.TypeDecl)
+	getName() string
 
 	generate(output *output, declType *codegen.TypeDecl, validators []validator) func(*codegen.Emitter) error
 	enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error

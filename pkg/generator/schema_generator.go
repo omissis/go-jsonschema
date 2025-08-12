@@ -543,7 +543,7 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: formatter.generate(g.output, decl, validators),
-			Name: decl.GetName() + "_validator",
+			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
 }
@@ -1289,13 +1289,13 @@ func (g *schemaGenerator) generateEnumType(
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{
 					Impl: formatter.enumMarshal(&enumDecl),
-					Name: enumDecl.GetName() + "_enum",
+					Name: enumDecl.GetName() + "_enum_" + formatter.getName(),
 				})
 			}
 
 			g.output.file.Package.AddDecl(&codegen.Method{
 				Impl: formatter.enumUnmarshal(enumDecl, enumType, valueConstant, wrapInStruct),
-				Name: enumDecl.GetName() + "_enum_unmarshal",
+				Name: enumDecl.GetName() + "_enum_unmarshal_" + formatter.getName(),
 			})
 		}
 	}
