@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "definitions": {
+    "Agreement": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommonType"
+        },
+        {
+          "properties": {
+            "@type": {
+              "type": "string",
+              "const": "Agreement"
+            }
+          }
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "permission"
+              ]
+            },
+            {
+              "required": [
+                "prohibition"
+              ]
+            }
+          ]
+        }
+      ],
+      "required": [
+        "@type"
+      ]
+    },
+    "CommonType": {
+      "type": "object",
+      "properties": {
+        "permission": {
+          "type": "string"
+        },
+        "prohibition": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

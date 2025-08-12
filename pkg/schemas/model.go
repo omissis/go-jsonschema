@@ -287,6 +287,10 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		obj.DependentSchemas = legacyObj.Dependencies
 	}
 
+	if len(obj.Type) == 0 && (len(obj.Properties) > 0 || obj.AdditionalProperties != nil) {
+		obj.Type = TypeList{"object"}
+	}
+
 	*value = Type(obj)
 
 	return nil

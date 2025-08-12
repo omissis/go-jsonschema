@@ -913,6 +913,11 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
 	for i, typ := range rAnyOf {
+		// infer type from base if not set
+		if len(typ.Type) == 0 {
+			typ.Type = append(schemas.TypeList{}, t.Type...)
+		}
+
 		typ.SetSubSchemaTypeElem()
 
 		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
