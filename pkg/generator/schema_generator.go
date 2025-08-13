@@ -1269,6 +1269,20 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
 	}
 
+	// After resolving the ref type we lose info about the original schema
+	// so rewrite all nested refs to include the original schema id
+	_, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
+	}
+
+	if fileName != "" {
+		err = ntyp.Decl.SchemaType.ConvertAllRefs(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("convert refs: %w", err)
+		}
+	}
+
 	ntyp.Decl.SchemaType.Dereferenced = true
 
 	g.schemaTypesByRef[t.Ref] = ntyp.Decl.SchemaType
