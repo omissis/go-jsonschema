@@ -40,6 +40,8 @@ type Config struct {
 	// DisableCustomTypesForMaps configures the generator to avoid creating a custom type for maps,
 	// and to use the map type directly.
 	DisableCustomTypesForMaps bool
+	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
+	AliasSingleAllOfAnyOfRefs bool
 }
 
 type SchemaMapping struct {
