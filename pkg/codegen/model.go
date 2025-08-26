@@ -277,7 +277,7 @@ type AliasType struct {
 }
 
 func (p AliasType) Generate(out *Emitter) error {
-	out.Printf("type %s = %s", p.Alias, p.Name)
+	out.Printlnf("type %s = %s", p.Alias, p.Name)
 
 	return nil
 }
