@@ -515,7 +515,9 @@ func (j *Embeddedlinkrelation) UnmarshalJSON(value []byte) error {
 }
 
 type AnyOf4Elem_2 = Embeddedlinkrelation
+
 type AnyOf4Elem_1 = Embeddedlinkpath
+
 type AnyOf4Elem_0 = Embeddedlinkend
 
 // UnmarshalYAML implements yaml.Unmarshaler.
