@@ -147,6 +147,14 @@ func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
 		return err
 	}
 
+	if schema.ID != "" {
+		if _, processed := o.processedSchemas[schema.ID]; processed {
+			return nil
+		}
+
+		o.processedSchemas[schema.ID] = true
+	}
+
 	return newSchemaGenerator(g, schema, fileName, o).generateRootType()
 }
 
@@ -213,6 +221,7 @@ func (g *Generator) beginOutput(
 		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
 		declsByName:             map[string]*codegen.TypeDecl{},
 		unmarshallersByTypeDecl: map[*codegen.TypeDecl]bool{},
+		processedSchemas:        map[string]bool{},
 	}
 	g.outputs[id] = output
 
