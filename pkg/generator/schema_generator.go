@@ -851,11 +851,16 @@ func (g *schemaGenerator) addStructField(
 
 	var b strings.Builder
 
-	if isRequired || g.DisableOmitempty() {
+	switch {
+	case isRequired || g.DisableOmitempty():
 		for _, tag := range g.config.Tags {
 			fmt.Fprintf(&b, `%s:"%s" `, tag, name)
 		}
-	} else {
+	case g.config.PreferOmitzero:
+		for _, tag := range g.config.Tags {
+			fmt.Fprintf(&b, `%s:"%s,omitzero" `, tag, name)
+		}
+	default:
 		for _, tag := range g.config.Tags {
 			fmt.Fprintf(&b, `%s:"%s,omitempty" `, tag, name)
 		}
