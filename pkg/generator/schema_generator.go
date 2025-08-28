@@ -377,6 +377,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) structFieldValidators(
 	validators []validator,
 	f codegen.StructField,
@@ -394,11 +395,22 @@ func (g *schemaGenerator) structFieldValidators(
 		validators = g.structFieldValidators(validators, f, v.Type, v.IsNillable())
 
 	case codegen.PrimitiveType:
-		if v.Type == schemas.TypeNameString {
+		switch {
+		case v.Type == schemas.TypeNameString:
 			hasPattern := len(f.SchemaType.Pattern) != 0
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern || f.SchemaType.Const != nil {
 				// Double escape the escape characters so we don't effectively parse the escapes within the value.
 				escapedPattern := f.SchemaType.Pattern
+
+				var constVal *string
+
+				if f.SchemaType.Const != nil {
+					if s, ok := f.SchemaType.Const.(string); ok {
+						constVal = &s
+					} else {
+						g.warner(fmt.Sprintf("Ignoring non string const value: %v", f.SchemaType.Const))
+					}
+				}
 
 				replaceJSONCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
 
@@ -414,6 +426,7 @@ func (g *schemaGenerator) structFieldValidators(
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
 					pattern:    escapedPattern,
+					constVal:   constVal,
 					isNillable: isNillable,
 				})
 			}
@@ -421,12 +434,14 @@ func (g *schemaGenerator) structFieldValidators(
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
 			}
-		} else if strings.Contains(v.Type, "int") || v.Type == float64Type {
+
+		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
 				f.SchemaType.ExclusiveMaximum != nil ||
 				f.SchemaType.Minimum != nil ||
-				f.SchemaType.ExclusiveMinimum != nil {
+				f.SchemaType.ExclusiveMinimum != nil ||
+				f.SchemaType.Const != nil {
 				validators = append(validators, &numericValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
@@ -436,12 +451,33 @@ func (g *schemaGenerator) structFieldValidators(
 					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
 					minimum:          f.SchemaType.Minimum,
 					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					constVal:         f.SchemaType.Const,
 					roundToInt:       strings.Contains(v.Type, "int"),
 				})
 			}
 
 			if f.SchemaType.MultipleOf != nil && v.Type == float64Type {
 				g.output.file.Package.AddImport("math", "")
+			}
+
+		case v.Type == "bool":
+			if f.SchemaType.Const != nil {
+				var constVal *bool
+
+				if f.SchemaType.Const != nil {
+					if b, ok := f.SchemaType.Const.(bool); ok {
+						constVal = &b
+					} else {
+						g.warner(fmt.Sprintf("Ignoring non boolean const value: %v", f.SchemaType.Const))
+					}
+				}
+
+				validators = append(validators, &booleanValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					isNillable: isNillable,
+					constVal:   constVal,
+				})
 			}
 		}
 
