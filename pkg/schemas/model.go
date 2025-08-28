@@ -304,6 +304,7 @@ func AnyOf(types []*Type, baseType *Type) (*Type, error) {
 		return nil, err
 	}
 
+	typ.Required = mergeRequiredUnion(types, baseType)
 	typ.subSchemaType = SubSchemaTypeAnyOf
 	typ.subSchemasCount = len(types)
 
@@ -337,6 +338,29 @@ func MergeTypes(types []*Type, baseType *Type) (*Type, error) {
 	}
 
 	return result, nil
+}
+
+func mergeRequiredUnion(types []*Type, baseType *Type) []string {
+	required := make([]string, len(baseType.Required))
+	copy(required, baseType.Required)
+
+	for _, r := range types[0].Required {
+		valid := true
+
+		for _, t := range types {
+			if !slices.Contains(t.Required, r) {
+				valid = false
+
+				break
+			}
+		}
+
+		if valid && !slices.Contains(required, r) {
+			required = append(required, r) //nolint:makezero
+		}
+	}
+
+	return required
 }
 
 func updateAllRefsValues(structValue *reflect.Value, refPath string) error {

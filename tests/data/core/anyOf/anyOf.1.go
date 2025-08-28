@@ -18,13 +18,13 @@ type AnyOf1 struct {
 
 type AnyOf1ConfigurationsElem struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
+	Bar *float64 `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Baz corresponds to the JSON schema field "baz".
 	Baz *bool `json:"baz,omitempty" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
-	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`
+	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
 
 type AnyOf1ConfigurationsElem_0 struct {
