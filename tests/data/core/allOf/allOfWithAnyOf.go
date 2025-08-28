@@ -12,10 +12,10 @@ type Agreement struct {
 	Type string `json:"@type" yaml:"@type" mapstructure:"@type"`
 
 	// Permission corresponds to the JSON schema field "permission".
-	Permission string `json:"permission" yaml:"permission" mapstructure:"permission"`
+	Permission *string `json:"permission,omitempty" yaml:"permission,omitempty" mapstructure:"permission,omitempty"`
 
 	// Prohibition corresponds to the JSON schema field "prohibition".
-	Prohibition float64 `json:"prohibition" yaml:"prohibition" mapstructure:"prohibition"`
+	Prohibition *float64 `json:"prohibition,omitempty" yaml:"prohibition,omitempty" mapstructure:"prohibition,omitempty"`
 }
 
 type Agreement_0 map[string]interface{}
