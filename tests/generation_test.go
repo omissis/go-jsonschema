@@ -236,6 +236,16 @@ func TestAliasSingleAllOfAnyOfRefs(t *testing.T) {
 	testExamples(t, cfg, "./data/aliasSingleAllOfAnyOfRefs")
 }
 
+func TestPreferOmitzero(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.PreferOmitzero = true
+	cfg.Tags = []string{"json"}
+
+	testExamples(t, cfg, "./data/preferOmitzero")
+}
+
 func TestSchemaExtensions(t *testing.T) {
 	t.Parallel()
 
