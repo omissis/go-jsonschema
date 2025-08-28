@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/primitives",
+  "type": "object",
+  "properties": {
+    "myString": {
+      "type": "string",
+      "const": "foo"
+    },
+    "myNumber": {
+      "type": "number",
+      "const": 4.2
+    },
+    "myInteger": {
+      "type": "integer",
+      "const": 42
+    },
+    "myBoolean": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "$defs": {
+    "Required": {
+      "type": "object",
+      "properties": {
+        "myString": {
+          "type": "string",
+          "const": "foo"
+        },
+        "myNumber": {
+          "type": "number",
+          "const": 4.2
+        },
+        "myInteger": {
+          "type": "integer",
+          "const": 42
+        },
+        "myBoolean": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": [
+        "myString",
+        "myNumber",
+        "myInteger",
+        "myBoolean"
+      ]
+    }
+  }
+}
