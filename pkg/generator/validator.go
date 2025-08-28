@@ -356,6 +356,7 @@ type stringValidator struct {
 	maxLength  int
 	isNillable bool
 	pattern    string
+	constVal   *string
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
@@ -391,6 +392,14 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 			out.Indent(-1)
 			out.Printlnf("}")
 		}
+	}
+
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != "%s" {`, checkPointer, pointerPrefix, value, *v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%s", "%s", "%s")`, fieldName, *v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
 	}
 
 	if v.minLength == 0 && v.maxLength == 0 {
@@ -432,6 +441,7 @@ type numericValidator struct {
 	exclusiveMaximum *any
 	minimum          *float64
 	exclusiveMinimum *any
+	constVal         any
 	roundToInt       bool
 }
 
@@ -443,6 +453,14 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 	if v.isNillable {
 		checkPointer = fmt.Sprintf("%s != nil && ", value)
 		pointerPrefix = "*"
+	}
+
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != %v {`, checkPointer, pointerPrefix, value, v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%v", "%s", %v)`, v.jsonName, v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
 	}
 
 	if v.multipleOf != nil {
@@ -525,6 +543,42 @@ func (v *numericValidator) valueOf(val float64) any {
 	}
 
 	return val
+}
+
+type booleanValidator struct {
+	jsonName   string
+	fieldName  string
+	isNillable bool
+	constVal   *bool
+}
+
+func (v *booleanValidator) generate(out *codegen.Emitter, unmarshalTemplate string) error {
+	value := getPlainName(v.fieldName)
+	fieldName := v.jsonName
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != %t {`, checkPointer, pointerPrefix, value, *v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%t", "%s", %t)`, fieldName, *v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	return nil
+}
+
+func (v *booleanValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
 }
 
 func getPlainName(fieldName string) string {
