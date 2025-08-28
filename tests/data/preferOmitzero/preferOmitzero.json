@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/primitives",
+  "type": "object",
+  "properties": {
+    "myString": {
+      "type": "string"
+    },
+    "myNumber": {
+      "type": "number"
+    },
+    "myInteger": {
+      "type": "integer"
+    },
+    "myBoolean": {
+      "type": "boolean"
+    },
+    "myNull": {
+      "type": "null"
+    },
+    "myStringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "myNullArray": {
+      "type": "array",
+      "items": {
+        "type": "null"
+      }
+    },
+    "myObjectArray": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "myArray": {
+      "type": "array"
+    },
+    "myMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    }
+  }
+}

@@ -865,6 +865,10 @@ func (g *schemaGenerator) addStructField(
 	var tagsBuilder strings.Builder
 
 	omitEmpty := ",omitempty"
+	if g.config.PreferOmitzero {
+		omitEmpty = ",omitzero"
+	}
+
 	if isRequired || g.DisableOmitempty() {
 		omitEmpty = ""
 	}
