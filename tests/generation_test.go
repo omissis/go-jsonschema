@@ -48,6 +48,16 @@ func TestOmitempty(t *testing.T) {
 	testExamples(t, cfg, "./data/disableOmitempty")
 }
 
+func TestPreferOmitzero(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.PreferOmitzero = true
+	cfg.Tags = []string{"json"}
+
+	testExamples(t, cfg, "./data/preferOmitzero")
+}
+
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
