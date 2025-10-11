@@ -1315,7 +1315,7 @@ func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
 }
 
 // isTypeNullable checks if a type is nullable and returns the index of the type array where to find the actual type,
-// or -1 if none was found
+// or -1 if none was found.
 func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
 	if len(t.Type) == 1 && (t.Type[0] == schemas.TypeNameArray || t.Type[0] == schemas.TypeNameNull) {
 		return 0, true
@@ -1333,8 +1333,8 @@ func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
 		return 0, true
 	}
 
-	for i := 0; i < len(t.Type); i++ {
-		if t.Type[i] == schemas.TypeNameNull {
+	for _, tt := range t.Type {
+		if tt == schemas.TypeNameNull {
 			return -1, true
 		}
 	}
