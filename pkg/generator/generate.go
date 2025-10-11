@@ -210,8 +210,9 @@ func (g *Generator) beginOutput(
 			FileName: outputName,
 			Package:  pkg,
 		},
-		declsBySchema: map[*schemas.Type]*codegen.TypeDecl{},
-		declsByName:   map[string]*codegen.TypeDecl{},
+		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
+		declsByName:             map[string]*codegen.TypeDecl{},
+		unmarshallersByTypeDecl: map[*codegen.TypeDecl]bool{},
 	}
 	g.outputs[id] = output
 

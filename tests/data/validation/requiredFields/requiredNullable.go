@@ -11,11 +11,11 @@ type RequiredNullable struct {
 	MyNullableObject *RequiredNullableMyNullableObject `json:"myNullableObject" yaml:"myNullableObject" mapstructure:"myNullableObject"`
 
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
-	MyNullableString *string `json:"myNullableString" yaml:"myNullableString" mapstructure:"myNullableString"`
+	MyNullableString RequiredNullableMyNullableString `json:"myNullableString" yaml:"myNullableString" mapstructure:"myNullableString"`
 
 	// MyNullableStringArray corresponds to the JSON schema field
 	// "myNullableStringArray".
-	MyNullableStringArray []string `json:"myNullableStringArray" yaml:"myNullableStringArray" mapstructure:"myNullableStringArray"`
+	MyNullableStringArray *RequiredNullableMyNullableStringArray `json:"myNullableStringArray" yaml:"myNullableStringArray" mapstructure:"myNullableStringArray"`
 }
 
 type RequiredNullableMyNullableObject struct {
@@ -58,6 +58,10 @@ func (j *RequiredNullableMyNullableObject) UnmarshalYAML(value *yaml.Node) error
 	*j = RequiredNullableMyNullableObject(plain)
 	return nil
 }
+
+type RequiredNullableMyNullableString *string
+
+type RequiredNullableMyNullableStringArray []string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RequiredNullable) UnmarshalJSON(value []byte) error {

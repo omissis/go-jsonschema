@@ -64,7 +64,7 @@ type AutoinstallSchema struct {
 	Packages []string `json:"packages,omitempty" yaml:"packages,omitempty" mapstructure:"packages,omitempty"`
 
 	// Proxy corresponds to the JSON schema field "proxy".
-	Proxy *string `json:"proxy,omitempty" yaml:"proxy,omitempty" mapstructure:"proxy,omitempty"`
+	Proxy AutoinstallSchemaProxy `json:"proxy,omitempty" yaml:"proxy,omitempty" mapstructure:"proxy,omitempty"`
 
 	// RefreshInstaller corresponds to the JSON schema field "refresh-installer".
 	RefreshInstaller *AutoinstallSchemaRefreshInstaller `json:"refresh-installer,omitempty" yaml:"refresh-installer,omitempty" mapstructure:"refresh-installer,omitempty"`
@@ -446,8 +446,10 @@ type AutoinstallSchemaKernel struct {
 
 type AutoinstallSchemaKernelCrashDumps struct {
 	// Enabled corresponds to the JSON schema field "enabled".
-	Enabled *bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	Enabled AutoinstallSchemaKernelCrashDumpsEnabled `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
 }
+
+type AutoinstallSchemaKernelCrashDumpsEnabled *bool
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalJSON(value []byte) error {
@@ -490,11 +492,13 @@ type AutoinstallSchemaKeyboard struct {
 	Layout string `json:"layout" yaml:"layout" mapstructure:"layout"`
 
 	// Toggle corresponds to the JSON schema field "toggle".
-	Toggle *string `json:"toggle,omitempty" yaml:"toggle,omitempty" mapstructure:"toggle,omitempty"`
+	Toggle AutoinstallSchemaKeyboardToggle `json:"toggle,omitempty" yaml:"toggle,omitempty" mapstructure:"toggle,omitempty"`
 
 	// Variant corresponds to the JSON schema field "variant".
 	Variant *string `json:"variant,omitempty" yaml:"variant,omitempty" mapstructure:"variant,omitempty"`
 }
+
+type AutoinstallSchemaKeyboardToggle *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaKeyboard) UnmarshalJSON(value []byte) error {
@@ -573,6 +577,8 @@ func (j *AutoinstallSchemaOem) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+type AutoinstallSchemaProxy *string
+
 type AutoinstallSchemaRefreshInstaller struct {
 	// Channel corresponds to the JSON schema field "channel".
 	Channel *string `json:"channel,omitempty" yaml:"channel,omitempty" mapstructure:"channel,omitempty"`
@@ -598,10 +604,10 @@ var enumValues_AutoinstallSchemaShutdown = []interface{}{
 	"poweroff",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaShutdown) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaShutdown) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -618,10 +624,10 @@ func (j *AutoinstallSchemaShutdown) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaShutdown) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaShutdown) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -713,11 +719,11 @@ type AutoinstallSchemaUbuntuAdvantage struct {
 	Token *string `json:"token,omitempty" yaml:"token,omitempty" mapstructure:"token,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaUbuntuAdvantage
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if plain.Token != nil {
@@ -735,11 +741,11 @@ func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalYAML(value *yaml.Node) error
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaUbuntuAdvantage
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.Token != nil {
@@ -817,10 +823,10 @@ var enumValues_AutoinstallSchemaUpdates = []interface{}{
 	"all",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaUpdates) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaUpdates) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -837,10 +843,10 @@ func (j *AutoinstallSchemaUpdates) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaUpdates) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaUpdates) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool

@@ -17,7 +17,7 @@ type yamlFormatter struct{}
 
 func (yf *yamlFormatter) generate(
 	output *output,
-	declType codegen.TypeDecl,
+	declType *codegen.TypeDecl,
 	validators []validator,
 ) func(*codegen.Emitter) error {
 	var (
@@ -101,7 +101,7 @@ func (yf *yamlFormatter) generate(
 	}
 }
 
-func (yf *yamlFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) error {
+func (yf *yamlFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("Marshal%s implements %s.Marshal.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name, strings.ToUpper(formatYAML))
@@ -154,7 +154,7 @@ func (yf *yamlFormatter) enumUnmarshal(
 	}
 }
 
-func (yf *yamlFormatter) addImport(out *codegen.File, declType codegen.TypeDecl) {
+func (yf *yamlFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl) {
 	out.Package.AddImport(YAMLPackage, "yaml")
 
 	if structType, ok := declType.Type.(*codegen.StructType); ok {
