@@ -18,7 +18,7 @@ type jsonFormatter struct{}
 
 func (jf *jsonFormatter) generate(
 	output *output,
-	declType codegen.TypeDecl,
+	declType *codegen.TypeDecl,
 	validators []validator,
 ) func(*codegen.Emitter) error {
 	var (
@@ -103,7 +103,7 @@ func (jf *jsonFormatter) generate(
 	}
 }
 
-func (jf *jsonFormatter) enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) error {
+func (jf *jsonFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("Marshal%s implements %s.Marshaler.", strings.ToUpper(formatJSON), formatJSON)
 		out.Printlnf("func (j *%s) Marshal%s() ([]byte, error) {", declType.Name, strings.ToUpper(formatJSON))
@@ -157,7 +157,7 @@ func (jf *jsonFormatter) enumUnmarshal(
 	}
 }
 
-func (jf *jsonFormatter) addImport(out *codegen.File, declType codegen.TypeDecl) {
+func (jf *jsonFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl) {
 	out.Package.AddImport("encoding/json", "")
 
 	if structType, ok := declType.Type.(*codegen.StructType); ok {

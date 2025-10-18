@@ -27,6 +27,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 
 	"dario.cat/mergo"
 )
@@ -125,6 +126,12 @@ func (t *TypeList) Equals(b TypeList) bool {
 	}
 
 	return true
+}
+
+func (t *TypeList) Add(s string) {
+	if !slices.Contains(*t, s) {
+		*t = append(*t, s)
+	}
 }
 
 // Definitions hold schema definitions.

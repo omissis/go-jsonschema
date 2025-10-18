@@ -5,10 +5,10 @@ import (
 )
 
 type formatter interface {
-	addImport(out *codegen.File, declType codegen.TypeDecl)
+	addImport(out *codegen.File, declType *codegen.TypeDecl)
 
-	generate(output *output, declType codegen.TypeDecl, validators []validator) func(*codegen.Emitter) error
-	enumMarshal(declType codegen.TypeDecl) func(*codegen.Emitter) error
+	generate(output *output, declType *codegen.TypeDecl, validators []validator) func(*codegen.Emitter) error
+	enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error
 	enumUnmarshal(
 		declType codegen.TypeDecl,
 		enumType codegen.Type,

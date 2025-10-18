@@ -10,10 +10,12 @@ type IntegerThing *int
 
 type NullableType struct {
 	// MyInlineStringValue corresponds to the JSON schema field "MyInlineStringValue".
-	MyInlineStringValue *string `json:"MyInlineStringValue,omitempty" yaml:"MyInlineStringValue,omitempty" mapstructure:"MyInlineStringValue,omitempty"`
+	MyInlineStringValue NullableTypeMyInlineStringValue `json:"MyInlineStringValue,omitempty" yaml:"MyInlineStringValue,omitempty" mapstructure:"MyInlineStringValue,omitempty"`
 
 	// MyStringValue corresponds to the JSON schema field "MyStringValue".
 	MyStringValue StringThing `json:"MyStringValue,omitempty" yaml:"MyStringValue,omitempty" mapstructure:"MyStringValue,omitempty"`
 }
+
+type NullableTypeMyInlineStringValue *string
 
 type StringThing *string

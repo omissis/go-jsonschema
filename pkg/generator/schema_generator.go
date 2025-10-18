@@ -244,12 +244,14 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
 			if decl.Name != scope.string() {
-				decl := &codegen.AliasType{
+				declAlias := &codegen.AliasType{
 					Alias: scope.string(),
 					Name:  decl.Name,
 				}
 
-				g.output.file.Package.AddDecl(decl)
+				g.generateUnmarshaler(decl, nil)
+
+				g.output.file.Package.AddDecl(declAlias)
 			}
 		}
 
@@ -317,7 +319,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
 			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
-			g.generateUnmarshaler(decl, validators)
+			g.generateUnmarshaler(&decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
@@ -353,7 +355,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
-			g.generateUnmarshaler(decl, validators)
+			g.generateUnmarshaler(&decl, validators)
 		}
 
 	case codegen.PrimitiveType, *codegen.PrimitiveType:
@@ -363,12 +365,12 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}, tt, false)
 
 		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
-			g.generateUnmarshaler(decl, validators)
+			g.generateUnmarshaler(&decl, validators)
 		}
 
 	case codegen.MapType, *codegen.MapType:
 		if t.IsSubSchemaTypeElem() {
-			g.generateUnmarshaler(decl, []validator{})
+			g.generateUnmarshaler(&decl, []validator{})
 		}
 	}
 
@@ -472,10 +474,18 @@ func (g *schemaGenerator) structFieldValidators(
 	return validators
 }
 
-func (g *schemaGenerator) generateUnmarshaler(decl codegen.TypeDecl, validators []validator) {
+func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
 	if g.config.OnlyModels {
 		return
 	}
+
+	if hasUnmarshallers, ok := g.output.unmarshallersByTypeDecl[decl]; ok || hasUnmarshallers {
+		return
+	}
+
+	defer func() {
+		g.output.unmarshallersByTypeDecl[decl] = true
+	}()
 
 	for _, v := range validators {
 		if _, ok := v.(*anyOfValidator); ok {
@@ -851,9 +861,8 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 		return nil, errEmptyInAnyOf
 	}
 
-	rAnyOf := g.resolveRefs(anyOf)
-
-	var isCycle bool
+	isCycle := false
+	rAnyOf, hasNull := g.resolveRefs(anyOf, false)
 
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
@@ -869,6 +878,10 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 			isCycle = true
 
 			continue
+		}
+
+		if hasNull {
+			typ.Type.Add(schemas.TypeNameNull)
 		}
 
 		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
@@ -889,7 +902,7 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 }
 
 func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	rAllOf := g.resolveRefs(allOf)
+	rAllOf, _ := g.resolveRefs(allOf, true)
 
 	allOfType, err := schemas.AllOf(rAllOf)
 	if err != nil {
@@ -957,6 +970,15 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return g.generateAllOfType(t.AllOf, scope)
 		}
 
+		if len(t.Type) == 2 && typeIsNullable {
+			dt, err := g.generateDeclaredType(t, scope)
+			if err != nil {
+				return nil, err
+			}
+
+			return codegen.WrapTypeInPointer(dt), nil
+		}
+
 		if len(t.Type) > 1 && !typeIsNullable {
 			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as interface{} with no validation", scope))
 
@@ -967,7 +989,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
-		if schemas.IsPrimitiveType(t.Type[typeIndex]) {
+		if typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			if t.IsSubSchemaTypeElem() {
 				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a refactor.
 			}
@@ -1003,7 +1025,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return cg, nil
 		}
 
-		if t.Type[typeIndex] == schemas.TypeNameArray {
+		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type
 
 			if t.Items == nil {
@@ -1018,6 +1040,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			}
 
 			return &codegen.ArrayType{Type: theType}, nil
+		}
+
+		if typeIndex == -1 {
+			return codegen.EmptyInterfaceType{}, nil
 		}
 	}
 
@@ -1164,11 +1190,11 @@ func (g *schemaGenerator) generateEnumType(
 		g.output.file.Package.AddImport("reflect", "")
 
 		for _, formatter := range g.formatters {
-			formatter.addImport(g.output.file, enumDecl)
+			formatter.addImport(g.output.file, &enumDecl)
 
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{
-					Impl: formatter.enumMarshal(enumDecl),
+					Impl: formatter.enumMarshal(&enumDecl),
 					Name: enumDecl.GetName() + "_enum",
 				})
 			}
@@ -1197,8 +1223,9 @@ func (g *schemaGenerator) generateEnumType(
 	return &codegen.NamedType{Decl: &enumDecl}, nil
 }
 
-func (g *schemaGenerator) resolveRefs(types []*schemas.Type) []*schemas.Type {
+func (g *schemaGenerator) resolveRefs(types []*schemas.Type, withNulls bool) ([]*schemas.Type, bool) {
 	resolvedTypes := make([]*schemas.Type, 0, len(types))
+	hasNulls := false
 
 	for _, typ := range types {
 		resolvedType, err := g.resolveRef(typ)
@@ -1208,10 +1235,16 @@ func (g *schemaGenerator) resolveRefs(types []*schemas.Type) []*schemas.Type {
 			continue
 		}
 
+		if !withNulls && len(resolvedType.Type) == 1 && resolvedType.Type[0] == schemas.TypeNameNull {
+			hasNulls = true
+
+			continue
+		}
+
 		resolvedTypes = append(resolvedTypes, resolvedType)
 	}
 
-	return resolvedTypes
+	return resolvedTypes, hasNulls
 }
 
 func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
@@ -1281,24 +1314,30 @@ func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
 	}, nil
 }
 
-// isTypeNullable checks if a type is nullable and returns the index of the type array where to find the actual type.
+// isTypeNullable checks if a type is nullable and returns the index of the type array where to find the actual type,
+// or -1 if none was found.
 func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
-	var (
-		index    int
-		nullable bool
-	)
+	if len(t.Type) == 1 && (t.Type[0] == schemas.TypeNameArray || t.Type[0] == schemas.TypeNameNull) {
+		return 0, true
+	}
 
-	if len(t.Type) == 2 {
-		for i, t := range t.Type {
-			if t == "null" {
-				nullable = true
+	if len(t.Type) == 1 && t.Type[0] != schemas.TypeNameNull {
+		return 0, false
+	}
 
-				continue
-			}
+	if len(t.Type) == 2 && t.Type[0] == schemas.TypeNameNull {
+		return 1, true
+	}
 
-			index = i
+	if len(t.Type) == 2 && t.Type[1] == schemas.TypeNameNull {
+		return 0, true
+	}
+
+	for _, tt := range t.Type {
+		if tt == schemas.TypeNameNull {
+			return -1, true
 		}
 	}
 
-	return index, nullable
+	return -1, false
 }

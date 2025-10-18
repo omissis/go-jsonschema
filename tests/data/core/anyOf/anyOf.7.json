@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Item": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "type": "object",
+    "properties": {
+        "foo": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Item"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "bar": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/Item"
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            }
+        },
+        "baz": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/Item"
+                    },
+                    {
+                        "type": "null"
+                    }
+                ]
+            }
+        }
+    },
+    "required": ["foo", "bar"]
+}

@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "PeerKind": {
+      "description": "Different types of peer subjects.",
+      "enum": ["RFC822", "DNS", "IP"],
+      "title": "PeerKind",
+      "type": "string"
+    },
+    "PeerName": {
+      "description": "Represents a peer (i.e., end entity) certificate's name (Subject or SAN).",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/PeerKind",
+          "description": "The kind of peer name"
+        },
+        "value": {
+          "description": "The peer's name",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": ["kind", "value"],
+      "title": "PeerName",
+      "type": "object"
+    },
+    "Testcase": {
+      "description": "Represents an individual Limbo testcase.",
+      "properties": {
+        "expected_peer_name": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PeerName"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For server (i.e. client-side) validation: the expected peer name, if any"
+        },
+        "not_expected_peer_name": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PeerName"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For server (i.e. client-side) validation: the expected peer name, if any"
+        }
+      },
+      "required": ["expected_peer_name"],
+      "title": "Testcase",
+      "type": "object"
+    }
+  },
+  "title": "x509-limbo schemas"
+}
