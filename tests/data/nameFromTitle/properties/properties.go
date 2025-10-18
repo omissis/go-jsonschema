@@ -11,15 +11,13 @@ import "strings"
 
 type Alpha struct {
 	// Beta corresponds to the JSON schema field "beta".
-	Beta AlphaBeta `json:"beta,omitempty" yaml:"beta,omitempty" mapstructure:"beta,omitempty"`
+	Beta Beta `json:"beta,omitempty" yaml:"beta,omitempty" mapstructure:"beta,omitempty"`
 
 	// Eta corresponds to the JSON schema field "eta".
 	Eta *Eta `json:"eta,omitempty" yaml:"eta,omitempty" mapstructure:"eta,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
-
-type AlphaBeta interface{}
 
 type Beta interface{}
 
@@ -112,10 +110,10 @@ type Properties struct {
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Properties) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
+	if err := value.Decode(&raw); err != nil {
 		return err
 	}
 	if _, ok := raw["iota"]; raw != nil && !ok {
@@ -123,7 +121,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 	}
 	type Plain Properties
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	st := reflect.TypeOf(Plain{})
@@ -138,10 +136,10 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Properties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["iota"]; raw != nil && !ok {
@@ -149,7 +147,7 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 	}
 	type Plain Properties
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	st := reflect.TypeOf(Plain{})

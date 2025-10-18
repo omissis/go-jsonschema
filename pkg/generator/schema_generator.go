@@ -136,10 +136,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
 		}
 
-		if len(def.Type) == 0 && len(def.Properties) == 0 {
-			return &codegen.EmptyInterfaceType{}, nil
-		}
-
 		defName = g.caser.Identifierize(defName)
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
