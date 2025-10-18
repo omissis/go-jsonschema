@@ -1,16 +1,24 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sanity-io/litter"
 	"github.com/sosodev/duration"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
+)
+
+var (
+	ErrDurationIsEmpty                = errors.New("duration default value must not be an empty string")
+	ErrCannotConvertISO8601ToGoFormat = errors.New("could not convert duration from ISO8601 to Go format")
+	ErrInvalidDefaultValue            = errors.New("invalid default value")
+	ErrCannotFindSlideToDump          = errors.New("didn't find a slice to dump")
+	ErrDefaultDurationIsNotAString    = errors.New("duration default value must be a string")
 )
 
 type validator interface {
@@ -185,16 +193,16 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 			defaultDurationISO8601, ok := v.defaultValue.(string)
 
 			if !ok {
-				return nil, errors.New(fmt.Sprintf("duration default value must be a string, %T given", v.defaultValue))
+				return nil, fmt.Errorf("%w: %T given", ErrDefaultDurationIsNotAString, v.defaultValue)
 			}
 
 			if defaultDurationISO8601 == "" {
-				return nil, errors.New("duration default value must not be an empty string")
+				return nil, ErrDurationIsEmpty
 			}
 
 			duration, err := duration.Parse(defaultDurationISO8601)
 			if err != nil {
-				return nil, errors.New("could not convert duration from ISO8601 to Go format")
+				return nil, ErrCannotConvertISO8601ToGoFormat
 			}
 
 			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
@@ -240,14 +248,14 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 	if kind == reflect.Slice {
 		df, ok := v.defaultValue.([]interface{})
 		if !ok {
-			return "", errors.New("invalid default value")
+			return "", ErrInvalidDefaultValue
 		}
 
 		for _, value := range df {
 			tmpEmitter.Printlnf("%s,", litter.Sdump(value))
 		}
 	} else {
-		return "", errors.New("didn't find a slice to dump")
+		return "", ErrCannotFindSlideToDump
 	}
 
 	tmpEmitter.Printf("}")
