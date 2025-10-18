@@ -122,7 +122,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, oerr
 		}
 
-		sg = newSchemaGenerator(g.Generator, schema, fileName, output)
+		sg = newSchemaGenerator(g.Generator, schema, qualified, output)
 	}
 
 	var def *schemas.Type

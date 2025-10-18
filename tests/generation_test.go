@@ -223,6 +223,16 @@ func TestDeeplyNestedMinimalNames(t *testing.T) {
 	testExamples(t, cfg, "./data/deeplyNested")
 }
 
+func TestRefWithOverridesPath(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.OnlyModels = true
+	cfg.StructNameFromTitle = true
+
+	testExampleFile(t, cfg, "./data/refWithOverridesPath/schema.json")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
