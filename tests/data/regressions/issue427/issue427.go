@@ -10,19 +10,33 @@ import "reflect"
 
 type TestcaseExpectedPeerName_0 = PeerName
 
-const PeerKindRFC822 PeerKind = "RFC822"
+// Represents a peer (i.e., end entity) certificate's name (Subject or SAN).
+type TestcaseExpectedPeerName struct {
+	// The kind of peer name
+	Kind PeerKind `json:"kind" yaml:"kind" mapstructure:"kind"`
 
-type PeerKind string
+	// The peer's name
+	Value string `json:"value" yaml:"value" mapstructure:"value"`
+}
 
-type TestcaseNotExpectedPeerName_0 = PeerName
-
-const PeerKindIP PeerKind = "IP"
-const PeerKindDNS PeerKind = "DNS"
-
-var enumValues_PeerKind = []interface{}{
-	"RFC822",
-	"DNS",
-	"IP",
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *PeerKind) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_PeerKind {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_PeerKind, v)
+	}
+	*j = PeerKind(v)
+	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -45,25 +59,9 @@ func (j *PeerKind) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *PeerKind) UnmarshalJSON(value []byte) error {
-	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_PeerKind {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_PeerKind, v)
-	}
-	*j = PeerKind(v)
-	return nil
-}
+const PeerKindRFC822 PeerKind = "RFC822"
+const PeerKindDNS PeerKind = "DNS"
+const PeerKindIP PeerKind = "IP"
 
 // Represents a peer (i.e., end entity) certificate's name (Subject or SAN).
 type PeerName struct {
@@ -116,6 +114,12 @@ func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+var enumValues_PeerKind = []interface{}{
+	"RFC822",
+	"DNS",
+	"IP",
+}
+
 // Represents an individual Limbo testcase.
 type Testcase struct {
 	// For server (i.e. client-side) validation: the expected peer name, if any
@@ -125,14 +129,9 @@ type Testcase struct {
 	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
 }
 
-// Represents a peer (i.e., end entity) certificate's name (Subject or SAN).
-type TestcaseExpectedPeerName struct {
-	// The kind of peer name
-	Kind PeerKind `json:"kind" yaml:"kind" mapstructure:"kind"`
+type PeerKind string
 
-	// The peer's name
-	Value string `json:"value" yaml:"value" mapstructure:"value"`
-}
+type TestcaseNotExpectedPeerName_0 = PeerName
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
