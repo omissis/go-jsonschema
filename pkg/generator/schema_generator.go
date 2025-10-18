@@ -36,6 +36,7 @@ func newSchemaGenerator(
 
 type schemaGenerator struct {
 	*Generator
+
 	output           *output
 	schema           *schemas.Schema
 	schemaFileName   string

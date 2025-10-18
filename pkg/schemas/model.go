@@ -40,6 +40,7 @@ var (
 // Schema is the root schema.
 type Schema struct {
 	*ObjectAsType
+
 	ID          string      `json:"$id"` // RFC draft-wright-json-schema-01, section-9.2.
 	LegacyID    string      `json:"id"`  // RFC draft-wright-json-schema-00, section 4.5.
 	Definitions Definitions `json:"$defs,omitempty"`

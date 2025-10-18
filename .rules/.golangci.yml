@@ -24,6 +24,8 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
+    # disabled
+    - noinlineerr
   settings:
     govet:
       settings:

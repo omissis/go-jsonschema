@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -347,9 +348,13 @@ func diffStrings(t *testing.T, expected, actual string) (*string, bool) {
 		t.Fatal(err.Error())
 	}
 
-	out, err := exec.Command("diff", "--side-by-side",
+	out, err := exec.CommandContext(
+		context.Background(),
+		"diff",
+		"--side-by-side",
 		fmt.Sprintf("%s/expected", dir),
-		fmt.Sprintf("%s/actual", dir)).Output()
+		fmt.Sprintf("%s/actual", dir),
+	).Output()
 
 	if !errors.As(err, &errExit) {
 		t.Fatal(err.Error())

@@ -271,6 +271,7 @@ type Type interface {
 
 type AliasType struct {
 	Decl
+
 	Alias string
 	Name  string
 }
@@ -337,7 +338,7 @@ func (t NamedType) Generate(out *Emitter) error {
 	return nil
 }
 
-// We need special handling when validating durations.
+// DurationType exists to provide special handling when validating durations.
 // Having a dedicated type for durations allows the validator to
 // differentiate between durations and other types.
 type DurationType struct{}
