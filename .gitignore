@@ -1,10 +1,12 @@
 .env
 .envrc
 .idea
+bin/
 coverage.out
 coverage/
-bin/
-dist/
-vendor/
-output/
 go.work
+mise.local.toml
+mise.toml.tmp
+dist/
+output/
+vendor/

@@ -172,15 +172,11 @@ docker-build:
 docker-tools:
 	@scripts/docker-tools.sh
 
-.PHONY: asdf-install-tools asdf-update-tools
+.PHONY: mise-update-tools
 
-asdf-install-tools:
-	@scripts/asdf-add-plugins.sh
-	@asdf install
-
-asdf-update-tools:
-	@scripts/asdf-update-tools.sh
-	@asdf install
+mise-update-tools:
+	@scripts/mise-update-tools.sh
+	@mise install
 
 .PHONY: golang-check-updates golang-update golang-install-tools
 
