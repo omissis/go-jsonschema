@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "BaseObject": {
+      "type": "object",
+      "properties": {
+        "BaseField": {
+          "type": "string"
+        }
+      },
+      "required": ["BaseField"]
+    },
+    "ComposedWithAllOfAndProperties": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BaseObject"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "DirectField": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

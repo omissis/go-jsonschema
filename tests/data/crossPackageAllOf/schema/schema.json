@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/schema",
+  "type": "object",
+  "properties": {
+    "defInSameSchema": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/Thing"
+        }
+      ]
+    },
+    "defInOtherSchema": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "../other/other.json#/$defs/Thing"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        }
+      }
+    },
+    "Name": {
+      "type": "string"
+    }
+  }
+}

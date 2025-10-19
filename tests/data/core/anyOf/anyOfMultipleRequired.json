@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "MultipleRequiredBase": {
+      "type": "object",
+      "properties": {
+        "baseField": {
+          "type": "string"
+        }
+      },
+      "required": ["baseField"]
+    },
+    "MultipleRequiredMiddle": {
+      "type": "object",
+      "properties": {
+        "middleField": {
+          "type": "number"
+        }
+      },
+      "required": ["middleField"]
+    },
+    "ComposedWithMultipleRequired": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/MultipleRequiredBase"
+        },
+        {
+          "$ref": "#/definitions/MultipleRequiredMiddle"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "directField": {
+          "type": "boolean"
+        }
+      },
+      "required": ["directField"]
+    }
+  }
+}

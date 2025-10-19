@@ -72,10 +72,17 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
-	if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
-		if decl, ok := schemaOutput.declsByName[t.Ref]; ok {
-			if decl != nil {
-				return decl.Type, nil
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, err
+	}
+
+	if fileName == "" {
+		if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
+			if decl, ok := schemaOutput.declsByName[defName]; ok {
+				if decl != nil {
+					return &codegen.NamedType{Decl: decl}, nil
+				}
 			}
 		}
 	}
@@ -90,11 +97,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		}
 
 		return codegen.EmptyInterfaceType{}, nil
-	}
-
-	defName, fileName, err := g.extractRefNames(t)
-	if err != nil {
-		return nil, err
 	}
 
 	schema := g.schema
@@ -689,11 +691,11 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	}
 
 	if len(t.AnyOf) > 0 {
-		return g.generateAnyOfType(t.AnyOf, scope)
+		return g.generateAnyOfType(t, scope)
 	}
 
 	if len(t.AllOf) > 0 {
-		return g.generateAllOfType(t.AllOf, scope)
+		return g.generateAllOfType(t, scope)
 	}
 
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
@@ -853,13 +855,13 @@ func (g *schemaGenerator) addStructField(
 	return nil
 }
 
-func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	if len(anyOf) == 0 {
+func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if len(t.AnyOf) == 0 {
 		return nil, errEmptyInAnyOf
 	}
 
 	isCycle := false
-	rAnyOf, hasNull := g.resolveRefs(anyOf, false)
+	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
 	for i, typ := range rAnyOf {
 		typ.SetSubSchemaTypeElem()
@@ -890,21 +892,25 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
-	anyOfType, err := schemas.AnyOf(rAnyOf)
+	anyOfType, err := schemas.AnyOf(rAnyOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
 	}
 
+	anyOfType.AnyOf = nil
+
 	return g.generateTypeInline(anyOfType, scope)
 }
 
-func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	rAllOf, _ := g.resolveRefs(allOf, true)
+func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
-	allOfType, err := schemas.AllOf(rAllOf)
+	allOfType, err := schemas.AllOf(rAllOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge allOf types: %w", err)
 	}
+
+	allOfType.AllOf = nil
 
 	return g.generateTypeInline(allOfType, scope)
 }
@@ -960,11 +966,11 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AnyOf) > 0 {
-			return g.generateAnyOfType(t.AnyOf, scope)
+			return g.generateAnyOfType(t, scope)
 		}
 
 		if len(t.AllOf) > 0 {
-			return g.generateAllOfType(t.AllOf, scope)
+			return g.generateAllOfType(t, scope)
 		}
 
 		if len(t.Type) == 2 && typeIsNullable {
@@ -1261,6 +1267,20 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 	ntyp, err := g.extractPointedType(typ)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
+	}
+
+	// After resolving the ref type we lose info about the original schema
+	// so rewrite all nested refs to include the original schema id
+	_, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
+	}
+
+	if fileName != "" {
+		err = ntyp.Decl.SchemaType.ConvertAllRefs(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("convert refs: %w", err)
+		}
 	}
 
 	ntyp.Decl.SchemaType.Dereferenced = true
