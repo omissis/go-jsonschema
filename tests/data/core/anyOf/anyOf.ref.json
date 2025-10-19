@@ -10,7 +10,7 @@
   ],
   "definitions": {
     "Policy": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/Offer"
         },

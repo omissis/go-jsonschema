@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/refNested",
+  "type": "object",
+  "properties": {
+    "myThing": {
+      "$ref": "#/$defs/Thing"
+    }
+  },
+  "$defs": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name"
+        }
+      }
+    },
+    "Name": {
+      "type": "string"
+    }
+  }
+}

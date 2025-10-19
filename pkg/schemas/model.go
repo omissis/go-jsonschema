@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 
 	"dario.cat/mergo"
 )
@@ -176,6 +177,7 @@ type Type struct {
 	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // Section 5.18.
 	Enum                 []interface{}    `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
+	Const                interface{}      `json:"const,omitempty"`
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
 	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
@@ -214,6 +216,10 @@ type Type struct {
 	Dereferenced bool `json:"-"` // Marks that his type has been dereferenced.
 }
 
+func (value *Type) IsEmptyObject() bool {
+	return len(value.Properties) == 0 && value.AdditionalProperties == nil
+}
+
 func (value *Type) SetSubSchemaType(sst SubSchemaType) {
 	value.subSchemaType = sst
 }
@@ -236,6 +242,12 @@ func (value *Type) IsSubSchemaTypeElem() bool {
 
 func (value *Type) SetSubSchemaTypeElem() {
 	value.subSchemaTypeElem = true
+}
+
+func (value *Type) ConvertAllRefs(absolutePath string) error {
+	val := reflect.ValueOf(value).Elem()
+
+	return updateAllRefsValues(&val, absolutePath)
 }
 
 // UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
@@ -275,13 +287,17 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		obj.DependentSchemas = legacyObj.Dependencies
 	}
 
+	if len(obj.Type) == 0 && (len(obj.Properties) > 0 || obj.AdditionalProperties != nil) {
+		obj.Type = TypeList{"object"}
+	}
+
 	*value = Type(obj)
 
 	return nil
 }
 
-func AllOf(types []*Type) (*Type, error) {
-	typ, err := MergeTypes(types)
+func AllOf(types []*Type, baseType *Type) (*Type, error) {
+	typ, err := MergeTypes(types, baseType)
 	if err != nil {
 		return nil, err
 	}
@@ -291,32 +307,37 @@ func AllOf(types []*Type) (*Type, error) {
 	return typ, nil
 }
 
-func AnyOf(types []*Type) (*Type, error) {
-	typ, err := MergeTypes(types)
+func AnyOf(types []*Type, baseType *Type) (*Type, error) {
+	typ, err := MergeTypes(types, baseType)
 	if err != nil {
 		return nil, err
 	}
 
+	typ.Required = mergeRequiredUnion(types, baseType)
 	typ.subSchemaType = SubSchemaTypeAnyOf
 	typ.subSchemasCount = len(types)
 
 	return typ, nil
 }
 
-func MergeTypes(types []*Type) (*Type, error) {
+func MergeTypes(types []*Type, baseType *Type) (*Type, error) {
 	if len(types) == 0 {
 		return nil, ErrEmptyTypesList
 	}
 
 	result := &Type{}
 
-	if isPrimitiveTypeList(types) {
+	if isPrimitiveTypeList(types, result.Type) {
 		return result, nil
 	}
 
 	opts := []func(*mergo.Config){
 		mergo.WithAppendSlice,
 		mergo.WithTransformers(typeListTransformer{}),
+	}
+
+	if err := mergo.Merge(result, baseType, opts...); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrCannotMergeTypes, err)
 	}
 
 	for _, t := range types {
@@ -326,6 +347,80 @@ func MergeTypes(types []*Type) (*Type, error) {
 	}
 
 	return result, nil
+}
+
+func mergeRequiredUnion(types []*Type, baseType *Type) []string {
+	required := make([]string, len(baseType.Required))
+	copy(required, baseType.Required)
+
+	for _, r := range types[0].Required {
+		valid := true
+
+		for _, t := range types {
+			if !slices.Contains(t.Required, r) {
+				valid = false
+
+				break
+			}
+		}
+
+		if valid && !slices.Contains(required, r) {
+			required = append(required, r) //nolint:makezero
+		}
+	}
+
+	return required
+}
+
+func updateAllRefsValues(structValue *reflect.Value, refPath string) error {
+	switch structValue.Kind() { //nolint:exhaustive
+	case reflect.Struct:
+		for i := range structValue.NumField() {
+			field := structValue.Field(i)
+			name := structValue.Type().Field(i).Name
+
+			switch field.Kind() { //nolint:exhaustive
+			case reflect.String:
+				fieldVal := field.String()
+				if name == "Ref" && fieldVal != "" && field.CanSet() {
+					if strings.HasPrefix(fieldVal, "#") {
+						field.SetString(refPath + fieldVal)
+					}
+				}
+
+			default:
+				if err := updateAllRefsValues(&field, refPath); err != nil {
+					return fmt.Errorf("struct error: %w", err)
+				}
+			}
+		}
+
+	case reflect.Ptr:
+		elem := structValue.Elem()
+		if !structValue.IsNil() {
+			if err := updateAllRefsValues(&elem, refPath); err != nil {
+				return fmt.Errorf("ptr error: %w", err)
+			}
+		}
+
+	case reflect.Map:
+		for _, key := range structValue.MapKeys() {
+			val := structValue.MapIndex(key)
+			if err := updateAllRefsValues(&val, refPath); err != nil {
+				return fmt.Errorf("map error: %w", err)
+			}
+		}
+
+	case reflect.Slice, reflect.Array:
+		for i := range structValue.Len() {
+			field := structValue.Index(i)
+			if err := updateAllRefsValues(&field, refPath); err != nil {
+				return fmt.Errorf("slice error: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 type typeListTransformer struct{}

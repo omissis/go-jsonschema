@@ -27,11 +27,18 @@ func CleanNameForSorting(name string) string {
 	if strings.HasPrefix(name, PrefixEnumValue) {
 		return strings.TrimPrefix(name, PrefixEnumValue) + "_enumValues" // Append a string for sorting properly.
 	}
+	// Preserve existing sort order in tests
+	name = strings.TrimSuffix(name, "_yaml")
+	name = strings.TrimSuffix(name, "_json")
 
 	return name
 }
 
-func isPrimitiveTypeList(types []*Type) bool {
+func isPrimitiveTypeList(types []*Type, baseType TypeList) bool {
+	if len(baseType) > 0 && !IsPrimitiveType(baseType[0]) {
+		return false
+	}
+
 	for _, typ := range types {
 		if len(typ.Type) == 0 {
 			continue

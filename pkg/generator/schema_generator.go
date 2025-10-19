@@ -72,10 +72,17 @@ func (g *schemaGenerator) generateRootType() error {
 }
 
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
-	if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
-		if decl, ok := schemaOutput.declsByName[t.Ref]; ok {
-			if decl != nil {
-				return decl.Type, nil
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, err
+	}
+
+	if fileName == "" {
+		if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
+			if decl, ok := schemaOutput.declsByName[defName]; ok {
+				if decl != nil {
+					return &codegen.NamedType{Decl: decl}, nil
+				}
 			}
 		}
 	}
@@ -90,11 +97,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		}
 
 		return codegen.EmptyInterfaceType{}, nil
-	}
-
-	defName, fileName, err := g.extractRefNames(t)
-	if err != nil {
-		return nil, err
 	}
 
 	schema := g.schema
@@ -374,6 +376,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) structFieldValidators(
 	validators []validator,
 	f codegen.StructField,
@@ -391,11 +394,22 @@ func (g *schemaGenerator) structFieldValidators(
 		validators = g.structFieldValidators(validators, f, v.Type, v.IsNillable())
 
 	case codegen.PrimitiveType:
-		if v.Type == schemas.TypeNameString {
+		switch {
+		case v.Type == schemas.TypeNameString:
 			hasPattern := len(f.SchemaType.Pattern) != 0
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern || f.SchemaType.Const != nil {
 				// Double escape the escape characters so we don't effectively parse the escapes within the value.
 				escapedPattern := f.SchemaType.Pattern
+
+				var constVal *string
+
+				if f.SchemaType.Const != nil {
+					if s, ok := f.SchemaType.Const.(string); ok {
+						constVal = &s
+					} else {
+						g.warner(fmt.Sprintf("Ignoring non string const value: %v", f.SchemaType.Const))
+					}
+				}
 
 				replaceJSONCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
 
@@ -411,6 +425,7 @@ func (g *schemaGenerator) structFieldValidators(
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
 					pattern:    escapedPattern,
+					constVal:   constVal,
 					isNillable: isNillable,
 				})
 			}
@@ -418,12 +433,14 @@ func (g *schemaGenerator) structFieldValidators(
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
 			}
-		} else if strings.Contains(v.Type, "int") || v.Type == float64Type {
+
+		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
 				f.SchemaType.ExclusiveMaximum != nil ||
 				f.SchemaType.Minimum != nil ||
-				f.SchemaType.ExclusiveMinimum != nil {
+				f.SchemaType.ExclusiveMinimum != nil ||
+				f.SchemaType.Const != nil {
 				validators = append(validators, &numericValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
@@ -433,12 +450,33 @@ func (g *schemaGenerator) structFieldValidators(
 					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
 					minimum:          f.SchemaType.Minimum,
 					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					constVal:         f.SchemaType.Const,
 					roundToInt:       strings.Contains(v.Type, "int"),
 				})
 			}
 
 			if f.SchemaType.MultipleOf != nil && v.Type == float64Type {
 				g.output.file.Package.AddImport("math", "")
+			}
+
+		case v.Type == "bool":
+			if f.SchemaType.Const != nil {
+				var constVal *bool
+
+				if f.SchemaType.Const != nil {
+					if b, ok := f.SchemaType.Const.(bool); ok {
+						constVal = &b
+					} else {
+						g.warner(fmt.Sprintf("Ignoring non boolean const value: %v", f.SchemaType.Const))
+					}
+				}
+
+				validators = append(validators, &booleanValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					isNillable: isNillable,
+					constVal:   constVal,
+				})
 			}
 		}
 
@@ -505,7 +543,7 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: formatter.generate(g.output, decl, validators),
-			Name: decl.GetName() + "_validator",
+			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
 }
@@ -689,11 +727,11 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	}
 
 	if len(t.AnyOf) > 0 {
-		return g.generateAnyOfType(t.AnyOf, scope)
+		return g.generateAnyOfType(t, scope)
 	}
 
 	if len(t.AllOf) > 0 {
-		return g.generateAllOfType(t.AllOf, scope)
+		return g.generateAllOfType(t, scope)
 	}
 
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
@@ -812,11 +850,16 @@ func (g *schemaGenerator) addStructField(
 
 	tags := ""
 
-	if isRequired || g.DisableOmitempty() {
+	switch {
+	case isRequired || g.DisableOmitempty():
 		for _, tag := range g.config.Tags {
 			tags += fmt.Sprintf(`%s:"%s" `, tag, name)
 		}
-	} else {
+	case g.config.PreferOmitzero:
+		for _, tag := range g.config.Tags {
+			tags += fmt.Sprintf(`%s:"%s,omitzero" `, tag, name)
+		}
+	default:
 		for _, tag := range g.config.Tags {
 			tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
 		}
@@ -853,15 +896,32 @@ func (g *schemaGenerator) addStructField(
 	return nil
 }
 
-func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	if len(anyOf) == 0 {
+func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if len(t.AnyOf) == 0 {
 		return nil, errEmptyInAnyOf
 	}
 
+	if g.config.AliasSingleAllOfAnyOfRefs && len(t.AnyOf) == 1 && t.IsEmptyObject() {
+		childType := t.AnyOf[0]
+		if childType.Ref != "" {
+			resolvedType, err := g.resolveRef(childType)
+			if err == nil {
+				return g.generateTypeInline(resolvedType, scope)
+			} else {
+				g.warner(fmt.Sprintf("Could not resolve ref %q: %v", childType.Ref, err))
+			}
+		}
+	}
+
 	isCycle := false
-	rAnyOf, hasNull := g.resolveRefs(anyOf, false)
+	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
 	for i, typ := range rAnyOf {
+		// infer type from base if not set
+		if len(typ.Type) == 0 {
+			typ.Type = append(schemas.TypeList{}, t.Type...)
+		}
+
 		typ.SetSubSchemaTypeElem()
 
 		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
@@ -890,21 +950,37 @@ func (g *schemaGenerator) generateAnyOfType(anyOf []*schemas.Type, scope nameSco
 		return codegen.EmptyInterfaceType{}, nil
 	}
 
-	anyOfType, err := schemas.AnyOf(rAnyOf)
+	anyOfType, err := schemas.AnyOf(rAnyOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge anyOf types: %w", err)
 	}
 
+	anyOfType.AnyOf = nil
+
 	return g.generateTypeInline(anyOfType, scope)
 }
 
-func (g *schemaGenerator) generateAllOfType(allOf []*schemas.Type, scope nameScope) (codegen.Type, error) {
-	rAllOf, _ := g.resolveRefs(allOf, true)
+func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if g.config.AliasSingleAllOfAnyOfRefs && len(t.AllOf) == 1 && t.IsEmptyObject() {
+		subType := t.AllOf[0]
+		if subType.Ref != "" {
+			resolvedType, err := g.resolveRef(subType)
+			if err == nil {
+				return g.generateTypeInline(resolvedType, scope)
+			} else {
+				g.warner(fmt.Sprintf("Could not resolve subtype ref %q: %v", subType.Ref, err))
+			}
+		}
+	}
 
-	allOfType, err := schemas.AllOf(rAllOf)
+	rAllOf, _ := g.resolveRefs(t.AllOf, true)
+
+	allOfType, err := schemas.AllOf(rAllOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge allOf types: %w", err)
 	}
+
+	allOfType.AllOf = nil
 
 	return g.generateTypeInline(allOfType, scope)
 }
@@ -960,11 +1036,11 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AnyOf) > 0 {
-			return g.generateAnyOfType(t.AnyOf, scope)
+			return g.generateAnyOfType(t, scope)
 		}
 
 		if len(t.AllOf) > 0 {
-			return g.generateAllOfType(t.AllOf, scope)
+			return g.generateAllOfType(t, scope)
 		}
 
 		if len(t.Type) == 2 && typeIsNullable {
@@ -1192,13 +1268,13 @@ func (g *schemaGenerator) generateEnumType(
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{
 					Impl: formatter.enumMarshal(&enumDecl),
-					Name: enumDecl.GetName() + "_enum",
+					Name: enumDecl.GetName() + "_enum_" + formatter.getName(),
 				})
 			}
 
 			g.output.file.Package.AddDecl(&codegen.Method{
 				Impl: formatter.enumUnmarshal(enumDecl, enumType, valueConstant, wrapInStruct),
-				Name: enumDecl.GetName() + "_enum_unmarshal",
+				Name: enumDecl.GetName() + "_enum_unmarshal_" + formatter.getName(),
 			})
 		}
 	}
@@ -1261,6 +1337,20 @@ func (g *schemaGenerator) resolveRef(t *schemas.Type) (*schemas.Type, error) {
 	ntyp, err := g.extractPointedType(typ)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
+	}
+
+	// After resolving the ref type we lose info about the original schema
+	// so rewrite all nested refs to include the original schema id
+	_, fileName, err := g.extractRefNames(t)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errCannotResolveRef, err)
+	}
+
+	if fileName != "" {
+		err = ntyp.Decl.SchemaType.ConvertAllRefs(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("convert refs: %w", err)
+		}
 	}
 
 	ntyp.Decl.SchemaType.Dereferenced = true

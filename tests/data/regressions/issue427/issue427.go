@@ -10,7 +10,7 @@ import "reflect"
 
 type TestcaseExpectedPeerName_0 = PeerName
 
-// Represents a peer (i.e., end entity) certificate's name (Subject or SAN).
+// For server (i.e. client-side) validation: the expected peer name, if any
 type TestcaseExpectedPeerName struct {
 	// The kind of peer name
 	Kind PeerKind `json:"kind" yaml:"kind" mapstructure:"kind"`
@@ -179,7 +179,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// Represents a peer (i.e., end entity) certificate's name (Subject or SAN).
+// For server (i.e. client-side) validation: the expected peer name, if any
 type TestcaseNotExpectedPeerName struct {
 	// The kind of peer name
 	Kind PeerKind `json:"kind" yaml:"kind" mapstructure:"kind"`

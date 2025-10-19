@@ -40,6 +40,10 @@ type Config struct {
 	// DisableCustomTypesForMaps configures the generator to avoid creating a custom type for maps,
 	// and to use the map type directly.
 	DisableCustomTypesForMaps bool
+	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
+	AliasSingleAllOfAnyOfRefs bool
+	// PreferOmitzero will use omit omitzero instead of omitempty, note this requires Go 1.24
+	PreferOmitzero bool
 }
 
 type SchemaMapping struct {

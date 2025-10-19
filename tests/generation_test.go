@@ -97,6 +97,25 @@ func TestCrossPackage(t *testing.T) {
 	testExampleFile(t, cfg, "./data/crossPackage/schema/schema.json")
 }
 
+func TestCrossPackageAllOf(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schema",
+			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			OutputName:  "schema.go",
+		},
+		{
+			SchemaID:    "https://example.com/other",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/crossPackageAllOf/other",
+			OutputName:  "../other/other.go",
+		},
+	}
+	testExampleFile(t, cfg, "./data/crossPackageAllOf/schema/schema.json")
+}
+
 func TestCrossPackageNoOutput(t *testing.T) {
 	t.Parallel()
 
@@ -206,6 +225,25 @@ func TestMinSizeInt(t *testing.T) {
 	cfg.MinSizedInts = true
 
 	testExamples(t, cfg, "./data/minSizedInts")
+}
+
+func TestAliasSingleAllOfAnyOfRefs(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.AliasSingleAllOfAnyOfRefs = true
+
+	testExamples(t, cfg, "./data/aliasSingleAllOfAnyOfRefs")
+}
+
+func TestPreferOmitzero(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.PreferOmitzero = true
+	cfg.Tags = []string{"json"}
+
+	testExamples(t, cfg, "./data/preferOmitzero")
 }
 
 func TestSchemaExtensions(t *testing.T) {
