@@ -1,7 +1,7 @@
 [tools]
 
 adr-tools = "3.0.0"
-golang = "1.23.8"
+golang = "1.25.4"
 golangci-lint = "2.5.0"
 goreleaser = "2.9.0"
 hadolint = "2.14.0"
