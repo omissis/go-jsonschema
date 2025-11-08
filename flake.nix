@@ -4,10 +4,17 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
+    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+
   };
 
   outputs = inputs @ {flake-parts, ...}:
     flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [
+        inputs.treefmt-nix.flakeModule
+      ];
+
       systems = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
 
       perSystem = {
@@ -46,6 +53,7 @@
 
           default = config.packages.go-jsonschema;
         };
+
         checks = {
           go-jsonschema-tests = pkgs.buildGoModule {
             name = "go-jsonschema-tests";
@@ -238,6 +246,73 @@
           };
         };
 
+        treefmt = {
+          projectRootFile = "flake.nix";
+
+          programs = {
+            alejandra.enable = true;
+            # Disabled to avoid modifying .go files in tests/data
+            # gofmt.enable = true;
+            # gofumpt.enable = true;
+          };
+
+          settings.global.excludes = [
+            ".direnv/*"
+            "result"
+            ".git/*"
+          ];
+
+          settings.formatter = {
+            shfmt = {
+              command = "${pkgs.shfmt}/bin/shfmt";
+              options = ["-i" "2" "-ci" "-sr" "-w"];
+              includes = ["*.sh"];
+            };
+
+            # Temporarily disabled - yq keeps rewriting files even without changes
+            # yq = {
+            #   command = pkgs.writeShellApplication {
+            #     name = "format-yaml";
+            #     runtimeInputs = [pkgs.yq-go];
+            #     text = ''
+            #       for file in "$@"; do
+            #         yq eval -P -I 2 -i "$file"
+            #       done
+            #     '';
+            #   };
+            #   includes = ["*.yaml" "*.yml"];
+            # };
+
+            # Disabled to avoid modifying .json files in tests/data
+            # jq = {
+            #   command = pkgs.writeShellApplication {
+            #     name = "format-json";
+            #     text = ''
+            #       for file in "$@"; do
+            #         ${pkgs.jq}/bin/jq -M . "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+            #       done
+            #     '';
+            #   };
+            #   includes = ["*.json"];
+            # };
+
+            # Disabled to avoid modifying .go files in tests/data
+            # goimports = {
+            #   command = "${pkgs.gotools}/bin/goimports";
+            #   options = ["-w" "-local" "github.com/atombender"];
+            #   includes = ["*.go"];
+            #   excludes = ["vendor/*" "tests/data/*"];
+            # };
+
+            markdownlint-cli2 = {
+              command = "${pkgs.markdownlint-cli2}/bin/markdownlint-cli2";
+              options = ["--config" ".rules/.markdownlint.yaml" "--fix"];
+              includes = ["*.md"];
+              excludes = [".direnv/*" "result/*"];
+            };
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             go
@@ -257,6 +332,7 @@
             checkmake
             gofumpt
             jq
+            config.treefmt.build.wrapper
           ];
 
           shellHook = ''
@@ -265,7 +341,7 @@
           '';
         };
 
-        formatter = pkgs.alejandra;
+        formatter = config.treefmt.build.wrapper;
       };
     };
 }
