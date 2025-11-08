@@ -6,13 +6,15 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
-
+    git-hooks.url = "github:cachix/git-hooks.nix";
+    git-hooks.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = inputs @ {flake-parts, ...}:
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         inputs.treefmt-nix.flakeModule
+        inputs.git-hooks.flakeModule
       ];
 
       systems = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
@@ -313,6 +315,19 @@
           };
         };
 
+        pre-commit = {
+          check.enable = true;
+          settings.hooks = {
+            treefmt = {
+              enable = true;
+              package = config.treefmt.build.wrapper;
+              # Don't use --fail-on-change, just format the files
+              entry = "${config.treefmt.build.wrapper}/bin/treefmt";
+              pass_filenames = false;
+            };
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             go
@@ -336,6 +351,7 @@
           ];
 
           shellHook = ''
+            ${config.pre-commit.installationScript}
             echo "go-jsonschema development environment"
             echo "Go version: $(go version)"
           '';
