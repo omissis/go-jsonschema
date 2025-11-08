@@ -23,28 +23,27 @@
         config,
         pkgs,
         ...
-      }: {
-        packages = {
-          go-jsonschema = pkgs.buildGoModule {
+      }: let
+        cleanSrc = pkgs.lib.cleanSourceWith {
+          src = ./.;
+          filter = path: type:
+            !(pkgs.lib.hasSuffix "go.work" path)
+            && !(pkgs.lib.hasSuffix "go.work.sum" path);
+        };
+
+        makePackage = goPackage: let
+          buildGoModule = pkgs.buildGoModule.override {go = goPackage;};
+        in
+          buildGoModule {
             pname = "go-jsonschema";
             version = "0.0.0-dev";
-
-            src = pkgs.lib.cleanSourceWith {
-              src = ./.;
-              filter = path: type:
-                !(pkgs.lib.hasSuffix "go.work" path)
-                && !(pkgs.lib.hasSuffix "go.work.sum" path);
-            };
-
+            src = cleanSrc;
             vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
-
             subPackages = ["."];
-
             ldflags = [
               "-s"
               "-w"
             ];
-
             meta = with pkgs.lib; {
               description = "Generate Go types from JSON Schema";
               homepage = "https://github.com/atombender/go-jsonschema";
@@ -53,21 +52,13 @@
             };
           };
 
-          default = config.packages.go-jsonschema;
-        };
-
-        checks = {
-          go-jsonschema-tests = pkgs.buildGoModule {
+        makeTests = goPackage: let
+          buildGoModule = pkgs.buildGoModule.override {go = goPackage;};
+        in
+          buildGoModule {
             name = "go-jsonschema-tests";
-            src = pkgs.lib.cleanSourceWith {
-              src = ./.;
-              filter = path: type:
-                !(pkgs.lib.hasSuffix "go.work" path)
-                && !(pkgs.lib.hasSuffix "go.work.sum" path);
-            };
-
+            src = cleanSrc;
             vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
-
             buildPhase = ''
               export HOME=$TMPDIR
 
@@ -83,39 +74,42 @@
               echo "Generating coverage report..."
               go tool covdata textfmt -i=./coverage/tests,./coverage/pkg -o coverage.out
             '';
-
             installPhase = ''
               mkdir -p $out
               cp coverage.out $out/ || true
               echo "All tests passed successfully with coverage" > $out/test-results
             '';
           };
+      in {
+        packages = {
+          go-jsonschema-go124 = makePackage pkgs.go_1_24;
+          go-jsonschema-go125 = makePackage pkgs.go;
+          default = makePackage pkgs.go;
+        };
 
-          lint-golang = pkgs.buildGoModule {
-            name = "lint-golang";
-            src = pkgs.lib.cleanSourceWith {
-              src = ./.;
-              filter = path: type:
-                !(pkgs.lib.hasSuffix "go.work" path)
-                && !(pkgs.lib.hasSuffix "go.work.sum" path);
+        checks = {
+          tests-go124 = makeTests pkgs.go_1_24;
+          tests-go125 = makeTests pkgs.go;
+
+          lint-golang = let
+            buildGoModule = pkgs.buildGoModule.override {go = pkgs.go;};
+          in
+            buildGoModule {
+              name = "lint-golang";
+              src = cleanSrc;
+              vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
+              nativeBuildInputs = [pkgs.golangci-lint];
+              buildPhase = ''
+                export HOME=$TMPDIR
+                golangci-lint -v run --color=always --config=.rules/.golangci.yml ./...
+                golangci-lint -v run --color=always --config=.rules/.golangci.yml tests/*.go
+                golangci-lint -v run --color=always --config=.rules/.golangci.yml tests/helpers/*.go
+              '';
+              installPhase = ''
+                mkdir -p $out
+                echo "Go linting passed" > $out/result
+              '';
             };
-
-            vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
-
-            nativeBuildInputs = [pkgs.golangci-lint];
-
-            buildPhase = ''
-              export HOME=$TMPDIR
-              golangci-lint -v run --color=always --config=.rules/.golangci.yml ./...
-              golangci-lint -v run --color=always --config=.rules/.golangci.yml tests/*.go
-              golangci-lint -v run --color=always --config=.rules/.golangci.yml tests/helpers/*.go
-            '';
-
-            installPhase = ''
-              mkdir -p $out
-              echo "Go linting passed" > $out/result
-            '';
-          };
 
           lint-dockerfile = pkgs.stdenv.mkDerivation {
             name = "lint-dockerfile";

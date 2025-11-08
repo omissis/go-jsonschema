@@ -12,11 +12,39 @@ concurrency:
   group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}
   cancel-in-progress: true
 jobs:
+  test-go-versions:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ['124', '125']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcf5dd907a8 # v5
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            accept-flake-config = true
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: devenv
+      - name: Build with Go 1.${{ matrix.go-version }}
+        run: nix build .#go-jsonschema-go${{ matrix.go-version }} --print-build-logs
+      - name: Test with Go 1.${{ matrix.go-version }}
+        run: nix build .#tests-go${{ matrix.go-version }} --print-build-logs
+      - name: Upload coverage to Codecov
+        if: matrix.go-version == '125'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./result/coverage.out
+          fail_ci_if_error: false
   qa:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcf5dd907a8 # v5
       - name: Install Nix
         uses: cachix/install-nix-action@v30
         with:
@@ -30,10 +58,3 @@ jobs:
         run: nix fmt -- --check .
       - name: Run Nix flake checks
         run: nix flake check --print-build-logs --show-trace
-      - name: Build package
-        run: nix build --print-build-logs
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: ./result/coverage.out
-          fail_ci_if_error: false
