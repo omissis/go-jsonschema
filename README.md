@@ -20,7 +20,8 @@ along with unmarshalling code that validates the input JSON according to the sch
 
 ## Installing
 
-* **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
+* **Download**: Get a release from the
+  [releases page](https://github.com/atombender/go-jsonschema/releases).
 
 * **Install from source**: To install with Go 1.23+:
 
@@ -76,9 +77,10 @@ Note the flag format:
 
 ### Regenerating tests' golden files
 
-It sometimes happen that new features or bug fixes to the library require regenerating the tests' golden files, here's how to do it:
+It sometimes happen that new features or bug fixes to the library require
+regenerating the tests' golden files, here's how to do it:
 
-```
+```shell
 export OVERWRITE_EXPECTED_GO_FILE="true"
 make test
 ```

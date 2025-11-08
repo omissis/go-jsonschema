@@ -1,36 +1,34 @@
 ignore:
-  - "**/*.json"
-  - "**/*.md"
-  - "**/*.mod"
-  - "**/*.sum"
-  - "**/*.yaml"
-  - "**/*.yml"
-  - "**/*_test.go"
-  - "**/Dockerfile"
-  - "**/LICENSE"
-  - "**/Makefile"
-  - ".github/"
-  - ".rules/"
-  - ".vscode/"
-  - "coverage/"
-  - "dist/"
-  - "docs/"
-  - "output/"
-  - "scripts/"
-
+  - '**/*.json'
+  - '**/*.md'
+  - '**/*.mod'
+  - '**/*.sum'
+  - '**/*.yaml'
+  - '**/*.yml'
+  - '**/*_test.go'
+  - '**/Dockerfile'
+  - '**/LICENSE'
+  - '**/Makefile'
+  - .github/
+  - .rules/
+  - .vscode/
+  - coverage/
+  - dist/
+  - docs/
+  - output/
+  - scripts/
 codecov:
   require_ci_to_pass: true
   branch: main
-
 coverage:
   status:
     project:
       app:
         target: auto
-        paths: "!tests/"
+        paths: '!tests/'
       tests:
         target: auto
-        paths: "tests/"
+        paths: tests/
     patch:
       enabled: true
       target: auto
