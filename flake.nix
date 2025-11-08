@@ -85,6 +85,14 @@
           go-jsonschema-go124 = makePackage pkgs.go_1_24;
           go-jsonschema-go125 = makePackage pkgs.go;
           default = makePackage pkgs.go;
+
+          test-ci = pkgs.writeShellApplication {
+            name = "test-ci";
+            runtimeInputs = [pkgs.act];
+            text = ''
+              exec act -W .github/workflows/nix.yaml -P ubuntu-24.04=catthehacker/ubuntu:act-24.04 "$@"
+            '';
+          };
         };
 
         checks = {
@@ -101,9 +109,9 @@
               nativeBuildInputs = [pkgs.golangci-lint];
               buildPhase = ''
                 export HOME=$TMPDIR
-                golangci-lint -v run --color=always --config=.rules/.golangci.yml ./...
-                golangci-lint -v run --color=always --config=.rules/.golangci.yml tests/*.go
-                golangci-lint -v run --color=always --config=.rules/.golangci.yml tests/helpers/*.go
+                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml ./...
+                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml tests/*.go
+                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml tests/helpers/*.go
               '';
               installPhase = ''
                 mkdir -p $out
@@ -218,28 +226,29 @@
             '';
           };
 
-          build-goreleaser = pkgs.stdenv.mkDerivation {
-            name = "build-goreleaser";
-            src = ./.;
+          build-goreleaser = let
+            buildGoModule = pkgs.buildGoModule.override {go = pkgs.go;};
+          in
+            buildGoModule {
+              name = "build-goreleaser";
+              src = cleanSrc;
+              vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
+              nativeBuildInputs = [pkgs.goreleaser pkgs.git];
 
-            nativeBuildInputs = [pkgs.go pkgs.goreleaser pkgs.git];
+              buildPhase = ''
+                export HOME=$TMPDIR
+                export GO_VERSION=$(go version | cut -d ' ' -f 3)
 
-            buildPhase = ''
-              export HOME=$TMPDIR
-              export GOCACHE=$TMPDIR/go-cache
-              export GOPATH=$TMPDIR/go
-              export GO_VERSION=$(go version | cut -d ' ' -f 3)
+                goreleaser check
+                goreleaser release --skip=before,docker --verbose --snapshot --clean
+              '';
 
-              goreleaser check
-              goreleaser release --verbose --snapshot --clean
-            '';
-
-            installPhase = ''
-              mkdir -p $out
-              cp -r dist $out/ || true
-              echo "GoReleaser build passed" > $out/result
-            '';
-          };
+              installPhase = ''
+                mkdir -p $out
+                cp -r dist $out/ || true
+                echo "GoReleaser build passed" > $out/result
+              '';
+            };
         };
 
         treefmt = {
