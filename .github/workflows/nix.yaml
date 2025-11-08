@@ -11,11 +11,16 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test-go-versions:
-    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         go-version: ['124', '125']
+        os:
+          - system: x86_64-linux
+            runs-on: ubuntu-24.04
+          - system: aarch64-darwin
+            runs-on: macos-14
+    runs-on: ${{ matrix.os.runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -28,12 +33,12 @@ jobs:
         uses: cachix/cachix-action@v15
         with:
           name: devenv
-      - name: Build with Go 1.${{ matrix.go-version }}
-        run: nix build .#go-jsonschema-go${{ matrix.go-version }} --print-build-logs
-      - name: Test with Go 1.${{ matrix.go-version }}
-        run: nix build .#tests-go${{ matrix.go-version }} --print-build-logs
+      - name: Build with Go 1.${{ matrix.go-version }} on ${{ matrix.os.system }}
+        run: nix build .#packages.${{ matrix.os.system }}.go-jsonschema-go${{ matrix.go-version }} --print-build-logs
+      - name: Test with Go 1.${{ matrix.go-version }} on ${{ matrix.os.system }}
+        run: nix build .#checks.${{ matrix.os.system }}.tests-go${{ matrix.go-version }} --print-build-logs
       - name: Upload coverage to Codecov
-        if: matrix.go-version == '125'
+        if: matrix.go-version == '125' && matrix.os.system == 'x86_64-linux'
         uses: codecov/codecov-action@v5
         with:
           files: ./result/coverage.out
