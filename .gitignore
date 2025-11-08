@@ -10,3 +10,5 @@ mise.toml.tmp
 dist/
 output/
 vendor/
+.direnv
+result
