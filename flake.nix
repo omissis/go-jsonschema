@@ -109,9 +109,7 @@
               nativeBuildInputs = [pkgs.golangci-lint];
               buildPhase = ''
                 export HOME=$TMPDIR
-                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml ./...
-                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml tests/*.go
-                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml tests/helpers/*.go
+                golangci-lint -v run --modules-download-mode vendor --color=always --config=.rules/.golangci.yml ./... --skip-dirs tests
               '';
               installPhase = ''
                 mkdir -p $out
@@ -332,27 +330,30 @@
         };
 
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            go
-            gopls
-            gotools
-            go-tools
-            golangci-lint
-            adr-tools
-            goreleaser
-            hadolint
-            markdownlint-cli2
-            shellcheck
-            shfmt
-            yamllint
-            yq-go
-            nodePackages.jsonlint
-            checkmake
-            gofumpt
-            jq
-            config.treefmt.build.wrapper
-            act
-          ];
+          packages = with pkgs;
+            [
+              go
+              gopls
+              gotools
+              go-tools
+              golangci-lint
+              adr-tools
+              goreleaser
+              hadolint
+              markdownlint-cli2
+              shellcheck
+              shfmt
+              yamllint
+              yq-go
+              nodePackages.jsonlint
+              checkmake
+              gofumpt
+              jq
+              config.treefmt.build.wrapper
+              act
+              config.pre-commit.settings.package
+            ]
+            ++ config.pre-commit.settings.enabledPackages;
 
           shellHook = ''
             ${config.pre-commit.installationScript}
