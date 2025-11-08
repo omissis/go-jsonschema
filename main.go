@@ -239,13 +239,13 @@ func allKeys(in ...map[string]string) []string {
 	return result
 }
 
-func logf(format string, args ...interface{}) {
+func logf(format string, args ...any) {
 	fmt.Fprint(os.Stderr, "go-jsonschema: ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprint(os.Stderr, "\n")
 }
 
-func verboseLogf(format string, args ...interface{}) {
+func verboseLogf(format string, args ...any) {
 	if verbose {
 		logf(format, args...)
 	}

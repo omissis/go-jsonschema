@@ -153,7 +153,7 @@ type defaultValidator struct {
 	jsonName         string
 	fieldName        string
 	defaultValueType codegen.Type
-	defaultValue     interface{}
+	defaultValue     any
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
@@ -176,14 +176,14 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
 			dvm, ok := v.defaultValue.(map[string]any)
 			if ok {
-				namedFields := ""
+				var namedFields strings.Builder
 				for _, k := range sortedKeys(dvm) {
-					namedFields += fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
+					namedFields.WriteString(fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k])))
 				}
 
-				namedFields += "\n"
+				namedFields.WriteString("\n")
 
-				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields.String())
 
 				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 			}
@@ -246,7 +246,7 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 	kind := reflect.ValueOf(v.defaultValue).Kind()
 
 	if kind == reflect.Slice {
-		df, ok := v.defaultValue.([]interface{})
+		df, ok := v.defaultValue.([]any)
 		if !ok {
 			return "", ErrInvalidDefaultValue
 		}
