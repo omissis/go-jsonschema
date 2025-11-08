@@ -54,32 +54,50 @@
 
         makeTests = goPackage: let
           buildGoModule = pkgs.buildGoModule.override {go = goPackage;};
-        in
-          buildGoModule {
-            name = "go-jsonschema-tests";
+
+          # Tests for main module
+          mainTests = buildGoModule {
+            name = "go-jsonschema-tests-main";
             src = cleanSrc;
             vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
             buildPhase = ''
               export HOME=$TMPDIR
-
               mkdir -p coverage/pkg
-              mkdir -p coverage/tests
-
               echo "Running tests in root module with coverage..."
               go test -v -race -covermode=atomic -coverpkg=./... -cover ./... -args -test.gocoverdir="$PWD/coverage/pkg"
-
-              echo "Running tests in tests module with coverage..."
-              go test -v -race -covermode=atomic -coverpkg=./... -cover ./tests -args -test.gocoverdir="$PWD/coverage/tests"
-
-              echo "Generating coverage report..."
-              go tool covdata textfmt -i=./coverage/tests,./coverage/pkg -o coverage.out
             '';
             installPhase = ''
               mkdir -p $out
-              cp coverage.out $out/ || true
-              echo "All tests passed successfully with coverage" > $out/test-results
+              cp -r coverage/pkg $out/ || true
+              echo "Main module tests passed" > $out/result
             '';
           };
+
+          # Tests for tests module (integration tests)
+          integrationTests = buildGoModule {
+            name = "go-jsonschema-tests-integration";
+            src = cleanSrc;
+            vendorHash = "sha256-VCSDBMTWCz2KTPEOotBtNTBDDqhDSEE+zDvxX7X9a0s=";
+            modRoot = "tests";
+            buildPhase = ''
+              export HOME=$TMPDIR
+              mkdir -p coverage/tests
+              echo "Running integration tests with coverage..."
+              go test -v -race -covermode=atomic -coverpkg=./... -cover ./... -args -test.gocoverdir="$PWD/coverage/tests"
+            '';
+            installPhase = ''
+              mkdir -p $out
+              cp -r coverage/tests $out/ || true
+              echo "Integration tests passed" > $out/result
+            '';
+          };
+        in
+          pkgs.runCommand "go-jsonschema-tests" {
+            buildInputs = [mainTests integrationTests];
+          } ''
+            mkdir -p $out
+            echo "All tests passed successfully" > $out/test-results
+          '';
       in {
         packages = {
           go-jsonschema-go124 = makePackage pkgs.go_1_24;
