@@ -43,6 +43,40 @@ This project makes use of [go workspaces](https://go.dev/ref/mod#workspaces) in 
 generated code during development while keeping the codebase as tidy and maintainable as possible.
 It's an unusual choice, but it allows to not only test the code-generation logic, but also the generated code itself.
 
+## Nix Development Environment
+
+This project uses [Nix](https://nixos.org/) for reproducible development environments and CI/CD.
+Nix solves dependency management across different systems, ensuring consistent builds and tests regardless of your
+local setup.
+
+### Quick Start
+
+```shell
+# Enter development shell with all tools
+nix develop
+
+# Run all checks (tests, lints, formatting)
+nix flake check
+
+# Run specific checks
+nix build .#checks.x86_64-linux.tests-go125       # Integration tests
+nix build .#checks.x86_64-linux.lint-golang       # Go linting
+nix build .#checks.x86_64-linux.build-goreleaser  # GoReleaser build
+
+# Format code
+nix fmt
+
+# Test CI workflows locally
+nix run .#test-ci
+```
+
+### Why Nix?
+
+- **Reproducible builds**: Same dependencies across all environments (dev, CI, production)
+- **Hermetic testing**: Tests run in isolated sandboxes with no external network access
+- **Multi-version support**: Test against Go 1.24 and 1.25 simultaneously
+- **No Docker required**: Native support for NixOS and other Linux distributions
+
 ## Usage
 
 At its most basic:
