@@ -342,6 +342,7 @@
             gofumpt
             jq
             config.treefmt.build.wrapper
+            act
           ];
 
           shellHook = ''
