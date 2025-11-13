@@ -13,9 +13,7 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-var (
-	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
-)
+var errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
 
 const float64Type = "float64"
 
