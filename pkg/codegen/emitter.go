@@ -39,10 +39,7 @@ func (e *Emitter) Indent(n int32) {
 
 func (e *Emitter) Comment(s string) {
 	if s != "" {
-		limit := e.maxLineLength - e.indent
-		if limit < 0 {
-			limit = 0
-		}
+		limit := max(e.maxLineLength-e.indent, 0)
 
 		//nolint:gosec // limit is guarded against negative values
 		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
@@ -53,13 +50,10 @@ func (e *Emitter) Comment(s string) {
 	}
 }
 
-func (e *Emitter) Commentf(s string, args ...interface{}) {
+func (e *Emitter) Commentf(s string, args ...any) {
 	s = fmt.Sprintf(s, args...)
 	if s != "" {
-		limit := e.maxLineLength - e.indent
-		if limit < 0 {
-			limit = 0
-		}
+		limit := max(e.maxLineLength-e.indent, 0)
 
 		//nolint:gosec // limit is guarded against negative values
 		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
@@ -70,13 +64,13 @@ func (e *Emitter) Commentf(s string, args ...interface{}) {
 	}
 }
 
-func (e *Emitter) Printf(format string, args ...interface{}) {
+func (e *Emitter) Printf(format string, args ...any) {
 	e.checkIndent()
 	fmt.Fprintf(&e.sb, format, args...)
 	e.start = false
 }
 
-func (e *Emitter) Printlnf(format string, args ...interface{}) {
+func (e *Emitter) Printlnf(format string, args ...any) {
 	e.Printf(format, args...)
 	e.Newline()
 }

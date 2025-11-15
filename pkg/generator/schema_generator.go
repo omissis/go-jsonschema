@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -812,19 +813,19 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	tags := ""
+	var tags strings.Builder
 
 	if isRequired || g.DisableOmitempty() {
 		for _, tag := range g.config.Tags {
-			tags += fmt.Sprintf(`%s:"%s" `, tag, name)
+			tags.WriteString(fmt.Sprintf(`%s:"%s" `, tag, name))
 		}
 	} else {
 		for _, tag := range g.config.Tags {
-			tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
+			tags.WriteString(fmt.Sprintf(`%s:"%s,omitempty" `, tag, name))
 		}
 	}
 
-	structField.Tags = strings.TrimSpace(tags)
+	structField.Tags = strings.TrimSpace(tags.String())
 
 	if structField.Comment == "" {
 		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
@@ -1350,10 +1351,8 @@ func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
 		return 0, true
 	}
 
-	for _, tt := range t.Type {
-		if tt == schemas.TypeNameNull {
-			return -1, true
-		}
+	if slices.Contains(t.Type, schemas.TypeNameNull) {
+		return -1, true
 	}
 
 	return -1, false
