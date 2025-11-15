@@ -13,10 +13,10 @@ type AnyOf4 []AnyOf4Elem
 type AnyOf4Elem struct {
 	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
 	// the 'from' key, this is the parent's parent.
-	From EmbeddedlinkendFrom `json:"from" yaml:"from" mapstructure:"from"`
+	From *EmbeddedlinkendFrom `json:"from,omitempty" yaml:"from,omitempty" mapstructure:"from,omitempty"`
 
 	// LinkKind corresponds to the JSON schema field "linkKind".
-	LinkKind string `json:"linkKind" yaml:"linkKind" mapstructure:"linkKind"`
+	LinkKind *string `json:"linkKind,omitempty" yaml:"linkKind,omitempty" mapstructure:"linkKind,omitempty"`
 
 	// LinkType corresponds to the JSON schema field "linkType".
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
@@ -25,7 +25,7 @@ type AnyOf4Elem struct {
 	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
-	Target EmbeddedlinkrelationTarget `json:"target" yaml:"target" mapstructure:"target"`
+	Target *EmbeddedlinkrelationTarget `json:"target,omitempty" yaml:"target,omitempty" mapstructure:"target,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -515,7 +515,9 @@ func (j *Embeddedlinkrelation) UnmarshalJSON(value []byte) error {
 }
 
 type AnyOf4Elem_2 = Embeddedlinkrelation
+
 type AnyOf4Elem_1 = Embeddedlinkpath
+
 type AnyOf4Elem_0 = Embeddedlinkend
 
 // UnmarshalYAML implements yaml.Unmarshaler.
