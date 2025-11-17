@@ -738,6 +738,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			defaultValue any          = nil
 			fieldType    codegen.Type = codegen.EmptyInterfaceType{}
 		)
+
 		if len(t.AdditionalProperties.Type) == 1 {
 			switch t.AdditionalProperties.Type[0] {
 			case schemas.TypeNameString:
