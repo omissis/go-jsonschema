@@ -12,10 +12,7 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-var (
-	errEmptyInAnyOf                        = errors.New("cannot have empty anyOf array")
-	errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
-)
+var errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
 
 const float64Type = "float64"
 
@@ -700,10 +697,6 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
 	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
-		if len(t.AdditionalProperties.Type) > 1 {
-			return nil, errTooManyTypesForAdditionalProperties
-		}
-
 		var (
 			defaultValue any          = nil
 			fieldType    codegen.Type = codegen.EmptyInterfaceType{}
