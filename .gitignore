@@ -10,3 +10,7 @@ mise.toml.tmp
 dist/
 output/
 vendor/
+.direnv
+result
+.pre-commit-config.yaml
+*.log

@@ -24,8 +24,8 @@ func IsPrimitiveType(t string) bool {
 }
 
 func CleanNameForSorting(name string) string {
-	if strings.HasPrefix(name, PrefixEnumValue) {
-		return strings.TrimPrefix(name, PrefixEnumValue) + "_enumValues" // Append a string for sorting properly.
+	if after, found := strings.CutPrefix(name, PrefixEnumValue); found {
+		return after + "_enumValues" // Append a string for sorting properly.
 	}
 
 	return name

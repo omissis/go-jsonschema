@@ -12,3 +12,4 @@ ignore: |
   **/node_modules/**
   **/helm_chart/**
   **/.github/**
+  .pre-commit-config.yaml
