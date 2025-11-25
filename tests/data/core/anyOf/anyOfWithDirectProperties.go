@@ -52,6 +52,7 @@ func (j *BaseObject) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type ComposedWithAllOfAndProperties_0 = BaseObject
+
 type ComposedWithAllOfAndProperties struct {
 	// BaseField corresponds to the JSON schema field "BaseField".
 	BaseField string `json:"BaseField" yaml:"BaseField" mapstructure:"BaseField"`
