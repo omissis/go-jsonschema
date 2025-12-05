@@ -93,16 +93,18 @@ func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type ComposedWithMultipleRequired_0 = MultipleRequiredBase
+
 type ComposedWithMultipleRequired_1 = MultipleRequiredMiddle
+
 type ComposedWithMultipleRequired struct {
 	// BaseField corresponds to the JSON schema field "baseField".
-	BaseField string `json:"baseField" yaml:"baseField" mapstructure:"baseField"`
+	BaseField *string `json:"baseField,omitempty" yaml:"baseField,omitempty" mapstructure:"baseField,omitempty"`
 
 	// DirectField corresponds to the JSON schema field "directField".
 	DirectField bool `json:"directField" yaml:"directField" mapstructure:"directField"`
 
 	// MiddleField corresponds to the JSON schema field "middleField".
-	MiddleField float64 `json:"middleField" yaml:"middleField" mapstructure:"middleField"`
+	MiddleField *float64 `json:"middleField,omitempty" yaml:"middleField,omitempty" mapstructure:"middleField,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
