@@ -2,7 +2,7 @@
 
 adr-tools = "3.0.0"
 golang = "1.23.8"
-golangci-lint = "2.5.0"
+golangci-lint = "2.8.0"
 goreleaser = "2.9.0"
 hadolint = "2.14.0"
 markdownlint-cli2 = "0.18.1"
