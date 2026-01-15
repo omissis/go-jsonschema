@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -786,6 +787,8 @@ func (g *schemaGenerator) addStructField(
 
 	fieldName := g.caser.Identifierize(name)
 
+	var extraTags []string
+
 	if ext := prop.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -794,7 +797,13 @@ func (g *schemaGenerator) addStructField(
 		if ext.Identifier != nil {
 			fieldName = *ext.Identifier
 		}
+
+		for tagKey, tagVal := range ext.ExtraTags {
+			extraTags = append(extraTags, fmt.Sprintf(`%s:"%s"`, tagKey, tagVal))
+		}
 	}
+
+	slices.Sort(extraTags)
 
 	if count, ok := uniqueNames[fieldName]; ok {
 		uniqueNames[fieldName] = count + 1
@@ -823,6 +832,8 @@ func (g *schemaGenerator) addStructField(
 			tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
 		}
 	}
+
+	tags += strings.Join(extraTags, " ")
 
 	structField.Tags = strings.TrimSpace(tags)
 
