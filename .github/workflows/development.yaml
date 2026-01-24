@@ -20,7 +20,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: ^1.23.8
+          go-version: ^1.24.12
       - name: Setup workspace
         run: cp go.work.dist go.work
       - name: Download golangci-lint installer
@@ -40,4 +40,4 @@ jobs:
           version: 2.13.3
           args: release --verbose --snapshot --clean
         env:
-          GO_VERSION: 1.23.8
+          GO_VERSION: 1.24.12
