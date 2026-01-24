@@ -1,3 +1,3 @@
 module github.com/atombender/go-jsonschema/tests/example/other
 
-go 1.23.0
+go 1.24.0
