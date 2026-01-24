@@ -24,6 +24,7 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
+    - wsl
     # disabled
     - noinlineerr
   settings:
