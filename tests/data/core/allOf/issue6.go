@@ -2,17 +2,13 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"reflect"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
 
 // Base definition for all elements in a resource.
-type Element any
+type Element interface{}
 
 // see http://hl7.org/fhir/json.html#schema for information about the FHIR Json
 // Schemas
@@ -76,7 +72,7 @@ const Issue6NameUse_2_Old Issue6NameUse_2 = "old"
 const Issue6NameUse_2_Temp Issue6NameUse_2 = "temp"
 const Issue6NameUse_2_Usual Issue6NameUse_2 = "usual"
 
-var enumValues_Issue6NameUse_2 = []any{
+var enumValues_Issue6NameUse_2 = []interface{}{
 	"usual",
 	"official",
 	"temp",
@@ -127,4 +123,4 @@ func (j *Issue6NameUse_2) UnmarshalJSON(value []byte) error {
 }
 
 // Something
-type Period any
+type Period interface{}

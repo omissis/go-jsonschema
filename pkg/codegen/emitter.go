@@ -39,10 +39,7 @@ func (e *Emitter) Indent(n int32) {
 
 func (e *Emitter) Comment(s string) {
 	if s != "" {
-		limit := e.maxLineLength - e.indent
-		if limit < 0 {
-			limit = 0
-		}
+		limit := max(0, e.maxLineLength-e.indent)
 
 		//nolint:gosec // limit is guarded against negative values
 		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
@@ -56,10 +53,7 @@ func (e *Emitter) Comment(s string) {
 func (e *Emitter) Commentf(s string, args ...any) {
 	s = fmt.Sprintf(s, args...)
 	if s != "" {
-		limit := e.maxLineLength - e.indent
-		if limit < 0 {
-			limit = 0
-		}
+		limit := max(0, e.maxLineLength-e.indent)
 
 		//nolint:gosec // limit is guarded against negative values
 		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")

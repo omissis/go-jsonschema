@@ -2,14 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"math"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "math"
 
 type MultipleOf struct {
 	// MyInteger corresponds to the JSON schema field "myInteger".
@@ -27,7 +23,7 @@ type MultipleOf struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MultipleOf) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -66,7 +62,7 @@ func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *MultipleOf) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

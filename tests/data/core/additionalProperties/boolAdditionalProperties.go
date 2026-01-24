@@ -2,14 +2,11 @@
 
 package test
 
-import (
-	"encoding/json"
-	"reflect"
-	"strings"
-
-	"github.com/go-viper/mapstructure/v2"
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "github.com/go-viper/mapstructure/v2"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
+import "strings"
 
 type BoolAdditionalProperties struct {
 	// Name corresponds to the JSON schema field "name".
@@ -20,7 +17,7 @@ type BoolAdditionalProperties struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *BoolAdditionalProperties) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -46,7 +43,7 @@ func (j *BoolAdditionalProperties) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *BoolAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

@@ -2,14 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"reflect"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
 
 type AllOf4 []AllOf4Elem
 
@@ -33,7 +29,7 @@ type AllOf4Elem struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AllOf4Elem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -63,7 +59,7 @@ func (j *AllOf4Elem) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AllOf4Elem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -112,7 +108,7 @@ type EmbeddedlinkendFrom struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *EmbeddedlinkendFrom) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -133,7 +129,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *EmbeddedlinkendFrom) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -156,7 +152,7 @@ type EmbeddedlinkendLinkType string
 
 const EmbeddedlinkendLinkTypeEND EmbeddedlinkendLinkType = "END"
 
-var enumValues_EmbeddedlinkendLinkType = []any{
+var enumValues_EmbeddedlinkendLinkType = []interface{}{
 	"END",
 }
 
@@ -200,11 +196,11 @@ func (j *EmbeddedlinkendLinkType) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type EmbeddedlinkendTags map[string]any
+type EmbeddedlinkendTags map[string]interface{}
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Embeddedlinkend) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -222,7 +218,7 @@ func (j *Embeddedlinkend) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Embeddedlinkend) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -259,7 +255,7 @@ type EmbeddedlinkpathFrom struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *EmbeddedlinkpathFrom) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -280,7 +276,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *EmbeddedlinkpathFrom) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -303,7 +299,7 @@ type EmbeddedlinkpathLinkType string
 
 const EmbeddedlinkpathLinkTypePATH EmbeddedlinkpathLinkType = "PATH"
 
-var enumValues_EmbeddedlinkpathLinkType = []any{
+var enumValues_EmbeddedlinkpathLinkType = []interface{}{
 	"PATH",
 }
 
@@ -347,11 +343,11 @@ func (j *EmbeddedlinkpathLinkType) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type EmbeddedlinkpathTags map[string]any
+type EmbeddedlinkpathTags map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Embeddedlinkpath) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -372,7 +368,7 @@ func (j *Embeddedlinkpath) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Embeddedlinkpath) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -409,7 +405,7 @@ type EmbeddedlinkrelationLinkType string
 
 const EmbeddedlinkrelationLinkTypeRELATION EmbeddedlinkrelationLinkType = "RELATION"
 
-var enumValues_EmbeddedlinkrelationLinkType = []any{
+var enumValues_EmbeddedlinkrelationLinkType = []interface{}{
 	"RELATION",
 }
 
@@ -453,7 +449,7 @@ func (j *EmbeddedlinkrelationLinkType) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type EmbeddedlinkrelationTags map[string]any
+type EmbeddedlinkrelationTags map[string]interface{}
 
 type EmbeddedlinkrelationTarget struct {
 	// ContextId corresponds to the JSON schema field "contextId".
@@ -490,7 +486,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Embeddedlinkrelation) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -517,7 +513,7 @@ func (j *Embeddedlinkrelation) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Embeddedlinkrelation) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}

@@ -176,14 +176,15 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
 			dvm, ok := v.defaultValue.(map[string]any)
 			if ok {
-				namedFields := ""
+				var b strings.Builder
+
 				for _, k := range sortedKeys(dvm) {
-					namedFields += fmt.Sprintf("\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
+					fmt.Fprintf(&b, "\n%s: %s,", upperFirst(k), litter.Sdump(dvm[k]))
 				}
 
-				namedFields += "\n"
+				b.WriteString("\n")
 
-				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), namedFields)
+				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), b.String())
 
 				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 			}

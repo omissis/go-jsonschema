@@ -2,15 +2,11 @@
 
 package test
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-
-	"reflect"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "errors"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
 
 type TestcaseExpectedPeerName_0 = PeerName
 
@@ -78,7 +74,7 @@ type PeerName struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *PeerName) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -99,7 +95,7 @@ func (j *PeerName) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -118,7 +114,7 @@ func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-var enumValues_PeerKind = []any{
+var enumValues_PeerKind = []interface{}{
 	"RFC822",
 	"DNS",
 	"IP",
@@ -139,7 +135,7 @@ type TestcaseNotExpectedPeerName_0 = PeerName
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -162,7 +158,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -194,7 +190,7 @@ type TestcaseNotExpectedPeerName struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -217,7 +213,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -240,7 +236,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Testcase) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -258,7 +254,7 @@ func (j *Testcase) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Testcase) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

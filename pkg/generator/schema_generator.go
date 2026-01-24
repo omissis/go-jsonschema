@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -647,7 +648,7 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 		return t.Type[tidx], isPtr
 	}
 
-	g.warner("Property has multiple types; will be represented as any with no validation")
+	g.warner("Property has multiple types; will be represented as interface{} with no validation")
 
 	return schemas.TypeNameNull, false
 }
@@ -812,19 +813,19 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	tags := ""
+	var b strings.Builder
 
 	if isRequired || g.DisableOmitempty() {
 		for _, tag := range g.config.Tags {
-			tags += fmt.Sprintf(`%s:"%s" `, tag, name)
+			fmt.Fprintf(&b, `%s:"%s" `, tag, name)
 		}
 	} else {
 		for _, tag := range g.config.Tags {
-			tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
+			fmt.Fprintf(&b, `%s:"%s,omitempty" `, tag, name)
 		}
 	}
 
-	structField.Tags = strings.TrimSpace(tags)
+	structField.Tags = strings.TrimSpace(b.String())
 
 	if structField.Comment == "" {
 		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
@@ -983,7 +984,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.Type) > 1 && !typeIsNullable {
-			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as any with no validation", scope))
+			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as interface{} with no validation", scope))
 
 			return codegen.EmptyInterfaceType{}, nil
 		}
@@ -1113,7 +1114,7 @@ func (g *schemaGenerator) generateEnumType(
 			}
 		}
 
-		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses any, which cannot have methods.
+		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods.
 	} else {
 		if len(t.Type) > 1 {
 			// TODO: Support multiple types.
@@ -1350,10 +1351,8 @@ func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
 		return 0, true
 	}
 
-	for _, tt := range t.Type {
-		if tt == schemas.TypeNameNull {
-			return -1, true
-		}
+	if slices.Contains(t.Type, schemas.TypeNameNull) {
+		return -1, true
 	}
 
 	return -1, false

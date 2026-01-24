@@ -2,13 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "errors"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 // object with anyOf properties, some with $defs
 type AnyOf2 struct {
@@ -34,7 +31,7 @@ type AnyOf2ConfigurationsElem_1 struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf2ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -54,7 +51,7 @@ type AnyOf2ConfigurationsElem_0 = Foo
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf2ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -99,7 +96,7 @@ func (j *AnyOf2ConfigurationsElem_2) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -130,7 +127,7 @@ func (j *AnyOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf2ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -166,7 +163,7 @@ type Foo struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -184,7 +181,7 @@ func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Foo) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}

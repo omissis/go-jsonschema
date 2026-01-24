@@ -2,13 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"github.com/atombender/go-jsonschema/pkg/types"
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import "github.com/atombender/go-jsonschema/pkg/types"
+import yaml "gopkg.in/yaml.v3"
 
 type Date struct {
 	// MyObject corresponds to the JSON schema field "myObject".
@@ -22,7 +19,7 @@ type DateMyObject struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DateMyObject) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -40,7 +37,7 @@ func (j *DateMyObject) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *DateMyObject) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

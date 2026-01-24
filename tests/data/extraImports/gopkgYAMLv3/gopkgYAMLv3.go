@@ -2,14 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"reflect"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
 
 type GopkgYAMLv3 struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
@@ -22,7 +18,7 @@ type GopkgYAMLv3 struct {
 	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull any `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
+	MyNull interface{} `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
 	MyNumber *float64 `json:"myNumber,omitempty" yaml:"myNumber,omitempty" mapstructure:"myNumber,omitempty"`
@@ -36,7 +32,7 @@ type GopkgYAMLv3MyEnum string
 const GopkgYAMLv3MyEnumX GopkgYAMLv3MyEnum = "x"
 const GopkgYAMLv3MyEnumY GopkgYAMLv3MyEnum = "y"
 
-var enumValues_GopkgYAMLv3MyEnum = []any{
+var enumValues_GopkgYAMLv3MyEnum = []interface{}{
 	"x",
 	"y",
 }
@@ -83,7 +79,7 @@ func (j *GopkgYAMLv3MyEnum) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *GopkgYAMLv3) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -101,7 +97,7 @@ func (j *GopkgYAMLv3) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *GopkgYAMLv3) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

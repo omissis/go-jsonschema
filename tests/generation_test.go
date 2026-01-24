@@ -33,13 +33,6 @@ var (
 	}
 )
 
-func TestDev(t *testing.T) {
-	t.Parallel()
-
-	testExampleFile(t, basicConfig, "./data/core/additionalProperties/arrayAdditionalProperties.json")
-}
-
-
 func TestCore(t *testing.T) {
 	t.Parallel()
 

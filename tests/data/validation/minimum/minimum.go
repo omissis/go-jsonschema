@@ -2,12 +2,9 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Minimum struct {
 	// MyInteger corresponds to the JSON schema field "myInteger".
@@ -25,7 +22,7 @@ type Minimum struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Minimum) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -58,7 +55,7 @@ func (j *Minimum) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Minimum) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

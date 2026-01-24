@@ -2,12 +2,9 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type AllOf2 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
@@ -27,7 +24,7 @@ type AllOf2ConfigurationsElem struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AllOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -48,7 +45,7 @@ func (j *AllOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AllOf2ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -74,7 +71,7 @@ type Bar struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Bar) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -92,7 +89,7 @@ func (j *Bar) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Bar) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -120,7 +117,7 @@ type Foo struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Foo) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -138,7 +135,7 @@ func (j *Foo) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

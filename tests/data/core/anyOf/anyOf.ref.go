@@ -2,13 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "errors"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type Agreement struct {
 	// Id corresponds to the JSON schema field "id".
@@ -37,7 +34,7 @@ func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type AnyOfRef any
+type AnyOfRef interface{}
 
 type AnyOfRef_0 struct {
 	// Id corresponds to the JSON schema field "id".
@@ -75,7 +72,7 @@ type AnyOfRef_0_1 = Agreement
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -102,7 +99,7 @@ func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOfRef_0) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -132,4 +129,4 @@ type Offer struct {
 	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
-type Policy any
+type Policy interface{}

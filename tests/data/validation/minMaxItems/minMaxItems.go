@@ -2,16 +2,13 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type MinMaxItems struct {
 	// MyNestedArray corresponds to the JSON schema field "myNestedArray".
-	MyNestedArray [][]any `json:"myNestedArray,omitempty" yaml:"myNestedArray,omitempty" mapstructure:"myNestedArray,omitempty"`
+	MyNestedArray [][]interface{} `json:"myNestedArray,omitempty" yaml:"myNestedArray,omitempty" mapstructure:"myNestedArray,omitempty"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
 	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`

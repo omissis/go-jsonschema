@@ -2,12 +2,9 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type MaxLength struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
@@ -19,7 +16,7 @@ type MaxLength struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MaxLength) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -43,7 +40,7 @@ func (j *MaxLength) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *MaxLength) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

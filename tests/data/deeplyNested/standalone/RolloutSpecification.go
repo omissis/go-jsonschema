@@ -2,14 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"regexp"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "regexp"
 
 // The details of applications to be deployed.
 type Applications struct {
@@ -26,7 +22,7 @@ type Applications struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Applications) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -50,7 +46,7 @@ func (j *Applications) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Applications) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -87,7 +83,7 @@ type ApplyAcrossServiceResources struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ApplyAcrossServiceResources) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -108,7 +104,7 @@ func (j *ApplyAcrossServiceResources) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ApplyAcrossServiceResources) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -136,7 +132,7 @@ type BuildSource struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *BuildSource) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -154,7 +150,7 @@ func (j *BuildSource) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *BuildSource) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -191,7 +187,7 @@ type Email struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Email) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -209,7 +205,7 @@ func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Email) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -245,7 +241,7 @@ type IncidentOptions struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -266,7 +262,7 @@ func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Incident) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -365,7 +361,7 @@ type OrchestratedStep struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -395,7 +391,7 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -433,7 +429,7 @@ type Parameters struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Parameters) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -451,7 +447,7 @@ func (j *Parameters) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Parameters) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -484,7 +480,7 @@ type Properties struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Properties) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -515,7 +511,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -575,7 +571,7 @@ type RolloutMetadata struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -608,7 +604,7 @@ func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *RolloutMetadata) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -651,7 +647,7 @@ type RolloutPolicyReference struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RolloutPolicyReference) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -672,7 +668,7 @@ func (j *RolloutPolicyReference) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *RolloutPolicyReference) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -706,7 +702,7 @@ type RolloutSpecification struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -733,7 +729,7 @@ func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *RolloutSpecification) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

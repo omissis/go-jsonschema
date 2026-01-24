@@ -409,7 +409,7 @@ type EmptyInterfaceType struct{}
 func (EmptyInterfaceType) IsNillable() bool { return true }
 
 func (EmptyInterfaceType) Generate(out *Emitter) error {
-	out.Printf("any")
+	out.Printf("interface{}")
 
 	return nil
 }
@@ -419,7 +419,7 @@ type NullType struct{}
 func (NullType) IsNillable() bool { return true }
 
 func (NullType) Generate(out *Emitter) error {
-	out.Printf("any")
+	out.Printf("interface{}")
 
 	return nil
 }

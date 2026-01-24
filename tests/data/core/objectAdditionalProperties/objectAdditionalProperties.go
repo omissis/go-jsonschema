@@ -2,11 +2,8 @@
 
 package test
 
-import (
-	"encoding/json"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import yaml "gopkg.in/yaml.v3"
 
 type ObjectAdditionalProperties struct {
 	// Foo corresponds to the JSON schema field "foo".
@@ -17,7 +14,7 @@ type ObjectAdditionalPropertiesFoo map[string]string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -35,7 +32,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

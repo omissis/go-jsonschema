@@ -2,13 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "errors"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
 
 type AnyOf6 struct {
 	// Qux2 corresponds to the JSON schema field "qux2".
@@ -17,12 +14,12 @@ type AnyOf6 struct {
 
 type AnyOf6Qux2Elem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []any `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf6Qux2Elem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -53,7 +50,7 @@ func (j *AnyOf6Qux2Elem) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf6Qux2Elem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -89,12 +86,12 @@ type Bar2 struct {
 
 type Bar2ContentElem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []any `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Bar2ContentElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -125,7 +122,7 @@ func (j *Bar2ContentElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Bar2ContentElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -191,7 +188,7 @@ func (j *Baz2) UnmarshalJSON(value []byte) error {
 
 type Baz2ContentElem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []any `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -218,7 +215,7 @@ func (j *Bar2) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Baz2ContentElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -260,7 +257,7 @@ func (j *Baz2) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Baz2ContentElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -301,12 +298,12 @@ type Foo2 struct {
 
 type Foo2ContentElem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []any `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Foo2ContentElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -337,7 +334,7 @@ func (j *Foo2ContentElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Foo2ContentElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

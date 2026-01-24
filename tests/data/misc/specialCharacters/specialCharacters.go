@@ -2,14 +2,10 @@
 
 package test
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"reflect"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
 
 type License string
 
@@ -23,7 +19,7 @@ const License_1_GPL30 License_1 = "GPL-3.0+"
 const License_1_MIT License_1 = "MIT+"
 const License_1_Wildcard License_1 = "*"
 
-var enumValues_License_1 = []any{
+var enumValues_License_1 = []interface{}{
 	"GPL-3.0+",
 	"MIT+",
 	"*",
@@ -69,7 +65,7 @@ func (j *License_1) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-var enumValues_License = []any{
+var enumValues_License = []interface{}{
 	"GPL-3.0",
 	"MIT",
 	"*",
@@ -135,7 +131,7 @@ const SpecialCharactersPlainLicensesGPL30 SpecialCharactersPlainLicenses = "GPL-
 const SpecialCharactersPlainLicensesMIT SpecialCharactersPlainLicenses = "MIT"
 const SpecialCharactersPlainLicensesWildcard SpecialCharactersPlainLicenses = "*"
 
-var enumValues_SpecialCharactersPlainLicenses = []any{
+var enumValues_SpecialCharactersPlainLicenses = []interface{}{
 	"GPL-3.0",
 	"MIT",
 	"*",
@@ -187,7 +183,7 @@ const SpecialCharactersPlusLicensesGPL30 SpecialCharactersPlusLicenses = "GPL-3.
 const SpecialCharactersPlusLicensesMIT SpecialCharactersPlusLicenses = "MIT+"
 const SpecialCharactersPlusLicensesWildcard SpecialCharactersPlusLicenses = "*"
 
-var enumValues_SpecialCharactersPlusLicenses = []any{
+var enumValues_SpecialCharactersPlusLicenses = []interface{}{
 	"GPL-3.0+",
 	"MIT+",
 	"*",

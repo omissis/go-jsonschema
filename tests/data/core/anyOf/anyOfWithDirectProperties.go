@@ -2,18 +2,13 @@
 
 package test
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-
-	"github.com/go-viper/mapstructure/v2"
-
-	"reflect"
-	"strings"
-
-	yaml "gopkg.in/yaml.v3"
-)
+import "encoding/json"
+import "errors"
+import "fmt"
+import "github.com/go-viper/mapstructure/v2"
+import yaml "gopkg.in/yaml.v3"
+import "reflect"
+import "strings"
 
 type BaseObject struct {
 	// BaseField corresponds to the JSON schema field "BaseField".
@@ -22,7 +17,7 @@ type BaseObject struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *BaseObject) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -40,7 +35,7 @@ func (j *BaseObject) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *BaseObject) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -65,12 +60,12 @@ type ComposedWithAllOfAndProperties struct {
 	// DirectField corresponds to the JSON schema field "DirectField".
 	DirectField []string `json:"DirectField,omitempty" yaml:"DirectField,omitempty" mapstructure:"DirectField,omitempty"`
 
-	AdditionalProperties any `mapstructure:",remain"`
+	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -101,7 +96,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]any
+	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
