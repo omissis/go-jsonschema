@@ -15,7 +15,7 @@ import (
 const (
 	varNamePlainStruct = "plain"
 	varNameRawMap      = "raw"
-	interfaceTypeName  = "interface{}"
+	interfaceTypeName  = "any"
 	typePlain          = "Plain"
 )
 

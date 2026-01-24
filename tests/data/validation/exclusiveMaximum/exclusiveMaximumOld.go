@@ -2,9 +2,12 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type ExclusiveMaximumOld struct {
 	// MyInteger corresponds to the JSON schema field "myInteger".
@@ -14,7 +17,7 @@ type ExclusiveMaximumOld struct {
 	MyNullableInteger *int `json:"myNullableInteger,omitempty" yaml:"myNullableInteger,omitempty" mapstructure:"myNullableInteger,omitempty"`
 
 	// MyNullableNumber corresponds to the JSON schema field "myNullableNumber".
-	MyNullableNumber interface{} `json:"myNullableNumber,omitempty" yaml:"myNullableNumber,omitempty" mapstructure:"myNullableNumber,omitempty"`
+	MyNullableNumber any `json:"myNullableNumber,omitempty" yaml:"myNullableNumber,omitempty" mapstructure:"myNullableNumber,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
 	MyNumber float64 `json:"myNumber" yaml:"myNumber" mapstructure:"myNumber"`
@@ -22,7 +25,7 @@ type ExclusiveMaximumOld struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ExclusiveMaximumOld) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -52,7 +55,7 @@ func (j *ExclusiveMaximumOld) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ExclusiveMaximumOld) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

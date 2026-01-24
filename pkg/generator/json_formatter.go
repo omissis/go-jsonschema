@@ -44,7 +44,7 @@ func (jf *jsonFormatter) generate(
 		out.Indent(1)
 
 		if forceBefore || len(beforeValidators) != 0 {
-			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+			out.Printlnf("var %s map[string]any", varNameRawMap)
 			out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }", formatJSON, varNameRawMap)
 		}
 

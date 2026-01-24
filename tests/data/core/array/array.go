@@ -2,13 +2,16 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".
-	MyArray []interface{} `json:"myArray,omitempty" yaml:"myArray,omitempty" mapstructure:"myArray,omitempty"`
+	MyArray []any `json:"myArray,omitempty" yaml:"myArray,omitempty" mapstructure:"myArray,omitempty"`
 
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
 	MyBooleanArray []bool `json:"myBooleanArray,omitempty" yaml:"myBooleanArray,omitempty" mapstructure:"myBooleanArray,omitempty"`
@@ -17,10 +20,10 @@ type Array struct {
 	MyIntegerArray []int `json:"myIntegerArray,omitempty" yaml:"myIntegerArray,omitempty" mapstructure:"myIntegerArray,omitempty"`
 
 	// MyNestedNullArray corresponds to the JSON schema field "myNestedNullArray".
-	MyNestedNullArray [][]interface{} `json:"myNestedNullArray,omitempty" yaml:"myNestedNullArray,omitempty" mapstructure:"myNestedNullArray,omitempty"`
+	MyNestedNullArray [][]any `json:"myNestedNullArray,omitempty" yaml:"myNestedNullArray,omitempty" mapstructure:"myNestedNullArray,omitempty"`
 
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
-	MyNullArray []interface{} `json:"myNullArray,omitempty" yaml:"myNullArray,omitempty" mapstructure:"myNullArray,omitempty"`
+	MyNullArray []any `json:"myNullArray,omitempty" yaml:"myNullArray,omitempty" mapstructure:"myNullArray,omitempty"`
 
 	// MyNumberArray corresponds to the JSON schema field "myNumberArray".
 	MyNumberArray []float64 `json:"myNumberArray,omitempty" yaml:"myNumberArray,omitempty" mapstructure:"myNumberArray,omitempty"`
@@ -32,11 +35,11 @@ type Array struct {
 	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
 }
 
-type ArrayMyObjectArrayElem map[string]interface{}
+type ArrayMyObjectArrayElem map[string]any
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Array) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -63,7 +66,7 @@ func (j *Array) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Array) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

@@ -2,11 +2,15 @@
 
 package test
 
-import "encoding/json"
-import "errors"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"reflect"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type DecoratedPlanner struct {
 	// Decorator corresponds to the JSON schema field "decorator".
@@ -26,7 +30,7 @@ type DecoratedPlannerDecorator struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DecoratedPlannerDecorator) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -44,7 +48,7 @@ func (j *DecoratedPlannerDecorator) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *DecoratedPlannerDecorator) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -62,7 +66,7 @@ func (j *DecoratedPlannerDecorator) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *DecoratedPlanner) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -83,7 +87,7 @@ func (j *DecoratedPlanner) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DecoratedPlanner) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -121,7 +125,7 @@ const EventNameBIRTHDAY EventName = "BIRTHDAY"
 const EventNameGAME EventName = "GAME"
 const EventNameHOLIDAY EventName = "HOLIDAY"
 
-var enumValues_EventName = []interface{}{
+var enumValues_EventName = []any{
 	"BIRTHDAY",
 	"GAME",
 	"HOLIDAY",
@@ -174,7 +178,7 @@ const EventTagsElemCOUNTRY EventTagsElem = "COUNTRY"
 const EventTagsElemPERSON EventTagsElem = "PERSON"
 const EventTagsElemREGION EventTagsElem = "REGION"
 
-var enumValues_EventTagsElem = []interface{}{
+var enumValues_EventTagsElem = []any{
 	"COUNTRY",
 	"REGION",
 	"CITY",
@@ -223,7 +227,7 @@ func (j *EventTagsElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Event) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -241,7 +245,7 @@ func (j *Event) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Event) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -259,7 +263,7 @@ func (j *Event) UnmarshalYAML(value *yaml.Node) error {
 
 type ObjectPropertiesDefault struct {
 	// Active corresponds to the JSON schema field "active".
-	Active interface{} `json:"active,omitempty" yaml:"active,omitempty" mapstructure:"active,omitempty"`
+	Active any `json:"active,omitempty" yaml:"active,omitempty" mapstructure:"active,omitempty"`
 
 	// Planners corresponds to the JSON schema field "planners".
 	Planners []ObjectPropertiesDefaultPlannersElem `json:"planners,omitempty" yaml:"planners,omitempty" mapstructure:"planners,omitempty"`
@@ -329,7 +333,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalYAML(value *yaml.Node) 
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -356,7 +360,7 @@ func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalJSON(value []byte) error 
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

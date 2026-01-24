@@ -43,7 +43,7 @@ func (yf *yamlFormatter) generate(
 		out.Indent(1)
 
 		if forceBefore || len(beforeValidators) != 0 {
-			out.Printlnf("var %s map[string]interface{}", varNameRawMap)
+			out.Printlnf("var %s map[string]any", varNameRawMap)
 			out.Printlnf("if err := value.Decode(&%s); err != nil { return err }", varNameRawMap)
 		}
 
@@ -104,7 +104,7 @@ func (yf *yamlFormatter) generate(
 func (yf *yamlFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("Marshal%s implements %s.Marshal.", strings.ToUpper(formatYAML), formatYAML)
-		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name, strings.ToUpper(formatYAML))
+		out.Printlnf("func (j *%s) Marshal%s() (any, error) {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
 		out.Printlnf("return %s.Marshal(j.Value)", formatYAML)
 		out.Indent(-1)

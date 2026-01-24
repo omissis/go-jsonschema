@@ -2,10 +2,14 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
+import (
+	"encoding/json"
+	"fmt"
+
+	"reflect"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type RefToEnum struct {
 	// MyThing corresponds to the JSON schema field "myThing".
@@ -17,7 +21,7 @@ type Thing string
 const ThingX Thing = "x"
 const ThingY Thing = "y"
 
-var enumValues_Thing = []interface{}{
+var enumValues_Thing = []any{
 	"x",
 	"y",
 }

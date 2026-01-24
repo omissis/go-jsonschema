@@ -2,10 +2,13 @@
 
 package test
 
-import "encoding/json"
-import "errors"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type AnyOf7 struct {
 	// Bar corresponds to the JSON schema field "bar".
@@ -25,7 +28,7 @@ type AnyOf7BarElem struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf7BarElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -48,7 +51,7 @@ func (j *AnyOf7BarElem) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf7BarElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -96,7 +99,7 @@ type Item struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf7BazElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -119,7 +122,7 @@ func (j *AnyOf7BazElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf7BazElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -149,7 +152,7 @@ type AnyOf7Foo struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf7Foo) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -172,7 +175,7 @@ func (j *AnyOf7Foo) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf7Foo) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -206,7 +209,7 @@ func (j *Item) UnmarshalJSON(value []byte) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf7) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -227,7 +230,7 @@ func (j *AnyOf7) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf7) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

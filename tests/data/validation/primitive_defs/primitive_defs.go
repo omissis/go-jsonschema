@@ -2,9 +2,12 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type MinStr string
 
@@ -46,7 +49,7 @@ type PrimitiveDefs struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -64,7 +67,7 @@ func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

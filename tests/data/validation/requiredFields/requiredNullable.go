@@ -2,9 +2,12 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type RequiredNullable struct {
 	// MyNullableObject corresponds to the JSON schema field "myNullableObject".
@@ -25,7 +28,7 @@ type RequiredNullableMyNullableObject struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RequiredNullableMyNullableObject) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -43,7 +46,7 @@ func (j *RequiredNullableMyNullableObject) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *RequiredNullableMyNullableObject) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -65,7 +68,7 @@ type RequiredNullableMyNullableStringArray []string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RequiredNullable) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -89,7 +92,7 @@ func (j *RequiredNullable) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *RequiredNullable) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

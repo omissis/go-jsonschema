@@ -7,4 +7,4 @@ type ObjectEmpty struct {
 	Foo ObjectEmptyFoo `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
 
-type ObjectEmptyFoo map[string]interface{}
+type ObjectEmptyFoo map[string]any

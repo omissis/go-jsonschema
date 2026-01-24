@@ -2,9 +2,12 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type Primitives struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
@@ -14,7 +17,7 @@ type Primitives struct {
 	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull interface{} `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
+	MyNull any `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
 	MyNumber *float64 `json:"myNumber,omitempty" yaml:"myNumber,omitempty" mapstructure:"myNumber,omitempty"`
@@ -25,7 +28,7 @@ type Primitives struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Primitives) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -43,7 +46,7 @@ func (j *Primitives) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Primitives) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

@@ -2,22 +2,25 @@
 
 package test
 
-import "encoding/json"
-import "github.com/go-viper/mapstructure/v2"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
-import "strings"
+import (
+	"encoding/json"
+	"reflect"
+	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+	yaml "gopkg.in/yaml.v3"
+)
 
 type ObjectAdditionalProperties struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 
-	AdditionalProperties map[string]interface{} `mapstructure:",remain"`
+	AdditionalProperties map[string]any `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -27,7 +30,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]interface{}{}
+		plain.AdditionalProperties = map[string]any{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := range st.NumField() {
@@ -43,7 +46,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -53,7 +56,7 @@ func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]interface{}{}
+		plain.AdditionalProperties = map[string]any{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := range st.NumField() {

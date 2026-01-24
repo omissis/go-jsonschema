@@ -647,7 +647,7 @@ func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
 		return t.Type[tidx], isPtr
 	}
 
-	g.warner("Property has multiple types; will be represented as interface{} with no validation")
+	g.warner("Property has multiple types; will be represented as any with no validation")
 
 	return schemas.TypeNameNull, false
 }
@@ -983,7 +983,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.Type) > 1 && !typeIsNullable {
-			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as interface{} with no validation", scope))
+			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as any with no validation", scope))
 
 			return codegen.EmptyInterfaceType{}, nil
 		}
@@ -1113,7 +1113,7 @@ func (g *schemaGenerator) generateEnumType(
 			}
 		}
 
-		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses interface{}, which cannot have methods.
+		wrapInStruct = t.Type[0] == schemas.TypeNameNull // Null uses any, which cannot have methods.
 	} else {
 		if len(t.Type) > 1 {
 			// TODO: Support multiple types.

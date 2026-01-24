@@ -2,10 +2,13 @@
 
 package test
 
-import "encoding/json"
-import "errors"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 // Text provided to or from an LLM.
 type TextContent struct {
@@ -15,7 +18,7 @@ type TextContent struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TextContent) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -33,7 +36,7 @@ func (j *TextContent) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -65,7 +68,7 @@ type CallToolResultContentElem struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -88,7 +91,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

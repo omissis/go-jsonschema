@@ -2,10 +2,14 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+
+	"time"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type Duration struct {
 	// MyObject corresponds to the JSON schema field "myObject".
@@ -22,7 +26,7 @@ type DurationMyObject struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *DurationMyObject) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -45,7 +49,7 @@ func (j *DurationMyObject) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *DurationMyObject) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

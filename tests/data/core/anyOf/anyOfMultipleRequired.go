@@ -2,13 +2,18 @@
 
 package test
 
-import "encoding/json"
-import "errors"
-import "fmt"
-import "github.com/go-viper/mapstructure/v2"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
-import "strings"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/go-viper/mapstructure/v2"
+
+	"reflect"
+	"strings"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type MultipleRequiredBase struct {
 	// BaseField corresponds to the JSON schema field "baseField".
@@ -17,7 +22,7 @@ type MultipleRequiredBase struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -35,7 +40,7 @@ func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -58,7 +63,7 @@ type MultipleRequiredMiddle struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -76,7 +81,7 @@ func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -106,12 +111,12 @@ type ComposedWithMultipleRequired struct {
 	// MiddleField corresponds to the JSON schema field "middleField".
 	MiddleField *float64 `json:"middleField,omitempty" yaml:"middleField,omitempty" mapstructure:"middleField,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -146,7 +151,7 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

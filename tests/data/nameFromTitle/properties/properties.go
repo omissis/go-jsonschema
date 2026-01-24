@@ -2,12 +2,15 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import "github.com/go-viper/mapstructure/v2"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
-import "strings"
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+	yaml "gopkg.in/yaml.v3"
+)
 
 type Alpha struct {
 	// Beta corresponds to the JSON schema field "beta".
@@ -16,10 +19,10 @@ type Alpha struct {
 	// Eta corresponds to the JSON schema field "eta".
 	Eta *Eta `json:"eta,omitempty" yaml:"eta,omitempty" mapstructure:"eta,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
-type Beta interface{}
+type Beta any
 
 type Eta struct {
 	// Epsilon corresponds to the JSON schema field "epsilon".
@@ -28,12 +31,12 @@ type Eta struct {
 	// Theta corresponds to the JSON schema field "theta".
 	Theta Theta `json:"theta" yaml:"theta" mapstructure:"theta"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Eta) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -62,7 +65,7 @@ func (j *Eta) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -93,26 +96,26 @@ type Iota struct {
 	// DESCRIPTION
 	Kappa *TITLE `json:"kappa,omitempty" yaml:"kappa,omitempty" mapstructure:"kappa,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 type IotaKappaLambdaElem struct {
 	// Sigma corresponds to the JSON schema field "sigma".
 	Sigma *Alpha `json:"sigma,omitempty" yaml:"sigma,omitempty" mapstructure:"sigma,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 type Properties struct {
 	// Iota corresponds to the JSON schema field "iota".
 	Iota Iota `json:"iota" yaml:"iota" mapstructure:"iota"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -138,7 +141,7 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Properties) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -167,7 +170,7 @@ type TITLE struct {
 	// Lambda corresponds to the JSON schema field "lambda".
 	Lambda []IotaKappaLambdaElem `json:"lambda,omitempty" yaml:"lambda,omitempty" mapstructure:"lambda,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 type Theta int

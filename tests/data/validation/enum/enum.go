@@ -2,10 +2,14 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
+import (
+	"encoding/json"
+	"fmt"
+
+	"reflect"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type Enum struct {
 	// MyBooleanTypedEnum corresponds to the JSON schema field "myBooleanTypedEnum".
@@ -45,7 +49,7 @@ type Enum struct {
 
 type EnumMyBooleanTypedEnum bool
 
-var enumValues_EnumMyBooleanTypedEnum = []interface{}{
+var enumValues_EnumMyBooleanTypedEnum = []any{
 	true,
 	false,
 }
@@ -92,7 +96,7 @@ func (j *EnumMyBooleanTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 
 type EnumMyBooleanUntypedEnum bool
 
-var enumValues_EnumMyBooleanUntypedEnum = []interface{}{
+var enumValues_EnumMyBooleanUntypedEnum = []any{
 	true,
 	false,
 }
@@ -139,7 +143,7 @@ func (j *EnumMyBooleanUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 
 type EnumMyIntegerTypedEnum int
 
-var enumValues_EnumMyIntegerTypedEnum = []interface{}{
+var enumValues_EnumMyIntegerTypedEnum = []any{
 	1,
 	2,
 	3,
@@ -186,7 +190,7 @@ func (j *EnumMyIntegerTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type EnumMyMixedTypeEnum struct {
-	Value interface{}
+	Value any
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -195,11 +199,11 @@ func (j *EnumMyMixedTypeEnum) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshal.
-func (j *EnumMyMixedTypeEnum) MarshalYAML() (interface{}, error) {
+func (j *EnumMyMixedTypeEnum) MarshalYAML() (any, error) {
 	return yaml.Marshal(j.Value)
 }
 
-var enumValues_EnumMyMixedTypeEnum = []interface{}{
+var enumValues_EnumMyMixedTypeEnum = []any{
 	42.0,
 	"smurf",
 }
@@ -207,7 +211,7 @@ var enumValues_EnumMyMixedTypeEnum = []interface{}{
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *EnumMyMixedTypeEnum) UnmarshalYAML(value *yaml.Node) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := value.Decode(&v.Value); err != nil {
 		return err
@@ -229,7 +233,7 @@ func (j *EnumMyMixedTypeEnum) UnmarshalYAML(value *yaml.Node) error {
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *EnumMyMixedTypeEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
@@ -249,7 +253,7 @@ func (j *EnumMyMixedTypeEnum) UnmarshalJSON(value []byte) error {
 }
 
 type EnumMyMixedUntypedEnum struct {
-	Value interface{}
+	Value any
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -258,11 +262,11 @@ func (j *EnumMyMixedUntypedEnum) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshal.
-func (j *EnumMyMixedUntypedEnum) MarshalYAML() (interface{}, error) {
+func (j *EnumMyMixedUntypedEnum) MarshalYAML() (any, error) {
 	return yaml.Marshal(j.Value)
 }
 
-var enumValues_EnumMyMixedUntypedEnum = []interface{}{
+var enumValues_EnumMyMixedUntypedEnum = []any{
 	"red",
 	1.0,
 	true,
@@ -272,7 +276,7 @@ var enumValues_EnumMyMixedUntypedEnum = []interface{}{
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *EnumMyMixedUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
@@ -294,7 +298,7 @@ func (j *EnumMyMixedUntypedEnum) UnmarshalJSON(value []byte) error {
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *EnumMyMixedUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := value.Decode(&v.Value); err != nil {
 		return err
@@ -314,7 +318,7 @@ func (j *EnumMyMixedUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type EnumMyNullTypedEnum struct {
-	Value interface{}
+	Value any
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -323,18 +327,18 @@ func (j *EnumMyNullTypedEnum) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshal.
-func (j *EnumMyNullTypedEnum) MarshalYAML() (interface{}, error) {
+func (j *EnumMyNullTypedEnum) MarshalYAML() (any, error) {
 	return yaml.Marshal(j.Value)
 }
 
-var enumValues_EnumMyNullTypedEnum = []interface{}{
+var enumValues_EnumMyNullTypedEnum = []any{
 	nil,
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *EnumMyNullTypedEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
@@ -356,7 +360,7 @@ func (j *EnumMyNullTypedEnum) UnmarshalJSON(value []byte) error {
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *EnumMyNullTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := value.Decode(&v.Value); err != nil {
 		return err
@@ -376,7 +380,7 @@ func (j *EnumMyNullTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type EnumMyNullUntypedEnum struct {
-	Value interface{}
+	Value any
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -385,18 +389,18 @@ func (j *EnumMyNullUntypedEnum) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshal.
-func (j *EnumMyNullUntypedEnum) MarshalYAML() (interface{}, error) {
+func (j *EnumMyNullUntypedEnum) MarshalYAML() (any, error) {
 	return yaml.Marshal(j.Value)
 }
 
-var enumValues_EnumMyNullUntypedEnum = []interface{}{
+var enumValues_EnumMyNullUntypedEnum = []any{
 	nil,
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *EnumMyNullUntypedEnum) UnmarshalJSON(value []byte) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := json.Unmarshal(value, &v.Value); err != nil {
 		return err
@@ -418,7 +422,7 @@ func (j *EnumMyNullUntypedEnum) UnmarshalJSON(value []byte) error {
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *EnumMyNullUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 	var v struct {
-		Value interface{}
+		Value any
 	}
 	if err := value.Decode(&v.Value); err != nil {
 		return err
@@ -439,7 +443,7 @@ func (j *EnumMyNullUntypedEnum) UnmarshalYAML(value *yaml.Node) error {
 
 type EnumMyNumberTypedEnum float64
 
-var enumValues_EnumMyNumberTypedEnum = []interface{}{
+var enumValues_EnumMyNumberTypedEnum = []any{
 	1.0,
 	2.0,
 	3.0,
@@ -487,7 +491,7 @@ func (j *EnumMyNumberTypedEnum) UnmarshalYAML(value *yaml.Node) error {
 
 type EnumMyNumberUntypedEnum float64
 
-var enumValues_EnumMyNumberUntypedEnum = []interface{}{
+var enumValues_EnumMyNumberUntypedEnum = []any{
 	1.0,
 	2.0,
 	3.0,
@@ -539,7 +543,7 @@ const EnumMyStringTypedEnumBlue EnumMyStringTypedEnum = "blue"
 const EnumMyStringTypedEnumGreen EnumMyStringTypedEnum = "green"
 const EnumMyStringTypedEnumRed EnumMyStringTypedEnum = "red"
 
-var enumValues_EnumMyStringTypedEnum = []interface{}{
+var enumValues_EnumMyStringTypedEnum = []any{
 	"red",
 	"blue",
 	"green",
@@ -591,7 +595,7 @@ const EnumMyStringUntypedEnumBlue EnumMyStringUntypedEnum = "blue"
 const EnumMyStringUntypedEnumGreen EnumMyStringUntypedEnum = "green"
 const EnumMyStringUntypedEnumRed EnumMyStringUntypedEnum = "red"
 
-var enumValues_EnumMyStringUntypedEnum = []interface{}{
+var enumValues_EnumMyStringUntypedEnum = []any{
 	"red",
 	"blue",
 	"green",

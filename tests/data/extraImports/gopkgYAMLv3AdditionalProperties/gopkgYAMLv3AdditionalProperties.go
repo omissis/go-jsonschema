@@ -2,11 +2,14 @@
 
 package test
 
-import "encoding/json"
-import "github.com/go-viper/mapstructure/v2"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
-import "strings"
+import (
+	"encoding/json"
+	"reflect"
+	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+	yaml "gopkg.in/yaml.v3"
+)
 
 type GopkgYAMLv3AdditionalProperties struct {
 	// Bar corresponds to the JSON schema field "bar".
@@ -15,12 +18,12 @@ type GopkgYAMLv3AdditionalProperties struct {
 	// Foo corresponds to the JSON schema field "foo".
 	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 
-	AdditionalProperties map[string]interface{} `mapstructure:",remain"`
+	AdditionalProperties map[string]any `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -30,7 +33,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]interface{}{}
+		plain.AdditionalProperties = map[string]any{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := range st.NumField() {
@@ -46,7 +49,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *GopkgYAMLv3AdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -56,7 +59,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalYAML(value *yaml.Node) error 
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]interface{}{}
+		plain.AdditionalProperties = map[string]any{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := range st.NumField() {

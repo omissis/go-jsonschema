@@ -2,10 +2,14 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
+import (
+	"encoding/json"
+	"fmt"
+
+	"reflect"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type TypedDefaultEnums struct {
 	// Some corresponds to the JSON schema field "some".
@@ -17,7 +21,7 @@ type TypedDefaultEnumsSome string
 const TypedDefaultEnumsSomeOther TypedDefaultEnumsSome = "other"
 const TypedDefaultEnumsSomeRandom TypedDefaultEnumsSome = "random"
 
-var enumValues_TypedDefaultEnumsSome = []interface{}{
+var enumValues_TypedDefaultEnumsSome = []any{
 	"random",
 	"other",
 }
@@ -64,7 +68,7 @@ func (j *TypedDefaultEnumsSome) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TypedDefaultEnums) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -82,7 +86,7 @@ func (j *TypedDefaultEnums) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TypedDefaultEnums) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

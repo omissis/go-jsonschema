@@ -146,7 +146,7 @@ func (p *Package) Generate(out *Emitter) error {
 type Var struct {
 	Type  Type
 	Name  string
-	Value interface{}
+	Value any
 }
 
 func (v *Var) GetName() string {
@@ -171,7 +171,7 @@ func (v *Var) Generate(out *Emitter) error {
 type Constant struct {
 	Type  Type
 	Name  string
-	Value interface{}
+	Value any
 }
 
 func (c *Constant) GetName() string {
@@ -409,7 +409,7 @@ type EmptyInterfaceType struct{}
 func (EmptyInterfaceType) IsNillable() bool { return true }
 
 func (EmptyInterfaceType) Generate(out *Emitter) error {
-	out.Printf("interface{}")
+	out.Printf("any")
 
 	return nil
 }
@@ -419,7 +419,7 @@ type NullType struct{}
 func (NullType) IsNillable() bool { return true }
 
 func (NullType) Generate(out *Emitter) error {
-	out.Printf("interface{}")
+	out.Printf("any")
 
 	return nil
 }
@@ -427,7 +427,7 @@ func (NullType) Generate(out *Emitter) error {
 type StructType struct {
 	Fields             []StructField
 	RequiredJSONFields []string
-	DefaultValue       interface{}
+	DefaultValue       any
 }
 
 func (*StructType) IsNillable() bool { return false }
@@ -468,7 +468,7 @@ type StructField struct {
 	Comment      string
 	Tags         string
 	JSONName     string
-	DefaultValue interface{}
+	DefaultValue any
 	SchemaType   *schemas.Type
 }
 

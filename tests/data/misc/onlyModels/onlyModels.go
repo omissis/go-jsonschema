@@ -13,7 +13,7 @@ type OnlyModels struct {
 	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull interface{} `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
+	MyNull any `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
 	MyNumber *float64 `json:"myNumber,omitempty" yaml:"myNumber,omitempty" mapstructure:"myNumber,omitempty"`

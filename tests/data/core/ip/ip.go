@@ -2,10 +2,14 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
-import "net/netip"
+import (
+	"encoding/json"
+	"fmt"
+
+	"net/netip"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type Ip struct {
 	// MyObject corresponds to the JSON schema field "myObject".
@@ -19,7 +23,7 @@ type IpMyObject struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *IpMyObject) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -37,7 +41,7 @@ func (j *IpMyObject) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *IpMyObject) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

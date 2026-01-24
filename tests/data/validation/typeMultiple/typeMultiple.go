@@ -4,18 +4,18 @@ package test
 
 type TypeMultiple struct {
 	// All corresponds to the JSON schema field "all".
-	All interface{} `json:"all,omitempty" yaml:"all,omitempty" mapstructure:"all,omitempty"`
+	All any `json:"all,omitempty" yaml:"all,omitempty" mapstructure:"all,omitempty"`
 
 	// AllPrimitives corresponds to the JSON schema field "allPrimitives".
-	AllPrimitives interface{} `json:"allPrimitives,omitempty" yaml:"allPrimitives,omitempty" mapstructure:"allPrimitives,omitempty"`
+	AllPrimitives any `json:"allPrimitives,omitempty" yaml:"allPrimitives,omitempty" mapstructure:"allPrimitives,omitempty"`
 
 	// ArrayOfAll corresponds to the JSON schema field "arrayOfAll".
-	ArrayOfAll []interface{} `json:"arrayOfAll,omitempty" yaml:"arrayOfAll,omitempty" mapstructure:"arrayOfAll,omitempty"`
+	ArrayOfAll []any `json:"arrayOfAll,omitempty" yaml:"arrayOfAll,omitempty" mapstructure:"arrayOfAll,omitempty"`
 
 	// ArrayOfAllPrimitives corresponds to the JSON schema field
 	// "arrayOfAllPrimitives".
-	ArrayOfAllPrimitives []interface{} `json:"arrayOfAllPrimitives,omitempty" yaml:"arrayOfAllPrimitives,omitempty" mapstructure:"arrayOfAllPrimitives,omitempty"`
+	ArrayOfAllPrimitives []any `json:"arrayOfAllPrimitives,omitempty" yaml:"arrayOfAllPrimitives,omitempty" mapstructure:"arrayOfAllPrimitives,omitempty"`
 
 	// OnlyTwoOptions corresponds to the JSON schema field "onlyTwoOptions".
-	OnlyTwoOptions interface{} `json:"onlyTwoOptions,omitempty" yaml:"onlyTwoOptions,omitempty" mapstructure:"onlyTwoOptions,omitempty"`
+	OnlyTwoOptions any `json:"onlyTwoOptions,omitempty" yaml:"onlyTwoOptions,omitempty" mapstructure:"onlyTwoOptions,omitempty"`
 }

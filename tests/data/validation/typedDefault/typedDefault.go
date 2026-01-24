@@ -2,8 +2,11 @@
 
 package test
 
-import "encoding/json"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 type TypedDefault struct {
 	// TopLevelDomains corresponds to the JSON schema field "topLevelDomains".
@@ -12,7 +15,7 @@ type TypedDefault struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TypedDefault) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -35,7 +38,7 @@ func (j *TypedDefault) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TypedDefault) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

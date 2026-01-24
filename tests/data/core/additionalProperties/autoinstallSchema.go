@@ -2,13 +2,16 @@
 
 package test
 
-import "encoding/json"
-import "fmt"
-import "github.com/go-viper/mapstructure/v2"
-import yaml "gopkg.in/yaml.v3"
-import "reflect"
-import "regexp"
-import "strings"
+import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+	yaml "gopkg.in/yaml.v3"
+)
 
 type AutoinstallSchema struct {
 	// ActiveDirectory corresponds to the JSON schema field "active-directory".
@@ -27,10 +30,10 @@ type AutoinstallSchema struct {
 	Drivers *AutoinstallSchemaDrivers `json:"drivers,omitempty" yaml:"drivers,omitempty" mapstructure:"drivers,omitempty"`
 
 	// EarlyCommands corresponds to the JSON schema field "early-commands".
-	EarlyCommands []interface{} `json:"early-commands,omitempty" yaml:"early-commands,omitempty" mapstructure:"early-commands,omitempty"`
+	EarlyCommands []any `json:"early-commands,omitempty" yaml:"early-commands,omitempty" mapstructure:"early-commands,omitempty"`
 
 	// ErrorCommands corresponds to the JSON schema field "error-commands".
-	ErrorCommands []interface{} `json:"error-commands,omitempty" yaml:"error-commands,omitempty" mapstructure:"error-commands,omitempty"`
+	ErrorCommands []any `json:"error-commands,omitempty" yaml:"error-commands,omitempty" mapstructure:"error-commands,omitempty"`
 
 	// Identity corresponds to the JSON schema field "identity".
 	Identity *AutoinstallSchemaIdentity `json:"identity,omitempty" yaml:"identity,omitempty" mapstructure:"identity,omitempty"`
@@ -49,13 +52,13 @@ type AutoinstallSchema struct {
 	Keyboard *AutoinstallSchemaKeyboard `json:"keyboard,omitempty" yaml:"keyboard,omitempty" mapstructure:"keyboard,omitempty"`
 
 	// LateCommands corresponds to the JSON schema field "late-commands".
-	LateCommands []interface{} `json:"late-commands,omitempty" yaml:"late-commands,omitempty" mapstructure:"late-commands,omitempty"`
+	LateCommands []any `json:"late-commands,omitempty" yaml:"late-commands,omitempty" mapstructure:"late-commands,omitempty"`
 
 	// Locale corresponds to the JSON schema field "locale".
 	Locale *string `json:"locale,omitempty" yaml:"locale,omitempty" mapstructure:"locale,omitempty"`
 
 	// Network corresponds to the JSON schema field "network".
-	Network interface{} `json:"network,omitempty" yaml:"network,omitempty" mapstructure:"network,omitempty"`
+	Network any `json:"network,omitempty" yaml:"network,omitempty" mapstructure:"network,omitempty"`
 
 	// Oem corresponds to the JSON schema field "oem".
 	Oem *AutoinstallSchemaOem `json:"oem,omitempty" yaml:"oem,omitempty" mapstructure:"oem,omitempty"`
@@ -108,7 +111,7 @@ type AutoinstallSchema struct {
 	// Zdevs corresponds to the JSON schema field "zdevs".
 	Zdevs []AutoinstallSchemaZdevsElem `json:"zdevs,omitempty" yaml:"zdevs,omitempty" mapstructure:"zdevs,omitempty"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 type AutoinstallSchemaActiveDirectory struct {
@@ -140,7 +143,7 @@ type AutoinstallSchemaApt struct {
 	PreserveSourcesList *bool `json:"preserve_sources_list,omitempty" yaml:"preserve_sources_list,omitempty" mapstructure:"preserve_sources_list,omitempty"`
 
 	// Primary corresponds to the JSON schema field "primary".
-	Primary []interface{} `json:"primary,omitempty" yaml:"primary,omitempty" mapstructure:"primary,omitempty"`
+	Primary []any `json:"primary,omitempty" yaml:"primary,omitempty" mapstructure:"primary,omitempty"`
 
 	// Sources corresponds to the JSON schema field "sources".
 	Sources AutoinstallSchemaAptSources `json:"sources,omitempty" yaml:"sources,omitempty" mapstructure:"sources,omitempty"`
@@ -154,7 +157,7 @@ const AutoinstallSchemaAptDisableComponentsElemNonFree AutoinstallSchemaAptDisab
 const AutoinstallSchemaAptDisableComponentsElemRestricted AutoinstallSchemaAptDisableComponentsElem = "restricted"
 const AutoinstallSchemaAptDisableComponentsElemUniverse AutoinstallSchemaAptDisableComponentsElem = "universe"
 
-var enumValues_AutoinstallSchemaAptDisableComponentsElem = []interface{}{
+var enumValues_AutoinstallSchemaAptDisableComponentsElem = []any{
 	"universe",
 	"multiverse",
 	"restricted",
@@ -208,7 +211,7 @@ const AutoinstallSchemaAptFallbackAbort AutoinstallSchemaAptFallback = "abort"
 const AutoinstallSchemaAptFallbackContinueAnyway AutoinstallSchemaAptFallback = "continue-anyway"
 const AutoinstallSchemaAptFallbackOfflineInstall AutoinstallSchemaAptFallback = "offline-install"
 
-var enumValues_AutoinstallSchemaAptFallback = []interface{}{
+var enumValues_AutoinstallSchemaAptFallback = []any{
 	"abort",
 	"continue-anyway",
 	"offline-install",
@@ -269,7 +272,7 @@ type AutoinstallSchemaAptMirrorSelectionPrimaryElem_1 struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -287,7 +290,7 @@ func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalJSON(value [
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -316,7 +319,7 @@ type AutoinstallSchemaAptPreferencesElem struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaAptPreferencesElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -340,7 +343,7 @@ func (j *AutoinstallSchemaAptPreferencesElem) UnmarshalYAML(value *yaml.Node) er
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaAptPreferencesElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -362,7 +365,7 @@ func (j *AutoinstallSchemaAptPreferencesElem) UnmarshalJSON(value []byte) error 
 	return nil
 }
 
-type AutoinstallSchemaAptSources map[string]interface{}
+type AutoinstallSchemaAptSources map[string]any
 
 type AutoinstallSchemaCodecs struct {
 	// Install corresponds to the JSON schema field "install".
@@ -390,7 +393,7 @@ type AutoinstallSchemaIdentity struct {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaIdentity) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -414,7 +417,7 @@ func (j *AutoinstallSchemaIdentity) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaIdentity) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -453,7 +456,7 @@ type AutoinstallSchemaKernelCrashDumpsEnabled *bool
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -471,7 +474,7 @@ func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -502,7 +505,7 @@ type AutoinstallSchemaKeyboardToggle *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaKeyboard) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -520,7 +523,7 @@ func (j *AutoinstallSchemaKeyboard) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaKeyboard) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -538,12 +541,12 @@ func (j *AutoinstallSchemaKeyboard) UnmarshalYAML(value *yaml.Node) error {
 
 type AutoinstallSchemaOem struct {
 	// Install corresponds to the JSON schema field "install".
-	Install interface{} `json:"install" yaml:"install" mapstructure:"install"`
+	Install any `json:"install" yaml:"install" mapstructure:"install"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaOem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -561,7 +564,7 @@ func (j *AutoinstallSchemaOem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaOem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -591,7 +594,7 @@ type AutoinstallSchemaReporting map[string]struct {
 	// Type corresponds to the JSON schema field "type".
 	Type string `json:"type" yaml:"type" mapstructure:"type"`
 
-	AdditionalProperties interface{} `mapstructure:",remain"`
+	AdditionalProperties any `mapstructure:",remain"`
 }
 
 type AutoinstallSchemaShutdown string
@@ -599,7 +602,7 @@ type AutoinstallSchemaShutdown string
 const AutoinstallSchemaShutdownPoweroff AutoinstallSchemaShutdown = "poweroff"
 const AutoinstallSchemaShutdownReboot AutoinstallSchemaShutdown = "reboot"
 
-var enumValues_AutoinstallSchemaShutdown = []interface{}{
+var enumValues_AutoinstallSchemaShutdown = []any{
 	"reboot",
 	"poweroff",
 }
@@ -657,7 +660,7 @@ type AutoinstallSchemaSnapsElem struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaSnapsElem) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -675,7 +678,7 @@ func (j *AutoinstallSchemaSnapsElem) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchemaSnapsElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -710,7 +713,7 @@ type AutoinstallSchemaSsh struct {
 	InstallServer *bool `json:"install-server,omitempty" yaml:"install-server,omitempty" mapstructure:"install-server,omitempty"`
 }
 
-type AutoinstallSchemaStorage map[string]interface{}
+type AutoinstallSchemaStorage map[string]any
 
 // Compatibility only - use ubuntu-pro instead
 type AutoinstallSchemaUbuntuAdvantage struct {
@@ -818,7 +821,7 @@ type AutoinstallSchemaUpdates string
 const AutoinstallSchemaUpdatesAll AutoinstallSchemaUpdates = "all"
 const AutoinstallSchemaUpdatesSecurity AutoinstallSchemaUpdates = "security"
 
-var enumValues_AutoinstallSchemaUpdates = []interface{}{
+var enumValues_AutoinstallSchemaUpdates = []any{
 	"security",
 	"all",
 }
@@ -863,7 +866,7 @@ func (j *AutoinstallSchemaUpdates) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type AutoinstallSchemaUserData map[string]interface{}
+type AutoinstallSchemaUserData map[string]any
 
 type AutoinstallSchemaZdevsElem struct {
 	// Enabled corresponds to the JSON schema field "enabled".
@@ -875,7 +878,7 @@ type AutoinstallSchemaZdevsElem struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchema) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -907,7 +910,7 @@ func (j *AutoinstallSchema) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AutoinstallSchema) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}

@@ -2,10 +2,13 @@
 
 package test
 
-import "encoding/json"
-import "errors"
-import "fmt"
-import yaml "gopkg.in/yaml.v3"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	yaml "gopkg.in/yaml.v3"
+)
 
 // object with anyOf properties as root
 type AnyOf3 struct {
@@ -13,7 +16,7 @@ type AnyOf3 struct {
 	Bar *float64 `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []interface{} `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []any `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
 	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
@@ -26,7 +29,7 @@ type AnyOf3_0 struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf3_0) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -44,7 +47,7 @@ func (j *AnyOf3_0) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf3_0) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -67,7 +70,7 @@ type AnyOf3_1 struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf3_1) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -85,7 +88,7 @@ func (j *AnyOf3_1) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf3_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
@@ -103,7 +106,7 @@ func (j *AnyOf3_1) UnmarshalYAML(value *yaml.Node) error {
 
 type AnyOf3_2 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []interface{} `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []any `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -130,7 +133,7 @@ func (j *AnyOf3_2) UnmarshalYAML(value *yaml.Node) error {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf3) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
@@ -161,7 +164,7 @@ func (j *AnyOf3) UnmarshalJSON(value []byte) error {
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *AnyOf3) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
