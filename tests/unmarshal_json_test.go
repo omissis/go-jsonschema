@@ -85,8 +85,8 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 					t,
 					&testAnyOf.AnyOf1{
 						Configurations: []testAnyOf.AnyOf1ConfigurationsElem{
-							{Foo: "hello"},
-							{Bar: 2.2},
+							{Foo: ptr("hello")},
+							{Bar: ptr(2.2)},
 							{Baz: ptr(true)},
 						},
 						Flags: "hello",
@@ -115,8 +115,8 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 					t,
 					&testAnyOf.AnyOf1{
 						Configurations: []testAnyOf.AnyOf1ConfigurationsElem{
-							{Foo: "ciao"},
-							{Bar: 200.0},
+							{Foo: ptr("ciao")},
+							{Bar: ptr(200.0)},
 						},
 						Flags: true,
 					},
@@ -145,8 +145,8 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 					t,
 					&testAnyOf.AnyOf2{
 						Configurations: []testAnyOf.AnyOf2ConfigurationsElem{
-							{Foo: "ciao"},
-							{Bar: 2.0},
+							{Foo: ptr("ciao")},
+							{Bar: ptr(2.0)},
 							{Baz: ptr(false)},
 						},
 					},
@@ -162,7 +162,7 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 				assert.Equal(
 					t,
 					&testAnyOf.AnyOf3{
-						Foo: "ciao",
+						Foo: ptr("ciao"),
 					},
 					target,
 				)
@@ -176,7 +176,7 @@ func TestJsonUmarshalAnyOf(t *testing.T) {
 				assert.Equal(
 					t,
 					&testAnyOf.AnyOf3{
-						Bar: 2.0,
+						Bar: ptr(2.0),
 					},
 					target,
 				)
