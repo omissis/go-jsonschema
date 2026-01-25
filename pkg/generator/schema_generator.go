@@ -813,19 +813,19 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	var tags strings.Builder
+	var b strings.Builder
 
 	if isRequired || g.DisableOmitempty() {
 		for _, tag := range g.config.Tags {
-			tags.WriteString(fmt.Sprintf(`%s:"%s" `, tag, name))
+			fmt.Fprintf(&b, `%s:"%s" `, tag, name)
 		}
 	} else {
 		for _, tag := range g.config.Tags {
-			tags.WriteString(fmt.Sprintf(`%s:"%s,omitempty" `, tag, name))
+			fmt.Fprintf(&b, `%s:"%s,omitempty" `, tag, name)
 		}
 	}
 
-	structField.Tags = strings.TrimSpace(tags.String())
+	structField.Tags = strings.TrimSpace(b.String())
 
 	if structField.Comment == "" {
 		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",

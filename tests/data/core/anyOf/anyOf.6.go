@@ -152,16 +152,27 @@ func (j *Bar2ContentElem) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type Baz2ContentElem_2 = Baz2
+
 type Baz2ContentElem_0 = Foo2
+
 type AnyOf6Qux2Elem_2 = Baz2
+
 type AnyOf6Qux2Elem_1 = Bar2
+
 type AnyOf6Qux2Elem_0 = Foo2
+
 type Foo2ContentElem_0 = Foo2
+
 type Foo2ContentElem_1 = Bar2
+
 type Foo2ContentElem_2 = Baz2
+
 type Baz2ContentElem_1 = Bar2
+
 type Bar2ContentElem_2 = Baz2
+
 type Bar2ContentElem_1 = Bar2
+
 type Bar2ContentElem_0 = Foo2
 
 // UnmarshalJSON implements json.Unmarshaler.

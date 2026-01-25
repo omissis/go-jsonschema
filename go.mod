@@ -1,17 +1,17 @@
 module github.com/atombender/go-jsonschema
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.8
+toolchain go1.24.12
 
 require (
 	dario.cat/mergo v1.0.2
-	github.com/goccy/go-yaml v1.18.0
+	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/sanity-io/litter v1.5.8
 	github.com/sosodev/duration v1.3.1
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 )
 

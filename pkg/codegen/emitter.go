@@ -42,9 +42,9 @@ func (e *Emitter) Comment(s string) {
 		limit := max(e.maxLineLength-e.indent, 0)
 
 		//nolint:gosec // limit is guarded against negative values
-		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
+		lines := strings.SplitSeq(wordwrap.WrapString(s, uint(limit)), "\n")
 
-		for _, line := range lines {
+		for line := range lines {
 			e.Printlnf("// %s", line)
 		}
 	}
@@ -56,9 +56,9 @@ func (e *Emitter) Commentf(s string, args ...any) {
 		limit := max(e.maxLineLength-e.indent, 0)
 
 		//nolint:gosec // limit is guarded against negative values
-		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
+		lines := strings.SplitSeq(wordwrap.WrapString(s, uint(limit)), "\n")
 
-		for _, line := range lines {
+		for line := range lines {
 			e.Printlnf("// %s", line)
 		}
 	}

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Fetch all tags
         run: git fetch --force --tags
       - name: Cleanup pre-release tags
@@ -22,7 +22,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: ^1.23.8
+          go-version: ^1.24.12
       - name: Setup workspace
         run: cp go.work.dist go.work
       - name: Log in to Docker Hub
@@ -35,8 +35,8 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: 2.9.0
+          version: 2.13.3
           args: release --verbose --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GO_VERSION: 1.23.8
+          GO_VERSION: 1.24.12
