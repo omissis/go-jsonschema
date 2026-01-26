@@ -611,6 +611,16 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 			return ncg, nil
 		}
 
+		if pcg, ok := cg.(*codegen.PointerType); ok {
+			if ncg, ok := pcg.Type.(codegen.NamedType); ok {
+				for _, imprt := range ncg.Package.Imports {
+					g.output.file.Package.AddImport(imprt.QualifiedName, "")
+				}
+
+				return pcg, nil
+			}
+		}
+
 		if dcg, ok := cg.(codegen.DurationType); ok {
 			g.output.file.Package.AddImport("time", "")
 
@@ -1060,6 +1070,16 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 				}
 
 				return ncg, nil
+			}
+
+			if pcg, ok := cg.(*codegen.PointerType); ok {
+				if ncg, ok := pcg.Type.(codegen.NamedType); ok {
+					for _, imprt := range ncg.Package.Imports {
+						g.output.file.Package.AddImport(imprt.QualifiedName, "")
+					}
+
+					return pcg, nil
+				}
 			}
 
 			if dcg, ok := cg.(codegen.DurationType); ok {
