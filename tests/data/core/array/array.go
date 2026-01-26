@@ -22,6 +22,10 @@ type Array struct {
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
 	MyNullArray []interface{} `json:"myNullArray,omitempty" yaml:"myNullArray,omitempty" mapstructure:"myNullArray,omitempty"`
 
+	// MyNullableUntypedArray corresponds to the JSON schema field
+	// "myNullableUntypedArray".
+	MyNullableUntypedArray *ArrayMyNullableUntypedArray `json:"myNullableUntypedArray,omitempty" yaml:"myNullableUntypedArray,omitempty" mapstructure:"myNullableUntypedArray,omitempty"`
+
 	// MyNumberArray corresponds to the JSON schema field "myNumberArray".
 	MyNumberArray []float64 `json:"myNumberArray,omitempty" yaml:"myNumberArray,omitempty" mapstructure:"myNumberArray,omitempty"`
 
@@ -31,6 +35,8 @@ type Array struct {
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
 	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
 }
+
+type ArrayMyNullableUntypedArray []interface{}
 
 type ArrayMyObjectArrayElem map[string]interface{}
 

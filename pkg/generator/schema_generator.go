@@ -570,7 +570,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	switch typeName {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
-			return nil, errArrayPropertyItems
+			return codegen.ArrayType{Type: codegen.EmptyInterfaceType{}}, nil
 		}
 
 		elemType, err := g.generateType(t.Items, g.singularScope(scope))

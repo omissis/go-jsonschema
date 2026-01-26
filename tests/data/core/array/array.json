@@ -50,6 +50,9 @@
           "type": "null"
         }
       }
+    },
+    "myNullableUntypedArray": {
+      "type": ["array", "null"]
     }
   }
 }
