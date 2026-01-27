@@ -6,6 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "regexp"
+import "unicode/utf8"
 
 // The details of applications to be deployed.
 type Applications struct {
@@ -376,10 +377,10 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
-	if plain.TargetName != nil && len(*plain.TargetName) < 1 {
+	if plain.TargetName != nil && utf8.RuneCountInString(string(*plain.TargetName)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "targetName", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, string(plain.TargetType)); !matched {
@@ -406,10 +407,10 @@ func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
-	if plain.TargetName != nil && len(*plain.TargetName) < 1 {
+	if plain.TargetName != nil && utf8.RuneCountInString(string(*plain.TargetName)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "targetName", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, string(plain.TargetType)); !matched {
@@ -592,7 +593,7 @@ func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^Major$|^Minor$|^Hotfix$)`, string(plain.RolloutType)); !matched {
@@ -625,7 +626,7 @@ func (j *RolloutMetadata) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^Major$|^Minor$|^Hotfix$)`, string(plain.RolloutType)); !matched {

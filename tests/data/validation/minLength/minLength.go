@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "unicode/utf8"
 
 type MinLength struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
@@ -28,10 +29,10 @@ func (j *MinLength) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if plain.MyNullableString != nil && len(*plain.MyNullableString) < 10 {
+	if plain.MyNullableString != nil && utf8.RuneCountInString(string(*plain.MyNullableString)) < 10 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNullableString", 10)
 	}
-	if len(plain.MyString) < 5 {
+	if utf8.RuneCountInString(string(plain.MyString)) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "myString", 5)
 	}
 	*j = MinLength(plain)
@@ -52,10 +53,10 @@ func (j *MinLength) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if plain.MyNullableString != nil && len(*plain.MyNullableString) < 10 {
+	if plain.MyNullableString != nil && utf8.RuneCountInString(string(*plain.MyNullableString)) < 10 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNullableString", 10)
 	}
-	if len(plain.MyString) < 5 {
+	if utf8.RuneCountInString(string(plain.MyString)) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "myString", 5)
 	}
 	*j = MinLength(plain)
