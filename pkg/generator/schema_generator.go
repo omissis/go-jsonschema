@@ -1004,6 +1004,7 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := g.isTypeNullable(t)
 
@@ -1047,7 +1048,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			if t.IsSubSchemaTypeElem() {
-				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a refactor.
+				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a rework.
 			}
 
 			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
@@ -1092,11 +1093,9 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
-			var theType codegen.Type
+			var theType codegen.Type = codegen.EmptyInterfaceType{}
 
-			if t.Items == nil {
-				theType = codegen.EmptyInterfaceType{}
-			} else {
+			if t.Items != nil {
 				var err error
 
 				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
