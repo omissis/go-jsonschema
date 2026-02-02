@@ -821,21 +821,24 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	var b strings.Builder
-  var omitEmpty string
+	var (
+		tagsBuilder strings.Builder
+		omitEmpty   string
+	)
 
-  if isRequired || g.DisableOmitempty() {
-    omitEmpty = ",omitempty"
+	if isRequired || g.DisableOmitempty() {
+		omitEmpty = ",omitempty"
 	}
 
-  for _, tag := range g.config.Tags {
-    fmt.Fprintf(&b, `%s:"%s%s" `, tag, name, omitEmpty)
-  }
-  for _, tag := range extraTags {
-    fmt.Fprintf(&b, `%s:"%s%s" `, tag, name, omitEmpty)
-  }
+	for _, tag := range g.config.Tags {
+		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
+	}
 
-	structField.Tags = strings.TrimSpace(b.String())
+	for _, tag := range extraTags {
+		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
+	}
+
+	structField.Tags = strings.TrimSpace(tagsBuilder.String())
 
 	if structField.Comment == "" {
 		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
