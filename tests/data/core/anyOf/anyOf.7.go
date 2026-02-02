@@ -88,6 +88,7 @@ func (j *Item) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type AnyOf7BazElem_0 = Item
+
 type Item struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
@@ -140,6 +141,7 @@ func (j *AnyOf7BazElem) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type AnyOf7BarElem_0 = Item
+
 type AnyOf7Foo struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`

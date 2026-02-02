@@ -39,44 +39,38 @@ func (e *Emitter) Indent(n int32) {
 
 func (e *Emitter) Comment(s string) {
 	if s != "" {
-		limit := e.maxLineLength - e.indent
-		if limit < 0 {
-			limit = 0
-		}
+		limit := max(0, e.maxLineLength-e.indent)
 
 		//nolint:gosec // limit is guarded against negative values
-		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
+		lines := strings.SplitSeq(wordwrap.WrapString(s, uint(limit)), "\n")
 
-		for _, line := range lines {
+		for line := range lines {
 			e.Printlnf("// %s", line)
 		}
 	}
 }
 
-func (e *Emitter) Commentf(s string, args ...interface{}) {
+func (e *Emitter) Commentf(s string, args ...any) {
 	s = fmt.Sprintf(s, args...)
 	if s != "" {
-		limit := e.maxLineLength - e.indent
-		if limit < 0 {
-			limit = 0
-		}
+		limit := max(0, e.maxLineLength-e.indent)
 
 		//nolint:gosec // limit is guarded against negative values
-		lines := strings.Split(wordwrap.WrapString(s, uint(limit)), "\n")
+		lines := strings.SplitSeq(wordwrap.WrapString(s, uint(limit)), "\n")
 
-		for _, line := range lines {
+		for line := range lines {
 			e.Printlnf("// %s", line)
 		}
 	}
 }
 
-func (e *Emitter) Printf(format string, args ...interface{}) {
+func (e *Emitter) Printf(format string, args ...any) {
 	e.checkIndent()
 	fmt.Fprintf(&e.sb, format, args...)
 	e.start = false
 }
 
-func (e *Emitter) Printlnf(format string, args ...interface{}) {
+func (e *Emitter) Printlnf(format string, args ...any) {
 	e.Printf(format, args...)
 	e.Newline()
 }

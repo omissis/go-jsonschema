@@ -48,7 +48,7 @@ func FromYAMLFile(fileName string) (*Schema, error) {
 
 func FromYAMLReader(r io.Reader) (*Schema, error) {
 	// Marshal to JSON first because YAML decoder doesn't understand JSON tags.
-	var m map[string]interface{}
+	var m map[string]any
 
 	if err := yaml.NewDecoder(r).Decode(&m); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML: %w", err)

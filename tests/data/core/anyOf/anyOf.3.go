@@ -10,13 +10,13 @@ import yaml "gopkg.in/yaml.v3"
 // object with anyOf properties as root
 type AnyOf3 struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
+	Bar *float64 `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Configurations corresponds to the JSON schema field "configurations".
 	Configurations []interface{} `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
-	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`
+	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
 
 type AnyOf3_0 struct {

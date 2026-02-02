@@ -821,21 +821,21 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	tags := ""
+	var b strings.Builder
+  var omitEmpty string
 
-	if isRequired || g.DisableOmitempty() {
-		for _, tag := range g.config.Tags {
-			tags += fmt.Sprintf(`%s:"%s" `, tag, name)
-		}
-	} else {
-		for _, tag := range g.config.Tags {
-			tags += fmt.Sprintf(`%s:"%s,omitempty" `, tag, name)
-		}
+  if isRequired || g.DisableOmitempty() {
+    omitEmpty = ",omitempty"
 	}
 
-	tags += strings.Join(extraTags, " ")
+  for _, tag := range g.config.Tags {
+    fmt.Fprintf(&b, `%s:"%s%s" `, tag, name, omitEmpty)
+  }
+  for _, tag := range extraTags {
+    fmt.Fprintf(&b, `%s:"%s%s" `, tag, name, omitEmpty)
+  }
 
-	structField.Tags = strings.TrimSpace(tags)
+	structField.Tags = strings.TrimSpace(b.String())
 
 	if structField.Comment == "" {
 		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
@@ -1361,10 +1361,8 @@ func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
 		return 0, true
 	}
 
-	for _, tt := range t.Type {
-		if tt == schemas.TypeNameNull {
-			return -1, true
-		}
+	if slices.Contains(t.Type, schemas.TypeNameNull) {
+		return -1, true
 	}
 
 	return -1, false

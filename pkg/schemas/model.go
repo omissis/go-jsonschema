@@ -175,7 +175,7 @@ type Type struct {
 	Properties           map[string]*Type `json:"properties,omitempty"`           // Section 5.16.
 	PatternProperties    map[string]*Type `json:"patternProperties,omitempty"`    // Section 5.17.
 	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // Section 5.18.
-	Enum                 []interface{}    `json:"enum,omitempty"`                 // Section 5.20.
+	Enum                 []any            `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
@@ -183,10 +183,10 @@ type Type struct {
 	OneOf []*Type `json:"oneOf,omitempty"` // Section 10.2.1.3.
 	Not   *Type   `json:"not,omitempty"`   // Section 10.2.1.4.
 	// RFC draft-wright-json-schema-validation-00, section 6, 7.
-	Title       string      `json:"title,omitempty"`       // Section 6.1.
-	Description string      `json:"description,omitempty"` // Section 6.1.
-	Default     interface{} `json:"default,omitempty"`     // Section 6.2.
-	Format      string      `json:"format,omitempty"`      // Section 7.
+	Title       string `json:"title,omitempty"`       // Section 6.1.
+	Description string `json:"description,omitempty"` // Section 6.1.
+	Default     any    `json:"default,omitempty"`     // Section 6.2.
+	Format      string `json:"format,omitempty"`      // Section 7.
 	// RFC draft-wright-json-schema-hyperschema-00, section 4.
 	Media          *Type  `json:"media,omitempty"`          // Section 4.3.
 	BinaryEncoding string `json:"binaryEncoding,omitempty"` // Section 4.3.
@@ -304,6 +304,7 @@ func AnyOf(types []*Type, baseType *Type) (*Type, error) {
 		return nil, err
 	}
 
+	typ.Required = mergeRequiredUnion(types, baseType)
 	typ.subSchemaType = SubSchemaTypeAnyOf
 	typ.subSchemasCount = len(types)
 
@@ -337,6 +338,29 @@ func MergeTypes(types []*Type, baseType *Type) (*Type, error) {
 	}
 
 	return result, nil
+}
+
+func mergeRequiredUnion(types []*Type, baseType *Type) []string {
+	required := make([]string, len(baseType.Required))
+	copy(required, baseType.Required)
+
+	for _, r := range types[0].Required {
+		valid := true
+
+		for _, t := range types {
+			if !slices.Contains(t.Required, r) {
+				valid = false
+
+				break
+			}
+		}
+
+		if valid && !slices.Contains(required, r) {
+			required = append(required, r) //nolint:makezero
+		}
+	}
+
+	return required
 }
 
 func updateAllRefsValues(structValue *reflect.Value, refPath string) error {
@@ -393,7 +417,7 @@ func updateAllRefsValues(structValue *reflect.Value, refPath string) error {
 type typeListTransformer struct{}
 
 func (t typeListTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
-	if typ == reflect.TypeOf(TypeList{}) {
+	if typ == reflect.TypeFor[TypeList]() {
 		return func(dst, src reflect.Value) error {
 			return nil
 		}
