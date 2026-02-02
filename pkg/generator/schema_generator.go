@@ -787,6 +787,8 @@ func (g *schemaGenerator) addStructField(
 
 	fieldName := g.caser.Identifierize(name)
 
+	var extraTags []string
+
 	if ext := prop.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -795,7 +797,13 @@ func (g *schemaGenerator) addStructField(
 		if ext.Identifier != nil {
 			fieldName = *ext.Identifier
 		}
+
+		for tagKey, tagVal := range ext.ExtraTags {
+			extraTags = append(extraTags, fmt.Sprintf(`%s:"%s"`, tagKey, tagVal))
+		}
 	}
+
+	slices.Sort(extraTags)
 
 	if count, ok := uniqueNames[fieldName]; ok {
 		uniqueNames[fieldName] = count + 1
@@ -813,19 +821,22 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	var b strings.Builder
+	var tagsBuilder strings.Builder
 
+	omitEmpty := ",omitempty"
 	if isRequired || g.DisableOmitempty() {
-		for _, tag := range g.config.Tags {
-			fmt.Fprintf(&b, `%s:"%s" `, tag, name)
-		}
-	} else {
-		for _, tag := range g.config.Tags {
-			fmt.Fprintf(&b, `%s:"%s,omitempty" `, tag, name)
-		}
+		omitEmpty = ""
 	}
 
-	structField.Tags = strings.TrimSpace(b.String())
+	for _, tag := range g.config.Tags {
+		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
+	}
+
+	for _, tag := range extraTags {
+		fmt.Fprintf(&tagsBuilder, `%s `, tag)
+	}
+
+	structField.Tags = strings.TrimSpace(tagsBuilder.String())
 
 	if structField.Comment == "" {
 		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",

@@ -427,8 +427,9 @@ func (t typeListTransformer) Transformer(typ reflect.Type) func(dst, src reflect
 }
 
 type GoJSONSchemaExtension struct {
-	Type       *string  `json:"type,omitempty"`
-	Identifier *string  `json:"identifier,omitempty"`
-	Nillable   bool     `json:"nillable,omitempty"`
-	Imports    []string `json:"imports,omitempty"`
+	Type       *string           `json:"type,omitempty"`
+	Identifier *string           `json:"identifier,omitempty"`
+	Nillable   bool              `json:"nillable,omitempty"`
+	Imports    []string          `json:"imports,omitempty"`
+	ExtraTags  map[string]string `json:"extraTags,omitempty"`
 }
