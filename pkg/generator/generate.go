@@ -21,7 +21,6 @@ const (
 
 var (
 	errSchemaHasNoRoot                = errors.New("schema has no root")
-	errArrayPropertyItems             = errors.New("array property must have 'items' set to a type")
 	errEnumArrCannotBeEmpty           = errors.New("enum array cannot be empty")
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
