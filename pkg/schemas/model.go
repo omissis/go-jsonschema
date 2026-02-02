@@ -177,6 +177,7 @@ type Type struct {
 	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // Section 5.18.
 	Enum                 []any            `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
+	Const                any              `json:"const,omitempty"`
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
 	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
