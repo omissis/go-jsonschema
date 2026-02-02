@@ -408,7 +408,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	}
 
 	if v.minLength != 0 {
-		out.Printlnf(`if %slen(%s%s) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
+		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", "%s", %d)`, fieldName, v.minLength)
 		out.Indent(-1)
@@ -416,7 +416,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	}
 
 	if v.maxLength != 0 {
-		out.Printlnf(`if %slen(%s%s) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
+		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", "%s", %d)`, fieldName, v.maxLength)
 		out.Indent(-1)

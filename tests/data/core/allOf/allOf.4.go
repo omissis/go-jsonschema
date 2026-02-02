@@ -6,6 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "unicode/utf8"
 
 type AllOf4 []AllOf4Elem
 
@@ -50,7 +51,7 @@ func (j *AllOf4Elem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.LinkKind) < 1 {
+	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
 	}
 	*j = AllOf4Elem(plain)
@@ -80,7 +81,7 @@ func (j *AllOf4Elem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.LinkKind) < 1 {
+	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
 	}
 	*j = AllOf4Elem(plain)
@@ -120,7 +121,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkendFrom(plain)
@@ -141,7 +142,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkendFrom(plain)
@@ -267,7 +268,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkpathFrom(plain)
@@ -288,7 +289,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkpathFrom(plain)
@@ -463,7 +464,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if plain.ContextId != nil && len(*plain.ContextId) < 1 {
+	if plain.ContextId != nil && utf8.RuneCountInString(string(*plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkrelationTarget(plain)
@@ -477,7 +478,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if plain.ContextId != nil && len(*plain.ContextId) < 1 {
+	if plain.ContextId != nil && utf8.RuneCountInString(string(*plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkrelationTarget(plain)
@@ -504,7 +505,7 @@ func (j *Embeddedlinkrelation) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.LinkKind) < 1 {
+	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
 	}
 	*j = Embeddedlinkrelation(plain)
@@ -531,7 +532,7 @@ func (j *Embeddedlinkrelation) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.LinkKind) < 1 {
+	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
 	}
 	*j = Embeddedlinkrelation(plain)

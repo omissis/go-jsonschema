@@ -525,14 +525,16 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport("errors", "")
 		}
 
+		if sv, ok := v.(*stringValidator); ok && (sv.minLength != 0 || sv.maxLength != 0) {
+			g.output.file.Package.AddImport("unicode/utf8", "")
+		}
+
 		for _, pkg := range v.desc().imports {
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
 		}
 
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
-
-			break
 		}
 	}
 

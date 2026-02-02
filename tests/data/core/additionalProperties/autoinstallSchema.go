@@ -9,6 +9,7 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "regexp"
 import "strings"
+import "unicode/utf8"
 
 type AutoinstallSchema struct {
 	// ActiveDirectory corresponds to the JSON schema field "active-directory".
@@ -731,10 +732,10 @@ func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field %s pattern match: must match %s", "Token", `^C[1-9A-HJ-NP-Za-km-z]+$`)
 		}
 	}
-	if plain.Token != nil && len(*plain.Token) < 24 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) < 24 {
 		return fmt.Errorf("field %s length: must be >= %d", "token", 24)
 	}
-	if plain.Token != nil && len(*plain.Token) > 30 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) > 30 {
 		return fmt.Errorf("field %s length: must be <= %d", "token", 30)
 	}
 	*j = AutoinstallSchemaUbuntuAdvantage(plain)
@@ -753,10 +754,10 @@ func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalYAML(value *yaml.Node) error
 			return fmt.Errorf("field %s pattern match: must match %s", "Token", `^C[1-9A-HJ-NP-Za-km-z]+$`)
 		}
 	}
-	if plain.Token != nil && len(*plain.Token) < 24 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) < 24 {
 		return fmt.Errorf("field %s length: must be >= %d", "token", 24)
 	}
-	if plain.Token != nil && len(*plain.Token) > 30 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) > 30 {
 		return fmt.Errorf("field %s length: must be <= %d", "token", 30)
 	}
 	*j = AutoinstallSchemaUbuntuAdvantage(plain)
@@ -781,10 +782,10 @@ func (j *AutoinstallSchemaUbuntuPro) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field %s pattern match: must match %s", "Token", `^C[1-9A-HJ-NP-Za-km-z]+$`)
 		}
 	}
-	if plain.Token != nil && len(*plain.Token) < 24 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) < 24 {
 		return fmt.Errorf("field %s length: must be >= %d", "token", 24)
 	}
-	if plain.Token != nil && len(*plain.Token) > 30 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) > 30 {
 		return fmt.Errorf("field %s length: must be <= %d", "token", 30)
 	}
 	*j = AutoinstallSchemaUbuntuPro(plain)
@@ -803,10 +804,10 @@ func (j *AutoinstallSchemaUbuntuPro) UnmarshalYAML(value *yaml.Node) error {
 			return fmt.Errorf("field %s pattern match: must match %s", "Token", `^C[1-9A-HJ-NP-Za-km-z]+$`)
 		}
 	}
-	if plain.Token != nil && len(*plain.Token) < 24 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) < 24 {
 		return fmt.Errorf("field %s length: must be >= %d", "token", 24)
 	}
-	if plain.Token != nil && len(*plain.Token) > 30 {
+	if plain.Token != nil && utf8.RuneCountInString(string(*plain.Token)) > 30 {
 		return fmt.Errorf("field %s length: must be <= %d", "token", 30)
 	}
 	*j = AutoinstallSchemaUbuntuPro(plain)
