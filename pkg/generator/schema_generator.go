@@ -821,13 +821,11 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	var (
-		tagsBuilder strings.Builder
-		omitEmpty   string
-	)
+	var tagsBuilder strings.Builder
 
+	omitEmpty := ",omitempty"
 	if isRequired || g.DisableOmitempty() {
-		omitEmpty = ",omitempty"
+		omitEmpty = ""
 	}
 
 	for _, tag := range g.config.Tags {
@@ -835,7 +833,7 @@ func (g *schemaGenerator) addStructField(
 	}
 
 	for _, tag := range extraTags {
-		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
+		fmt.Fprintf(&tagsBuilder, `%s `, tag)
 	}
 
 	structField.Tags = strings.TrimSpace(tagsBuilder.String())
