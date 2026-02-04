@@ -216,6 +216,10 @@ type Type struct {
 	Dereferenced bool `json:"-"` // Marks that his type has been dereferenced.
 }
 
+func (value *Type) IsEmptyObject() bool {
+	return len(value.Properties) == 0 && value.AdditionalProperties == nil
+}
+
 func (value *Type) SetSubSchemaType(sst SubSchemaType) {
 	value.subSchemaType = sst
 }
