@@ -231,8 +231,73 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
 	}
 
+	// Special handling for pointer-to-integer types (e.g., *int or NamedType wrapping *int).
+	// We need to create a temp variable and take its address.
+	if v.isPointerToInteger() {
+		if f, ok := v.defaultValue.(float64); ok {
+			intVal := int(f)
+			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+			tmpEmitter.Printlnf("defaultInt := %d", intVal)
+			tmpEmitter.Printlnf(`%s = &defaultInt`, getPlainName(v.fieldName))
+
+			return tmpEmitter.String(), nil
+		}
+	}
+
 	// Fallback to sdump in case we couldn't dump it properly.
-	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue)), nil
+	// Special handling for integer types: JSON numbers are float64, but we need int literals.
+	defaultValue := v.defaultValue
+	if v.isIntegerType() {
+		if f, ok := v.defaultValue.(float64); ok {
+			defaultValue = int(f)
+		}
+	}
+
+	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(defaultValue)), nil
+}
+
+func (v *defaultValidator) isIntegerType() bool {
+	return isIntegerType(v.defaultValueType)
+}
+
+func isIntegerType(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.PointerType:
+		return isIntegerType(tt.Type)
+	case *codegen.PointerType:
+		return isIntegerType(tt.Type)
+	case codegen.NamedType:
+		return isIntegerType(tt.Decl.Type)
+	case *codegen.NamedType:
+		return isIntegerType(tt.Decl.Type)
+	case codegen.PrimitiveType:
+		return tt.Type == "int"
+	}
+
+	return false
+}
+
+func (v *defaultValidator) isPointerToInteger() bool {
+	return isPointerToInteger(v.defaultValueType)
+}
+
+func isPointerToInteger(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.NamedType:
+		return isPointerToInteger(tt.Decl.Type)
+	case *codegen.NamedType:
+		return isPointerToInteger(tt.Decl.Type)
+	case codegen.PointerType:
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
+			return pt.Type == "int"
+		}
+	case *codegen.PointerType:
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
+			return pt.Type == "int"
+		}
+	}
+
+	return false
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
