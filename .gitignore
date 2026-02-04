@@ -5,6 +5,7 @@ bin/
 coverage.out
 coverage/
 go.work
+go.work.sum
 mise.local.toml
 mise.toml.tmp
 dist/
