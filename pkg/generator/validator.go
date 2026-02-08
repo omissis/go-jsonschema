@@ -154,6 +154,7 @@ type defaultValidator struct {
 	fieldName        string
 	defaultValueType codegen.Type
 	defaultValue     any
+	isPointer        bool
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
@@ -186,7 +187,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 
 				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), b.String())
 
-				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
+				return v.assignDefault(out, defaultValue), nil
 			}
 		}
 
@@ -221,18 +222,50 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 			)
 			tmpEmitter.Indent(-1)
 			tmpEmitter.Printlnf("}")
-			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+
+			if v.isPointer {
+				tmpEmitter.Printlnf(`%s.%s = &%s`, varNamePlainStruct, v.fieldName, defaultValue)
+			} else {
+				tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+			}
 
 			return tmpEmitter.String(), nil
 		}
 	}
 
 	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
-		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
+		return v.assignDefault(out, defaultValue), nil
 	}
 
 	// Fallback to sdump in case we couldn't dump it properly.
-	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue)), nil
+	return v.assignDefault(out, litter.Sdump(v.defaultValue)), nil
+}
+
+// assignDefault generates the assignment of a default value to the field.
+// When the field is a pointer type, it creates a typed temporary variable
+// and assigns its address to the field.
+func (v *defaultValidator) assignDefault(out *codegen.Emitter, valueExpr string) string {
+	if !v.isPointer {
+		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), valueExpr)
+	}
+
+	tmpVarName := "default" + v.fieldName
+	tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+	// Use a var declaration with explicit type so that untyped constants
+	// (e.g. 42.0 from JSON) are correctly converted to the target type.
+	typeEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+	if err := v.defaultValueType.Generate(typeEmitter); err == nil {
+		typeName := strings.TrimSpace(typeEmitter.String())
+		tmpEmitter.Printlnf("var %s %s = %s", tmpVarName, typeName, valueExpr)
+	} else {
+		tmpEmitter.Printlnf("%s := %s", tmpVarName, valueExpr)
+	}
+
+	tmpEmitter.Printlnf("%s = &%s", getPlainName(v.fieldName), tmpVarName)
+
+	return strings.TrimRight(tmpEmitter.String(), "\n")
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {

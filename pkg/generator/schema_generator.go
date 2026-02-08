@@ -333,11 +333,20 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
 				}
 
+				dvType := f.Type
+				dvIsPointer := false
+
+				if pt, ok := f.Type.(*codegen.PointerType); ok {
+					dvType = pt.Type
+					dvIsPointer = true
+				}
+
 				validators = append(validators, &defaultValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
-					defaultValueType: f.Type,
+					defaultValueType: dvType,
 					defaultValue:     f.DefaultValue,
+					isPointer:        dvIsPointer,
 				})
 			}
 
@@ -891,14 +900,33 @@ func (g *schemaGenerator) addStructField(
 		return fmt.Errorf("could not generate type for field %q: %w", name, err)
 	}
 
+	// pointerOverride is nil (not set), true (force pointer), or false (force non-pointer).
+	var pointerOverride *bool
+	if ext := prop.GoJSONSchemaExtension; ext != nil {
+		pointerOverride = ext.Pointer
+	}
+
 	switch {
 	case prop.Default != nil:
 		structField.DefaultValue = g.defaultPropertyValue(prop)
 
+		if pointerOverride != nil && *pointerOverride && !structField.Type.IsNillable() {
+			structField.Type = codegen.WrapTypeInPointer(structField.Type)
+		}
+
 	default:
-		if isRequired {
+		switch {
+		case pointerOverride != nil && !*pointerOverride:
+			if isRequired {
+				structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+			}
+		case pointerOverride != nil && *pointerOverride:
+			if !structField.Type.IsNillable() {
+				structField.Type = codegen.WrapTypeInPointer(structField.Type)
+			}
+		case isRequired:
 			structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
-		} else if !structField.Type.IsNillable() {
+		case !structField.Type.IsNillable():
 			structField.Type = codegen.WrapTypeInPointer(structField.Type)
 		}
 	}
