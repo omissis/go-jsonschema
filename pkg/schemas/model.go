@@ -214,6 +214,9 @@ type Type struct {
 
 	// Flags.
 	Dereferenced bool `json:"-"` // Marks that his type has been dereferenced.
+
+	// Custom extensions (e.g., x-go-extra-tags)
+	Extensions map[string]any `json:"-"`
 }
 
 func (value *Type) SetSubSchemaType(sst SubSchemaType) {
@@ -281,6 +284,21 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 
 	if legacyObj.Dependencies != nil && obj.DependentSchemas == nil {
 		obj.DependentSchemas = legacyObj.Dependencies
+	}
+
+	// Parse extensions (e.g., x-go-extra-tags)
+
+	var extMap map[string]any
+	if err := json.Unmarshal(raw, &extMap); err == nil {
+		extensions := make(map[string]any)
+
+		for k, v := range extMap {
+			if strings.HasPrefix(k, "x-") {
+				extensions[k] = v
+			}
+		}
+
+		obj.Extensions = extensions
 	}
 
 	*value = Type(obj)

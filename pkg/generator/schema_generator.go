@@ -873,6 +873,13 @@ func (g *schemaGenerator) addStructField(
 		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
 	}
 
+	// Extract tags from 'x-go-tags' property value
+	if prop.Extensions != nil {
+		if xGoExtraTags, ok := prop.Extensions["x-go-extra-tags"].(string); ok && xGoExtraTags != "" {
+			extraTags = append(extraTags, xGoExtraTags)
+		}
+	}
+
 	for _, tag := range extraTags {
 		fmt.Fprintf(&tagsBuilder, `%s `, tag)
 	}

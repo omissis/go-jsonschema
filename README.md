@@ -174,6 +174,40 @@ only specific validations remain to be fully implemented.
     * [ ] JSON pointers
     * [ ] Regex
 
+### Extensions
+
+go-jsonschema supports custom extensions in JSON Schema definitions, allowing you to influence the generated Go code with additional metadata.
+
+#### Supported Extensions
+
+- [x] `x-go-extra-tags`: Add custom struct tags to generated fields. For example:
+
+  ```json
+  {
+    "type": "string",
+    "x-go-extra-tags": "env:'SERVER_URL' default:':8080'"
+  }
+  ```
+  This will append the specified tags to the generated Go struct field.
+
+- [x] `goJSONSchema`: Use the `goJSONSchema` extension to specify a custom Go type, identifier, nillability, imports, or extra tags for a field. Example:
+
+  ```json
+  {
+    "type": "string",
+    "goJSONSchema": {
+      "type": "MyCustomType",
+      "identifier": "CustomField",
+      "nillable": true,
+      "imports": ["github.com/example/custompkg"],
+      "extraTags": {"xml": "custom"}
+    }
+  }
+  ```
+  This will generate a field using `MyCustomType`, with the specified identifier, nillability, imports, and extra tags.
+
+Extensions are loaded automatically from schema properties prefixed with `x-` or from the `goJSONSchema` property.
+
 ## License
 
 MIT license. See `LICENSE` file.
