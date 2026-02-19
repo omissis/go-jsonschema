@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "intWithDefault": {
+      "type": "integer",
+      "default": 42,
+      "goJSONSchema": {
+        "pointer": true
+      }
+    },
+    "boolWithDefault": {
+      "type": "boolean",
+      "default": true,
+      "goJSONSchema": {
+        "pointer": true
+      }
+    },
+    "stringWithDefault": {
+      "type": "string",
+      "default": "hello",
+      "goJSONSchema": {
+        "pointer": true
+      }
+    },
+    "durationWithDefault": {
+      "type": "string",
+      "format": "duration",
+      "default": "PT20S",
+      "goJSONSchema": {
+        "pointer": true
+      }
+    },
+    "sliceWithDefault": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["a", "b"],
+      "goJSONSchema": {
+        "pointer": true
+      }
+    },
+    "requiredIntPointer": {
+      "type": "integer",
+      "goJSONSchema": {
+        "pointer": true
+      }
+    },
+    "optionalIntNonPointer": {
+      "type": "integer",
+      "goJSONSchema": {
+        "pointer": false
+      }
+    },
+    "optionalStringNonPointer": {
+      "type": "string",
+      "goJSONSchema": {
+        "pointer": false
+      }
+    },
+    "requiredIntNonPointer": {
+      "type": "integer",
+      "goJSONSchema": {
+        "pointer": false
+      }
+    },
+    "normalDefault": {
+      "type": "string",
+      "default": "world"
+    },
+    "normalOptional": {
+      "type": "string"
+    }
+  },
+  "required": ["requiredIntPointer", "requiredIntNonPointer"]
+}
