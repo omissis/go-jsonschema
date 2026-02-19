@@ -24,18 +24,18 @@ archives:
 checksum:
   name_template: checksums.txt
 snapshot:
-  version_template: "{{ incpatch .Version }}-next"
+  version_template: '{{ incpatch .Version }}-next'
 changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
+      - '^docs:'
+      - '^test:'
 release:
   github:
     owner: omissis
     name: go-jsonschema
-  name_template: "{{ .Tag }}"
+  name_template: '{{ .Tag }}'
   prerelease: auto
 brews:
   - name: go-jsonschema
