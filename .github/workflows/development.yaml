@@ -34,7 +34,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
       - name: Build binaries
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: 2.13.3
