@@ -2,7 +2,7 @@ module github.com/atombender/go-jsonschema
 
 go 1.24.0
 
-toolchain go1.24.12
+toolchain go1.26.0
 
 require (
 	dario.cat/mergo v1.0.2
