@@ -227,6 +227,15 @@ func TestMinSizeInt(t *testing.T) {
 	testExamples(t, cfg, "./data/minSizedInts")
 }
 
+func TestAliasSingleAllOfAnyOfRefs(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.AliasSingleAllOfAnyOfRefs = true
+
+	testExamples(t, cfg, "./data/aliasSingleAllOfAnyOfRefs")
+}
+
 func TestSchemaExtensions(t *testing.T) {
 	t.Parallel()
 

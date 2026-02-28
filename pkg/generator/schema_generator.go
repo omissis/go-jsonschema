@@ -913,6 +913,18 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return nil, errEmptyInAnyOf
 	}
 
+	if g.config.AliasSingleAllOfAnyOfRefs && len(t.AnyOf) == 1 && t.IsEmptyObject() {
+		childType := t.AnyOf[0]
+		if childType.Ref != "" {
+			resolvedType, err := g.resolveRef(childType)
+			if err == nil {
+				return g.generateTypeInline(resolvedType, scope)
+			} else {
+				g.warner(fmt.Sprintf("Could not resolve ref %q: %v", childType.Ref, err))
+			}
+		}
+	}
+
 	isCycle := false
 	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
@@ -961,6 +973,18 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 }
 
 func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if g.config.AliasSingleAllOfAnyOfRefs && len(t.AllOf) == 1 && t.IsEmptyObject() {
+		subType := t.AllOf[0]
+		if subType.Ref != "" {
+			resolvedType, err := g.resolveRef(subType)
+			if err == nil {
+				return g.generateTypeInline(resolvedType, scope)
+			} else {
+				g.warner(fmt.Sprintf("Could not resolve subtype ref %q: %v", subType.Ref, err))
+			}
+		}
+	}
+
 	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
 	allOfType, err := schemas.AllOf(rAllOf, t)

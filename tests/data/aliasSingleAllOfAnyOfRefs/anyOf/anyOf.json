@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "type": "object",
+  "anyOf": [
+    {
+      "$ref": "#/definitions/Thing"
+    }
+  ],
+  "definitions": {
+    "Thing": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Value"
+          }
+        }
+      }
+    },
+    "Value": {
+      "type": "number"
+    }
+  }
+}
