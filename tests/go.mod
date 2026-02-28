@@ -1,6 +1,6 @@
 module github.com/atombender/go-jsonschema/tests
 
-go 1.24.0
+go 1.25.0
 
 replace (
 	github.com/atombender/go-jsonschema => ../
