@@ -34,7 +34,7 @@ func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type AnyOfRef interface{}
+type AnyOfRef map[string]interface{}
 
 type AnyOfRef_0 struct {
 	// Id corresponds to the JSON schema field "id".
