@@ -1,4 +1,4 @@
-FROM golang:1.24.12-alpine3.21 AS tools
+FROM golang:1.25.7-alpine3.23 AS tools
 
 COPY scripts/tools-golang.sh /tmp/tools-golang.sh
 

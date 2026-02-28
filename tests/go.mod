@@ -1,6 +1,6 @@
 module github.com/atombender/go-jsonschema/tests
 
-go 1.24.0
+go 1.25.0
 
 replace (
 	github.com/atombender/go-jsonschema => ../
@@ -8,8 +8,8 @@ replace (
 )
 
 require (
-	github.com/atombender/go-jsonschema v0.21.0
-	github.com/atombender/go-jsonschema/tests/helpers/other v0.0.0-20260124222439-72a7c5d00183
+	github.com/atombender/go-jsonschema v0.22.0
+	github.com/atombender/go-jsonschema/tests/helpers/other v0.0.0-20260228134922-cb7689305858
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/google/go-cmp v0.7.0
 	github.com/stretchr/testify v1.11.1
@@ -23,5 +23,5 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sanity-io/litter v1.5.8 // indirect
-	github.com/sosodev/duration v1.3.1 // indirect
+	github.com/sosodev/duration v1.4.0 // indirect
 )
