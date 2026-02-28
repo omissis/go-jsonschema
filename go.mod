@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/sanity-io/litter v1.5.8
-	github.com/sosodev/duration v1.3.1
+	github.com/sosodev/duration v1.4.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 )
