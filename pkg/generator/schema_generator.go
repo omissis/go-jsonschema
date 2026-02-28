@@ -864,17 +864,17 @@ func (g *schemaGenerator) addStructField(
 
 	var tagsBuilder strings.Builder
 
-	omitEmpty := ",omitempty"
-	if g.config.PreferOmitzero {
-		omitEmpty = ",omitzero"
-	}
+	omit := ",omitempty,omitzero"
 
-	if isRequired || g.DisableOmitempty() {
-		omitEmpty = ""
+	if g.config.DisableOmitEmpty {
+		omit = strings.Replace(omit, ",omitempty", "", -1)
+	}
+	if g.config.DisableOmitZero {
+		omit = strings.Replace(omit, ",omitzero", "", -1)
 	}
 
 	for _, tag := range g.config.Tags {
-		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
+		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omit)
 	}
 
 	for _, tag := range extraTags {

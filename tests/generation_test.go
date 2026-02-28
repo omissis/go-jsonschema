@@ -39,23 +39,44 @@ func TestCore(t *testing.T) {
 	testExamples(t, basicConfig, "./data/core")
 }
 
-func TestOmitempty(t *testing.T) {
+func TestOmitBoth(t *testing.T) {
 	t.Parallel()
 
 	cfg := basicConfig
-	cfg.DisableOmitempty = true
-
-	testExamples(t, cfg, "./data/disableOmitempty")
-}
-
-func TestPreferOmitzero(t *testing.T) {
-	t.Parallel()
-
-	cfg := basicConfig
-	cfg.PreferOmitzero = true
 	cfg.Tags = []string{"json"}
 
-	testExamples(t, cfg, "./data/preferOmitzero")
+	testExamples(t, cfg, "./data/omitBoth")
+}
+
+func TestOmitEmpty(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"json"}
+	cfg.DisableOmitZero = true
+
+	testExamples(t, cfg, "./data/omitEmpty")
+}
+
+func TestOmitNone(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"json"}
+	cfg.DisableOmitEmpty = true
+	cfg.DisableOmitZero = true
+
+	testExamples(t, cfg, "./data/omitNone")
+}
+
+func TestOmitZero(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"json"}
+	cfg.DisableOmitEmpty = true
+
+	testExamples(t, cfg, "./data/omitZero")
 }
 
 func TestValidation(t *testing.T) {

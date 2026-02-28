@@ -6,49 +6,49 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-type PreferOmitzero struct {
+type OmitNone struct {
 	// MyArray corresponds to the JSON schema field "myArray".
-	MyArray []interface{} `json:"myArray,omitzero"`
+	MyArray []interface{} `json:"myArray"`
 
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
-	MyBoolean *bool `json:"myBoolean,omitzero"`
+	MyBoolean *bool `json:"myBoolean"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
-	MyInteger *int `json:"myInteger,omitzero"`
+	MyInteger *int `json:"myInteger"`
 
 	// MyMap corresponds to the JSON schema field "myMap".
-	MyMap PreferOmitzeroMyMap `json:"myMap,omitzero"`
+	MyMap OmitNoneMyMap `json:"myMap"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull interface{} `json:"myNull,omitzero"`
+	MyNull interface{} `json:"myNull"`
 
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
-	MyNullArray []interface{} `json:"myNullArray,omitzero"`
+	MyNullArray []interface{} `json:"myNullArray"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
-	MyNumber *float64 `json:"myNumber,omitzero"`
+	MyNumber *float64 `json:"myNumber"`
 
 	// MyObjectArray corresponds to the JSON schema field "myObjectArray".
-	MyObjectArray []PreferOmitzeroMyObjectArrayElem `json:"myObjectArray,omitzero"`
+	MyObjectArray []OmitNoneMyObjectArrayElem `json:"myObjectArray"`
 
 	// MyString corresponds to the JSON schema field "myString".
-	MyString *string `json:"myString,omitzero"`
+	MyString *string `json:"myString"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
-	MyStringArray []string `json:"myStringArray,omitzero"`
+	MyStringArray []string `json:"myStringArray"`
 }
 
-type PreferOmitzeroMyMap map[string]float64
+type OmitNoneMyMap map[string]float64
 
-type PreferOmitzeroMyObjectArrayElem map[string]interface{}
+type OmitNoneMyObjectArrayElem map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *PreferOmitzero) UnmarshalJSON(value []byte) error {
+func (j *OmitNone) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	type Plain PreferOmitzero
+	type Plain OmitNone
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
@@ -61,17 +61,17 @@ func (j *PreferOmitzero) UnmarshalJSON(value []byte) error {
 			return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNullArray[%d]", i0))
 		}
 	}
-	*j = PreferOmitzero(plain)
+	*j = OmitNone(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *PreferOmitzero) UnmarshalYAML(value *yaml.Node) error {
+func (j *OmitNone) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	type Plain PreferOmitzero
+	type Plain OmitNone
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
@@ -84,6 +84,6 @@ func (j *PreferOmitzero) UnmarshalYAML(value *yaml.Node) error {
 			return fmt.Errorf("field %s: must be null", fmt.Sprintf("myNullArray[%d]", i0))
 		}
 	}
-	*j = PreferOmitzero(plain)
+	*j = OmitNone(plain)
 	return nil
 }
