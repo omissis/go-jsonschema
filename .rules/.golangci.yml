@@ -28,6 +28,12 @@ linters:
     # disabled
     - noinlineerr
   settings:
+    gosec:
+      excludes:
+        # todo
+        - G704
+        # disabled
+        - G705
     govet:
       settings:
         printf:

@@ -41,7 +41,6 @@ func (e *Emitter) Comment(s string) {
 	if s != "" {
 		limit := max(0, e.maxLineLength-e.indent)
 
-		//nolint:gosec // limit is guarded against negative values
 		lines := strings.SplitSeq(wordwrap.WrapString(s, uint(limit)), "\n")
 
 		for line := range lines {
@@ -55,7 +54,6 @@ func (e *Emitter) Commentf(s string, args ...any) {
 	if s != "" {
 		limit := max(0, e.maxLineLength-e.indent)
 
-		//nolint:gosec // limit is guarded against negative values
 		lines := strings.SplitSeq(wordwrap.WrapString(s, uint(limit)), "\n")
 
 		for line := range lines {
