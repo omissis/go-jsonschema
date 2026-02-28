@@ -1,6 +1,6 @@
 ---
-foo: "example1"
-bar: "example2"
+foo: example1
+bar: example2
 baz:
-  property1: "hello"
+  property1: hello
   property2: 123
