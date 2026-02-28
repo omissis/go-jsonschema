@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/integerDefault",
+  "type": "object",
+  "required": ["programId", "count", "nullableCount"],
+  "properties": {
+    "programId": {
+      "type": "integer",
+      "default": 0
+    },
+    "count": {
+      "type": "integer",
+      "default": 42
+    },
+    "nullableCount": {
+      "type": ["integer", "null"],
+      "default": 0
+    }
+  }
+}
