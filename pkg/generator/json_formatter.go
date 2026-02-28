@@ -172,3 +172,7 @@ func (jf *jsonFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl
 		}
 	}
 }
+
+func (yf *jsonFormatter) getName() string {
+	return "json"
+}

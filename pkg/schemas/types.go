@@ -27,6 +27,9 @@ func CleanNameForSorting(name string) string {
 	if cleanName, found := strings.CutPrefix(name, PrefixEnumValue); found {
 		return cleanName + "_enumValues" // Append a string for sorting properly.
 	}
+	// Preserve existing sort order in tests
+	name = strings.TrimSuffix(name, "_yaml")
+	name = strings.TrimSuffix(name, "_json")
 
 	return name
 }

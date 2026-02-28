@@ -169,3 +169,7 @@ func (yf *yamlFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl
 		}
 	}
 }
+
+func (yf *yamlFormatter) getName() string {
+	return "yaml"
+}
