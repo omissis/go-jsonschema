@@ -22,7 +22,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: ^1.24.13
+          go-version: 1.24.13
       - name: Setup workspace
         run: cp go.work.dist go.work
       - name: Log in to Docker Hub

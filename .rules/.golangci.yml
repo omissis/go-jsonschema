@@ -42,6 +42,10 @@ linters:
             - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
             - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
             - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    modernize:
+      disable:
+        # todo: remove when updating to go1.26
+        - newexpr
   exclusions:
     generated: lax
     presets:
