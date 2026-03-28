@@ -33,6 +33,12 @@ var (
 	}
 )
 
+// func TestDebug(t *testing.T) {
+// 	t.Parallel()
+
+// 	testExampleFile(t, basicConfig, "./data/core/some/file.json")
+// }
+
 func TestCore(t *testing.T) {
 	t.Parallel()
 

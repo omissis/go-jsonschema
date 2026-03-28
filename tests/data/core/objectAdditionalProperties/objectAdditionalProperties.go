@@ -7,7 +7,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type ObjectAdditionalProperties struct {
 	// Foo corresponds to the JSON schema field "foo".
-	Foo ObjectAdditionalPropertiesFoo `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
+	Foo ObjectAdditionalPropertiesFoo `json:"foo,omitempty,omitzero" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
 
 type ObjectAdditionalPropertiesFoo map[string]string

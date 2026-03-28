@@ -113,16 +113,16 @@ func (j *License) UnmarshalJSON(value []byte) error {
 
 type SpecialCharacters struct {
 	// PlainLicenses corresponds to the JSON schema field "plainLicenses".
-	PlainLicenses *SpecialCharactersPlainLicenses `json:"plainLicenses,omitempty" yaml:"plainLicenses,omitempty" mapstructure:"plainLicenses,omitempty"`
+	PlainLicenses *SpecialCharactersPlainLicenses `json:"plainLicenses,omitempty,omitzero" yaml:"plainLicenses,omitempty" mapstructure:"plainLicenses,omitempty"`
 
 	// PlainLicensesRef corresponds to the JSON schema field "plainLicensesRef".
-	PlainLicensesRef []License `json:"plainLicensesRef,omitempty" yaml:"plainLicensesRef,omitempty" mapstructure:"plainLicensesRef,omitempty"`
+	PlainLicensesRef []License `json:"plainLicensesRef,omitempty,omitzero" yaml:"plainLicensesRef,omitempty" mapstructure:"plainLicensesRef,omitempty"`
 
 	// PlusLicenses corresponds to the JSON schema field "plusLicenses".
-	PlusLicenses *SpecialCharactersPlusLicenses `json:"plusLicenses,omitempty" yaml:"plusLicenses,omitempty" mapstructure:"plusLicenses,omitempty"`
+	PlusLicenses *SpecialCharactersPlusLicenses `json:"plusLicenses,omitempty,omitzero" yaml:"plusLicenses,omitempty" mapstructure:"plusLicenses,omitempty"`
 
 	// PlusLicensesRef corresponds to the JSON schema field "plusLicensesRef".
-	PlusLicensesRef []License_1 `json:"plusLicensesRef,omitempty" yaml:"plusLicensesRef,omitempty" mapstructure:"plusLicensesRef,omitempty"`
+	PlusLicensesRef []License_1 `json:"plusLicensesRef,omitempty,omitzero" yaml:"plusLicensesRef,omitempty" mapstructure:"plusLicensesRef,omitempty"`
 }
 
 type SpecialCharactersPlainLicenses string

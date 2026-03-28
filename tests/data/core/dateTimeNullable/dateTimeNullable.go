@@ -6,12 +6,12 @@ import "time"
 
 type DateTimeNullable struct {
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *DateTimeNullableMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+	MyObject *DateTimeNullableMyObject `json:"myObject,omitempty,omitzero" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
 
 type DateTimeNullableMyObject struct {
 	// MyNullableDateTime corresponds to the JSON schema field "myNullableDateTime".
-	MyNullableDateTime DateTimeNullableMyObjectMyNullableDateTime `json:"myNullableDateTime,omitempty" yaml:"myNullableDateTime,omitempty" mapstructure:"myNullableDateTime,omitempty"`
+	MyNullableDateTime DateTimeNullableMyObjectMyNullableDateTime `json:"myNullableDateTime,omitempty,omitzero" yaml:"myNullableDateTime,omitempty" mapstructure:"myNullableDateTime,omitempty"`
 }
 
 type DateTimeNullableMyObjectMyNullableDateTime *time.Time

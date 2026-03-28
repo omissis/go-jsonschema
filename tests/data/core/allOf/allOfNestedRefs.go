@@ -8,7 +8,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type AllOfNestedRefs struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar *string `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+	Bar *string `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
 	Foo interface{} `json:"foo" yaml:"foo" mapstructure:"foo"`
@@ -52,12 +52,12 @@ func (j *AllOfNestedRefs) UnmarshalYAML(value *yaml.Node) error {
 
 type ExtraProps struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar *string `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+	Bar *string `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 }
 
 type RootObject struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar *string `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+	Bar *string `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
 	Foo interface{} `json:"foo" yaml:"foo" mapstructure:"foo"`

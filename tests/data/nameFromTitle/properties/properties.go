@@ -11,10 +11,10 @@ import "strings"
 
 type Alpha struct {
 	// Beta corresponds to the JSON schema field "beta".
-	Beta Beta `json:"beta,omitempty" yaml:"beta,omitempty" mapstructure:"beta,omitempty"`
+	Beta Beta `json:"beta,omitempty,omitzero" yaml:"beta,omitempty" mapstructure:"beta,omitempty"`
 
 	// Eta corresponds to the JSON schema field "eta".
-	Eta *Eta `json:"eta,omitempty" yaml:"eta,omitempty" mapstructure:"eta,omitempty"`
+	Eta *Eta `json:"eta,omitempty,omitzero" yaml:"eta,omitempty" mapstructure:"eta,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
@@ -91,14 +91,14 @@ func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
 
 type Iota struct {
 	// DESCRIPTION
-	Kappa *TITLE `json:"kappa,omitempty" yaml:"kappa,omitempty" mapstructure:"kappa,omitempty"`
+	Kappa *TITLE `json:"kappa,omitempty,omitzero" yaml:"kappa,omitempty" mapstructure:"kappa,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
 type IotaKappaLambdaElem struct {
 	// Sigma corresponds to the JSON schema field "sigma".
-	Sigma *Alpha `json:"sigma,omitempty" yaml:"sigma,omitempty" mapstructure:"sigma,omitempty"`
+	Sigma *Alpha `json:"sigma,omitempty,omitzero" yaml:"sigma,omitempty" mapstructure:"sigma,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
@@ -165,7 +165,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 // DESCRIPTION
 type TITLE struct {
 	// Lambda corresponds to the JSON schema field "lambda".
-	Lambda []IotaKappaLambdaElem `json:"lambda,omitempty" yaml:"lambda,omitempty" mapstructure:"lambda,omitempty"`
+	Lambda []IotaKappaLambdaElem `json:"lambda,omitempty,omitzero" yaml:"lambda,omitempty" mapstructure:"lambda,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }

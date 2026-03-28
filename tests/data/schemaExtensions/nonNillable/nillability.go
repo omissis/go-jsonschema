@@ -4,5 +4,5 @@ package test
 
 type Nillability struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *map[bool]string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *map[bool]string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }

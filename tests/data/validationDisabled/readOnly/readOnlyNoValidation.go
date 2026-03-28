@@ -8,7 +8,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type ReadOnlyNoValidation struct {
 	// MyReadOnlyString corresponds to the JSON schema field "myReadOnlyString".
-	MyReadOnlyString *string `json:"myReadOnlyString,omitempty" yaml:"myReadOnlyString,omitempty" mapstructure:"myReadOnlyString,omitempty"`
+	MyReadOnlyString *string `json:"myReadOnlyString,omitempty,omitzero" yaml:"myReadOnlyString,omitempty" mapstructure:"myReadOnlyString,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
 	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`

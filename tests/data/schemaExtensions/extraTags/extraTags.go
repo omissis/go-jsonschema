@@ -4,5 +4,5 @@ package test
 
 type ExtraTags struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty" a:"" b:"foo,bar" c:"baz"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty" a:"" b:"foo,bar" c:"baz"`
 }

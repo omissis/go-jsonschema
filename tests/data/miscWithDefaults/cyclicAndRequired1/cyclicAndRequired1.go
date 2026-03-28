@@ -8,12 +8,12 @@ import yaml "gopkg.in/yaml.v3"
 
 type Bar struct {
 	// RefToFoo corresponds to the JSON schema field "refToFoo".
-	RefToFoo *Foo `json:"refToFoo,omitempty" yaml:"refToFoo,omitempty" mapstructure:"refToFoo,omitempty"`
+	RefToFoo *Foo `json:"refToFoo,omitempty,omitzero" yaml:"refToFoo,omitempty" mapstructure:"refToFoo,omitempty"`
 }
 
 type CyclicAndRequired1 struct {
 	// A corresponds to the JSON schema field "a".
-	A *Foo `json:"a,omitempty" yaml:"a,omitempty" mapstructure:"a,omitempty"`
+	A *Foo `json:"a,omitempty,omitzero" yaml:"a,omitempty" mapstructure:"a,omitempty"`
 }
 
 type Foo struct {

@@ -10,13 +10,13 @@ import yaml "gopkg.in/yaml.v3"
 // object with anyOf properties as root
 type AnyOf3 struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar *float64 `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+	Bar *float64 `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []interface{} `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []interface{} `json:"configurations,omitempty,omitzero" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
-	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
+	Foo *string `json:"foo,omitempty,omitzero" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
 
 type AnyOf3_0 struct {
@@ -103,7 +103,7 @@ func (j *AnyOf3_1) UnmarshalYAML(value *yaml.Node) error {
 
 type AnyOf3_2 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []interface{} `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []interface{} `json:"configurations,omitempty,omitzero" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

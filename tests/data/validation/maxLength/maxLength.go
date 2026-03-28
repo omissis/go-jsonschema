@@ -9,7 +9,7 @@ import "unicode/utf8"
 
 type MaxLength struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
-	MyNullableString *string `json:"myNullableString,omitempty" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
+	MyNullableString *string `json:"myNullableString,omitempty,omitzero" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
 	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`

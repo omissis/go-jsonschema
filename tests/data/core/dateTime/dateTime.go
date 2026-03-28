@@ -9,7 +9,7 @@ import "time"
 
 type DateTime struct {
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *DateTimeMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+	MyObject *DateTimeMyObject `json:"myObject,omitempty,omitzero" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
 
 type DateTimeMyObject struct {

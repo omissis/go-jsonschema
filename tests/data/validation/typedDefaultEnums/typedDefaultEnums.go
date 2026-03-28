@@ -9,7 +9,7 @@ import "reflect"
 
 type TypedDefaultEnums struct {
 	// Some corresponds to the JSON schema field "some".
-	Some TypedDefaultEnumsSome `json:"some,omitempty" yaml:"some,omitempty" mapstructure:"some,omitempty"`
+	Some TypedDefaultEnumsSome `json:"some,omitempty,omitzero" yaml:"some,omitempty" mapstructure:"some,omitempty"`
 }
 
 type TypedDefaultEnumsSome string

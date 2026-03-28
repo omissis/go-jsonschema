@@ -8,23 +8,23 @@ type Name string
 
 type Schema struct {
 	// DefInOtherSchema corresponds to the JSON schema field "defInOtherSchema".
-	DefInOtherSchema *SchemaDefInOtherSchema `json:"defInOtherSchema,omitempty" yaml:"defInOtherSchema,omitempty" mapstructure:"defInOtherSchema,omitempty"`
+	DefInOtherSchema *SchemaDefInOtherSchema `json:"defInOtherSchema,omitempty,omitzero" yaml:"defInOtherSchema,omitempty" mapstructure:"defInOtherSchema,omitempty"`
 
 	// DefInSameSchema corresponds to the JSON schema field "defInSameSchema".
-	DefInSameSchema *SchemaDefInSameSchema `json:"defInSameSchema,omitempty" yaml:"defInSameSchema,omitempty" mapstructure:"defInSameSchema,omitempty"`
+	DefInSameSchema *SchemaDefInSameSchema `json:"defInSameSchema,omitempty,omitzero" yaml:"defInSameSchema,omitempty" mapstructure:"defInSameSchema,omitempty"`
 }
 
 type SchemaDefInOtherSchema struct {
 	// Value corresponds to the JSON schema field "value".
-	Value *other.Value `json:"value,omitempty" yaml:"value,omitempty" mapstructure:"value,omitempty"`
+	Value *other.Value `json:"value,omitempty,omitzero" yaml:"value,omitempty" mapstructure:"value,omitempty"`
 }
 
 type SchemaDefInSameSchema struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *Name `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *Name `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 type Thing struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *Name `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *Name `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }

@@ -12,7 +12,7 @@ type AnyOf7 struct {
 	Bar []*AnyOf7BarElem `json:"bar" yaml:"bar" mapstructure:"bar"`
 
 	// Baz corresponds to the JSON schema field "baz".
-	Baz []*AnyOf7BazElem `json:"baz,omitempty" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
+	Baz []*AnyOf7BazElem `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
 	Foo *AnyOf7Foo `json:"foo" yaml:"foo" mapstructure:"foo"`
@@ -20,7 +20,7 @@ type AnyOf7 struct {
 
 type AnyOf7BarElem struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -71,7 +71,7 @@ func (j *AnyOf7BarElem) UnmarshalJSON(value []byte) error {
 
 type AnyOf7BazElem struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 type AnyOf7Foo_0 = Item
@@ -91,7 +91,7 @@ type AnyOf7BazElem_0 = Item
 
 type Item struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -144,7 +144,7 @@ type AnyOf7BarElem_0 = Item
 
 type AnyOf7Foo struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

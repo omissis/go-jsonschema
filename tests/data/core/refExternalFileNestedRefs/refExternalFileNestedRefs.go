@@ -6,15 +6,15 @@ type Name string
 
 type RefExternalFileNestedRefs struct {
 	// MyExternalThing corresponds to the JSON schema field "myExternalThing".
-	MyExternalThing *Thing `json:"myExternalThing,omitempty" yaml:"myExternalThing,omitempty" mapstructure:"myExternalThing,omitempty"`
+	MyExternalThing *Thing `json:"myExternalThing,omitempty,omitzero" yaml:"myExternalThing,omitempty" mapstructure:"myExternalThing,omitempty"`
 }
 
 type RefNested struct {
 	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing `json:"myThing,omitempty" yaml:"myThing,omitempty" mapstructure:"myThing,omitempty"`
+	MyThing *Thing `json:"myThing,omitempty,omitzero" yaml:"myThing,omitempty" mapstructure:"myThing,omitempty"`
 }
 
 type Thing struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *Name `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *Name `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }

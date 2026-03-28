@@ -8,7 +8,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type AllOf2 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []AllOf2ConfigurationsElem `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []AllOf2ConfigurationsElem `json:"configurations,omitempty,omitzero" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 }
 
 type AllOf2ConfigurationsElem struct {
@@ -16,7 +16,7 @@ type AllOf2ConfigurationsElem struct {
 	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
 
 	// Baz corresponds to the JSON schema field "baz".
-	Baz *bool `json:"baz,omitempty" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
+	Baz *bool `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
 	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`
@@ -107,7 +107,7 @@ func (j *Bar) UnmarshalYAML(value *yaml.Node) error {
 
 type Baz struct {
 	// Baz corresponds to the JSON schema field "baz".
-	Baz *bool `json:"baz,omitempty" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
+	Baz *bool `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
 }
 
 type Foo struct {

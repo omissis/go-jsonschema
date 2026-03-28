@@ -11,7 +11,7 @@ type AllOf3 struct {
 	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
 
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []interface{} `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []interface{} `json:"configurations,omitempty,omitzero" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
 	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`

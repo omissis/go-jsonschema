@@ -10,7 +10,7 @@ import "strings"
 
 type ArrayAdditionalProperties struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 
 	AdditionalProperties map[string][]interface{} `mapstructure:",remain"`
 }

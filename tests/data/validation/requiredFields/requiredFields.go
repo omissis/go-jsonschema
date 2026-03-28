@@ -14,10 +14,10 @@ type RequiredFields struct {
 	MyBooleanArray []bool `json:"myBooleanArray" yaml:"myBooleanArray" mapstructure:"myBooleanArray"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
-	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
+	MyInteger *int `json:"myInteger,omitempty,omitzero" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
 
 	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
-	MyIntegerArray []int `json:"myIntegerArray,omitempty" yaml:"myIntegerArray,omitempty" mapstructure:"myIntegerArray,omitempty"`
+	MyIntegerArray []int `json:"myIntegerArray,omitempty,omitzero" yaml:"myIntegerArray,omitempty" mapstructure:"myIntegerArray,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
 	MyNull interface{} `json:"myNull" yaml:"myNull" mapstructure:"myNull"`
