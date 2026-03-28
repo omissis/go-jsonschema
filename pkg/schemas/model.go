@@ -439,6 +439,7 @@ type GoJSONSchemaExtension struct {
 	Type       *string           `json:"type,omitempty"`
 	Identifier *string           `json:"identifier,omitempty"`
 	Nillable   bool              `json:"nillable,omitempty"`
+	Pointer    *bool             `json:"pointer,omitempty"`
 	Imports    []string          `json:"imports,omitempty"`
 	ExtraTags  map[string]string `json:"extraTags,omitempty"`
 }
