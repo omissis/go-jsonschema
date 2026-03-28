@@ -3,6 +3,7 @@
 package test
 
 import "encoding/json"
+import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
 type IntegerDefault struct {
@@ -23,6 +24,15 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
+	}
+	if _, ok := raw["count"]; raw != nil && !ok {
+		return fmt.Errorf("field count in IntegerDefault: required")
+	}
+	if _, ok := raw["nullableCount"]; raw != nil && !ok {
+		return fmt.Errorf("field nullableCount in IntegerDefault: required")
+	}
+	if _, ok := raw["programId"]; raw != nil && !ok {
+		return fmt.Errorf("field programId in IntegerDefault: required")
 	}
 	type Plain IntegerDefault
 	var plain Plain
@@ -49,6 +59,15 @@ func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
+	}
+	if _, ok := raw["count"]; raw != nil && !ok {
+		return fmt.Errorf("field count in IntegerDefault: required")
+	}
+	if _, ok := raw["nullableCount"]; raw != nil && !ok {
+		return fmt.Errorf("field nullableCount in IntegerDefault: required")
+	}
+	if _, ok := raw["programId"]; raw != nil && !ok {
+		return fmt.Errorf("field programId in IntegerDefault: required")
 	}
 	type Plain IntegerDefault
 	var plain Plain

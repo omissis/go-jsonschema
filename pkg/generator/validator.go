@@ -13,6 +13,8 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
 )
 
+const typeInt = "int"
+
 var (
 	ErrDurationIsEmpty                = errors.New("duration default value must not be an empty string")
 	ErrCannotConvertISO8601ToGoFormat = errors.New("could not convert duration from ISO8601 to Go format")
@@ -304,7 +306,7 @@ func isIntegerType(t codegen.Type) bool {
 	case *codegen.NamedType:
 		return isIntegerType(tt.Decl.Type)
 	case codegen.PrimitiveType:
-		return tt.Type == "int"
+		return tt.Type == typeInt
 	}
 
 	return false
@@ -322,11 +324,11 @@ func isPointerToInteger(t codegen.Type) bool {
 		return isPointerToInteger(tt.Decl.Type)
 	case codegen.PointerType:
 		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == "int"
+			return pt.Type == typeInt
 		}
 	case *codegen.PointerType:
 		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == "int"
+			return pt.Type == typeInt
 		}
 	}
 

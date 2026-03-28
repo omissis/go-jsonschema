@@ -75,7 +75,7 @@ func (j *Pointer) UnmarshalJSON(value []byte) error {
 
 	}
 	if v, ok := raw["intWithDefault"]; !ok || v == nil {
-		var defaultIntWithDefault int = 42.0
+		var defaultIntWithDefault int = 42
 		plain.IntWithDefault = &defaultIntWithDefault
 	}
 	if v, ok := raw["normalDefault"]; !ok || v == nil {
@@ -125,7 +125,7 @@ func (j *Pointer) UnmarshalYAML(value *yaml.Node) error {
 
 	}
 	if v, ok := raw["intWithDefault"]; !ok || v == nil {
-		var defaultIntWithDefault int = 42.0
+		var defaultIntWithDefault int = 42
 		plain.IntWithDefault = &defaultIntWithDefault
 	}
 	if v, ok := raw["normalDefault"]; !ok || v == nil {
