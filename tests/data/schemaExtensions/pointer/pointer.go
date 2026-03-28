@@ -54,6 +54,9 @@ func (j *Pointer) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["requiredIntNonPointer"]; raw != nil && !ok {
 		return fmt.Errorf("field requiredIntNonPointer in Pointer: required")
 	}
+	if _, ok := raw["requiredIntPointer"]; raw != nil && !ok {
+		return fmt.Errorf("field requiredIntPointer in Pointer: required")
+	}
 	type Plain Pointer
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -100,6 +103,9 @@ func (j *Pointer) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["requiredIntNonPointer"]; raw != nil && !ok {
 		return fmt.Errorf("field requiredIntNonPointer in Pointer: required")
+	}
+	if _, ok := raw["requiredIntPointer"]; raw != nil && !ok {
+		return fmt.Errorf("field requiredIntPointer in Pointer: required")
 	}
 	type Plain Pointer
 	var plain Plain
