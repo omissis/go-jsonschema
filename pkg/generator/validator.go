@@ -13,6 +13,8 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
 )
 
+const typeInt = "int"
+
 var (
 	ErrDurationIsEmpty                = errors.New("duration default value must not be an empty string")
 	ErrCannotConvertISO8601ToGoFormat = errors.New("could not convert duration from ISO8601 to Go format")
@@ -237,8 +239,29 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 		return v.assignDefault(out, defaultValue), nil
 	}
 
+	// Special handling for pointer-to-integer types (e.g., *int or NamedType wrapping *int).
+	// We need to create a temp variable and take its address.
+	if v.isPointerToInteger() {
+		if f, ok := v.defaultValue.(float64); ok {
+			intVal := int(f)
+			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+			tmpEmitter.Printlnf("defaultInt := %d", intVal)
+			tmpEmitter.Printlnf(`%s = &defaultInt`, getPlainName(v.fieldName))
+
+			return tmpEmitter.String(), nil
+		}
+	}
+
 	// Fallback to sdump in case we couldn't dump it properly.
-	return v.assignDefault(out, litter.Sdump(v.defaultValue)), nil
+	// Special handling for integer types: JSON numbers are float64, but we need int literals.
+	defaultValue := v.defaultValue
+	if v.isIntegerType() {
+		if f, ok := v.defaultValue.(float64); ok {
+			defaultValue = int(f)
+		}
+	}
+
+	return v.assignDefault(out, litter.Sdump(defaultValue)), nil
 }
 
 // assignDefault generates the assignment of a default value to the field.
@@ -266,6 +289,50 @@ func (v *defaultValidator) assignDefault(out *codegen.Emitter, valueExpr string)
 	tmpEmitter.Printlnf("%s = &%s", getPlainName(v.fieldName), tmpVarName)
 
 	return strings.TrimRight(tmpEmitter.String(), "\n")
+}
+
+func (v *defaultValidator) isIntegerType() bool {
+	return isIntegerType(v.defaultValueType)
+}
+
+func isIntegerType(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.PointerType:
+		return isIntegerType(tt.Type)
+	case *codegen.PointerType:
+		return isIntegerType(tt.Type)
+	case codegen.NamedType:
+		return isIntegerType(tt.Decl.Type)
+	case *codegen.NamedType:
+		return isIntegerType(tt.Decl.Type)
+	case codegen.PrimitiveType:
+		return tt.Type == typeInt
+	}
+
+	return false
+}
+
+func (v *defaultValidator) isPointerToInteger() bool {
+	return isPointerToInteger(v.defaultValueType)
+}
+
+func isPointerToInteger(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.NamedType:
+		return isPointerToInteger(tt.Decl.Type)
+	case *codegen.NamedType:
+		return isPointerToInteger(tt.Decl.Type)
+	case codegen.PointerType:
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
+			return pt.Type == typeInt
+		}
+	case *codegen.PointerType:
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
+			return pt.Type == typeInt
+		}
+	}
+
+	return false
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
