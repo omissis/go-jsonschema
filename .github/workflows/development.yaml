@@ -32,7 +32,7 @@ jobs:
       - name: Run tests
         run: ./scripts/test.sh
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
       - name: Build binaries
         uses: goreleaser/goreleaser-action@v7
         with:
