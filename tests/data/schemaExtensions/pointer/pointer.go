@@ -9,27 +9,27 @@ import "time"
 
 type Pointer struct {
 	// BoolWithDefault corresponds to the JSON schema field "boolWithDefault".
-	BoolWithDefault *bool `json:"boolWithDefault,omitempty" yaml:"boolWithDefault,omitempty" mapstructure:"boolWithDefault,omitempty"`
+	BoolWithDefault *bool `json:"boolWithDefault,omitempty,omitzero" yaml:"boolWithDefault,omitempty" mapstructure:"boolWithDefault,omitempty"`
 
 	// DurationWithDefault corresponds to the JSON schema field "durationWithDefault".
-	DurationWithDefault *time.Duration `json:"durationWithDefault,omitempty" yaml:"durationWithDefault,omitempty" mapstructure:"durationWithDefault,omitempty"`
+	DurationWithDefault *time.Duration `json:"durationWithDefault,omitempty,omitzero" yaml:"durationWithDefault,omitempty" mapstructure:"durationWithDefault,omitempty"`
 
 	// IntWithDefault corresponds to the JSON schema field "intWithDefault".
-	IntWithDefault *int `json:"intWithDefault,omitempty" yaml:"intWithDefault,omitempty" mapstructure:"intWithDefault,omitempty"`
+	IntWithDefault *int `json:"intWithDefault,omitempty,omitzero" yaml:"intWithDefault,omitempty" mapstructure:"intWithDefault,omitempty"`
 
 	// NormalDefault corresponds to the JSON schema field "normalDefault".
-	NormalDefault string `json:"normalDefault,omitempty" yaml:"normalDefault,omitempty" mapstructure:"normalDefault,omitempty"`
+	NormalDefault string `json:"normalDefault,omitempty,omitzero" yaml:"normalDefault,omitempty" mapstructure:"normalDefault,omitempty"`
 
 	// NormalOptional corresponds to the JSON schema field "normalOptional".
-	NormalOptional *string `json:"normalOptional,omitempty" yaml:"normalOptional,omitempty" mapstructure:"normalOptional,omitempty"`
+	NormalOptional *string `json:"normalOptional,omitempty,omitzero" yaml:"normalOptional,omitempty" mapstructure:"normalOptional,omitempty"`
 
 	// OptionalIntNonPointer corresponds to the JSON schema field
 	// "optionalIntNonPointer".
-	OptionalIntNonPointer int `json:"optionalIntNonPointer,omitempty" yaml:"optionalIntNonPointer,omitempty" mapstructure:"optionalIntNonPointer,omitempty"`
+	OptionalIntNonPointer int `json:"optionalIntNonPointer,omitempty,omitzero" yaml:"optionalIntNonPointer,omitempty" mapstructure:"optionalIntNonPointer,omitempty"`
 
 	// OptionalStringNonPointer corresponds to the JSON schema field
 	// "optionalStringNonPointer".
-	OptionalStringNonPointer string `json:"optionalStringNonPointer,omitempty" yaml:"optionalStringNonPointer,omitempty" mapstructure:"optionalStringNonPointer,omitempty"`
+	OptionalStringNonPointer string `json:"optionalStringNonPointer,omitempty,omitzero" yaml:"optionalStringNonPointer,omitempty" mapstructure:"optionalStringNonPointer,omitempty"`
 
 	// RequiredIntNonPointer corresponds to the JSON schema field
 	// "requiredIntNonPointer".
@@ -39,10 +39,10 @@ type Pointer struct {
 	RequiredIntPointer *int `json:"requiredIntPointer" yaml:"requiredIntPointer" mapstructure:"requiredIntPointer"`
 
 	// SliceWithDefault corresponds to the JSON schema field "sliceWithDefault".
-	SliceWithDefault []string `json:"sliceWithDefault,omitempty" yaml:"sliceWithDefault,omitempty" mapstructure:"sliceWithDefault,omitempty"`
+	SliceWithDefault []string `json:"sliceWithDefault,omitempty,omitzero" yaml:"sliceWithDefault,omitempty" mapstructure:"sliceWithDefault,omitempty"`
 
 	// StringWithDefault corresponds to the JSON schema field "stringWithDefault".
-	StringWithDefault *string `json:"stringWithDefault,omitempty" yaml:"stringWithDefault,omitempty" mapstructure:"stringWithDefault,omitempty"`
+	StringWithDefault *string `json:"stringWithDefault,omitempty,omitzero" yaml:"stringWithDefault,omitempty" mapstructure:"stringWithDefault,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
