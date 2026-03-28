@@ -9,7 +9,7 @@ import "regexp"
 
 type Issue378 struct {
 	// An escaped character that would otherwise be wrongly used
-	Memory *string `json:"memory,omitempty" yaml:"memory,omitempty" mapstructure:"memory,omitempty"`
+	Memory *string `json:"memory,omitempty,omitzero" yaml:"memory,omitempty" mapstructure:"memory,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

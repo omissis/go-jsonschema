@@ -7,7 +7,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type Thing struct {
 	// Values corresponds to the JSON schema field "values".
-	Values []Value `json:"values,omitempty" yaml:"values,omitempty" mapstructure:"values,omitempty"`
+	Values []Value `json:"values,omitempty,omitzero" yaml:"values,omitempty" mapstructure:"values,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

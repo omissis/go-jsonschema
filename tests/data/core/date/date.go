@@ -9,7 +9,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type Date struct {
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *DateMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+	MyObject *DateMyObject `json:"myObject,omitempty,omitzero" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
 
 type DateMyObject struct {

@@ -9,7 +9,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type Time struct {
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *TimeMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+	MyObject *TimeMyObject `json:"myObject,omitempty,omitzero" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
 
 type TimeMyObject struct {

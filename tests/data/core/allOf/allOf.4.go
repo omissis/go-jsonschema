@@ -22,7 +22,7 @@ type AllOf4Elem struct {
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkendTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
 	Target EmbeddedlinkrelationTarget `json:"target" yaml:"target" mapstructure:"target"`
@@ -91,13 +91,13 @@ func (j *AllOf4Elem) UnmarshalJSON(value []byte) error {
 type Embeddedlinkend struct {
 	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
 	// the 'from' key, this is the parent's parent.
-	From *EmbeddedlinkendFrom `json:"from,omitempty" yaml:"from,omitempty" mapstructure:"from,omitempty"`
+	From *EmbeddedlinkendFrom `json:"from,omitempty,omitzero" yaml:"from,omitempty" mapstructure:"from,omitempty"`
 
 	// LinkType corresponds to the JSON schema field "linkType".
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkendTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 // When consuming a CDEvent, you are consuming a parent event. So, when looking at
@@ -244,7 +244,7 @@ type Embeddedlinkpath struct {
 	LinkType EmbeddedlinkpathLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkpathTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkpathTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 // When consuming a CDEvent, you are consuming a parent event. So, when looking at
@@ -396,7 +396,7 @@ type Embeddedlinkrelation struct {
 	LinkType EmbeddedlinkrelationLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkrelationTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkrelationTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
 	Target EmbeddedlinkrelationTarget `json:"target" yaml:"target" mapstructure:"target"`
@@ -454,7 +454,7 @@ type EmbeddedlinkrelationTags map[string]interface{}
 
 type EmbeddedlinkrelationTarget struct {
 	// ContextId corresponds to the JSON schema field "contextId".
-	ContextId *string `json:"contextId,omitempty" yaml:"contextId,omitempty" mapstructure:"contextId,omitempty"`
+	ContextId *string `json:"contextId,omitempty,omitzero" yaml:"contextId,omitempty" mapstructure:"contextId,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.

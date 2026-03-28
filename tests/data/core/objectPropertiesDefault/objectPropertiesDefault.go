@@ -10,18 +10,18 @@ import "reflect"
 
 type DecoratedPlanner struct {
 	// Decorator corresponds to the JSON schema field "decorator".
-	Decorator DecoratedPlannerDecorator `json:"decorator,omitempty" yaml:"decorator,omitempty" mapstructure:"decorator,omitempty"`
+	Decorator DecoratedPlannerDecorator `json:"decorator,omitempty,omitzero" yaml:"decorator,omitempty" mapstructure:"decorator,omitempty"`
 
 	// Event corresponds to the JSON schema field "event".
-	Event *Event `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
+	Event *Event `json:"event,omitempty,omitzero" yaml:"event,omitempty" mapstructure:"event,omitempty"`
 }
 
 type DecoratedPlannerDecorator struct {
 	// Color corresponds to the JSON schema field "color".
-	Color string `json:"color,omitempty" yaml:"color,omitempty" mapstructure:"color,omitempty"`
+	Color string `json:"color,omitempty,omitzero" yaml:"color,omitempty" mapstructure:"color,omitempty"`
 
 	// Theme corresponds to the JSON schema field "theme".
-	Theme *string `json:"theme,omitempty" yaml:"theme,omitempty" mapstructure:"theme,omitempty"`
+	Theme *string `json:"theme,omitempty,omitzero" yaml:"theme,omitempty" mapstructure:"theme,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -104,15 +104,15 @@ func (j *DecoratedPlanner) UnmarshalJSON(value []byte) error {
 
 type DefaultPlanner struct {
 	// Event corresponds to the JSON schema field "event".
-	Event *Event `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
+	Event *Event `json:"event,omitempty,omitzero" yaml:"event,omitempty" mapstructure:"event,omitempty"`
 }
 
 type Event struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *EventName `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *EventName `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags []EventTagsElem `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags []EventTagsElem `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 type EventName string
@@ -259,23 +259,23 @@ func (j *Event) UnmarshalYAML(value *yaml.Node) error {
 
 type ObjectPropertiesDefault struct {
 	// Active corresponds to the JSON schema field "active".
-	Active interface{} `json:"active,omitempty" yaml:"active,omitempty" mapstructure:"active,omitempty"`
+	Active interface{} `json:"active,omitempty,omitzero" yaml:"active,omitempty" mapstructure:"active,omitempty"`
 
 	// Planners corresponds to the JSON schema field "planners".
-	Planners []ObjectPropertiesDefaultPlannersElem `json:"planners,omitempty" yaml:"planners,omitempty" mapstructure:"planners,omitempty"`
+	Planners []ObjectPropertiesDefaultPlannersElem `json:"planners,omitempty,omitzero" yaml:"planners,omitempty" mapstructure:"planners,omitempty"`
 }
 
 type ObjectPropertiesDefaultPlannersElem struct {
 	// Decorated corresponds to the JSON schema field "decorated".
-	Decorated *DecoratedPlanner `json:"decorated,omitempty" yaml:"decorated,omitempty" mapstructure:"decorated,omitempty"`
+	Decorated *DecoratedPlanner `json:"decorated,omitempty,omitzero" yaml:"decorated,omitempty" mapstructure:"decorated,omitempty"`
 
 	// Plain corresponds to the JSON schema field "plain".
-	Plain *DefaultPlanner `json:"plain,omitempty" yaml:"plain,omitempty" mapstructure:"plain,omitempty"`
+	Plain *DefaultPlanner `json:"plain,omitempty,omitzero" yaml:"plain,omitempty" mapstructure:"plain,omitempty"`
 }
 
 type ObjectPropertiesDefaultPlannersElem_0 struct {
 	// Plain corresponds to the JSON schema field "plain".
-	Plain *DefaultPlanner `json:"plain,omitempty" yaml:"plain,omitempty" mapstructure:"plain,omitempty"`
+	Plain *DefaultPlanner `json:"plain,omitempty,omitzero" yaml:"plain,omitempty" mapstructure:"plain,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -302,7 +302,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_0) UnmarshalJSON(value []byte) erro
 
 type ObjectPropertiesDefaultPlannersElem_1 struct {
 	// Decorated corresponds to the JSON schema field "decorated".
-	Decorated *DecoratedPlanner `json:"decorated,omitempty" yaml:"decorated,omitempty" mapstructure:"decorated,omitempty"`
+	Decorated *DecoratedPlanner `json:"decorated,omitempty,omitzero" yaml:"decorated,omitempty" mapstructure:"decorated,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

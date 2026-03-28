@@ -9,7 +9,7 @@ import yaml "gopkg.in/yaml.v3"
 // The server's response to a tool call
 type CallToolResult struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []CallToolResultContentElem `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []CallToolResultContentElem `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // Text provided to or from an LLM.

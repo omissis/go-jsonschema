@@ -862,15 +862,32 @@ func (g *schemaGenerator) addStructField(
 		SchemaType: prop,
 	}
 
-	var tagsBuilder strings.Builder
+	var (
+		tagsBuilder strings.Builder
+		omitJson    string
+		omitRest    string
+	)
 
-	omitEmpty := ",omitempty"
-	if isRequired || g.DisableOmitempty() {
-		omitEmpty = ""
+	if !isRequired {
+		omitJson = ",omitempty,omitzero"
+		omitRest = ",omitempty"
+
+		if g.config.DisableOmitEmpty {
+			omitJson = strings.ReplaceAll(omitJson, ",omitempty", "")
+			omitRest = strings.ReplaceAll(omitRest, ",omitempty", "")
+		}
+
+		if g.config.DisableOmitZero {
+			omitJson = strings.ReplaceAll(omitJson, ",omitzero", "")
+		}
 	}
 
 	for _, tag := range g.config.Tags {
-		fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitEmpty)
+		if tag == "json" {
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitJson)
+		} else {
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitRest)
+		}
 	}
 
 	for _, tag := range extraTags {

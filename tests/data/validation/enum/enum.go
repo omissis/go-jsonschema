@@ -9,38 +9,38 @@ import "reflect"
 
 type Enum struct {
 	// MyBooleanTypedEnum corresponds to the JSON schema field "myBooleanTypedEnum".
-	MyBooleanTypedEnum *EnumMyBooleanTypedEnum `json:"myBooleanTypedEnum,omitempty" yaml:"myBooleanTypedEnum,omitempty" mapstructure:"myBooleanTypedEnum,omitempty"`
+	MyBooleanTypedEnum *EnumMyBooleanTypedEnum `json:"myBooleanTypedEnum,omitempty,omitzero" yaml:"myBooleanTypedEnum,omitempty" mapstructure:"myBooleanTypedEnum,omitempty"`
 
 	// MyBooleanUntypedEnum corresponds to the JSON schema field
 	// "myBooleanUntypedEnum".
-	MyBooleanUntypedEnum *EnumMyBooleanUntypedEnum `json:"myBooleanUntypedEnum,omitempty" yaml:"myBooleanUntypedEnum,omitempty" mapstructure:"myBooleanUntypedEnum,omitempty"`
+	MyBooleanUntypedEnum *EnumMyBooleanUntypedEnum `json:"myBooleanUntypedEnum,omitempty,omitzero" yaml:"myBooleanUntypedEnum,omitempty" mapstructure:"myBooleanUntypedEnum,omitempty"`
 
 	// MyIntegerTypedEnum corresponds to the JSON schema field "myIntegerTypedEnum".
-	MyIntegerTypedEnum *EnumMyIntegerTypedEnum `json:"myIntegerTypedEnum,omitempty" yaml:"myIntegerTypedEnum,omitempty" mapstructure:"myIntegerTypedEnum,omitempty"`
+	MyIntegerTypedEnum *EnumMyIntegerTypedEnum `json:"myIntegerTypedEnum,omitempty,omitzero" yaml:"myIntegerTypedEnum,omitempty" mapstructure:"myIntegerTypedEnum,omitempty"`
 
 	// MyMixedTypeEnum corresponds to the JSON schema field "myMixedTypeEnum".
-	MyMixedTypeEnum *EnumMyMixedTypeEnum `json:"myMixedTypeEnum,omitempty" yaml:"myMixedTypeEnum,omitempty" mapstructure:"myMixedTypeEnum,omitempty"`
+	MyMixedTypeEnum *EnumMyMixedTypeEnum `json:"myMixedTypeEnum,omitempty,omitzero" yaml:"myMixedTypeEnum,omitempty" mapstructure:"myMixedTypeEnum,omitempty"`
 
 	// MyMixedUntypedEnum corresponds to the JSON schema field "myMixedUntypedEnum".
-	MyMixedUntypedEnum *EnumMyMixedUntypedEnum `json:"myMixedUntypedEnum,omitempty" yaml:"myMixedUntypedEnum,omitempty" mapstructure:"myMixedUntypedEnum,omitempty"`
+	MyMixedUntypedEnum *EnumMyMixedUntypedEnum `json:"myMixedUntypedEnum,omitempty,omitzero" yaml:"myMixedUntypedEnum,omitempty" mapstructure:"myMixedUntypedEnum,omitempty"`
 
 	// MyNullTypedEnum corresponds to the JSON schema field "myNullTypedEnum".
-	MyNullTypedEnum *EnumMyNullTypedEnum `json:"myNullTypedEnum,omitempty" yaml:"myNullTypedEnum,omitempty" mapstructure:"myNullTypedEnum,omitempty"`
+	MyNullTypedEnum *EnumMyNullTypedEnum `json:"myNullTypedEnum,omitempty,omitzero" yaml:"myNullTypedEnum,omitempty" mapstructure:"myNullTypedEnum,omitempty"`
 
 	// MyNullUntypedEnum corresponds to the JSON schema field "myNullUntypedEnum".
-	MyNullUntypedEnum *EnumMyNullUntypedEnum `json:"myNullUntypedEnum,omitempty" yaml:"myNullUntypedEnum,omitempty" mapstructure:"myNullUntypedEnum,omitempty"`
+	MyNullUntypedEnum *EnumMyNullUntypedEnum `json:"myNullUntypedEnum,omitempty,omitzero" yaml:"myNullUntypedEnum,omitempty" mapstructure:"myNullUntypedEnum,omitempty"`
 
 	// MyNumberTypedEnum corresponds to the JSON schema field "myNumberTypedEnum".
-	MyNumberTypedEnum *EnumMyNumberTypedEnum `json:"myNumberTypedEnum,omitempty" yaml:"myNumberTypedEnum,omitempty" mapstructure:"myNumberTypedEnum,omitempty"`
+	MyNumberTypedEnum *EnumMyNumberTypedEnum `json:"myNumberTypedEnum,omitempty,omitzero" yaml:"myNumberTypedEnum,omitempty" mapstructure:"myNumberTypedEnum,omitempty"`
 
 	// MyNumberUntypedEnum corresponds to the JSON schema field "myNumberUntypedEnum".
-	MyNumberUntypedEnum *EnumMyNumberUntypedEnum `json:"myNumberUntypedEnum,omitempty" yaml:"myNumberUntypedEnum,omitempty" mapstructure:"myNumberUntypedEnum,omitempty"`
+	MyNumberUntypedEnum *EnumMyNumberUntypedEnum `json:"myNumberUntypedEnum,omitempty,omitzero" yaml:"myNumberUntypedEnum,omitempty" mapstructure:"myNumberUntypedEnum,omitempty"`
 
 	// MyStringTypedEnum corresponds to the JSON schema field "myStringTypedEnum".
-	MyStringTypedEnum *EnumMyStringTypedEnum `json:"myStringTypedEnum,omitempty" yaml:"myStringTypedEnum,omitempty" mapstructure:"myStringTypedEnum,omitempty"`
+	MyStringTypedEnum *EnumMyStringTypedEnum `json:"myStringTypedEnum,omitempty,omitzero" yaml:"myStringTypedEnum,omitempty" mapstructure:"myStringTypedEnum,omitempty"`
 
 	// MyStringUntypedEnum corresponds to the JSON schema field "myStringUntypedEnum".
-	MyStringUntypedEnum *EnumMyStringUntypedEnum `json:"myStringUntypedEnum,omitempty" yaml:"myStringUntypedEnum,omitempty" mapstructure:"myStringUntypedEnum,omitempty"`
+	MyStringUntypedEnum *EnumMyStringUntypedEnum `json:"myStringUntypedEnum,omitempty,omitzero" yaml:"myStringUntypedEnum,omitempty" mapstructure:"myStringUntypedEnum,omitempty"`
 }
 
 type EnumMyBooleanTypedEnum bool

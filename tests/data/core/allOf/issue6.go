@@ -11,65 +11,65 @@ import "time"
 // Base definition for all elements in a resource.
 type Element struct {
 	// Additional content defined by implementations.
-	Extension []string `json:"extension,omitempty" yaml:"extension,omitempty" mapstructure:"extension,omitempty"`
+	Extension []string `json:"extension,omitempty,omitzero" yaml:"extension,omitempty" mapstructure:"extension,omitempty"`
 
 	// Unique id for the element within a resource (for internal references).
-	Id *string `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id,omitempty"`
+	Id *string `json:"id,omitempty,omitzero" yaml:"id,omitempty" mapstructure:"id,omitempty"`
 
 	// Name for the element
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 // see http://hl7.org/fhir/json.html#schema for information about the FHIR Json
 // Schemas
 type Issue6 struct {
 	// A human's name with the ability to identify parts and usage.
-	Name *Issue6Name `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *Issue6Name `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 // A human's name with the ability to identify parts and usage.
 type Issue6Name struct {
 	// Extensions for family
-	Family *Element `json:"_family,omitempty" yaml:"_family,omitempty" mapstructure:"_family,omitempty"`
+	Family *Element `json:"_family,omitempty,omitzero" yaml:"_family,omitempty" mapstructure:"_family,omitempty"`
 
 	// Extensions for given
-	Given []Element `json:"_given,omitempty" yaml:"_given,omitempty" mapstructure:"_given,omitempty"`
+	Given []Element `json:"_given,omitempty,omitzero" yaml:"_given,omitempty" mapstructure:"_given,omitempty"`
 
 	// Extensions for prefix
-	Prefix []Element `json:"_prefix,omitempty" yaml:"_prefix,omitempty" mapstructure:"_prefix,omitempty"`
+	Prefix []Element `json:"_prefix,omitempty,omitzero" yaml:"_prefix,omitempty" mapstructure:"_prefix,omitempty"`
 
 	// Extensions for suffix
-	Suffix []Element `json:"_suffix,omitempty" yaml:"_suffix,omitempty" mapstructure:"_suffix,omitempty"`
+	Suffix []Element `json:"_suffix,omitempty,omitzero" yaml:"_suffix,omitempty" mapstructure:"_suffix,omitempty"`
 
 	// Extensions for text
-	Text *Element `json:"_text,omitempty" yaml:"_text,omitempty" mapstructure:"_text,omitempty"`
+	Text *Element `json:"_text,omitempty,omitzero" yaml:"_text,omitempty" mapstructure:"_text,omitempty"`
 
 	// Extensions for use
-	Use *Element `json:"_use,omitempty" yaml:"_use,omitempty" mapstructure:"_use,omitempty"`
+	Use *Element `json:"_use,omitempty,omitzero" yaml:"_use,omitempty" mapstructure:"_use,omitempty"`
 
 	// The part of a name that links to the genealogy. In some cultures (e.g. Eritrea)
 	// the family name of a son is the first name of his father.
-	Family_2 *string `json:"family,omitempty" yaml:"family,omitempty" mapstructure:"family,omitempty"`
+	Family_2 *string `json:"family,omitempty,omitzero" yaml:"family,omitempty" mapstructure:"family,omitempty"`
 
 	// Given name.
-	Given_2 []string `json:"given,omitempty" yaml:"given,omitempty" mapstructure:"given,omitempty"`
+	Given_2 []string `json:"given,omitempty,omitzero" yaml:"given,omitempty" mapstructure:"given,omitempty"`
 
 	// Indicates the period of time when this name was valid for the named person.
-	Period *Period `json:"period,omitempty" yaml:"period,omitempty" mapstructure:"period,omitempty"`
+	Period *Period `json:"period,omitempty,omitzero" yaml:"period,omitempty" mapstructure:"period,omitempty"`
 
 	// Part of the name that is acquired as a title due to academic, legal, employment
 	// or nobility status, etc. and that appears at the start of the name.
-	Prefix_2 []string `json:"prefix,omitempty" yaml:"prefix,omitempty" mapstructure:"prefix,omitempty"`
+	Prefix_2 []string `json:"prefix,omitempty,omitzero" yaml:"prefix,omitempty" mapstructure:"prefix,omitempty"`
 
 	// Part of the name that is acquired as a title due to academic, legal, employment
 	// or nobility status, etc. and that appears at the end of the name.
-	Suffix_2 []string `json:"suffix,omitempty" yaml:"suffix,omitempty" mapstructure:"suffix,omitempty"`
+	Suffix_2 []string `json:"suffix,omitempty,omitzero" yaml:"suffix,omitempty" mapstructure:"suffix,omitempty"`
 
 	// A full text representation of the name.
-	Text_2 *string `json:"text,omitempty" yaml:"text,omitempty" mapstructure:"text,omitempty"`
+	Text_2 *string `json:"text,omitempty,omitzero" yaml:"text,omitempty" mapstructure:"text,omitempty"`
 
 	// Identifies the purpose for this name.
-	Use_2 *Issue6NameUse_2 `json:"use,omitempty" yaml:"use,omitempty" mapstructure:"use,omitempty"`
+	Use_2 *Issue6NameUse_2 `json:"use,omitempty,omitzero" yaml:"use,omitempty" mapstructure:"use,omitempty"`
 }
 
 type Issue6NameUse_2 string
@@ -136,8 +136,8 @@ func (j *Issue6NameUse_2) UnmarshalJSON(value []byte) error {
 type Period struct {
 	// The end of the period. If the end of the period is missing, it means that the
 	// period is ongoing.
-	End *time.Time `json:"end,omitempty" yaml:"end,omitempty" mapstructure:"end,omitempty"`
+	End *time.Time `json:"end,omitempty,omitzero" yaml:"end,omitempty" mapstructure:"end,omitempty"`
 
 	// The start of the period. The boundary is inclusive.
-	Start *time.Time `json:"start,omitempty" yaml:"start,omitempty" mapstructure:"start,omitempty"`
+	Start *time.Time `json:"start,omitempty,omitzero" yaml:"start,omitempty" mapstructure:"start,omitempty"`
 }

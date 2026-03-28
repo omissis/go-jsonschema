@@ -7,7 +7,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type TypedDefault struct {
 	// TopLevelDomains corresponds to the JSON schema field "topLevelDomains".
-	TopLevelDomains []string `json:"topLevelDomains,omitempty" yaml:"topLevelDomains,omitempty" mapstructure:"topLevelDomains,omitempty"`
+	TopLevelDomains []string `json:"topLevelDomains,omitempty,omitzero" yaml:"topLevelDomains,omitempty" mapstructure:"topLevelDomains,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

@@ -6,13 +6,13 @@ import other "github.com/atombender/go-jsonschema/tests/helpers/other"
 
 type Schema struct {
 	// DefInOtherSchema corresponds to the JSON schema field "defInOtherSchema".
-	DefInOtherSchema *other.Thing `json:"defInOtherSchema,omitempty" yaml:"defInOtherSchema,omitempty" mapstructure:"defInOtherSchema,omitempty"`
+	DefInOtherSchema *other.Thing `json:"defInOtherSchema,omitempty,omitzero" yaml:"defInOtherSchema,omitempty" mapstructure:"defInOtherSchema,omitempty"`
 
 	// DefInSameSchema corresponds to the JSON schema field "defInSameSchema".
-	DefInSameSchema *Thing `json:"defInSameSchema,omitempty" yaml:"defInSameSchema,omitempty" mapstructure:"defInSameSchema,omitempty"`
+	DefInSameSchema *Thing `json:"defInSameSchema,omitempty,omitzero" yaml:"defInSameSchema,omitempty" mapstructure:"defInSameSchema,omitempty"`
 }
 
 type Thing struct {
 	// S corresponds to the JSON schema field "s".
-	S *string `json:"s,omitempty" yaml:"s,omitempty" mapstructure:"s,omitempty"`
+	S *string `json:"s,omitempty,omitzero" yaml:"s,omitempty" mapstructure:"s,omitempty"`
 }

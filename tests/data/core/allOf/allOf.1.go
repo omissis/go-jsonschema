@@ -8,7 +8,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type AllOf1 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []AllOf1ConfigurationsElem `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []AllOf1ConfigurationsElem `json:"configurations,omitempty,omitzero" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 }
 
 type AllOf1ConfigurationsElem struct {

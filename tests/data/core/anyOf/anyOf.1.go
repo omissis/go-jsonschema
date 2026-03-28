@@ -10,21 +10,21 @@ import yaml "gopkg.in/yaml.v3"
 // object with anyOf properties
 type AnyOf1 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
-	Configurations []AnyOf1ConfigurationsElem `json:"configurations,omitempty" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
+	Configurations []AnyOf1ConfigurationsElem `json:"configurations,omitempty,omitzero" yaml:"configurations,omitempty" mapstructure:"configurations,omitempty"`
 
 	// Flags corresponds to the JSON schema field "flags".
-	Flags interface{} `json:"flags,omitempty" yaml:"flags,omitempty" mapstructure:"flags,omitempty"`
+	Flags interface{} `json:"flags,omitempty,omitzero" yaml:"flags,omitempty" mapstructure:"flags,omitempty"`
 }
 
 type AnyOf1ConfigurationsElem struct {
 	// Bar corresponds to the JSON schema field "bar".
-	Bar *float64 `json:"bar,omitempty" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+	Bar *float64 `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
 
 	// Baz corresponds to the JSON schema field "baz".
-	Baz *bool `json:"baz,omitempty" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
+	Baz *bool `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
 
 	// Foo corresponds to the JSON schema field "foo".
-	Foo *string `json:"foo,omitempty" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
+	Foo *string `json:"foo,omitempty,omitzero" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
 }
 
 type AnyOf1ConfigurationsElem_0 struct {
@@ -111,7 +111,7 @@ func (j *AnyOf1ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 
 type AnyOf1ConfigurationsElem_2 struct {
 	// Baz corresponds to the JSON schema field "baz".
-	Baz *bool `json:"baz,omitempty" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
+	Baz *bool `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

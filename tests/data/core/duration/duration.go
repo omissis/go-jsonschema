@@ -9,15 +9,15 @@ import "time"
 
 type Duration struct {
 	// MyObject corresponds to the JSON schema field "myObject".
-	MyObject *DurationMyObject `json:"myObject,omitempty" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
+	MyObject *DurationMyObject `json:"myObject,omitempty,omitzero" yaml:"myObject,omitempty" mapstructure:"myObject,omitempty"`
 }
 
 type DurationMyObject struct {
 	// WithDefault corresponds to the JSON schema field "withDefault".
-	WithDefault time.Duration `json:"withDefault,omitempty" yaml:"withDefault,omitempty" mapstructure:"withDefault,omitempty"`
+	WithDefault time.Duration `json:"withDefault,omitempty,omitzero" yaml:"withDefault,omitempty" mapstructure:"withDefault,omitempty"`
 
 	// WithoutDefault corresponds to the JSON schema field "withoutDefault".
-	WithoutDefault *time.Duration `json:"withoutDefault,omitempty" yaml:"withoutDefault,omitempty" mapstructure:"withoutDefault,omitempty"`
+	WithoutDefault *time.Duration `json:"withoutDefault,omitempty,omitzero" yaml:"withoutDefault,omitempty" mapstructure:"withoutDefault,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

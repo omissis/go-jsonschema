@@ -9,10 +9,10 @@ import "regexp"
 
 type Pattern struct {
 	// MyEscapedString corresponds to the JSON schema field "myEscapedString".
-	MyEscapedString *string `json:"myEscapedString,omitempty" yaml:"myEscapedString,omitempty" mapstructure:"myEscapedString,omitempty"`
+	MyEscapedString *string `json:"myEscapedString,omitempty,omitzero" yaml:"myEscapedString,omitempty" mapstructure:"myEscapedString,omitempty"`
 
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
-	MyNullableString *string `json:"myNullableString,omitempty" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
+	MyNullableString *string `json:"myNullableString,omitempty,omitzero" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
 	MyString string `json:"myString" yaml:"myString" mapstructure:"myString"`

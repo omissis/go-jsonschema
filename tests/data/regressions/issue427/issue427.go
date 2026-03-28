@@ -126,7 +126,7 @@ type Testcase struct {
 	ExpectedPeerName *TestcaseExpectedPeerName `json:"expected_peer_name" yaml:"expected_peer_name" mapstructure:"expected_peer_name"`
 
 	// For server (i.e. client-side) validation: the expected peer name, if any
-	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
+	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty,omitzero" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
 }
 
 type PeerKind string

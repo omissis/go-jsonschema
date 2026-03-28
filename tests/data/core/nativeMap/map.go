@@ -4,7 +4,7 @@ package test
 
 type Map struct {
 	// MyMap corresponds to the JSON schema field "myMap".
-	MyMap MapMyMap `json:"myMap,omitempty" yaml:"myMap,omitempty" mapstructure:"myMap,omitempty"`
+	MyMap MapMyMap `json:"myMap,omitempty,omitzero" yaml:"myMap,omitempty" mapstructure:"myMap,omitempty"`
 }
 
 type MapMyMap map[string]float64

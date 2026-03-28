@@ -8,22 +8,22 @@ import yaml "gopkg.in/yaml.v3"
 
 type Larger struct {
 	// I16L corresponds to the JSON schema field "i16l".
-	I16L *int16 `json:"i16l,omitempty" yaml:"i16l,omitempty" mapstructure:"i16l,omitempty"`
+	I16L *int16 `json:"i16l,omitempty,omitzero" yaml:"i16l,omitempty" mapstructure:"i16l,omitempty"`
 
 	// I16U corresponds to the JSON schema field "i16u".
-	I16U *int16 `json:"i16u,omitempty" yaml:"i16u,omitempty" mapstructure:"i16u,omitempty"`
+	I16U *int16 `json:"i16u,omitempty,omitzero" yaml:"i16u,omitempty" mapstructure:"i16u,omitempty"`
 
 	// I32L corresponds to the JSON schema field "i32l".
-	I32L *int32 `json:"i32l,omitempty" yaml:"i32l,omitempty" mapstructure:"i32l,omitempty"`
+	I32L *int32 `json:"i32l,omitempty,omitzero" yaml:"i32l,omitempty" mapstructure:"i32l,omitempty"`
 
 	// I32U corresponds to the JSON schema field "i32u".
-	I32U *int32 `json:"i32u,omitempty" yaml:"i32u,omitempty" mapstructure:"i32u,omitempty"`
+	I32U *int32 `json:"i32u,omitempty,omitzero" yaml:"i32u,omitempty" mapstructure:"i32u,omitempty"`
 
 	// I64L corresponds to the JSON schema field "i64l".
-	I64L *int64 `json:"i64l,omitempty" yaml:"i64l,omitempty" mapstructure:"i64l,omitempty"`
+	I64L *int64 `json:"i64l,omitempty,omitzero" yaml:"i64l,omitempty" mapstructure:"i64l,omitempty"`
 
 	// I64U corresponds to the JSON schema field "i64u".
-	I64U *int64 `json:"i64u,omitempty" yaml:"i64u,omitempty" mapstructure:"i64u,omitempty"`
+	I64U *int64 `json:"i64u,omitempty,omitzero" yaml:"i64u,omitempty" mapstructure:"i64u,omitempty"`
 
 	// U16 corresponds to the JSON schema field "u16".
 	U16 uint16 `json:"u16" yaml:"u16" mapstructure:"u16"`

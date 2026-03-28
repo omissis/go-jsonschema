@@ -39,7 +39,7 @@ func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
 
 type PrimitiveDefs struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
-	MyNullableString *MinStr `json:"myNullableString,omitempty" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
+	MyNullableString *MinStr `json:"myNullableString,omitempty,omitzero" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
 	MyString MinStr `json:"myString" yaml:"myString" mapstructure:"myString"`
