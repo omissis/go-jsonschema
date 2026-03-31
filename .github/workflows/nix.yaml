@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version: ['124', '125']
+        go-version: ['125', '126']
         os:
           - system: x86_64-linux
             runs-on: ubuntu-24.04

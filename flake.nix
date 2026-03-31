@@ -38,7 +38,7 @@
             pname = "go-jsonschema";
             version = "0.0.0-dev";
             src = cleanSrc;
-            vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
+            vendorHash = "sha256-NkqAeSGWVKvIkik4j9wE2O5LV9sDP3RE/B0LilYml7A=";
             subPackages = ["."];
             ldflags = [
               "-s"
@@ -59,7 +59,7 @@
           mainTests = buildGoModule {
             name = "go-jsonschema-tests-main";
             src = cleanSrc;
-            vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
+            vendorHash = "sha256-NkqAeSGWVKvIkik4j9wE2O5LV9sDP3RE/B0LilYml7A=";
             buildPhase = ''
               export HOME=$TMPDIR
               mkdir -p coverage/pkg
@@ -77,7 +77,7 @@
           integrationTests = buildGoModule {
             name = "go-jsonschema-tests-integration";
             src = cleanSrc;
-            vendorHash = "sha256-VCSDBMTWCz2KTPEOotBtNTBDDqhDSEE+zDvxX7X9a0s=";
+            vendorHash = "sha256-4A5k+KC/2FtFL3ljHX8Gn4maWruDBiY7K7m9sKdUva8=";
             modRoot = "tests";
             buildPhase = ''
               export HOME=$TMPDIR
@@ -100,9 +100,9 @@
           '';
       in {
         packages = {
-          go-jsonschema-go124 = makePackage pkgs.go_1_24;
-          go-jsonschema-go125 = makePackage pkgs.go;
-          default = makePackage pkgs.go;
+          go-jsonschema-go125 = makePackage pkgs.go_1_25;
+          go-jsonschema-go126 = makePackage pkgs.go;
+          default = makePackage pkgs.go_1_25;
 
           test-ci = pkgs.writeShellApplication {
             name = "test-ci";
@@ -114,8 +114,8 @@
         };
 
         checks = {
-          tests-go124 = makeTests pkgs.go_1_24;
-          tests-go125 = makeTests pkgs.go;
+          tests-go125 = makeTests pkgs.go_1_25;
+          tests-go126 = makeTests pkgs.go;
 
           lint-golang = let
             buildGoModule = pkgs.buildGoModule.override {go = pkgs.go;};
@@ -123,7 +123,7 @@
             buildGoModule {
               name = "lint-golang";
               src = cleanSrc;
-              vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
+              vendorHash = "sha256-NkqAeSGWVKvIkik4j9wE2O5LV9sDP3RE/B0LilYml7A=";
               nativeBuildInputs = [pkgs.golangci-lint];
               buildPhase = ''
                 export HOME=$TMPDIR
@@ -248,7 +248,7 @@
             buildGoModule {
               name = "build-goreleaser";
               src = cleanSrc;
-              vendorHash = "sha256-CBxxloy9W9uJq4l2zUrp6VJlu5lNCX55ks8OOWkHDF4=";
+              vendorHash = "sha256-NkqAeSGWVKvIkik4j9wE2O5LV9sDP3RE/B0LilYml7A=";
               nativeBuildInputs = [pkgs.goreleaser pkgs.git];
 
               buildPhase = ''
