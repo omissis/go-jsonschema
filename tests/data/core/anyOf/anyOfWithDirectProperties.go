@@ -58,7 +58,7 @@ type ComposedWithAllOfAndProperties struct {
 	BaseField string `json:"BaseField" yaml:"BaseField" mapstructure:"BaseField"`
 
 	// DirectField corresponds to the JSON schema field "DirectField".
-	DirectField []string `json:"DirectField,omitempty" yaml:"DirectField,omitempty" mapstructure:"DirectField,omitempty"`
+	DirectField []string `json:"DirectField,omitempty,omitzero" yaml:"DirectField,omitempty" mapstructure:"DirectField,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }

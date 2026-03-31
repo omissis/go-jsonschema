@@ -16,28 +16,28 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: ^1.24.12
+          go-version: 1.25.7
       - name: Setup workspace
         run: cp go.work.dist go.work
       - name: Download golangci-lint installer
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh -o /tmp/install-golangci-lint.sh
       - name: Install golangci-lint
-        run: sh /tmp/install-golangci-lint.sh -b /usr/local/bin v2.8.0
+        run: sh /tmp/install-golangci-lint.sh -b /usr/local/bin v2.11.4
       - name: Lint Go files
         run: ./scripts/lint-golang.sh
       - name: Run tests
         run: ./scripts/test.sh
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
       - name: Build binaries
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
-          version: 2.13.3
+          version: 2.14.1
           args: release --verbose --snapshot --clean
         env:
-          GO_VERSION: 1.24.12
+          GO_VERSION: 1.25.7

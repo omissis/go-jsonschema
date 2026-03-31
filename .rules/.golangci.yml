@@ -1,6 +1,6 @@
 version: "2"
 run:
-  go: "1.24"
+  go: "1.25"
   modules-download-mode: readonly
 linters:
   default: all
@@ -28,6 +28,12 @@ linters:
     # disabled
     - noinlineerr
   settings:
+    gosec:
+      excludes:
+        # todo
+        - G704
+        # disabled
+        - G705
     govet:
       settings:
         printf:
@@ -36,6 +42,10 @@ linters:
             - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
             - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
             - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    modernize:
+      disable:
+        # todo: remove when updating to go1.26
+        - newexpr
   exclusions:
     generated: lax
     presets:

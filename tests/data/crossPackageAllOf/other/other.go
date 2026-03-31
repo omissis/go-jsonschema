@@ -4,7 +4,7 @@ package other
 
 type Thing struct {
 	// Value corresponds to the JSON schema field "value".
-	Value *Value `json:"value,omitempty" yaml:"value,omitempty" mapstructure:"value,omitempty"`
+	Value *Value `json:"value,omitempty,omitzero" yaml:"value,omitempty" mapstructure:"value,omitempty"`
 }
 
 type Value float64

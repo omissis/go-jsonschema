@@ -11,10 +11,10 @@ type ExclusiveMaximum struct {
 	MyInteger int `json:"myInteger" yaml:"myInteger" mapstructure:"myInteger"`
 
 	// MyNullableInteger corresponds to the JSON schema field "myNullableInteger".
-	MyNullableInteger *int `json:"myNullableInteger,omitempty" yaml:"myNullableInteger,omitempty" mapstructure:"myNullableInteger,omitempty"`
+	MyNullableInteger *int `json:"myNullableInteger,omitempty,omitzero" yaml:"myNullableInteger,omitempty" mapstructure:"myNullableInteger,omitempty"`
 
 	// MyNullableNumber corresponds to the JSON schema field "myNullableNumber".
-	MyNullableNumber *float64 `json:"myNullableNumber,omitempty" yaml:"myNullableNumber,omitempty" mapstructure:"myNullableNumber,omitempty"`
+	MyNullableNumber *float64 `json:"myNullableNumber,omitempty,omitzero" yaml:"myNullableNumber,omitempty" mapstructure:"myNullableNumber,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
 	MyNumber float64 `json:"myNumber" yaml:"myNumber" mapstructure:"myNumber"`

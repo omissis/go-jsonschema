@@ -34,12 +34,19 @@ type Config struct {
 	// an "omitempty" tag will never be present in generated struct fields.
 	// When DisableOmitempty is set to false,
 	// an "omitempty" tag will be present for all fields that are not required.
-	DisableOmitempty bool
+	DisableOmitEmpty bool
+	// When DisableOmitZero is set to true,
+	// an "omitzero" tag will never be present in generated struct fields.
+	// When DisableOmitZero is set to false,
+	// an "omitzero" tag will be present for all fields that are not required.
+	DisableOmitZero bool
 	// DisableReadOnlyValidation configures the generator to omit validation for read-only fields.
 	DisableReadOnlyValidation bool
 	// DisableCustomTypesForMaps configures the generator to avoid creating a custom type for maps,
 	// and to use the map type directly.
 	DisableCustomTypesForMaps bool
+	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
+	AliasSingleAllOfAnyOfRefs bool
 }
 
 type SchemaMapping struct {

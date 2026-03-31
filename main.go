@@ -35,6 +35,8 @@ var (
 	minimalNames              bool
 	disableReadOnlyValidation bool
 	disableCustomTypesForMaps bool
+	disableOmitEmpty          bool
+	disableOmitZero           bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
@@ -83,7 +85,10 @@ var (
 				MinimalNames:              minimalNames,
 				DisableReadOnlyValidation: disableReadOnlyValidation,
 				DisableCustomTypesForMaps: disableCustomTypesForMaps,
+				DisableOmitEmpty:          disableOmitEmpty,
+				DisableOmitZero:           disableOmitZero,
 			}
+
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
 				if s, ok := schemaPackageMap[id]; ok {
@@ -91,14 +96,17 @@ var (
 				} else {
 					mapping.PackageName = defaultPackage
 				}
+
 				if s, ok := schemaOutputMap[id]; ok {
 					mapping.OutputName = s
 				} else {
 					mapping.OutputName = defaultOutput
 				}
+
 				if s, ok := schemaRootTypeMap[id]; ok {
 					mapping.RootType = s
 				}
+
 				cfg.SchemaMappings = append(cfg.SchemaMappings, mapping)
 			}
 
@@ -109,6 +117,7 @@ var (
 
 			for _, fileName := range args {
 				verboseLogf("Loading %s", fileName)
+
 				if err = generator.DoFile(fileName); err != nil {
 					abortWithErr(err)
 				}
@@ -132,14 +141,19 @@ var (
 					if err := os.MkdirAll(filepath.Dir(fileName), perm755); err != nil {
 						abortWithErr(err)
 					}
+
 					w, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm644)
 					if err != nil {
 						abortWithErr(err)
 					}
-					if _, err = w.Write(source); err != nil {
+
+					if _, err := w.Write(source); err != nil {
 						abortWithErr(err)
 					}
-					_ = w.Close()
+
+					if err := w.Close(); err != nil {
+						abortWithErr(err)
+					}
 				}
 			}
 
@@ -189,6 +203,10 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"Uses the shortest possible names")
 	rootCmd.PersistentFlags().BoolVar(&disableCustomTypesForMaps, "disable-custom-types-for-maps", false,
 		"Do not generate custom types when generating maps")
+	rootCmd.PersistentFlags().BoolVar(&disableOmitEmpty, "disable-omitempty", false,
+		"disable the addition of omitempty tag values")
+	rootCmd.PersistentFlags().BoolVar(&disableOmitZero, "disable-omitzero", false,
+		"disable the addition of omitzero tag values")
 
 	abortWithErr(rootCmd.Execute())
 }

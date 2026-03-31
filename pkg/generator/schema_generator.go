@@ -13,10 +13,7 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-var (
-	errEmptyInAnyOf                        = errors.New("cannot have empty anyOf array")
-	errTooManyTypesForAdditionalProperties = errors.New("cannot support multiple types for additional properties")
-)
+var errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
 
 const float64Type = "float64"
 
@@ -336,11 +333,20 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 					g.output.file.Package.AddImport("github.com/go-viper/mapstructure/v2", "")
 				}
 
+				dvType := f.Type
+				dvIsPointer := false
+
+				if pt, ok := f.Type.(*codegen.PointerType); ok {
+					dvType = pt.Type
+					dvIsPointer = true
+				}
+
 				validators = append(validators, &defaultValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
-					defaultValueType: f.Type,
+					defaultValueType: dvType,
 					defaultValue:     f.DefaultValue,
+					isPointer:        dvIsPointer,
 				})
 			}
 
@@ -377,6 +383,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) structFieldValidators(
 	validators []validator,
 	f codegen.StructField,
@@ -394,11 +401,22 @@ func (g *schemaGenerator) structFieldValidators(
 		validators = g.structFieldValidators(validators, f, v.Type, v.IsNillable())
 
 	case codegen.PrimitiveType:
-		if v.Type == schemas.TypeNameString {
+		switch {
+		case v.Type == schemas.TypeNameString:
 			hasPattern := len(f.SchemaType.Pattern) != 0
-			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern {
+			if f.SchemaType.MinLength != 0 || f.SchemaType.MaxLength != 0 || hasPattern || f.SchemaType.Const != nil {
 				// Double escape the escape characters so we don't effectively parse the escapes within the value.
 				escapedPattern := f.SchemaType.Pattern
+
+				var constVal *string
+
+				if f.SchemaType.Const != nil {
+					if s, ok := f.SchemaType.Const.(string); ok {
+						constVal = &s
+					} else {
+						g.warner(fmt.Sprintf("Ignoring non string const value: %v", f.SchemaType.Const))
+					}
+				}
 
 				replaceJSONCharactersBy := []string{"\\b", "\\f", "\\n", "\\r", "\\t"}
 
@@ -414,6 +432,7 @@ func (g *schemaGenerator) structFieldValidators(
 					minLength:  f.SchemaType.MinLength,
 					maxLength:  f.SchemaType.MaxLength,
 					pattern:    escapedPattern,
+					constVal:   constVal,
 					isNillable: isNillable,
 				})
 			}
@@ -421,12 +440,14 @@ func (g *schemaGenerator) structFieldValidators(
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
 			}
-		} else if strings.Contains(v.Type, "int") || v.Type == float64Type {
+
+		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
 				f.SchemaType.ExclusiveMaximum != nil ||
 				f.SchemaType.Minimum != nil ||
-				f.SchemaType.ExclusiveMinimum != nil {
+				f.SchemaType.ExclusiveMinimum != nil ||
+				f.SchemaType.Const != nil {
 				validators = append(validators, &numericValidator{
 					jsonName:         f.JSONName,
 					fieldName:        f.Name,
@@ -436,12 +457,33 @@ func (g *schemaGenerator) structFieldValidators(
 					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
 					minimum:          f.SchemaType.Minimum,
 					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					constVal:         f.SchemaType.Const,
 					roundToInt:       strings.Contains(v.Type, "int"),
 				})
 			}
 
 			if f.SchemaType.MultipleOf != nil && v.Type == float64Type {
 				g.output.file.Package.AddImport("math", "")
+			}
+
+		case v.Type == "bool":
+			if f.SchemaType.Const != nil {
+				var constVal *bool
+
+				if f.SchemaType.Const != nil {
+					if b, ok := f.SchemaType.Const.(bool); ok {
+						constVal = &b
+					} else {
+						g.warner(fmt.Sprintf("Ignoring non boolean const value: %v", f.SchemaType.Const))
+					}
+				}
+
+				validators = append(validators, &booleanValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					isNillable: isNillable,
+					constVal:   constVal,
+				})
 			}
 		}
 
@@ -492,14 +534,16 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport("errors", "")
 		}
 
+		if sv, ok := v.(*stringValidator); ok && (sv.minLength != 0 || sv.maxLength != 0) {
+			g.output.file.Package.AddImport("unicode/utf8", "")
+		}
+
 		for _, pkg := range v.desc().imports {
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
 		}
 
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
-
-			break
 		}
 	}
 
@@ -508,7 +552,7 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 
 		g.output.file.Package.AddDecl(&codegen.Method{
 			Impl: formatter.generate(g.output, decl, validators),
-			Name: decl.GetName() + "_validator",
+			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
 }
@@ -537,7 +581,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	switch typeName {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
-			return nil, errArrayPropertyItems
+			return codegen.ArrayType{Type: codegen.EmptyInterfaceType{}}, nil
 		}
 
 		elemType, err := g.generateType(t.Items, g.singularScope(scope))
@@ -574,6 +618,16 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 			}
 
 			return ncg, nil
+		}
+
+		if pcg, ok := cg.(*codegen.PointerType); ok {
+			if ncg, ok := pcg.Type.(codegen.NamedType); ok {
+				for _, imprt := range ncg.Package.Imports {
+					g.output.file.Package.AddImport(imprt.QualifiedName, "")
+				}
+
+				return pcg, nil
+			}
 		}
 
 		if dcg, ok := cg.(codegen.DurationType); ok {
@@ -701,10 +755,6 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 
 	// Checking .Not here because `false` is unmarshalled to .Not = Type{}.
 	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
-		if len(t.AdditionalProperties.Type) > 1 {
-			return nil, errTooManyTypesForAdditionalProperties
-		}
-
 		var (
 			defaultValue any          = nil
 			fieldType    codegen.Type = codegen.EmptyInterfaceType{}
@@ -787,6 +837,8 @@ func (g *schemaGenerator) addStructField(
 
 	fieldName := g.caser.Identifierize(name)
 
+	var extraTags []string
+
 	if ext := prop.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
 			g.output.file.Package.AddImport(pkg, "")
@@ -795,7 +847,13 @@ func (g *schemaGenerator) addStructField(
 		if ext.Identifier != nil {
 			fieldName = *ext.Identifier
 		}
+
+		for tagKey, tagVal := range ext.ExtraTags {
+			extraTags = append(extraTags, fmt.Sprintf(`%s:"%s"`, tagKey, tagVal))
+		}
 	}
+
+	slices.Sort(extraTags)
 
 	if count, ok := uniqueNames[fieldName]; ok {
 		uniqueNames[fieldName] = count + 1
@@ -806,54 +864,123 @@ func (g *schemaGenerator) addStructField(
 		uniqueNames[fieldName] = 1
 	}
 
-	structField := codegen.StructField{
-		Name:       fieldName,
-		Comment:    prop.Description,
-		JSONName:   name,
-		SchemaType: prop,
+	comment := prop.Description
+	if comment == "" {
+		comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.", fieldName, name)
 	}
 
-	var b strings.Builder
-
-	if isRequired || g.DisableOmitempty() {
-		for _, tag := range g.config.Tags {
-			fmt.Fprintf(&b, `%s:"%s" `, tag, name)
-		}
-	} else {
-		for _, tag := range g.config.Tags {
-			fmt.Fprintf(&b, `%s:"%s,omitempty" `, tag, name)
-		}
-	}
-
-	structField.Tags = strings.TrimSpace(b.String())
-
-	if structField.Comment == "" {
-		structField.Comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.",
-			structField.Name, name)
-	}
-
-	var err error
-
-	structField.Type, err = g.generateTypeInline(prop, scope.add(structField.Name))
+	structFieldType, err := g.generateStructFieldType(prop, scope.add(fieldName), isRequired)
 	if err != nil {
-		return fmt.Errorf("could not generate type for field %q: %w", name, err)
+		return fmt.Errorf("cannot add struct field: %w", err)
 	}
 
-	switch {
-	case prop.Default != nil:
-		structField.DefaultValue = g.defaultPropertyValue(prop)
-
-	default:
-		if isRequired {
-			structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
-		} else if !structField.Type.IsNillable() {
-			structField.Type = codegen.WrapTypeInPointer(structField.Type)
-		}
+	structField := codegen.StructField{
+		Name:         fieldName,
+		Comment:      comment,
+		JSONName:     name,
+		SchemaType:   prop,
+		Tags:         g.generateStructFieldTags(name, extraTags, isRequired),
+		DefaultValue: g.generateStructFieldDefaultValue(prop),
+		Type:         structFieldType,
 	}
+
+	g.appendStructRequiredJSONFields(&structField, structType, isRequired)
 
 	structType.AddField(structField)
 
 	return nil
+}
+
+func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []string, isRequired bool) string {
+	var (
+		tagsBuilder strings.Builder
+		omitJson    string
+		omitRest    string
+	)
+
+	if !isRequired {
+		if !g.config.DisableOmitEmpty {
+			omitJson += ",omitempty"
+			omitRest += ",omitempty"
+		}
+
+		if !g.config.DisableOmitZero {
+			omitJson += ",omitzero"
+			// omitRest is not set as omitzero is supported only by the json package
+		}
+	}
+
+	for _, tag := range g.config.Tags {
+		switch tag {
+		case "json":
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitJson)
+		default:
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitRest)
+		}
+	}
+
+	for _, tag := range extraTags {
+		fmt.Fprintf(&tagsBuilder, `%s `, tag)
+	}
+
+	return strings.TrimSpace(tagsBuilder.String())
+}
+
+func (g *schemaGenerator) generateStructFieldDefaultValue(schemaType *schemas.Type) any {
+	if schemaType.Default != nil {
+		return g.defaultPropertyValue(schemaType)
+	}
+
+	return nil
+}
+
+func (g *schemaGenerator) generateStructFieldType(
+	schemaType *schemas.Type,
+	scope nameScope,
+	isRequired bool,
+) (codegen.Type, error) {
+	fieldType, err := g.generateTypeInline(schemaType, scope)
+	if err != nil {
+		return nil, fmt.Errorf("could not generate type with scope '%s': %w", scope.string(), err)
+	}
+
+	var (
+		shouldForcePtrToTrue  bool
+		shouldForcePtrToFalse bool
+	)
+
+	if ext := schemaType.GoJSONSchemaExtension; ext != nil && ext.Pointer != nil {
+		shouldForcePtrToTrue = *ext.Pointer
+		shouldForcePtrToFalse = !*ext.Pointer
+	}
+
+	if fieldType.IsNillable() {
+		return fieldType, nil
+	}
+
+	if shouldForcePtrToTrue {
+		return codegen.WrapTypeInPointer(fieldType), nil
+	}
+
+	if shouldForcePtrToFalse {
+		return fieldType, nil
+	}
+
+	if !isRequired && schemaType.Default == nil {
+		return codegen.WrapTypeInPointer(fieldType), nil
+	}
+
+	return fieldType, nil
+}
+
+func (g *schemaGenerator) appendStructRequiredJSONFields(
+	structField *codegen.StructField,
+	structType *codegen.StructType,
+	isRequired bool,
+) {
+	if isRequired {
+		structType.RequiredJSONFields = append(structType.RequiredJSONFields, structField.JSONName)
+	}
 }
 
 func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -861,10 +988,27 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return nil, errEmptyInAnyOf
 	}
 
+	if g.config.AliasSingleAllOfAnyOfRefs && len(t.AnyOf) == 1 && t.IsEmptyObject() {
+		childType := t.AnyOf[0]
+		if childType.Ref != "" {
+			resolvedType, err := g.resolveRef(childType)
+			if err == nil {
+				return g.generateTypeInline(resolvedType, scope)
+			} else {
+				g.warner(fmt.Sprintf("Could not resolve ref %q: %v", childType.Ref, err))
+			}
+		}
+	}
+
 	isCycle := false
 	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
 	for i, typ := range rAnyOf {
+		// infer type from base if not set
+		if len(typ.Type) == 0 {
+			typ.Type = append(schemas.TypeList{}, t.Type...)
+		}
+
 		typ.SetSubSchemaTypeElem()
 
 		ic, cleanupCycle, cycleErr := g.detectCycle(typ)
@@ -904,6 +1048,18 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 }
 
 func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if g.config.AliasSingleAllOfAnyOfRefs && len(t.AllOf) == 1 && t.IsEmptyObject() {
+		subType := t.AllOf[0]
+		if subType.Ref != "" {
+			resolvedType, err := g.resolveRef(subType)
+			if err == nil {
+				return g.generateTypeInline(resolvedType, scope)
+			} else {
+				g.warner(fmt.Sprintf("Could not resolve subtype ref %q: %v", subType.Ref, err))
+			}
+		}
+	}
+
 	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
 	allOfType, err := schemas.AllOf(rAllOf, t)
@@ -952,6 +1108,7 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
+//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := g.isTypeNullable(t)
 
@@ -995,7 +1152,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			if t.IsSubSchemaTypeElem() {
-				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a refactor.
+				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a rework.
 			}
 
 			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
@@ -1020,6 +1177,16 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 				return ncg, nil
 			}
 
+			if pcg, ok := cg.(*codegen.PointerType); ok {
+				if ncg, ok := pcg.Type.(codegen.NamedType); ok {
+					for _, imprt := range ncg.Package.Imports {
+						g.output.file.Package.AddImport(imprt.QualifiedName, "")
+					}
+
+					return pcg, nil
+				}
+			}
+
 			if dcg, ok := cg.(codegen.DurationType); ok {
 				g.output.file.Package.AddImport("time", "")
 
@@ -1030,11 +1197,9 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
-			var theType codegen.Type
+			var theType codegen.Type = codegen.EmptyInterfaceType{}
 
-			if t.Items == nil {
-				theType = codegen.EmptyInterfaceType{}
-			} else {
+			if t.Items != nil {
 				var err error
 
 				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
@@ -1199,13 +1364,13 @@ func (g *schemaGenerator) generateEnumType(
 			if wrapInStruct {
 				g.output.file.Package.AddDecl(&codegen.Method{
 					Impl: formatter.enumMarshal(&enumDecl),
-					Name: enumDecl.GetName() + "_enum",
+					Name: enumDecl.GetName() + "_enum_" + formatter.getName(),
 				})
 			}
 
 			g.output.file.Package.AddDecl(&codegen.Method{
 				Impl: formatter.enumUnmarshal(enumDecl, enumType, valueConstant, wrapInStruct),
-				Name: enumDecl.GetName() + "_enum_unmarshal",
+				Name: enumDecl.GetName() + "_enum_unmarshal_" + formatter.getName(),
 			})
 		}
 	}

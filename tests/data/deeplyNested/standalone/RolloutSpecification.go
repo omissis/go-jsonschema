@@ -6,6 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "regexp"
+import "unicode/utf8"
 
 // The details of applications to be deployed.
 type Applications struct {
@@ -75,7 +76,7 @@ type ApplyAcrossServiceResources struct {
 	DefinitionName string `json:"definitionName" yaml:"definitionName" mapstructure:"definitionName"`
 
 	// Indicates if the cluster has to be deployed before application deployment.
-	DeployArmResources *bool `json:"deployArmResources,omitempty" yaml:"deployArmResources,omitempty" mapstructure:"deployArmResources,omitempty"`
+	DeployArmResources *bool `json:"deployArmResources,omitempty,omitzero" yaml:"deployArmResources,omitempty" mapstructure:"deployArmResources,omitempty"`
 
 	// The list of service resource instance names.
 	Names []string `json:"names" yaml:"names" mapstructure:"names"`
@@ -169,17 +170,17 @@ func (j *BuildSource) UnmarshalYAML(value *yaml.Node) error {
 // Option to use configuration specification file directly in rollout.
 type Configuration struct {
 	// Service scope configuration setting
-	ServiceScope *ServiceScope `json:"serviceScope,omitempty" yaml:"serviceScope,omitempty" mapstructure:"serviceScope,omitempty"`
+	ServiceScope *ServiceScope `json:"serviceScope,omitempty,omitzero" yaml:"serviceScope,omitempty" mapstructure:"serviceScope,omitempty"`
 }
 
 // Email Notification definitions
 type Email struct {
 	// Cc email addresses list separator with ',;'
-	Cc *string `json:"cc,omitempty" yaml:"cc,omitempty" mapstructure:"cc,omitempty"`
+	Cc *string `json:"cc,omitempty,omitzero" yaml:"cc,omitempty" mapstructure:"cc,omitempty"`
 
 	// Conditions of when to sending the email, default will send on all start, error,
 	// complete events
-	Options *Options `json:"options,omitempty" yaml:"options,omitempty" mapstructure:"options,omitempty"`
+	Options *Options `json:"options,omitempty,omitzero" yaml:"options,omitempty" mapstructure:"options,omitempty"`
 
 	// To email addresses list separator with ',;'
 	To string `json:"to" yaml:"to" mapstructure:"to"`
@@ -224,7 +225,7 @@ func (j *Email) UnmarshalJSON(value []byte) error {
 // Incident notification definitions
 type Incident struct {
 	// Conditions of when to create incidents, default will send on every error
-	Options *IncidentOptions `json:"options,omitempty" yaml:"options,omitempty" mapstructure:"options,omitempty"`
+	Options *IncidentOptions `json:"options,omitempty,omitzero" yaml:"options,omitempty" mapstructure:"options,omitempty"`
 
 	// The incident properties
 	Properties Properties `json:"properties" yaml:"properties" mapstructure:"properties"`
@@ -236,7 +237,7 @@ type Incident struct {
 // Conditions of when to create incidents, default will send on every error
 type IncidentOptions struct {
 	// When corresponds to the JSON schema field "when".
-	When []string `json:"when,omitempty" yaml:"when,omitempty" mapstructure:"when,omitempty"`
+	When []string `json:"when,omitempty,omitzero" yaml:"when,omitempty" mapstructure:"when,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -284,10 +285,10 @@ func (j *Incident) UnmarshalJSON(value []byte) error {
 // Notification definitions
 type Notification struct {
 	// Email Notification definitions
-	Email *Email `json:"email,omitempty" yaml:"email,omitempty" mapstructure:"email,omitempty"`
+	Email *Email `json:"email,omitempty,omitzero" yaml:"email,omitempty" mapstructure:"email,omitempty"`
 
 	// Incident notification definitions
-	Incident *Incident `json:"incident,omitempty" yaml:"incident,omitempty" mapstructure:"incident,omitempty"`
+	Incident *Incident `json:"incident,omitempty,omitzero" yaml:"incident,omitempty" mapstructure:"incident,omitempty"`
 }
 
 // Conditions of when to sending the email, default will send on all start, error,
@@ -296,10 +297,10 @@ type Options struct {
 	// 'All': All rollout information, default behavior, SummaryOnly': Only has
 	// summary table, no resource deployment details, Compact': Only show rows of
 	// failed resource operations.
-	Verbosity *string `json:"verbosity,omitempty" yaml:"verbosity,omitempty" mapstructure:"verbosity,omitempty"`
+	Verbosity *string `json:"verbosity,omitempty,omitzero" yaml:"verbosity,omitempty" mapstructure:"verbosity,omitempty"`
 
 	// When corresponds to the JSON schema field "when".
-	When []string `json:"when,omitempty" yaml:"when,omitempty" mapstructure:"when,omitempty"`
+	When []string `json:"when,omitempty,omitzero" yaml:"when,omitempty" mapstructure:"when,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -340,20 +341,20 @@ type OrchestratedStep struct {
 	// executed in the order that they are declared. The action names must be unique.
 	// If this is an Extension action, the name of the extension must exist in the
 	// 'Extensions' block in  RolloutParameters.
-	Actions []string `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
+	Actions []string `json:"actions,omitempty,omitzero" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
 
 	// The details of applications to be deployed.
-	Applications *Applications `json:"applications,omitempty" yaml:"applications,omitempty" mapstructure:"applications,omitempty"`
+	Applications *Applications `json:"applications,omitempty,omitzero" yaml:"applications,omitempty" mapstructure:"applications,omitempty"`
 
 	// The names of the rollout steps that must be executed prior to the current step
 	// being executed.
-	DependsOn []string `json:"dependsOn,omitempty" yaml:"dependsOn,omitempty" mapstructure:"dependsOn,omitempty"`
+	DependsOn []string `json:"dependsOn,omitempty,omitzero" yaml:"dependsOn,omitempty" mapstructure:"dependsOn,omitempty"`
 
 	// The name of the rollout step.
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
 	// The unique identifier of the target that is to be updated.
-	TargetName *string `json:"targetName,omitempty" yaml:"targetName,omitempty" mapstructure:"targetName,omitempty"`
+	TargetName *string `json:"targetName,omitempty,omitzero" yaml:"targetName,omitempty" mapstructure:"targetName,omitempty"`
 
 	// The type of the intended target of this rollout.
 	TargetType string `json:"targetType" yaml:"targetType" mapstructure:"targetType"`
@@ -376,10 +377,10 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
-	if plain.TargetName != nil && len(*plain.TargetName) < 1 {
+	if plain.TargetName != nil && utf8.RuneCountInString(string(*plain.TargetName)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "targetName", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, string(plain.TargetType)); !matched {
@@ -406,10 +407,10 @@ func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
-	if plain.TargetName != nil && len(*plain.TargetName) < 1 {
+	if plain.TargetName != nil && utf8.RuneCountInString(string(*plain.TargetName)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "targetName", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^ServiceResourceGroup$|^ServiceResource$|^Application$)`, string(plain.TargetType)); !matched {
@@ -469,10 +470,10 @@ type Properties struct {
 	ConnectorId string `json:"connectorId" yaml:"connectorId" mapstructure:"connectorId"`
 
 	// The incident correlation type.
-	CorrelateBy *string `json:"correlateBy,omitempty" yaml:"correlateBy,omitempty" mapstructure:"correlateBy,omitempty"`
+	CorrelateBy *string `json:"correlateBy,omitempty,omitzero" yaml:"correlateBy,omitempty" mapstructure:"correlateBy,omitempty"`
 
 	// The environment of the incidents raising location.
-	Environment *string `json:"environment,omitempty" yaml:"environment,omitempty" mapstructure:"environment,omitempty"`
+	Environment *string `json:"environment,omitempty,omitzero" yaml:"environment,omitempty" mapstructure:"environment,omitempty"`
 
 	// The routing Id for ICM
 	RoutingId string `json:"routingId" yaml:"routingId" mapstructure:"routingId"`
@@ -546,20 +547,20 @@ type RolloutMetadata struct {
 	BuildSource BuildSource `json:"buildSource" yaml:"buildSource" mapstructure:"buildSource"`
 
 	// Option to use configuration specification file directly in rollout.
-	Configuration *Configuration `json:"configuration,omitempty" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
+	Configuration *Configuration `json:"configuration,omitempty,omitzero" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
 
 	// The user-specified name of this particular rollout.
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
 	// Notification definitions
-	Notification *Notification `json:"notification,omitempty" yaml:"notification,omitempty" mapstructure:"notification,omitempty"`
+	Notification *Notification `json:"notification,omitempty,omitzero" yaml:"notification,omitempty" mapstructure:"notification,omitempty"`
 
 	// The path relative to the Service Group Root that points to the parameter
 	// replacements file.
-	ParameterReplacementsPath *string `json:"parameterReplacementsPath,omitempty" yaml:"parameterReplacementsPath,omitempty" mapstructure:"parameterReplacementsPath,omitempty"`
+	ParameterReplacementsPath *string `json:"parameterReplacementsPath,omitempty,omitzero" yaml:"parameterReplacementsPath,omitempty" mapstructure:"parameterReplacementsPath,omitempty"`
 
 	// List of rollout policy references to use for the rollout.
-	RolloutPolicyReferences []RolloutPolicyReference `json:"rolloutPolicyReferences,omitempty" yaml:"rolloutPolicyReferences,omitempty" mapstructure:"rolloutPolicyReferences,omitempty"`
+	RolloutPolicyReferences []RolloutPolicyReference `json:"rolloutPolicyReferences,omitempty,omitzero" yaml:"rolloutPolicyReferences,omitempty" mapstructure:"rolloutPolicyReferences,omitempty"`
 
 	// The scope of this particular rollout.
 	RolloutType string `json:"rolloutType" yaml:"rolloutType" mapstructure:"rolloutType"`
@@ -592,7 +593,7 @@ func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^Major$|^Minor$|^Hotfix$)`, string(plain.RolloutType)); !matched {
@@ -625,7 +626,7 @@ func (j *RolloutMetadata) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.Name) < 1 {
+	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
 	}
 	if matched, _ := regexp.MatchString(`(?i)(^Major$|^Minor$|^Hotfix$)`, string(plain.RolloutType)); !matched {
@@ -758,5 +759,5 @@ func (j *RolloutSpecification) UnmarshalYAML(value *yaml.Node) error {
 type ServiceScope struct {
 	// The path relative to the Service Group Root that points to the service scope
 	// configuration specification.
-	SpecPath *string `json:"specPath,omitempty" yaml:"specPath,omitempty" mapstructure:"specPath,omitempty"`
+	SpecPath *string `json:"specPath,omitempty,omitzero" yaml:"specPath,omitempty" mapstructure:"specPath,omitempty"`
 }

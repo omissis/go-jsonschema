@@ -8,29 +8,35 @@ import yaml "gopkg.in/yaml.v3"
 
 type Array struct {
 	// MyArray corresponds to the JSON schema field "myArray".
-	MyArray []interface{} `json:"myArray,omitempty" yaml:"myArray,omitempty" mapstructure:"myArray,omitempty"`
+	MyArray []interface{} `json:"myArray,omitempty,omitzero" yaml:"myArray,omitempty" mapstructure:"myArray,omitempty"`
 
 	// MyBooleanArray corresponds to the JSON schema field "myBooleanArray".
-	MyBooleanArray []bool `json:"myBooleanArray,omitempty" yaml:"myBooleanArray,omitempty" mapstructure:"myBooleanArray,omitempty"`
+	MyBooleanArray []bool `json:"myBooleanArray,omitempty,omitzero" yaml:"myBooleanArray,omitempty" mapstructure:"myBooleanArray,omitempty"`
 
 	// MyIntegerArray corresponds to the JSON schema field "myIntegerArray".
-	MyIntegerArray []int `json:"myIntegerArray,omitempty" yaml:"myIntegerArray,omitempty" mapstructure:"myIntegerArray,omitempty"`
+	MyIntegerArray []int `json:"myIntegerArray,omitempty,omitzero" yaml:"myIntegerArray,omitempty" mapstructure:"myIntegerArray,omitempty"`
 
 	// MyNestedNullArray corresponds to the JSON schema field "myNestedNullArray".
-	MyNestedNullArray [][]interface{} `json:"myNestedNullArray,omitempty" yaml:"myNestedNullArray,omitempty" mapstructure:"myNestedNullArray,omitempty"`
+	MyNestedNullArray [][]interface{} `json:"myNestedNullArray,omitempty,omitzero" yaml:"myNestedNullArray,omitempty" mapstructure:"myNestedNullArray,omitempty"`
 
 	// MyNullArray corresponds to the JSON schema field "myNullArray".
-	MyNullArray []interface{} `json:"myNullArray,omitempty" yaml:"myNullArray,omitempty" mapstructure:"myNullArray,omitempty"`
+	MyNullArray []interface{} `json:"myNullArray,omitempty,omitzero" yaml:"myNullArray,omitempty" mapstructure:"myNullArray,omitempty"`
+
+	// MyNullableUntypedArray corresponds to the JSON schema field
+	// "myNullableUntypedArray".
+	MyNullableUntypedArray *ArrayMyNullableUntypedArray `json:"myNullableUntypedArray,omitempty,omitzero" yaml:"myNullableUntypedArray,omitempty" mapstructure:"myNullableUntypedArray,omitempty"`
 
 	// MyNumberArray corresponds to the JSON schema field "myNumberArray".
-	MyNumberArray []float64 `json:"myNumberArray,omitempty" yaml:"myNumberArray,omitempty" mapstructure:"myNumberArray,omitempty"`
+	MyNumberArray []float64 `json:"myNumberArray,omitempty,omitzero" yaml:"myNumberArray,omitempty" mapstructure:"myNumberArray,omitempty"`
 
 	// MyObjectArray corresponds to the JSON schema field "myObjectArray".
-	MyObjectArray []ArrayMyObjectArrayElem `json:"myObjectArray,omitempty" yaml:"myObjectArray,omitempty" mapstructure:"myObjectArray,omitempty"`
+	MyObjectArray []ArrayMyObjectArrayElem `json:"myObjectArray,omitempty,omitzero" yaml:"myObjectArray,omitempty" mapstructure:"myObjectArray,omitempty"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
-	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
+	MyStringArray []string `json:"myStringArray,omitempty,omitzero" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
 }
+
+type ArrayMyNullableUntypedArray []interface{}
 
 type ArrayMyObjectArrayElem map[string]interface{}
 

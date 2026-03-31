@@ -4,7 +4,7 @@ package test
 
 type Schema struct {
 	// Prop corresponds to the JSON schema field "prop".
-	Prop SchemaBase `json:"prop,omitempty" yaml:"prop,omitempty" mapstructure:"prop,omitempty"`
+	Prop SchemaBase `json:"prop,omitempty,omitzero" yaml:"prop,omitempty" mapstructure:"prop,omitempty"`
 }
 
 type SchemaBase []int

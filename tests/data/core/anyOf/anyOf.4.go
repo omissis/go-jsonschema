@@ -7,25 +7,26 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
+import "unicode/utf8"
 
 type AnyOf4 []AnyOf4Elem
 
 type AnyOf4Elem struct {
 	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
 	// the 'from' key, this is the parent's parent.
-	From *EmbeddedlinkendFrom `json:"from,omitempty" yaml:"from,omitempty" mapstructure:"from,omitempty"`
+	From *EmbeddedlinkendFrom `json:"from,omitempty,omitzero" yaml:"from,omitempty" mapstructure:"from,omitempty"`
 
 	// LinkKind corresponds to the JSON schema field "linkKind".
-	LinkKind *string `json:"linkKind,omitempty" yaml:"linkKind,omitempty" mapstructure:"linkKind,omitempty"`
+	LinkKind *string `json:"linkKind,omitempty,omitzero" yaml:"linkKind,omitempty" mapstructure:"linkKind,omitempty"`
 
 	// LinkType corresponds to the JSON schema field "linkType".
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkendTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
-	Target *EmbeddedlinkrelationTarget `json:"target,omitempty" yaml:"target,omitempty" mapstructure:"target,omitempty"`
+	Target *EmbeddedlinkrelationTarget `json:"target,omitempty,omitzero" yaml:"target,omitempty" mapstructure:"target,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -93,13 +94,13 @@ func (j *AnyOf4Elem) UnmarshalJSON(value []byte) error {
 type Embeddedlinkend struct {
 	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
 	// the 'from' key, this is the parent's parent.
-	From *EmbeddedlinkendFrom `json:"from,omitempty" yaml:"from,omitempty" mapstructure:"from,omitempty"`
+	From *EmbeddedlinkendFrom `json:"from,omitempty,omitzero" yaml:"from,omitempty" mapstructure:"from,omitempty"`
 
 	// LinkType corresponds to the JSON schema field "linkType".
 	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkendTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkendTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 // When consuming a CDEvent, you are consuming a parent event. So, when looking at
@@ -123,7 +124,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkendFrom(plain)
@@ -144,7 +145,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkendFrom(plain)
@@ -246,7 +247,7 @@ type Embeddedlinkpath struct {
 	LinkType EmbeddedlinkpathLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkpathTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkpathTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 }
 
 // When consuming a CDEvent, you are consuming a parent event. So, when looking at
@@ -270,7 +271,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkpathFrom(plain)
@@ -291,7 +292,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.ContextId) < 1 {
+	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkpathFrom(plain)
@@ -398,7 +399,7 @@ type Embeddedlinkrelation struct {
 	LinkType EmbeddedlinkrelationLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
 
 	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkrelationTags `json:"tags,omitempty" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+	Tags EmbeddedlinkrelationTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
 
 	// Target corresponds to the JSON schema field "target".
 	Target EmbeddedlinkrelationTarget `json:"target" yaml:"target" mapstructure:"target"`
@@ -456,7 +457,7 @@ type EmbeddedlinkrelationTags map[string]interface{}
 
 type EmbeddedlinkrelationTarget struct {
 	// ContextId corresponds to the JSON schema field "contextId".
-	ContextId *string `json:"contextId,omitempty" yaml:"contextId,omitempty" mapstructure:"contextId,omitempty"`
+	ContextId *string `json:"contextId,omitempty,omitzero" yaml:"contextId,omitempty" mapstructure:"contextId,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -466,7 +467,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if plain.ContextId != nil && len(*plain.ContextId) < 1 {
+	if plain.ContextId != nil && utf8.RuneCountInString(string(*plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkrelationTarget(plain)
@@ -480,7 +481,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if plain.ContextId != nil && len(*plain.ContextId) < 1 {
+	if plain.ContextId != nil && utf8.RuneCountInString(string(*plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
 	}
 	*j = EmbeddedlinkrelationTarget(plain)
@@ -507,7 +508,7 @@ func (j *Embeddedlinkrelation) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain.LinkKind) < 1 {
+	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
 	}
 	*j = Embeddedlinkrelation(plain)
@@ -540,7 +541,7 @@ func (j *Embeddedlinkrelation) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain.LinkKind) < 1 {
+	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
 	}
 	*j = Embeddedlinkrelation(plain)

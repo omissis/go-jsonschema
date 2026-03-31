@@ -9,12 +9,12 @@ import yaml "gopkg.in/yaml.v3"
 
 type AnyOf6 struct {
 	// Qux2 corresponds to the JSON schema field "qux2".
-	Qux2 []AnyOf6Qux2Elem `json:"qux2,omitempty" yaml:"qux2,omitempty" mapstructure:"qux2,omitempty"`
+	Qux2 []AnyOf6Qux2Elem `json:"qux2,omitempty,omitzero" yaml:"qux2,omitempty" mapstructure:"qux2,omitempty"`
 }
 
 type AnyOf6Qux2Elem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -81,12 +81,12 @@ func (j *AnyOf6Qux2Elem) UnmarshalJSON(value []byte) error {
 
 type Bar2 struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []Bar2ContentElem `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []Bar2ContentElem `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 type Bar2ContentElem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -188,7 +188,7 @@ func (j *Baz2) UnmarshalJSON(value []byte) error {
 
 type Baz2ContentElem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -288,17 +288,17 @@ func (j *Baz2ContentElem) UnmarshalYAML(value *yaml.Node) error {
 
 type Baz2 struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []Baz2ContentElem `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []Baz2ContentElem `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 type Foo2 struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []Foo2ContentElem `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []Foo2ContentElem `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 type Foo2ContentElem struct {
 	// Content corresponds to the JSON schema field "content".
-	Content []interface{} `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+	Content []interface{} `json:"content,omitempty,omitzero" yaml:"content,omitempty" mapstructure:"content,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

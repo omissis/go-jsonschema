@@ -33,19 +33,56 @@ var (
 	}
 )
 
+// func TestDebug(t *testing.T) {
+// 	t.Parallel()
+
+// 	testExampleFile(t, basicConfig, "./data/core/some/file.json")
+// }
+
 func TestCore(t *testing.T) {
 	t.Parallel()
 
 	testExamples(t, basicConfig, "./data/core")
 }
 
-func TestOmitempty(t *testing.T) {
+func TestOmitBoth(t *testing.T) {
 	t.Parallel()
 
 	cfg := basicConfig
-	cfg.DisableOmitempty = true
+	cfg.Tags = []string{"json"}
 
-	testExamples(t, cfg, "./data/disableOmitempty")
+	testExamples(t, cfg, "./data/omitBoth")
+}
+
+func TestOmitEmpty(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"json"}
+	cfg.DisableOmitZero = true
+
+	testExamples(t, cfg, "./data/omitEmpty")
+}
+
+func TestOmitNone(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"json"}
+	cfg.DisableOmitEmpty = true
+	cfg.DisableOmitZero = true
+
+	testExamples(t, cfg, "./data/omitNone")
+}
+
+func TestOmitZero(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Tags = []string{"json"}
+	cfg.DisableOmitEmpty = true
+
+	testExamples(t, cfg, "./data/omitZero")
 }
 
 func TestValidation(t *testing.T) {
@@ -225,6 +262,15 @@ func TestMinSizeInt(t *testing.T) {
 	cfg.MinSizedInts = true
 
 	testExamples(t, cfg, "./data/minSizedInts")
+}
+
+func TestAliasSingleAllOfAnyOfRefs(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.AliasSingleAllOfAnyOfRefs = true
+
+	testExamples(t, cfg, "./data/aliasSingleAllOfAnyOfRefs")
 }
 
 func TestSchemaExtensions(t *testing.T) {

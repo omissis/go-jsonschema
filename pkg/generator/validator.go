@@ -13,6 +13,8 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/mathutils"
 )
 
+const typeInt = "int"
+
 var (
 	ErrDurationIsEmpty                = errors.New("duration default value must not be an empty string")
 	ErrCannotConvertISO8601ToGoFormat = errors.New("could not convert duration from ISO8601 to Go format")
@@ -154,6 +156,7 @@ type defaultValidator struct {
 	fieldName        string
 	defaultValueType codegen.Type
 	defaultValue     any
+	isPointer        bool
 }
 
 func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
@@ -186,7 +189,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 
 				defaultValue := fmt.Sprintf(`%s{%s}`, nt.Decl.GetName(), b.String())
 
-				return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
+				return v.assignDefault(out, defaultValue), nil
 			}
 		}
 
@@ -221,18 +224,115 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 			)
 			tmpEmitter.Indent(-1)
 			tmpEmitter.Printlnf("}")
-			tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+
+			if v.isPointer {
+				tmpEmitter.Printlnf(`%s.%s = &%s`, varNamePlainStruct, v.fieldName, defaultValue)
+			} else {
+				tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+			}
 
 			return tmpEmitter.String(), nil
 		}
 	}
 
 	if defaultValue, err := v.tryDumpDefaultSlice(out.MaxLineLength()); err == nil {
-		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), defaultValue), nil
+		return v.assignDefault(out, defaultValue), nil
+	}
+
+	// Special handling for pointer-to-integer types (e.g., *int or NamedType wrapping *int).
+	// We need to create a temp variable and take its address.
+	if v.isPointerToInteger() {
+		if f, ok := v.defaultValue.(float64); ok {
+			intVal := int(f)
+			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+			tmpEmitter.Printlnf("defaultInt := %d", intVal)
+			tmpEmitter.Printlnf(`%s = &defaultInt`, getPlainName(v.fieldName))
+
+			return tmpEmitter.String(), nil
+		}
 	}
 
 	// Fallback to sdump in case we couldn't dump it properly.
-	return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), litter.Sdump(v.defaultValue)), nil
+	// Special handling for integer types: JSON numbers are float64, but we need int literals.
+	defaultValue := v.defaultValue
+	if v.isIntegerType() {
+		if f, ok := v.defaultValue.(float64); ok {
+			defaultValue = int(f)
+		}
+	}
+
+	return v.assignDefault(out, litter.Sdump(defaultValue)), nil
+}
+
+// assignDefault generates the assignment of a default value to the field.
+// When the field is a pointer type, it creates a typed temporary variable
+// and assigns its address to the field.
+func (v *defaultValidator) assignDefault(out *codegen.Emitter, valueExpr string) string {
+	if !v.isPointer {
+		return fmt.Sprintf(`%s = %s`, getPlainName(v.fieldName), valueExpr)
+	}
+
+	tmpVarName := "default" + v.fieldName
+	tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+	// Use a var declaration with explicit type so that untyped constants
+	// (e.g. 42.0 from JSON) are correctly converted to the target type.
+	typeEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+	if err := v.defaultValueType.Generate(typeEmitter); err == nil {
+		typeName := strings.TrimSpace(typeEmitter.String())
+		tmpEmitter.Printlnf("var %s %s = %s", tmpVarName, typeName, valueExpr)
+	} else {
+		tmpEmitter.Printlnf("%s := %s", tmpVarName, valueExpr)
+	}
+
+	tmpEmitter.Printlnf("%s = &%s", getPlainName(v.fieldName), tmpVarName)
+
+	return strings.TrimRight(tmpEmitter.String(), "\n")
+}
+
+func (v *defaultValidator) isIntegerType() bool {
+	return isIntegerType(v.defaultValueType)
+}
+
+func isIntegerType(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.PointerType:
+		return isIntegerType(tt.Type)
+	case *codegen.PointerType:
+		return isIntegerType(tt.Type)
+	case codegen.NamedType:
+		return isIntegerType(tt.Decl.Type)
+	case *codegen.NamedType:
+		return isIntegerType(tt.Decl.Type)
+	case codegen.PrimitiveType:
+		return tt.Type == typeInt
+	}
+
+	return false
+}
+
+func (v *defaultValidator) isPointerToInteger() bool {
+	return isPointerToInteger(v.defaultValueType)
+}
+
+func isPointerToInteger(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.NamedType:
+		return isPointerToInteger(tt.Decl.Type)
+	case *codegen.NamedType:
+		return isPointerToInteger(tt.Decl.Type)
+	case codegen.PointerType:
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
+			return pt.Type == typeInt
+		}
+	case *codegen.PointerType:
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
+			return pt.Type == typeInt
+		}
+	}
+
+	return false
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
@@ -357,6 +457,7 @@ type stringValidator struct {
 	maxLength  int
 	isNillable bool
 	pattern    string
+	constVal   *string
 }
 
 func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
@@ -394,12 +495,20 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 		}
 	}
 
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != "%s" {`, checkPointer, pointerPrefix, value, *v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%s", "%s", "%s")`, fieldName, *v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
 	if v.minLength == 0 && v.maxLength == 0 {
 		return nil
 	}
 
 	if v.minLength != 0 {
-		out.Printlnf(`if %slen(%s%s) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
+		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) < %d {`, checkPointer, pointerPrefix, value, v.minLength)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be >= %%d", "%s", %d)`, fieldName, v.minLength)
 		out.Indent(-1)
@@ -407,7 +516,7 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 	}
 
 	if v.maxLength != 0 {
-		out.Printlnf(`if %slen(%s%s) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
+		out.Printlnf(`if %sutf8.RuneCountInString(string(%s%s)) > %d {`, checkPointer, pointerPrefix, value, v.maxLength)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", "%s", %d)`, fieldName, v.maxLength)
 		out.Indent(-1)
@@ -433,6 +542,7 @@ type numericValidator struct {
 	exclusiveMaximum *any
 	minimum          *float64
 	exclusiveMinimum *any
+	constVal         any
 	roundToInt       bool
 }
 
@@ -444,6 +554,14 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 	if v.isNillable {
 		checkPointer = fmt.Sprintf("%s != nil && ", value)
 		pointerPrefix = "*"
+	}
+
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != %v {`, checkPointer, pointerPrefix, value, v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%v", "%s", %v)`, v.jsonName, v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
 	}
 
 	if v.multipleOf != nil {
@@ -526,6 +644,42 @@ func (v *numericValidator) valueOf(val float64) any {
 	}
 
 	return val
+}
+
+type booleanValidator struct {
+	jsonName   string
+	fieldName  string
+	isNillable bool
+	constVal   *bool
+}
+
+func (v *booleanValidator) generate(out *codegen.Emitter, unmarshalTemplate string) error {
+	value := getPlainName(v.fieldName)
+	fieldName := v.jsonName
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.isNillable {
+		checkPointer = fmt.Sprintf("%s != nil && ", value)
+		pointerPrefix = "*"
+	}
+
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != %t {`, checkPointer, pointerPrefix, value, *v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%t", "%s", %t)`, fieldName, *v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	return nil
+}
+
+func (v *booleanValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: false,
+	}
 }
 
 func getPlainName(fieldName string) string {

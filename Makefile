@@ -8,14 +8,14 @@ SHELL := /bin/bash
 # ----------------------------------------------------------------------------------------------------------------------
 
 _DOCKER_FILELINT_IMAGE=cytopia/file-lint:latest-0.8
-_DOCKER_GOLANG_IMAGE=golang:1.24.12
-_DOCKER_GOLANGCI_LINT_IMAGE=golangci/golangci-lint:v2.8.0
+_DOCKER_GOLANG_IMAGE=golang:1.25.7
+_DOCKER_GOLANGCI_LINT_IMAGE=golangci/golangci-lint:v2.11.4
 _DOCKER_HADOLINT_IMAGE=hadolint/hadolint:v2.14.0
 _DOCKER_JSONLINT_IMAGE=cytopia/jsonlint:1.6
 _DOCKER_MAKEFILELINT_IMAGE=cytopia/checkmake:latest-0.5
 _DOCKER_MARKDOWNLINT_IMAGE=davidanson/markdownlint-cli2:v0.18.0
 _DOCKER_SHELLCHECK_IMAGE=koalaman/shellcheck-alpine:v0.11.0
-_DOCKER_SHFMT_IMAGE=mvdan/shfmt:v3.12.0-alpine
+_DOCKER_SHFMT_IMAGE=mvdan/shfmt:v3.13.0-alpine
 _DOCKER_TOOLS_IMAGE=omissis/go-jsonschema:tools-latest
 _DOCKER_YAMLLINT_IMAGE=cytopia/yamllint:1
 

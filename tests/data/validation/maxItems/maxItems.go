@@ -8,10 +8,10 @@ import yaml "gopkg.in/yaml.v3"
 
 type MaxItems struct {
 	// MyNestedArray corresponds to the JSON schema field "myNestedArray".
-	MyNestedArray [][]interface{} `json:"myNestedArray,omitempty" yaml:"myNestedArray,omitempty" mapstructure:"myNestedArray,omitempty"`
+	MyNestedArray [][]interface{} `json:"myNestedArray,omitempty,omitzero" yaml:"myNestedArray,omitempty" mapstructure:"myNestedArray,omitempty"`
 
 	// MyStringArray corresponds to the JSON schema field "myStringArray".
-	MyStringArray []string `json:"myStringArray,omitempty" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
+	MyStringArray []string `json:"myStringArray,omitempty,omitzero" yaml:"myStringArray,omitempty" mapstructure:"myStringArray,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

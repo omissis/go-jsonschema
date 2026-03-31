@@ -9,7 +9,7 @@ import yaml "gopkg.in/yaml.v3"
 
 type Agreement struct {
 	// Id corresponds to the JSON schema field "id".
-	Id *string `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id,omitempty"`
+	Id *string `json:"id,omitempty,omitzero" yaml:"id,omitempty" mapstructure:"id,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -34,14 +34,14 @@ func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type AnyOfRef interface{}
+type AnyOfRef map[string]interface{}
 
 type AnyOfRef_0 struct {
 	// Id corresponds to the JSON schema field "id".
-	Id *string `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id,omitempty"`
+	Id *string `json:"id,omitempty,omitzero" yaml:"id,omitempty" mapstructure:"id,omitempty"`
 
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 type AnyOfRef_0_0 = Offer
@@ -126,7 +126,7 @@ func (j *AnyOfRef_0) UnmarshalYAML(value *yaml.Node) error {
 
 type Offer struct {
 	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 type Policy interface{}

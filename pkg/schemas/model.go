@@ -177,6 +177,7 @@ type Type struct {
 	AdditionalProperties *Type            `json:"additionalProperties,omitempty"` // Section 5.18.
 	Enum                 []any            `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
+	Const                any              `json:"const,omitempty"`
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
 	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
@@ -213,6 +214,10 @@ type Type struct {
 
 	// Flags.
 	Dereferenced bool `json:"-"` // Marks that his type has been dereferenced.
+}
+
+func (value *Type) IsEmptyObject() bool {
+	return len(value.Properties) == 0 && value.AdditionalProperties == nil
 }
 
 func (value *Type) SetSubSchemaType(sst SubSchemaType) {
@@ -280,6 +285,10 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 
 	if legacyObj.Dependencies != nil && obj.DependentSchemas == nil {
 		obj.DependentSchemas = legacyObj.Dependencies
+	}
+
+	if len(obj.Type) == 0 && (len(obj.Properties) > 0 || obj.AdditionalProperties != nil) {
+		obj.Type = TypeList{"object"}
 	}
 
 	*value = Type(obj)
@@ -427,8 +436,10 @@ func (t typeListTransformer) Transformer(typ reflect.Type) func(dst, src reflect
 }
 
 type GoJSONSchemaExtension struct {
-	Type       *string  `json:"type,omitempty"`
-	Identifier *string  `json:"identifier,omitempty"`
-	Nillable   bool     `json:"nillable,omitempty"`
-	Imports    []string `json:"imports,omitempty"`
+	Type       *string           `json:"type,omitempty"`
+	Identifier *string           `json:"identifier,omitempty"`
+	Nillable   bool              `json:"nillable,omitempty"`
+	Pointer    *bool             `json:"pointer,omitempty"`
+	Imports    []string          `json:"imports,omitempty"`
+	ExtraTags  map[string]string `json:"extraTags,omitempty"`
 }

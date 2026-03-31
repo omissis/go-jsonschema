@@ -9,22 +9,22 @@ import "reflect"
 
 type GopkgYAMLv3 struct {
 	// MyBoolean corresponds to the JSON schema field "myBoolean".
-	MyBoolean *bool `json:"myBoolean,omitempty" yaml:"myBoolean,omitempty" mapstructure:"myBoolean,omitempty"`
+	MyBoolean *bool `json:"myBoolean,omitempty,omitzero" yaml:"myBoolean,omitempty" mapstructure:"myBoolean,omitempty"`
 
 	// MyEnum corresponds to the JSON schema field "myEnum".
-	MyEnum *GopkgYAMLv3MyEnum `json:"myEnum,omitempty" yaml:"myEnum,omitempty" mapstructure:"myEnum,omitempty"`
+	MyEnum *GopkgYAMLv3MyEnum `json:"myEnum,omitempty,omitzero" yaml:"myEnum,omitempty" mapstructure:"myEnum,omitempty"`
 
 	// MyInteger corresponds to the JSON schema field "myInteger".
-	MyInteger *int `json:"myInteger,omitempty" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
+	MyInteger *int `json:"myInteger,omitempty,omitzero" yaml:"myInteger,omitempty" mapstructure:"myInteger,omitempty"`
 
 	// MyNull corresponds to the JSON schema field "myNull".
-	MyNull interface{} `json:"myNull,omitempty" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
+	MyNull interface{} `json:"myNull,omitempty,omitzero" yaml:"myNull,omitempty" mapstructure:"myNull,omitempty"`
 
 	// MyNumber corresponds to the JSON schema field "myNumber".
-	MyNumber *float64 `json:"myNumber,omitempty" yaml:"myNumber,omitempty" mapstructure:"myNumber,omitempty"`
+	MyNumber *float64 `json:"myNumber,omitempty,omitzero" yaml:"myNumber,omitempty" mapstructure:"myNumber,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
-	MyString *string `json:"myString,omitempty" yaml:"myString,omitempty" mapstructure:"myString,omitempty"`
+	MyString *string `json:"myString,omitempty,omitzero" yaml:"myString,omitempty" mapstructure:"myString,omitempty"`
 }
 
 type GopkgYAMLv3MyEnum string

@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "unicode/utf8"
 
 type MinStr string
 
@@ -15,7 +16,7 @@ func (j *MinStr) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if len(plain) < 5 {
+	if utf8.RuneCountInString(string(plain)) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "", 5)
 	}
 	*j = MinStr(plain)
@@ -29,7 +30,7 @@ func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if len(plain) < 5 {
+	if utf8.RuneCountInString(string(plain)) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "", 5)
 	}
 	*j = MinStr(plain)
@@ -38,7 +39,7 @@ func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
 
 type PrimitiveDefs struct {
 	// MyNullableString corresponds to the JSON schema field "myNullableString".
-	MyNullableString *MinStr `json:"myNullableString,omitempty" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
+	MyNullableString *MinStr `json:"myNullableString,omitempty,omitzero" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
 
 	// MyString corresponds to the JSON schema field "myString".
 	MyString MinStr `json:"myString" yaml:"myString" mapstructure:"myString"`
