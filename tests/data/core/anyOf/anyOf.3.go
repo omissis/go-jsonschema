@@ -28,7 +28,7 @@ type AnyOf3_0 struct {
 func (j *AnyOf3_0) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf3_0: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AnyOf3_0: required")
@@ -46,7 +46,7 @@ func (j *AnyOf3_0) UnmarshalJSON(value []byte) error {
 func (j *AnyOf3_0) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf3_0: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AnyOf3_0: required")
@@ -69,7 +69,7 @@ type AnyOf3_1 struct {
 func (j *AnyOf3_1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf3_1: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AnyOf3_1: required")
@@ -87,7 +87,7 @@ func (j *AnyOf3_1) UnmarshalJSON(value []byte) error {
 func (j *AnyOf3_1) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf3_1: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AnyOf3_1: required")
@@ -132,7 +132,7 @@ func (j *AnyOf3_2) UnmarshalYAML(value *yaml.Node) error {
 func (j *AnyOf3) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf3: %w", err)
 	}
 	var anyOf3_0 AnyOf3_0
 	var anyOf3_1 AnyOf3_1
@@ -163,7 +163,7 @@ func (j *AnyOf3) UnmarshalJSON(value []byte) error {
 func (j *AnyOf3) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf3: %w", err)
 	}
 	var anyOf3_0 AnyOf3_0
 	var anyOf3_1 AnyOf3_1

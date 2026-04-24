@@ -18,7 +18,7 @@ type AllOfWithIfThen struct {
 func (j *AllOfWithIfThen) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOfWithIfThen: %w", err)
 	}
 	if _, ok := raw["result"]; raw != nil && !ok {
 		return fmt.Errorf("field result in AllOfWithIfThen: required")
@@ -36,7 +36,7 @@ func (j *AllOfWithIfThen) UnmarshalJSON(value []byte) error {
 func (j *AllOfWithIfThen) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOfWithIfThen: %w", err)
 	}
 	if _, ok := raw["result"]; raw != nil && !ok {
 		return fmt.Errorf("field result in AllOfWithIfThen: required")
