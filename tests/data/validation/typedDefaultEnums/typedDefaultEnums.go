@@ -66,7 +66,7 @@ func (j *TypedDefaultEnumsSome) UnmarshalYAML(value *yaml.Node) error {
 func (j *TypedDefaultEnums) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TypedDefaultEnums: %w", err)
 	}
 	type Plain TypedDefaultEnums
 	var plain Plain
@@ -84,7 +84,7 @@ func (j *TypedDefaultEnums) UnmarshalJSON(value []byte) error {
 func (j *TypedDefaultEnums) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TypedDefaultEnums: %w", err)
 	}
 	type Plain TypedDefaultEnums
 	var plain Plain

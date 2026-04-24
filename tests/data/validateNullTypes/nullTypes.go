@@ -18,7 +18,7 @@ type NullTypes struct {
 func (j *NullTypes) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw NullTypes: %w", err)
 	}
 	if raw == nil {
 		return fmt.Errorf("NullTypes: must not be null")
@@ -48,7 +48,7 @@ func (j *NullTypes) UnmarshalJSON(value []byte) error {
 func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw NullTypes: %w", err)
 	}
 	if raw == nil {
 		return fmt.Errorf("NullTypes: must not be null")
