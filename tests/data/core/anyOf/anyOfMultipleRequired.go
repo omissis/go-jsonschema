@@ -19,7 +19,7 @@ type MultipleRequiredBase struct {
 func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
 	}
 	if _, ok := raw["baseField"]; raw != nil && !ok {
 		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
@@ -37,7 +37,7 @@ func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
 	}
 	if _, ok := raw["baseField"]; raw != nil && !ok {
 		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
@@ -60,7 +60,7 @@ type MultipleRequiredMiddle struct {
 func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
 	}
 	if _, ok := raw["middleField"]; raw != nil && !ok {
 		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
@@ -78,7 +78,7 @@ func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
 	}
 	if _, ok := raw["middleField"]; raw != nil && !ok {
 		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
@@ -113,7 +113,7 @@ type ComposedWithMultipleRequired struct {
 func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
 	}
 	var composedWithMultipleRequired_0 ComposedWithMultipleRequired_0
 	var composedWithMultipleRequired_1 ComposedWithMultipleRequired_1
@@ -133,9 +133,23 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 		return err
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
@@ -148,7 +162,7 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
 	}
 	var composedWithMultipleRequired_0 ComposedWithMultipleRequired_0
 	var composedWithMultipleRequired_1 ComposedWithMultipleRequired_1
@@ -168,9 +182,23 @@ func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
