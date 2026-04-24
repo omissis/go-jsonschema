@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/allowListSubset",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contact": {
+      "type": "string",
+      "format": "email"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "host": {
+      "type": "string",
+      "format": "hostname"
+    }
+  },
+  "required": [
+    "userId",
+    "contact",
+    "homepage",
+    "host"
+  ]
+}

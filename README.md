@@ -166,13 +166,63 @@ only specific validations remain to be fully implemented.
     * [ ] `not`
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times
-    * [ ] Email addresses
-    * [ ] Hostnames
+    * [x] Email addresses (opt-in via `Config.FormatValidation`)
+    * [x] Hostnames (opt-in via `Config.FormatValidation`)
     * [ ] IP addresses
-    * [ ] Resource identifiers
+    * [x] Resource identifiers — `uri`, `uri-reference` (opt-in via `Config.FormatValidation`)
     * [ ] URI-template
     * [ ] JSON pointers
-    * [ ] Regex
+    * [x] Regex (opt-in via `Config.FormatValidation`)
+    * [x] `uuid` (extension; opt-in via `Config.FormatValidation`)
+
+### Opt-in `format` validation
+
+Setting `Config.FormatValidation.Enabled = true` emits a runtime check on
+every `format` keyword listed below. The validator runs after the typed
+struct decode, so the field's Go type is already its target form. Optional
+pointer fields are skipped when nil, so absent values do not trigger
+validation.
+
+| `format` | Strategy | Notes |
+| --- | --- | --- |
+| `uuid` | RE2 regex against the canonical 8-4-4-4-12 hex form (case-insensitive) | Not in the JSON Schema core spec; supported as a common extension. |
+| `email` | `net/mail.ParseAddress` + reject if a display-name is present + require the parsed address to round-trip the input verbatim | Stricter than the Go stdlib default: only RFC 5321 `addr-spec` (`local@domain`) is accepted. Forms like `Alice <alice@example.com>` or `<bob@example.com>` are rejected. |
+| `uri` | `net/url.Parse` + `IsAbs()` + RFC 3986 character-class regex | Rejects whitespace, control characters, and malformed percent-encoding (`%` not followed by two hex digits). Empty strings are rejected (not absolute). |
+| `uri-reference` | `net/url.Parse` + RFC 3986 character-class regex | Same character-class check as `uri`. Empty strings, fragment-only refs (`#x`), and relative paths (`/a/b`) are accepted per RFC 3986. |
+| `hostname` | RE2 regex (RFC 1123 labels) | |
+| `regex` | `regexp.Compile` (Go's RE2 syntax) | |
+
+The validation is opt-in to preserve existing behavior. To restrict
+validation to a subset of keywords, set `Config.FormatValidation.AllowList`:
+
+```go
+cfg.FormatValidation = generator.FormatValidationConfig{
+    Enabled:   true,
+    AllowList: []string{"uuid", "email"}, // nil = all known formats
+}
+```
+
+From the CLI, use `--validate-formats`:
+
+```shell
+# Validate every supported format keyword.
+go-jsonschema --validate-formats=all -p main schema.json
+
+# Validate only specific formats.
+go-jsonschema --validate-formats=uuid,email -p main schema.json
+
+# Explicit off (same as omitting the flag).
+go-jsonschema --validate-formats=off -p main schema.json
+```
+
+Unknown format names are rejected at flag-parse time so a typo like
+`uuid,emial` fails immediately rather than silently disabling email
+validation.
+
+The `uri` / `uri-reference` validation is **best-effort, not RFC-3986-perfect** —
+no Go validator (stdlib or third-party) is — but it catches the common
+cases that bare `url.Parse` accepts (whitespace, control chars, malformed
+pct-encoding).
 
 ## License
 
