@@ -298,6 +298,12 @@ func TestRefWithOverridesPath(t *testing.T) {
 	testExampleFile(t, cfg, "./data/refWithOverridesPath/schema.json")
 }
 
+func TestStructWithConstraints(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/structWithConstraints")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
