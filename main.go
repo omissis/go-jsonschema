@@ -37,8 +37,12 @@ var (
 	disableCustomTypesForMaps bool
 	disableOmitEmpty          bool
 	disableOmitZero           bool
+	validateFormatsRaw        string
 
-	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
+	errFlagFormat            = errors.New("flag must be in the format URI=PACKAGE")
+	errUnknownFormatKeyword  = errors.New("unknown format keyword")
+	errEmptyFormatListEntry  = errors.New("empty format name in --validate-formats list")
+	errFormatListWithKeyword = errors.New("--validate-formats: \"all\" and \"off\" cannot be combined with format names")
 
 	rootCmd = &cobra.Command{
 		Use:   "go-jsonschema FILE ...",
@@ -67,6 +71,11 @@ var (
 				abortWithErr(err)
 			}
 
+			formatValidation, err := parseValidateFormats(validateFormatsRaw)
+			if err != nil {
+				abortWithErr(err)
+			}
+
 			cfg := generator.Config{
 				Warner: func(message string) {
 					logf("Warning: %s", message)
@@ -87,6 +96,7 @@ var (
 				DisableCustomTypesForMaps: disableCustomTypesForMaps,
 				DisableOmitEmpty:          disableOmitEmpty,
 				DisableOmitZero:           disableOmitZero,
+				FormatValidation:          formatValidation,
 			}
 
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
@@ -207,8 +217,58 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"disable the addition of omitempty tag values")
 	rootCmd.PersistentFlags().BoolVar(&disableOmitZero, "disable-omitzero", false,
 		"disable the addition of omitzero tag values")
+	rootCmd.PersistentFlags().StringVar(&validateFormatsRaw, "validate-formats", "",
+		`Opt in to runtime validation of JSON Schema "format" keywords. Accepts
+"off" (default; same as omitting the flag), "all" (validate every supported
+format), or a comma-separated subset (e.g. "uuid,email"). Supported formats:
+`+strings.Join(generator.SupportedFormats(), ", ")+`.`)
 
 	abortWithErr(rootCmd.Execute())
+}
+
+// parseValidateFormats interprets the --validate-formats flag value.
+//
+// Accepted values:
+//
+//	""         — flag omitted; validation off.
+//	"off"      — explicit off (useful for scripts that always set the flag).
+//	"all"      — validate every format returned by generator.SupportedFormats.
+//	"a,b,c"    — validate only the listed formats (case-insensitive).
+//
+// Any unknown format name is rejected up front rather than silently dropped,
+// so a typo like "uuid,emial" fails immediately instead of disabling email
+// validation. "all" and "off" cannot be mixed with format names.
+func parseValidateFormats(raw string) (generator.FormatValidationConfig, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || strings.EqualFold(trimmed, "off") {
+		return generator.FormatValidationConfig{}, nil
+	}
+
+	if strings.EqualFold(trimmed, "all") {
+		return generator.FormatValidationConfig{Enabled: true}, nil
+	}
+
+	parts := strings.Split(trimmed, ",")
+	allowList := make([]string, 0, len(parts))
+
+	for _, p := range parts {
+		name := strings.ToLower(strings.TrimSpace(p))
+		switch {
+		case name == "":
+			return generator.FormatValidationConfig{}, errEmptyFormatListEntry
+		case name == "all" || name == "off":
+			return generator.FormatValidationConfig{}, errFormatListWithKeyword
+		case !generator.IsSupportedFormat(name):
+			return generator.FormatValidationConfig{}, fmt.Errorf(
+				"%w %q; supported: %s",
+				errUnknownFormatKeyword, name, strings.Join(generator.SupportedFormats(), ", "),
+			)
+		}
+
+		allowList = append(allowList, name)
+	}
+
+	return generator.FormatValidationConfig{Enabled: true, AllowList: allowList}, nil
 }
 
 func abortWithErr(err error) {
