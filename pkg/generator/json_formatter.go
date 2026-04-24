@@ -42,6 +42,7 @@ func (jf *jsonFormatter) generate(
 		for _, f := range structType.Fields {
 			if f.Name == additionalProperties {
 				forceBefore = true
+
 				break
 			}
 		}
