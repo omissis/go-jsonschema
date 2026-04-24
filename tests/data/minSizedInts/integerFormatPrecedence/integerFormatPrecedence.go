@@ -24,7 +24,7 @@ type IntegerFormatPrecedence struct {
 func (j *IntegerFormatPrecedence) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerFormatPrecedence: %w", err)
 	}
 	type Plain IntegerFormatPrecedence
 	var plain Plain
@@ -48,7 +48,7 @@ func (j *IntegerFormatPrecedence) UnmarshalJSON(value []byte) error {
 func (j *IntegerFormatPrecedence) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerFormatPrecedence: %w", err)
 	}
 	type Plain IntegerFormatPrecedence
 	var plain Plain

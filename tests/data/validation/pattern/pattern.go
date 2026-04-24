@@ -22,7 +22,7 @@ type Pattern struct {
 func (j *Pattern) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Pattern: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in Pattern: required")
@@ -53,7 +53,7 @@ func (j *Pattern) UnmarshalJSON(value []byte) error {
 func (j *Pattern) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Pattern: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in Pattern: required")

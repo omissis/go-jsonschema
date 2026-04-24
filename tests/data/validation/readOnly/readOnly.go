@@ -18,7 +18,7 @@ type ReadOnly struct {
 func (j *ReadOnly) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ReadOnly: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in ReadOnly: required")
@@ -39,7 +39,7 @@ func (j *ReadOnly) UnmarshalJSON(value []byte) error {
 func (j *ReadOnly) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ReadOnly: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in ReadOnly: required")

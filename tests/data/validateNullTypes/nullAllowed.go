@@ -28,7 +28,7 @@ type NullAllowed struct {
 func (j *NullAllowed) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw NullAllowed: %w", err)
 	}
 	if raw == nil {
 		return fmt.Errorf("NullAllowed: must not be null")
@@ -52,7 +52,7 @@ func (j *NullAllowed) UnmarshalJSON(value []byte) error {
 func (j *NullAllowed) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw NullAllowed: %w", err)
 	}
 	if raw == nil {
 		return fmt.Errorf("NullAllowed: must not be null")
