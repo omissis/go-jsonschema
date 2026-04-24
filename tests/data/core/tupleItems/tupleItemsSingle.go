@@ -20,7 +20,7 @@ type TupleItemsSingleLicensesElem struct {
 func (j *TupleItemsSingleLicensesElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TupleItemsSingleLicensesElem: %w", err)
 	}
 	if _, ok := raw["expression"]; raw != nil && !ok {
 		return fmt.Errorf("field expression in TupleItemsSingleLicensesElem: required")
@@ -38,7 +38,7 @@ func (j *TupleItemsSingleLicensesElem) UnmarshalJSON(value []byte) error {
 func (j *TupleItemsSingleLicensesElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TupleItemsSingleLicensesElem: %w", err)
 	}
 	if _, ok := raw["expression"]; raw != nil && !ok {
 		return fmt.Errorf("field expression in TupleItemsSingleLicensesElem: required")

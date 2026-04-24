@@ -3,6 +3,7 @@
 package test
 
 import "encoding/json"
+import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
 type TypedDefault struct {
@@ -14,7 +15,7 @@ type TypedDefault struct {
 func (j *TypedDefault) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TypedDefault: %w", err)
 	}
 	type Plain TypedDefault
 	var plain Plain
@@ -37,7 +38,7 @@ func (j *TypedDefault) UnmarshalJSON(value []byte) error {
 func (j *TypedDefault) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TypedDefault: %w", err)
 	}
 	type Plain TypedDefault
 	var plain Plain

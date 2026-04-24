@@ -49,7 +49,7 @@ type PrimitiveDefs struct {
 func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw PrimitiveDefs: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in PrimitiveDefs: required")
@@ -67,7 +67,7 @@ func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw PrimitiveDefs: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in PrimitiveDefs: required")
