@@ -454,6 +454,17 @@ func (g *schemaGenerator) structFieldValidators(
 				g.output.file.Package.AddImport("regexp", "")
 			}
 
+			if format := f.SchemaType.Format; format != "" &&
+				isKnownFormatKeyword(format) &&
+				g.config.FormatValidation.shouldValidate(format) {
+				validators = append(validators, &formatValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					format:     format,
+					isNillable: isNillable,
+				})
+			}
+
 		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
@@ -553,6 +564,10 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 
 		for _, pkg := range v.desc().imports {
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
+		}
+
+		for _, decl := range v.desc().decls {
+			g.output.file.Package.AddDecl(decl)
 		}
 
 		if v.desc().hasError {
