@@ -3,6 +3,7 @@
 package test
 
 import "encoding/json"
+import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
 // A named nullable integer with a pinned width, which generates a named pointer
@@ -19,7 +20,7 @@ type IntegerFormatPointerDefault struct {
 func (j *IntegerFormatPointerDefault) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerFormatPointerDefault: %w", err)
 	}
 	type Plain IntegerFormatPointerDefault
 	var plain Plain
@@ -39,7 +40,7 @@ func (j *IntegerFormatPointerDefault) UnmarshalJSON(value []byte) error {
 func (j *IntegerFormatPointerDefault) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerFormatPointerDefault: %w", err)
 	}
 	type Plain IntegerFormatPointerDefault
 	var plain Plain

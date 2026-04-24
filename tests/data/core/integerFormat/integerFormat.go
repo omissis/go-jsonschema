@@ -36,7 +36,7 @@ type IntegerFormat struct {
 func (j *IntegerFormat) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerFormat: %w", err)
 	}
 	type Plain IntegerFormat
 	var plain Plain
@@ -60,7 +60,7 @@ func (j *IntegerFormat) UnmarshalJSON(value []byte) error {
 func (j *IntegerFormat) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerFormat: %w", err)
 	}
 	type Plain IntegerFormat
 	var plain Plain
