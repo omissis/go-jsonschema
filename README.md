@@ -163,7 +163,7 @@ only specific validations remain to be fully implemented.
   * [ ] Boolean subschemas (§6.7)
     * [ ] `allOf`
     * [ ] `anyOf`
-    * [ ] `oneOf`
+    * [x] `oneOf` (primitive variants only; **note**: object discriminated unions pending)
     * [ ] `not`
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times
