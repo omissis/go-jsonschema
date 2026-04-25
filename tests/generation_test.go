@@ -195,6 +195,21 @@ func TestOnlyModels(t *testing.T) {
 	testExampleFile(t, cfg, "./data/misc/onlyModels/onlyModels.json")
 }
 
+// TestOnlyModelsOneOfPrimitive exercises the OnlyModels fallback for primitive
+// `oneOf` schemas: without the gate added in generateDeclaredType, the
+// wrapper-emission path would emit a struct whose only field is the
+// unexported `value any`, with no methods — unusable to consumers outside
+// the generated package. With the gate the schema falls back to the regular
+// `interface{}` representation that other consumers can construct directly.
+func TestOnlyModelsOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.OnlyModels = true
+
+	testExampleFile(t, cfg, "./data/onlyModels/oneOfPrimitive/oneOfPrimitive.json")
+}
+
 func TestSpecialCharacters(t *testing.T) {
 	t.Parallel()
 
@@ -303,6 +318,12 @@ func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
 	if !errors.Is(err, generator.ErrInvalidStrictAdditionalPropertiesMode) {
 		t.Errorf("expected ErrInvalidStrictAdditionalPropertiesMode, got %v", err)
 	}
+}
+
+func TestOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/oneOfPrimitive")
 }
 
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {

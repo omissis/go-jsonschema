@@ -288,6 +288,15 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateEnumType(t, scope)
 	}
 
+	// OnlyModels skips emitting Unmarshal/Marshal helpers, but the primitive
+	// `oneOf` wrapper has no other API surface (only an unexported `value`
+	// field), so without those methods consumers can't construct, inspect,
+	// or unmarshal the type. Fall back to the regular generation path in
+	// that mode so the resulting type stays usable.
+	if isPrimitiveOneOf(t) && !g.config.OnlyModels {
+		return g.generateOneOfPrimitive(t, scope)
+	}
+
 	name := g.output.uniqueTypeName(scope)
 
 	if g.config.StructNameFromTitle && t.Title != "" {
@@ -1326,6 +1335,13 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if len(t.AllOf) > 0 {
 			return g.generateAllOfType(t, scope)
+		}
+
+		// A primitive `oneOf` carries no top-level `type`, so this must run
+		// before the `len(t.Type) == 0` bail-out below or the wrapper would
+		// never be emitted.
+		if len(t.OneOf) > 0 && isPrimitiveOneOf(t) {
+			return g.generateDeclaredType(t, scope)
 		}
 
 		if len(t.Type) == 0 {

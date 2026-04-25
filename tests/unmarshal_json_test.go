@@ -20,6 +20,9 @@ import (
 	testFormatURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
+	testOneOfInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
+	testOneOfNumStringBool "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
+	testOneOfWithNull "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withNull"
 	testStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
 	testStrictAddlOmitted "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlOmitted"
@@ -668,6 +671,145 @@ func TestStrictFieldsErrorIsDeterministic(t *testing.T) {
 		assert.Contains(t, err.Error(), `["alpha" "mu" "zeta"]`,
 			"unknown keys should be sorted in error message")
 	}
+}
+
+func TestJsonUnmarshalOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	parseInField := func(t *testing.T, payload string) testOneOfInField.InField {
+		t.Helper()
+
+		var v testOneOfInField.InField
+		if err := json.Unmarshal([]byte(payload), &v); err != nil {
+			t.Fatalf("unmarshal: %s", err)
+		}
+
+		return v
+	}
+
+	t.Run("string variant accepted", func(t *testing.T) {
+		t.Parallel()
+
+		v := parseInField(t, `{"name":"a","value":"hello"}`)
+		s, ok := v.Value.AsString()
+		assert.True(t, ok)
+		assert.Equal(t, "hello", s)
+
+		_, gotNum := v.Value.AsNumber()
+		assert.False(t, gotNum)
+	})
+
+	t.Run("number variant accepted", func(t *testing.T) {
+		t.Parallel()
+
+		v := parseInField(t, `{"name":"a","value":42.5}`)
+		n, ok := v.Value.AsNumber()
+		assert.True(t, ok)
+		assert.InDelta(t, 42.5, n, 1e-9)
+	})
+
+	t.Run("bool variant accepted", func(t *testing.T) {
+		t.Parallel()
+
+		v := parseInField(t, `{"name":"a","value":true}`)
+		b, ok := v.Value.AsBool()
+		assert.True(t, ok)
+		assert.True(t, b)
+	})
+
+	t.Run("null is rejected because schema does not allow it", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfInField.InField
+		assert.Error(t, json.Unmarshal([]byte(`{"name":"a","value":null}`), &v))
+	})
+
+	t.Run("array is rejected for primitive variant", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfInField.InField
+		assert.Error(t, json.Unmarshal([]byte(`{"name":"a","value":[]}`), &v))
+	})
+
+	t.Run("round trip preserves value", func(t *testing.T) {
+		t.Parallel()
+
+		v := parseInField(t, `{"name":"x","value":7}`)
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"name":"x","value":7}`, string(out))
+	})
+
+	t.Run("string|null variant accepts null", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfWithNull.WithNull
+		require.NoError(t, json.Unmarshal([]byte(`{"value":null}`), &v))
+		assert.True(t, v.Value.IsNull())
+	})
+
+	t.Run("string|null variant accepts string", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfWithNull.WithNull
+		require.NoError(t, json.Unmarshal([]byte(`{"value":"x"}`), &v))
+
+		s, ok := v.Value.AsString()
+		assert.True(t, ok)
+		assert.Equal(t, "x", s)
+	})
+
+	t.Run("string|null variant rejects number", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfWithNull.WithNull
+		assert.Error(t, json.Unmarshal([]byte(`{"value":7}`), &v))
+	})
+
+	// Marshal/Unmarshal round-trip symmetry around the unset/null case.
+	// Schemas without a `null` variant must refuse to marshal an unset
+	// wrapper (rather than emit `null` that the matching UnmarshalJSON
+	// would reject). Schemas WITH a `null` variant continue to round-trip
+	// `null` ↔ unset cleanly.
+
+	t.Run("non-nullable wrapper: marshal unset value errors", func(t *testing.T) {
+		t.Parallel()
+
+		// numStringBool's oneOf is [number, string, boolean] — no null.
+		// A zero NumStringBoolValue (no variant set) must NOT marshal to
+		// null because UnmarshalJSON would reject that on the way back.
+		v := testOneOfNumStringBool.NumStringBool{}
+
+		_, err := json.Marshal(&v.Value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "schema does not allow null")
+	})
+
+	t.Run("nullable wrapper: round-trip preserves explicit null", func(t *testing.T) {
+		t.Parallel()
+
+		// withNull's oneOf is [string, null] — null is a legal variant.
+		input := []byte(`{"value":null}`)
+
+		var v testOneOfWithNull.WithNull
+
+		require.NoError(t, json.Unmarshal(input, &v))
+		assert.True(t, v.Value.IsNull())
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(input), string(out))
+	})
+
+	t.Run("IsZero is safe on a nil receiver", func(t *testing.T) {
+		t.Parallel()
+
+		// Pre-fix this panicked; the nil-receiver guard added in this
+		// commit makes IsZero return true for nil pointers.
+		var v *testOneOfNumStringBool.NumStringBoolValue
+
+		assert.True(t, v.IsZero())
+	})
 }
 
 func formatGopkgYAMLv3(v test.GopkgYAMLv3) string {
