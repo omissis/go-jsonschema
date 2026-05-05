@@ -17,6 +17,10 @@ import (
 	testFormatYAMLURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatYAMLURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatYAMLUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
+	testYAMLStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
+	testYAMLStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
+	testYAMLStrictAddlOmitted "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlOmitted"
+	testYAMLStrictAlwaysBasic "github.com/atombender/go-jsonschema/tests/data/strictAdditionalPropertiesAlways/basic"
 )
 
 func TestYamlV3Unmarshal(t *testing.T) {
@@ -158,6 +162,69 @@ func TestYamlUnmarshalFormatValidation(t *testing.T) {
 			desc:      "all schema rejects bad email",
 			yaml:      "userId: 550e8400-e29b-41d4-a716-446655440000\ncontact: oops\n",
 			target:    &testFormatYAMLAll.All{},
+			expectErr: true,
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			err := yamlv3.Unmarshal([]byte(tC.yaml), tC.target)
+			if tC.expectErr {
+				assert.Error(t, err, "expected validation error but got nil")
+			} else {
+				assert.NoError(t, err, "did not expect error")
+			}
+		})
+	}
+}
+
+// TestYamlUnmarshalStrictAdditionalProperties mirrors
+// TestJsonUnmarshalStrictAdditionalProperties but exercises the YAML path,
+// which goes through the same shared unmarshal-body pipeline. A divergence
+// in the yaml-tag stripping logic or in unknown-field rejection would
+// otherwise pass undetected with only the JSON tests.
+func TestYamlUnmarshalStrictAdditionalProperties(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc      string
+		yaml      string
+		target    any
+		expectErr bool
+	}{
+		// respect-schema mode + schema declares false
+		{desc: "addlFalse accepts only declared", yaml: "name: Alice\nage: 30\n", target: &testYAMLStrictAddlFalse.AddlFalse{}},
+		{
+			desc:      "addlFalse rejects extra",
+			yaml:      "name: Alice\nage: 30\nunexpected: true\n",
+			target:    &testYAMLStrictAddlFalse.AddlFalse{},
+			expectErr: true,
+		},
+
+		// respect-schema mode + schema is silent: must NOT enforce
+		{
+			desc:   "addlOmitted ignores extras",
+			yaml:   "label: x\nextra: 1\nmore: yes\n",
+			target: &testYAMLStrictAddlOmitted.AddlOmitted{},
+		},
+
+		// strict mode (always)
+		{desc: "always basic accepts known", yaml: "kind: foo\n", target: &testYAMLStrictAlwaysBasic.Basic{}},
+		{
+			desc:      "always basic rejects unknown",
+			yaml:      "kind: foo\noops: 42\n",
+			target:    &testYAMLStrictAlwaysBasic.Basic{},
+			expectErr: true,
+		},
+
+		// property-less object schemas: respect-schema mode + addlProps:false
+		{desc: "addlFalseEmpty accepts empty mapping", yaml: "{}\n", target: &testYAMLStrictAddlFalseEmpty.AddlFalseEmpty{}},
+		{
+			desc:      "addlFalseEmpty rejects any key",
+			yaml:      "foo: 1\n",
+			target:    &testYAMLStrictAddlFalseEmpty.AddlFalseEmpty{},
 			expectErr: true,
 		},
 	}

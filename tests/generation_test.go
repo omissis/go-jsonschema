@@ -271,6 +271,40 @@ func TestFormatValidationAllowList(t *testing.T) {
 	testExamples(t, cfg, "./data/formatValidationAllowList")
 }
 
+func TestStrictAdditionalPropertiesRespectSchema(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+
+	testExamples(t, cfg, "./data/strictAdditionalProperties")
+}
+
+func TestStrictAdditionalPropertiesAlways(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesStrict
+
+	testExamples(t, cfg, "./data/strictAdditionalPropertiesAlways")
+}
+
+func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesMode("rstrict") // typo
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject unknown StrictAdditionalProperties mode, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrInvalidStrictAdditionalPropertiesMode) {
+		t.Errorf("expected ErrInvalidStrictAdditionalPropertiesMode, got %v", err)
+	}
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 

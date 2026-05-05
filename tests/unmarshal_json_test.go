@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
@@ -19,6 +20,11 @@ import (
 	testFormatURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
+	testStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
+	testStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
+	testStrictAddlOmitted "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlOmitted"
+	testStrictAlwaysAddlOmittedEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalPropertiesAlways/addlOmittedEmpty"
+	testStrictAlwaysBasic "github.com/atombender/go-jsonschema/tests/data/strictAdditionalPropertiesAlways/basic"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
 
@@ -552,6 +558,115 @@ func TestJsonUnmarshalFormatValidation(t *testing.T) {
 				assert.NoError(t, err, "did not expect error")
 			}
 		})
+	}
+}
+
+func TestJsonUnmarshalStrictAdditionalProperties(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc      string
+		json      string
+		target    json.Unmarshaler
+		expectErr bool
+	}{
+		// respect-schema mode + schema declares false
+		{
+			desc:   "addlFalse accepts only declared",
+			json:   `{"name":"Alice","age":30}`,
+			target: &testStrictAddlFalse.AddlFalse{},
+		},
+		{
+			desc:      "addlFalse rejects extra",
+			json:      `{"name":"Alice","age":30,"unexpected":true}`,
+			target:    &testStrictAddlFalse.AddlFalse{},
+			expectErr: true,
+		},
+		{
+			desc:   "addlFalse minimal",
+			json:   `{"name":"Bob"}`,
+			target: &testStrictAddlFalse.AddlFalse{},
+		},
+
+		// respect-schema mode + schema is silent: must NOT enforce
+		{
+			desc:   "addlOmitted ignores extras",
+			json:   `{"label":"x","extra":1,"more":"yes"}`,
+			target: &testStrictAddlOmitted.AddlOmitted{},
+		},
+
+		// strict mode (always)
+		{
+			desc:   "always basic accepts known",
+			json:   `{"kind":"foo"}`,
+			target: &testStrictAlwaysBasic.Basic{},
+		},
+		{
+			desc:      "always basic rejects unknown",
+			json:      `{"kind":"foo","oops":42}`,
+			target:    &testStrictAlwaysBasic.Basic{},
+			expectErr: true,
+		},
+
+		// property-less object schemas: respect-schema mode + addlProps:false
+		{
+			desc:   "addlFalseEmpty accepts empty object",
+			json:   `{}`,
+			target: &testStrictAddlFalseEmpty.AddlFalseEmpty{},
+		},
+		{
+			desc:      "addlFalseEmpty rejects any key",
+			json:      `{"foo":1}`,
+			target:    &testStrictAddlFalseEmpty.AddlFalseEmpty{},
+			expectErr: true,
+		},
+
+		// property-less object schemas: strict mode applies even when schema is silent
+		{
+			desc:   "alwaysEmpty accepts empty object",
+			json:   `{}`,
+			target: &testStrictAlwaysAddlOmittedEmpty.AddlOmittedEmpty{},
+		},
+		{
+			desc:      "alwaysEmpty rejects any key",
+			json:      `{"foo":1}`,
+			target:    &testStrictAlwaysAddlOmittedEmpty.AddlOmittedEmpty{},
+			expectErr: true,
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			err := tC.target.UnmarshalJSON([]byte(tC.json))
+			if tC.expectErr {
+				assert.Error(t, err, "expected error but got nil")
+			} else {
+				assert.NoError(t, err, "did not expect error")
+			}
+		})
+	}
+}
+
+// TestStrictFieldsErrorIsDeterministic verifies the strict-fields validator
+// reports all unknown keys (not just one) and in deterministic sorted order.
+// Without sorting, Go's randomized map iteration would surface a different
+// key (or set order) on each run.
+func TestStrictFieldsErrorIsDeterministic(t *testing.T) {
+	t.Parallel()
+
+	jsonInput := []byte(`{"name":"Alice","zeta":1,"alpha":2,"mu":3}`)
+
+	// Run repeatedly to make sure map iteration randomness doesn't trip us up.
+	for range 50 {
+		var v testStrictAddlFalse.AddlFalse
+
+		err := v.UnmarshalJSON(jsonInput)
+		require.Error(t, err, "expected error for unknown keys")
+		// Sorted order should always be alpha, mu, zeta.
+		assert.Contains(t, err.Error(), `["alpha" "mu" "zeta"]`,
+			"unknown keys should be sorted in error message")
 	}
 }
 

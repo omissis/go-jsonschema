@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/schemas"
@@ -55,6 +56,55 @@ type Config struct {
 	// keywords (uuid, email, uri, uri-reference, hostname, regex). The zero
 	// value disables all format validation, preserving previous behavior.
 	FormatValidation FormatValidationConfig
+	// StrictAdditionalProperties controls runtime rejection of unknown
+	// fields during both `UnmarshalJSON` and `UnmarshalYAML`. The zero value
+	// (off) preserves the previous behavior where `additionalProperties:
+	// false` is silently ignored at unmarshal time.
+	StrictAdditionalProperties StrictAdditionalPropertiesMode
+}
+
+// StrictAdditionalPropertiesMode selects how the generator enforces JSON Schema's
+// `additionalProperties: false` keyword at unmarshal time. Enforcement is
+// applied uniformly to JSON and YAML inputs, since both go through the same
+// generated body.
+type StrictAdditionalPropertiesMode string
+
+const (
+	// StrictAdditionalPropertiesOff silently drops unknown fields from JSON
+	// and YAML input. This is the historical (and zero-value) behavior.
+	StrictAdditionalPropertiesOff StrictAdditionalPropertiesMode = ""
+	// StrictAdditionalPropertiesRespectSchema rejects unknown fields (in
+	// JSON or YAML input) for objects whose schema declares
+	// `additionalProperties: false`. Other objects continue to accept and
+	// silently drop unknown fields.
+	StrictAdditionalPropertiesRespectSchema StrictAdditionalPropertiesMode = "respect-schema"
+	// StrictAdditionalPropertiesStrict rejects unknown fields (in JSON or
+	// YAML input) for every generated object type, regardless of whether
+	// the schema declared `additionalProperties: false`. Skipped when the
+	// schema specifies a typed additionalProperties (a catch-all field is
+	// generated instead).
+	StrictAdditionalPropertiesStrict StrictAdditionalPropertiesMode = "strict"
+)
+
+// ErrInvalidStrictAdditionalPropertiesMode is returned when Config holds a
+// StrictAdditionalProperties value outside the documented set. Without this
+// check a typo (e.g. "rstrict") would silently fall through the per-type
+// switches and emit strict validators in modes the documented values would
+// not select.
+var ErrInvalidStrictAdditionalPropertiesMode = errors.New(
+	"invalid StrictAdditionalProperties mode (expected one of: \"\", \"respect-schema\", \"strict\")",
+)
+
+// IsValid reports whether the mode is one of the documented values.
+func (m StrictAdditionalPropertiesMode) IsValid() bool {
+	switch m {
+	case StrictAdditionalPropertiesOff,
+		StrictAdditionalPropertiesRespectSchema,
+		StrictAdditionalPropertiesStrict:
+		return true
+	}
+
+	return false
 }
 
 // FormatValidationConfig controls runtime validation of JSON Schema `format` keywords.
