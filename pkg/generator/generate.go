@@ -57,6 +57,11 @@ func New(config Config) (*Generator, error) {
 		return nil, err
 	}
 
+	if !config.StrictAdditionalProperties.IsValid() {
+		return nil, fmt.Errorf("%w: got %q",
+			ErrInvalidStrictAdditionalPropertiesMode, config.StrictAdditionalProperties)
+	}
+
 	formatters := []formatter{
 		&jsonFormatter{},
 	}
