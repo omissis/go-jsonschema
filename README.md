@@ -150,6 +150,7 @@ only specific validations remain to be fully implemented.
   * [ ] Object validation (§6.5)
     * [x] `required`
     * [x] `properties`
+    * [x] `additionalProperties: false` (opt-in via `Config.StrictAdditionalProperties`)
     * [ ] `patternProperties`
     * [ ] `dependencies`
     * [ ] `propertyNames`
@@ -223,6 +224,41 @@ The `uri` / `uri-reference` validation is **best-effort, not RFC-3986-perfect** 
 no Go validator (stdlib or third-party) is — but it catches the common
 cases that bare `url.Parse` accepts (whitespace, control chars, malformed
 pct-encoding).
+
+### Opt-in `additionalProperties: false` enforcement
+
+`Config.StrictAdditionalProperties` controls whether unknown fields in JSON
+or YAML input are rejected at unmarshal time. The three modes are:
+
+| Mode | Behavior |
+| --- | --- |
+| `""` (off, default) | Silently drop unknown fields. Preserves historical behavior. |
+| `"respect-schema"` | Reject unknown fields only for objects whose schema declares `additionalProperties: false`. Other objects continue to drop unknown fields silently. |
+| `"strict"` | Reject unknown fields for every generated object type, regardless of what the schema declared. Skipped when the schema specifies a typed `additionalProperties` (a catch-all map field is generated instead). |
+
+Enforcement runs against the raw decoded map, so JSON and YAML inputs are
+checked uniformly. `patternProperties` schemas suppress enforcement with a
+warning, since the generator has no first-class support for them yet.
+
+```go
+cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+```
+
+From the CLI, use `--strict-additional-properties`:
+
+```shell
+# Respect the schema's additionalProperties: false declarations.
+go-jsonschema --strict-additional-properties=respect-schema -p main schema.json
+
+# Reject unknown fields for every object type.
+go-jsonschema --strict-additional-properties=strict -p main schema.json
+
+# Explicit off (same as omitting the flag).
+go-jsonschema --strict-additional-properties=off -p main schema.json
+```
+
+Unknown mode names (e.g. `--strict-additional-properties=rstrict`) are
+rejected at flag-parse time so a typo cannot silently fall back to "off".
 
 ## License
 
