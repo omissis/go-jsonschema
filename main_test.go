@@ -8,6 +8,48 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/generator"
 )
 
+func TestParseStrictAdditionalProperties(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name    string
+		input   string
+		want    generator.StrictAdditionalPropertiesMode
+		wantErr error
+	}{
+		{name: "empty is off", input: "", want: generator.StrictAdditionalPropertiesOff},
+		{name: "off explicit", input: "off", want: generator.StrictAdditionalPropertiesOff},
+		{name: "off case-insensitive", input: "OFF", want: generator.StrictAdditionalPropertiesOff},
+		{name: "respect-schema", input: "respect-schema", want: generator.StrictAdditionalPropertiesRespectSchema},
+		{name: "strict", input: "strict", want: generator.StrictAdditionalPropertiesStrict},
+		{name: "strict trims whitespace", input: "  strict  ", want: generator.StrictAdditionalPropertiesStrict},
+		{name: "typo rejected", input: "rstrict", wantErr: errInvalidStrictAddlPropMode},
+		{name: "garbage rejected", input: "yes-please", wantErr: errInvalidStrictAddlPropMode},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := parseStrictAdditionalProperties(tc.input)
+
+			if tc.wantErr != nil {
+				if !errors.Is(err, tc.wantErr) {
+					t.Fatalf("expected error wrapping %v, got %v", tc.wantErr, err)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestParseValidateFormats(t *testing.T) {
 	t.Parallel()
 
