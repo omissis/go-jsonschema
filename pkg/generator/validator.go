@@ -54,6 +54,7 @@ var (
 	_ validator = new(numericValidator)
 	_ validator = new(anyOfValidator)
 	_ validator = new(formatValidator)
+	_ validator = new(strictFieldsValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -961,4 +962,61 @@ func (v *formatValidator) desc() *validatorDesc {
 	}
 
 	return d
+}
+
+// strictFieldsValidator emits a check that rejects any JSON field on the
+// container object that is not declared in the schema's `properties`. It
+// implements `additionalProperties: false` enforcement at unmarshal time
+// and runs against the raw map produced before the typed decode.
+type strictFieldsValidator struct {
+	declName    string
+	knownFields []string // sorted JSON field names declared by the schema
+}
+
+func (v *strictFieldsValidator) generate(out *codegen.Emitter, _ string) error {
+	// The container itself may legitimately be null (e.g. type ["null","object"]),
+	// in which case the raw map is nil and no further checks apply.
+	out.Printlnf("if %s != nil {", varNameRawMap)
+	out.Indent(1)
+	out.Printlnf("var extraKeys []string")
+	out.Printlnf("for additionalKey := range %s {", varNameRawMap)
+	out.Indent(1)
+	out.Printlnf("switch additionalKey {")
+
+	if len(v.knownFields) > 0 {
+		quoted := make([]string, len(v.knownFields))
+		for i, name := range v.knownFields {
+			quoted[i] = fmt.Sprintf("%q", name)
+		}
+
+		out.Printlnf("case %s:", strings.Join(quoted, ", "))
+	}
+
+	out.Printlnf("default:")
+	out.Indent(1)
+	out.Printlnf("extraKeys = append(extraKeys, additionalKey)")
+	out.Indent(-1)
+	out.Printlnf("}")
+	out.Indent(-1)
+	out.Printlnf("}")
+	// Sort so the error message is deterministic — Go map iteration order is
+	// randomized, so without this the reported keys would vary across runs.
+	out.Printlnf("if len(extraKeys) > 0 {")
+	out.Indent(1)
+	out.Printlnf("sort.Strings(extraKeys)")
+	out.Printlnf(`return fmt.Errorf("fields %%q in %s: additional properties not allowed", extraKeys)`, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *strictFieldsValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+		imports:             []packageImport{{qualifiedName: "sort"}},
+	}
 }
