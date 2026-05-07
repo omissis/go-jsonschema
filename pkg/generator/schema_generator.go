@@ -1138,7 +1138,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
-		if len(t.Type) == 2 && typeIsNullable && typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) && isTypeTemporal(t) {
+		if len(t.Type) == 2 &&
+			typeIsNullable &&
+			schemas.IsPrimitiveType(t.Type[typeIndex]) &&
+			isTypeTemporal(t) {
 			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
 		}
 
