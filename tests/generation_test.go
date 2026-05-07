@@ -332,6 +332,12 @@ func TestOneOfDiscriminated(t *testing.T) {
 	testExamples(t, basicConfig, "./data/oneOfDiscriminated")
 }
 
+func TestRecursiveAllOf(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/recursiveAllOf")
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 
