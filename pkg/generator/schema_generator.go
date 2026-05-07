@@ -598,46 +598,50 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		return codegen.EmptyInterfaceType{}, nil
 
 	default:
-		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
-			typeName,
-			t.Format,
-			typePtr,
-			g.config.MinSizedInts,
-			&t.Minimum,
-			&t.Maximum,
-			&t.ExclusiveMinimum,
-			&t.ExclusiveMaximum,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("invalid type %q: %w", typeName, err)
+		return g.primitiveType(t, typeName, typePtr)
+	}
+}
+
+func (g *schemaGenerator) primitiveType(t *schemas.Type, name string, isNillable bool) (codegen.Type, error) {
+	cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
+		name,
+		t.Format,
+		isNillable,
+		g.config.MinSizedInts,
+		&t.Minimum,
+		&t.Maximum,
+		&t.ExclusiveMinimum,
+		&t.ExclusiveMaximum,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("invalid type %q: %w", name, err)
+	}
+
+	if ncg, ok := cg.(codegen.NamedType); ok {
+		for _, imprt := range ncg.Package.Imports {
+			g.output.file.Package.AddImport(imprt.QualifiedName, "")
 		}
 
-		if ncg, ok := cg.(codegen.NamedType); ok {
+		return ncg, nil
+	}
+
+	if pcg, ok := cg.(*codegen.PointerType); ok {
+		if ncg, ok := pcg.Type.(codegen.NamedType); ok {
 			for _, imprt := range ncg.Package.Imports {
 				g.output.file.Package.AddImport(imprt.QualifiedName, "")
 			}
 
-			return ncg, nil
+			return pcg, nil
 		}
-
-		if pcg, ok := cg.(*codegen.PointerType); ok {
-			if ncg, ok := pcg.Type.(codegen.NamedType); ok {
-				for _, imprt := range ncg.Package.Imports {
-					g.output.file.Package.AddImport(imprt.QualifiedName, "")
-				}
-
-				return pcg, nil
-			}
-		}
-
-		if dcg, ok := cg.(codegen.DurationType); ok {
-			g.output.file.Package.AddImport("time", "")
-
-			return dcg, nil
-		}
-
-		return cg, nil
 	}
+
+	if dcg, ok := cg.(codegen.DurationType); ok {
+		g.output.file.Package.AddImport("time", "")
+
+		return dcg, nil
+	}
+
+	return cg, nil
 }
 
 func (g *schemaGenerator) determineTypeName(t *schemas.Type) (string, bool) {
@@ -1110,7 +1114,7 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	typeIndex, typeIsNullable := g.isTypeNullable(t)
+	typeIndex, typeIsNullable := isTypeNullable(t)
 
 	if t.Enum == nil && t.Ref == "" {
 		if ext := t.GoJSONSchemaExtension; ext != nil {
@@ -1131,6 +1135,14 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return g.generateAllOfType(t, scope)
 		}
 
+		if len(t.Type) == 0 {
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		if len(t.Type) == 2 && typeIsNullable && typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) && isTypeTemporal(t) {
+			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
+		}
+
 		if len(t.Type) == 2 && typeIsNullable {
 			dt, err := g.generateDeclaredType(t, scope)
 			if err != nil {
@@ -1146,54 +1158,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
-		if len(t.Type) == 0 {
-			return codegen.EmptyInterfaceType{}, nil
-		}
-
 		if typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			if t.IsSubSchemaTypeElem() {
 				return nil, nil //nolint: nilnil // TODO: this should be fixed, but it requires a rework.
 			}
 
-			cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
-				t.Type[typeIndex],
-				t.Format,
-				typeIsNullable,
-				g.config.MinSizedInts,
-				&t.Minimum,
-				&t.Maximum,
-				&t.ExclusiveMinimum,
-				&t.ExclusiveMaximum,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
-			}
-
-			if ncg, ok := cg.(codegen.NamedType); ok {
-				for _, imprt := range ncg.Package.Imports {
-					g.output.file.Package.AddImport(imprt.QualifiedName, "")
-				}
-
-				return ncg, nil
-			}
-
-			if pcg, ok := cg.(*codegen.PointerType); ok {
-				if ncg, ok := pcg.Type.(codegen.NamedType); ok {
-					for _, imprt := range ncg.Package.Imports {
-						g.output.file.Package.AddImport(imprt.QualifiedName, "")
-					}
-
-					return pcg, nil
-				}
-			}
-
-			if dcg, ok := cg.(codegen.DurationType); ok {
-				g.output.file.Package.AddImport("time", "")
-
-				return dcg, nil
-			}
-
-			return cg, nil
+			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
 		}
 
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
@@ -1499,7 +1469,7 @@ func (g *schemaGenerator) detectCycle(t *schemas.Type) (bool, func(), error) {
 
 // isTypeNullable checks if a type is nullable and returns the index of the type array where to find the actual type,
 // or -1 if none was found.
-func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
+func isTypeNullable(t *schemas.Type) (int, bool) {
 	if len(t.Type) == 1 && (t.Type[0] == schemas.TypeNameArray || t.Type[0] == schemas.TypeNameNull) {
 		return 0, true
 	}
@@ -1521,4 +1491,14 @@ func (g *schemaGenerator) isTypeNullable(t *schemas.Type) (int, bool) {
 	}
 
 	return -1, false
+}
+
+func isTypeTemporal(t *schemas.Type) bool {
+	for _, typ := range t.Type {
+		if typ == schemas.TypeNameString && (t.Format == "date-time" || t.Format == "date" || t.Format == "time") {
+			return true
+		}
+	}
+
+	return false
 }
