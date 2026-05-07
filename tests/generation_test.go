@@ -326,6 +326,12 @@ func TestOneOfPrimitive(t *testing.T) {
 	testExamples(t, basicConfig, "./data/oneOfPrimitive")
 }
 
+func TestOneOfDiscriminated(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/oneOfDiscriminated")
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 
