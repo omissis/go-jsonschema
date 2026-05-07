@@ -28,6 +28,7 @@ import (
 	testOneOfInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
 	testOneOfNumStringBool "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
 	testOneOfWithNull "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withNull"
+	testRecursiveAllOfSelfRef "github.com/atombender/go-jsonschema/tests/data/recursiveAllOf/selfRef"
 	testStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
 	testStrictAddlOmitted "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlOmitted"
@@ -1188,6 +1189,80 @@ func TestJsonUnmarshalOneOfTryEach(t *testing.T) {
 		err := json.Unmarshal([]byte(`{"value":{"name":"x"}}`), &v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "ambiguous")
+	})
+}
+
+// TestJsonUnmarshalRecursiveAllOf covers the recursive-allOf path that
+// previously emitted `interface{}` because generateType silently fell
+// through determineTypeName when the AllOf variants had mismatched
+// Type slices ($ref with empty Type vs inline {type:"object"}). The
+// fix delegates AllOf/AnyOf in generateType the same way
+// generateTypeInline already does, so a recursive type round-trips
+// through a properly-typed struct instead of `interface{}`.
+func TestJsonUnmarshalRecursiveAllOf(t *testing.T) {
+	t.Parallel()
+
+	t.Run("flat tree node decodes both inherited and inline fields", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRecursiveAllOfSelfRef.SelfRef
+
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"root":{"name":"root","value":"v0"}}`),
+			&v,
+		))
+		require.NotNil(t, v.Root.Name)
+		assert.Equal(t, "root", *v.Root.Name)
+		assert.Equal(t, "v0", v.Root.Value)
+		assert.Empty(t, v.Root.Children)
+	})
+
+	t.Run("nested children decode recursively", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRecursiveAllOfSelfRef.SelfRef
+
+		require.NoError(t, json.Unmarshal([]byte(`{
+			"root": {
+				"name": "root",
+				"value": "v0",
+				"children": [
+					{"name": "a", "value": "va"},
+					{"name": "b", "value": "vb", "children": [
+						{"name": "b1", "value": "vb1"}
+					]}
+				]
+			}
+		}`), &v))
+
+		require.Len(t, v.Root.Children, 2)
+		assert.Equal(t, "va", v.Root.Children[0].Value)
+		require.Len(t, v.Root.Children[1].Children, 1)
+		assert.Equal(t, "vb1", v.Root.Children[1].Children[0].Value)
+	})
+
+	t.Run("missing required value field is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRecursiveAllOfSelfRef.SelfRef
+
+		err := json.Unmarshal([]byte(`{"root":{"name":"x"}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "value")
+	})
+
+	t.Run("round-trip preserves nested structure", func(t *testing.T) {
+		t.Parallel()
+
+		input := []byte(`{"root":{"name":"r","value":"v","children":[{"value":"c1"}]}}`)
+
+		var v testRecursiveAllOfSelfRef.SelfRef
+
+		require.NoError(t, json.Unmarshal(input, &v))
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(input), string(out))
 	})
 }
 
