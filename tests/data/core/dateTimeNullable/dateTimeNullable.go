@@ -11,7 +11,5 @@ type DateTimeNullable struct {
 
 type DateTimeNullableMyObject struct {
 	// MyNullableDateTime corresponds to the JSON schema field "myNullableDateTime".
-	MyNullableDateTime DateTimeNullableMyObjectMyNullableDateTime `json:"myNullableDateTime,omitempty,omitzero" yaml:"myNullableDateTime,omitempty" mapstructure:"myNullableDateTime,omitempty"`
+	MyNullableDateTime *time.Time `json:"myNullableDateTime,omitempty,omitzero" yaml:"myNullableDateTime,omitempty" mapstructure:"myNullableDateTime,omitempty"`
 }
-
-type DateTimeNullableMyObjectMyNullableDateTime *time.Time
