@@ -305,6 +305,13 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		if d := g.detectDiscriminator(t.OneOf); d.ok {
 			return g.generateOneOfDiscriminator(t, scope, d.prop, d.values)
 		}
+
+		// No natural discriminator: try-each fallback (Phase 6) for object
+		// variants. This preserves correct oneOf semantics by checking each
+		// variant in turn and accepting only when exactly one succeeds.
+		if isTryEachOneOfCandidate(t.OneOf) {
+			return g.generateOneOfTryEach(t, scope)
+		}
 	}
 
 	name := g.output.uniqueTypeName(scope)
@@ -1317,7 +1324,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		// route through generateDeclaredType so the holder + variant types
 		// get full declarations rather than being inlined as interface{}.
 		if len(t.OneOf) > 1 {
-			if g.detectDiscriminator(t.OneOf).ok {
+			if g.detectDiscriminator(t.OneOf).ok || isTryEachOneOfCandidate(t.OneOf) {
 				return g.generateDeclaredType(t, scope)
 			}
 		}
