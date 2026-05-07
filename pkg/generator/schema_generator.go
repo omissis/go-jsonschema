@@ -297,6 +297,16 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateOneOfPrimitive(t, scope)
 	}
 
+	// Object oneOf with a natural discriminator: emit the holder + variant
+	// types and a dispatch UnmarshalJSON/MarshalJSON pair. OnlyModels falls
+	// back to the regular path for the same reason as primitive oneOf —
+	// without the methods the holder is unusable.
+	if len(t.OneOf) > 1 && !g.config.OnlyModels {
+		if d := g.detectDiscriminator(t.OneOf); d.ok {
+			return g.generateOneOfDiscriminator(t, scope, d.prop, d.values)
+		}
+	}
+
 	name := g.output.uniqueTypeName(scope)
 
 	if g.config.StructNameFromTitle && t.Title != "" {
@@ -673,6 +683,42 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 	if t.Ref != "" {
 		return g.generateReferencedType(t)
+	}
+
+	// AnyOf / AllOf must be delegated to their dedicated generators before
+	// falling through to determineTypeName + the type switch — otherwise a
+	// schema like `{allOf:[{$ref:Base},{type:"object",...}]}` ends up with
+	// determineTypeName returning "null" (the variants have mismatched
+	// Type slices: an empty one for the $ref and `[object]` for the inline
+	// branch) and the schema is silently emitted as `interface{}`. This
+	// mirrors the same delegation already done by generateTypeInline and
+	// is required for the discriminator-detection path (Phase 5) to emit
+	// real variant structs instead of interface{}.
+	//
+	// On merge failure (e.g. unsupported nested definitions whose refs
+	// can't resolve), warn and fall back to interface{} rather than
+	// surfacing a hard error — preserves the previous silent-fallback
+	// behaviour for schemas that hit unsupported features.
+	if len(t.AnyOf) > 0 {
+		dt, err := g.generateAnyOfType(t, scope)
+		if err != nil {
+			g.warner(fmt.Sprintf("anyOf generation failed for %v; falling back to interface{}: %v", scope, err))
+
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		return dt, nil
+	}
+
+	if len(t.AllOf) > 0 {
+		dt, err := g.generateAllOfType(t, scope)
+		if err != nil {
+			g.warner(fmt.Sprintf("allOf generation failed for %v; falling back to interface{}: %v", scope, err))
+
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		return dt, nil
 	}
 
 	typeName, typePtr := g.determineTypeName(t)
@@ -1265,6 +1311,15 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if len(t.OneOf) > 0 && isPrimitiveOneOf(t) {
 			return g.generateDeclaredType(t, scope)
+		}
+
+		// Discriminated oneOf — same delegation pattern as primitive oneOf:
+		// route through generateDeclaredType so the holder + variant types
+		// get full declarations rather than being inlined as interface{}.
+		if len(t.OneOf) > 1 {
+			if g.detectDiscriminator(t.OneOf).ok {
+				return g.generateDeclaredType(t, scope)
+			}
 		}
 
 		if len(t.Type) == 2 && typeIsNullable {

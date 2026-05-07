@@ -20,6 +20,9 @@ import (
 	testFormatURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
+	testOneOfDiscAnimal "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/animal"
+	testOneOfDiscNumeric "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/numericKind"
+	testOneOfRefDisc "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/refDiscriminator"
 	testOneOfInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
 	testOneOfNumStringBool "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
 	testOneOfWithNull "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withNull"
@@ -882,6 +885,197 @@ func TestJsonUnmarshalOneOfPrimitive(t *testing.T) {
 		_, err := json.Marshal(&v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "schema does not allow null")
+	})
+}
+
+// TestJsonUnmarshalOneOfDiscriminated covers the Phase-5 dispatch path: a
+// holder type whose UnmarshalJSON peeks a `kind`/`version` discriminator and
+// fans out into the matching variant. Goldens cover code shape;
+// these cases cover runtime dispatch correctness which goldens cannot.
+func TestJsonUnmarshalOneOfDiscriminated(t *testing.T) {
+	t.Parallel()
+
+	t.Run("animal: dog variant decoded into Dog field", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfDiscAnimal.Animal
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"creature":{"kind":"dog","barkAt":"the postman"}}`),
+			&v,
+		))
+		require.NotNil(t, v.Creature.Dog)
+		assert.Nil(t, v.Creature.Cat)
+		assert.Equal(t, "the postman", v.Creature.Dog.BarkAt)
+	})
+
+	t.Run("animal: cat variant decoded into Cat field", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfDiscAnimal.Animal
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"creature":{"kind":"cat","purr":true}}`),
+			&v,
+		))
+		require.NotNil(t, v.Creature.Cat)
+		assert.Nil(t, v.Creature.Dog)
+		assert.True(t, v.Creature.Cat.Purr)
+	})
+
+	t.Run("animal: missing discriminator rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfDiscAnimal.Animal
+
+		err := json.Unmarshal([]byte(`{"creature":{"barkAt":"x"}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "missing discriminator")
+	})
+
+	t.Run("animal: unknown discriminator value rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfDiscAnimal.Animal
+
+		err := json.Unmarshal([]byte(`{"creature":{"kind":"fish","fins":2}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown kind value")
+	})
+
+	t.Run("animal: round-trip dog preserves variant", func(t *testing.T) {
+		t.Parallel()
+
+		input := []byte(`{"creature":{"kind":"dog","barkAt":"squirrels"}}`)
+
+		var v testOneOfDiscAnimal.Animal
+
+		require.NoError(t, json.Unmarshal(input, &v))
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(input), string(out))
+	})
+
+	t.Run("animal: marshal with no variant set errors", func(t *testing.T) {
+		t.Parallel()
+
+		v := testOneOfDiscAnimal.Animal{}
+		_, err := json.Marshal(&v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "exactly one variant")
+	})
+
+	t.Run("animal: marshal with two variants set errors", func(t *testing.T) {
+		t.Parallel()
+
+		v := testOneOfDiscAnimal.Animal{
+			Creature: testOneOfDiscAnimal.AnimalCreature{
+				Dog: &testOneOfDiscAnimal.AnimalCreatureDog{Kind: "dog", BarkAt: "x"},
+				Cat: &testOneOfDiscAnimal.AnimalCreatureCat{Kind: "cat", Purr: true},
+			},
+		}
+		_, err := json.Marshal(&v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "exactly one variant")
+	})
+
+	t.Run("numericKind: integer discriminator dispatch", func(t *testing.T) {
+		t.Parallel()
+
+		var v1 testOneOfDiscNumeric.NumericKind
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"payload":{"version":1,"alpha":"a"}}`),
+			&v1,
+		))
+		require.NotNil(t, v1.Payload.Const1)
+		assert.Equal(t, "a", v1.Payload.Const1.Alpha)
+
+		var v2 testOneOfDiscNumeric.NumericKind
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"payload":{"version":2,"beta":"b"}}`),
+			&v2,
+		))
+		require.NotNil(t, v2.Payload.Const2)
+		assert.Equal(t, "b", v2.Payload.Const2.Beta)
+	})
+
+	t.Run("numericKind: equivalent numeric forms (1.0, 1e0) match the same variant", func(t *testing.T) {
+		t.Parallel()
+
+		// JSON allows 1, 1.0, and 1e0 as equivalent encodings of the integer 1.
+		// The discriminator dispatch must accept all three and route to
+		// Const1 (which has `version: 1` as its discriminator const).
+		for _, version := range []string{"1", "1.0", "1e0"} {
+			var v testOneOfDiscNumeric.NumericKind
+			require.NoErrorf(t,
+				json.Unmarshal([]byte(`{"payload":{"version":`+version+`,"alpha":"a"}}`), &v),
+				"version=%s", version,
+			)
+			require.NotNilf(t, v.Payload.Const1, "version=%s", version)
+			assert.Equalf(t, "a", v.Payload.Const1.Alpha, "version=%s", version)
+		}
+	})
+
+	t.Run("numericKind: non-numeric discriminator returns typed error", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfDiscNumeric.NumericKind
+
+		err := json.Unmarshal(
+			[]byte(`{"payload":{"version":"not-a-number","alpha":"a"}}`),
+			&v,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "version discriminator must be numeric")
+	})
+
+	// $ref/allOf flattening: variants are `{"allOf":[{"$ref":Common},{...const-bearing inline...}]}`.
+	// Without flattening, primitiveConstCandidates would see only the
+	// outer allOf wrapper (no Properties / Required at the top level)
+	// and the discriminator detection would fail. With flattening the
+	// discriminator-bearing const is recognised and dispatch works.
+
+	t.Run("refDiscriminator: allOf+$ref variant decoded into Click", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfRefDisc.RefDiscriminator
+
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"event":{"kind":"click","target":"#submit","timestamp":"2026-05-08T00:00:00Z"}}`),
+			&v,
+		))
+		require.NotNil(t, v.Event.Click)
+		assert.Nil(t, v.Event.Scroll)
+		assert.Equal(t, "#submit", v.Event.Click.Target)
+		require.NotNil(t, v.Event.Click.Timestamp)
+		assert.Equal(t, "2026-05-08T00:00:00Z", *v.Event.Click.Timestamp)
+	})
+
+	t.Run("refDiscriminator: allOf+$ref variant decoded into Scroll", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfRefDisc.RefDiscriminator
+
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"event":{"kind":"scroll","distance":120}}`),
+			&v,
+		))
+		require.NotNil(t, v.Event.Scroll)
+		assert.Nil(t, v.Event.Click)
+		assert.Equal(t, 120, v.Event.Scroll.Distance)
+	})
+
+	t.Run("refDiscriminator: round-trip preserves variant + inherited fields", func(t *testing.T) {
+		t.Parallel()
+
+		input := []byte(`{"event":{"kind":"click","target":"#x","timestamp":"t"}}`)
+
+		var v testOneOfRefDisc.RefDiscriminator
+
+		require.NoError(t, json.Unmarshal(input, &v))
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(input), string(out))
 	})
 }
 
