@@ -1112,7 +1112,6 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
-//nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
