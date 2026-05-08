@@ -14,11 +14,13 @@ type NumStringBool struct {
 
 type NumStringBoolValue struct {
 	value interface{}
+
+	present bool
 }
 
 // AsBool returns the value as a bool and reports whether it was a bool.
 func (j *NumStringBoolValue) AsBool() (bool, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return false, false
 	}
 	v, ok := j.value.(bool)
@@ -27,7 +29,7 @@ func (j *NumStringBoolValue) AsBool() (bool, bool) {
 
 // AsNumber returns the value as a float64 and reports whether it was numeric.
 func (j *NumStringBoolValue) AsNumber() (float64, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return 0, false
 	}
 	v, ok := j.value.(float64)
@@ -36,34 +38,38 @@ func (j *NumStringBoolValue) AsNumber() (float64, bool) {
 
 // AsString returns the value as a string and reports whether it was a string.
 func (j *NumStringBoolValue) AsString() (string, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return "", false
 	}
 	v, ok := j.value.(string)
 	return v, ok
 }
 
-// IsZero reports whether the value is unset; supports the encoding/json `omitzero`
-// tag.
+// IsZero reports whether the wrapper has not been populated by
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
+// explicitly-decoded JSON `null` is NOT zero — see IsNull.
 func (j *NumStringBoolValue) IsZero() bool {
-	if j == nil {
-		return true
-	}
-	return j.value == nil
+	return j == nil || !j.present
 }
 
 // MarshalJSON implements json.Marshaler.
 func (j *NumStringBoolValue) MarshalJSON() ([]byte, error) {
-	if j == nil || j.value == nil {
+	if j == nil || !j.present {
 		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal unset value (schema does not allow null)")
+	}
+	if j.value == nil {
+		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal nil value (schema does not allow null)")
 	}
 	return json.Marshal(j.value)
 }
 
 // MarshalYAML implements yaml.Marshaler.
 func (j *NumStringBoolValue) MarshalYAML() (interface{}, error) {
-	if j == nil || j.value == nil {
+	if j == nil || !j.present {
 		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal unset value (schema does not allow null)")
+	}
+	if j.value == nil {
+		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal nil value (schema does not allow null)")
 	}
 	return j.value, nil
 }
@@ -98,6 +104,7 @@ func (j *NumStringBoolValue) UnmarshalJSON(value []byte) error {
 	default:
 		return fmt.Errorf("NumStringBoolValue: unsupported JSON value of type %T", tok)
 	}
+	j.present = true
 	return nil
 }
 
@@ -128,6 +135,7 @@ func (j *NumStringBoolValue) UnmarshalYAML(value *yaml.Node) error {
 	default:
 		return fmt.Errorf("NumStringBoolValue: unsupported YAML scalar tag %q", value.Tag)
 	}
+	j.present = true
 	return nil
 }
 
