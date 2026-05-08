@@ -14,34 +14,39 @@ type WithNull struct {
 
 type WithNullValue struct {
 	value interface{}
+
+	present bool
 }
 
 // AsString returns the value as a string and reports whether it was a string.
 func (j *WithNullValue) AsString() (string, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return "", false
 	}
 	v, ok := j.value.(string)
 	return v, ok
 }
 
-// IsNull reports whether the decoded value was an explicit JSON null.
+// IsNull reports whether the wrapper was populated with an explicit JSON `null`.
+// Returns false for unset wrappers (use IsZero) and for wrappers holding a
+// non-null primitive.
 func (j *WithNullValue) IsNull() bool {
-	return j == nil || j.value == nil
+	return j != nil && j.present && j.value == nil
 }
 
-// IsZero reports whether the value is unset; supports the encoding/json `omitzero`
-// tag.
+// IsZero reports whether the wrapper has not been populated by
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
+// explicitly-decoded JSON `null` is NOT zero — see IsNull.
 func (j *WithNullValue) IsZero() bool {
-	if j == nil {
-		return true
-	}
-	return j.value == nil
+	return j == nil || !j.present
 }
 
 // MarshalJSON implements json.Marshaler.
 func (j *WithNullValue) MarshalJSON() ([]byte, error) {
-	if j == nil || j.value == nil {
+	if j == nil || !j.present {
+		return []byte("null"), nil
+	}
+	if j.value == nil {
 		return []byte("null"), nil
 	}
 	return json.Marshal(j.value)
@@ -49,7 +54,7 @@ func (j *WithNullValue) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML implements yaml.Marshaler.
 func (j *WithNullValue) MarshalYAML() (interface{}, error) {
-	if j == nil {
+	if j == nil || !j.present {
 		return nil, nil
 	}
 	return j.value, nil
@@ -70,10 +75,15 @@ func (j *WithNullValue) UnmarshalJSON(value []byte) error {
 		}
 		j.value = v
 	case nil:
+		var v any
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
 		j.value = nil
 	default:
 		return fmt.Errorf("WithNullValue: unsupported JSON value of type %T", tok)
 	}
+	j.present = true
 	return nil
 }
 
@@ -94,6 +104,7 @@ func (j *WithNullValue) UnmarshalYAML(value *yaml.Node) error {
 	default:
 		return fmt.Errorf("WithNullValue: unsupported YAML scalar tag %q", value.Tag)
 	}
+	j.present = true
 	return nil
 }
 
