@@ -43,7 +43,7 @@ func (j *Subset) UnmarshalJSON(value []byte) error {
 	type Plain Subset
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Subset: %w", err)
 	}
 	if addr, err := mail.ParseAddress(string(plain.Contact)); err != nil || addr.Name != "" || addr.Address != string(plain.Contact) {
 		return fmt.Errorf("field %s: must be a valid email (RFC 5321 addr-spec)", "contact")
@@ -76,7 +76,7 @@ func (j *Subset) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Subset
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Subset: %w", err)
 	}
 	if addr, err := mail.ParseAddress(string(plain.Contact)); err != nil || addr.Name != "" || addr.Address != string(plain.Contact) {
 		return fmt.Errorf("field %s: must be a valid email (RFC 5321 addr-spec)", "contact")

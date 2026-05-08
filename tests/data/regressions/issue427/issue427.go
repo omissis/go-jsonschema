@@ -87,7 +87,7 @@ func (j *PeerName) UnmarshalJSON(value []byte) error {
 	type Plain PeerName
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal PeerName: %w", err)
 	}
 	*j = PeerName(plain)
 	return nil
@@ -108,7 +108,7 @@ func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
 	type Plain PeerName
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal PeerName: %w", err)
 	}
 	*j = PeerName(plain)
 	return nil
@@ -150,7 +150,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TestcaseExpectedPeerName
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TestcaseExpectedPeerName: %w", err)
 	}
 	*j = TestcaseExpectedPeerName(plain)
 	return nil
@@ -173,7 +173,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
 	type Plain TestcaseExpectedPeerName
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TestcaseExpectedPeerName: %w", err)
 	}
 	*j = TestcaseExpectedPeerName(plain)
 	return nil
@@ -205,7 +205,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
 	type Plain TestcaseNotExpectedPeerName
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TestcaseNotExpectedPeerName: %w", err)
 	}
 	*j = TestcaseNotExpectedPeerName(plain)
 	return nil
@@ -228,7 +228,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TestcaseNotExpectedPeerName
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TestcaseNotExpectedPeerName: %w", err)
 	}
 	*j = TestcaseNotExpectedPeerName(plain)
 	return nil
@@ -246,7 +246,7 @@ func (j *Testcase) UnmarshalJSON(value []byte) error {
 	type Plain Testcase
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Testcase: %w", err)
 	}
 	*j = Testcase(plain)
 	return nil
@@ -264,7 +264,7 @@ func (j *Testcase) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Testcase
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Testcase: %w", err)
 	}
 	*j = Testcase(plain)
 	return nil

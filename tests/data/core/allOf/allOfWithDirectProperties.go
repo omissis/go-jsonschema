@@ -26,7 +26,7 @@ func (j *BaseObject) UnmarshalJSON(value []byte) error {
 	type Plain BaseObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BaseObject: %w", err)
 	}
 	*j = BaseObject(plain)
 	return nil
@@ -44,7 +44,7 @@ func (j *BaseObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain BaseObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BaseObject: %w", err)
 	}
 	*j = BaseObject(plain)
 	return nil
@@ -72,7 +72,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 	type Plain ComposedWithAllOfAndProperties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ComposedWithAllOfAndProperties: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -94,7 +94,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ComposedWithAllOfAndProperties: %w", err)
 	}
 	*j = ComposedWithAllOfAndProperties(plain)
 	return nil
@@ -112,7 +112,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ComposedWithAllOfAndProperties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ComposedWithAllOfAndProperties: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -134,7 +134,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ComposedWithAllOfAndProperties: %w", err)
 	}
 	*j = ComposedWithAllOfAndProperties(plain)
 	return nil

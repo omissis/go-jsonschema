@@ -280,7 +280,7 @@ func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalJSON(value [
 	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
 	}
 	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
 	return nil
@@ -298,7 +298,7 @@ func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalYAML(value *
 	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
 	}
 	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
 	return nil
@@ -333,7 +333,7 @@ func (j *AutoinstallSchemaAptPreferencesElem) UnmarshalYAML(value *yaml.Node) er
 	type Plain AutoinstallSchemaAptPreferencesElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaAptPreferencesElem: %w", err)
 	}
 	*j = AutoinstallSchemaAptPreferencesElem(plain)
 	return nil
@@ -357,7 +357,7 @@ func (j *AutoinstallSchemaAptPreferencesElem) UnmarshalJSON(value []byte) error 
 	type Plain AutoinstallSchemaAptPreferencesElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaAptPreferencesElem: %w", err)
 	}
 	*j = AutoinstallSchemaAptPreferencesElem(plain)
 	return nil
@@ -407,7 +407,7 @@ func (j *AutoinstallSchemaIdentity) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaIdentity
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaIdentity: %w", err)
 	}
 	*j = AutoinstallSchemaIdentity(plain)
 	return nil
@@ -431,7 +431,7 @@ func (j *AutoinstallSchemaIdentity) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaIdentity
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaIdentity: %w", err)
 	}
 	*j = AutoinstallSchemaIdentity(plain)
 	return nil
@@ -462,7 +462,7 @@ func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaKernelCrashDumps
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaKernelCrashDumps: %w", err)
 	}
 	*j = AutoinstallSchemaKernelCrashDumps(plain)
 	return nil
@@ -480,7 +480,7 @@ func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalYAML(value *yaml.Node) erro
 	type Plain AutoinstallSchemaKernelCrashDumps
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaKernelCrashDumps: %w", err)
 	}
 	*j = AutoinstallSchemaKernelCrashDumps(plain)
 	return nil
@@ -509,7 +509,7 @@ func (j *AutoinstallSchemaKeyboard) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaKeyboard
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaKeyboard: %w", err)
 	}
 	*j = AutoinstallSchemaKeyboard(plain)
 	return nil
@@ -527,7 +527,7 @@ func (j *AutoinstallSchemaKeyboard) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaKeyboard
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaKeyboard: %w", err)
 	}
 	*j = AutoinstallSchemaKeyboard(plain)
 	return nil
@@ -550,7 +550,7 @@ func (j *AutoinstallSchemaOem) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaOem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaOem: %w", err)
 	}
 	*j = AutoinstallSchemaOem(plain)
 	return nil
@@ -568,7 +568,7 @@ func (j *AutoinstallSchemaOem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaOem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaOem: %w", err)
 	}
 	*j = AutoinstallSchemaOem(plain)
 	return nil
@@ -662,7 +662,7 @@ func (j *AutoinstallSchemaSnapsElem) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaSnapsElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaSnapsElem: %w", err)
 	}
 	*j = AutoinstallSchemaSnapsElem(plain)
 	return nil
@@ -680,7 +680,7 @@ func (j *AutoinstallSchemaSnapsElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaSnapsElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaSnapsElem: %w", err)
 	}
 	*j = AutoinstallSchemaSnapsElem(plain)
 	return nil
@@ -719,7 +719,7 @@ func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalYAML(value *yaml.Node) error
 	type Plain AutoinstallSchemaUbuntuAdvantage
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaUbuntuAdvantage: %w", err)
 	}
 	if plain.Token != nil {
 		if matched, _ := regexp.MatchString(`^C[1-9A-HJ-NP-Za-km-z]+$`, string(*plain.Token)); !matched {
@@ -741,7 +741,7 @@ func (j *AutoinstallSchemaUbuntuAdvantage) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaUbuntuAdvantage
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaUbuntuAdvantage: %w", err)
 	}
 	if plain.Token != nil {
 		if matched, _ := regexp.MatchString(`^C[1-9A-HJ-NP-Za-km-z]+$`, string(*plain.Token)); !matched {
@@ -769,7 +769,7 @@ func (j *AutoinstallSchemaUbuntuPro) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaUbuntuPro
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaUbuntuPro: %w", err)
 	}
 	if plain.Token != nil {
 		if matched, _ := regexp.MatchString(`^C[1-9A-HJ-NP-Za-km-z]+$`, string(*plain.Token)); !matched {
@@ -791,7 +791,7 @@ func (j *AutoinstallSchemaUbuntuPro) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaUbuntuPro
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchemaUbuntuPro: %w", err)
 	}
 	if plain.Token != nil {
 		if matched, _ := regexp.MatchString(`^C[1-9A-HJ-NP-Za-km-z]+$`, string(*plain.Token)); !matched {
@@ -880,7 +880,7 @@ func (j *AutoinstallSchema) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchema
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchema: %w", err)
 	}
 	if 1 < plain.Version {
 		return fmt.Errorf("field %s: must be <= %v", "version", 1)
@@ -908,7 +908,7 @@ func (j *AutoinstallSchema) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for AutoinstallSchema: %w", err)
 	}
 	*j = AutoinstallSchema(plain)
 	return nil
@@ -926,7 +926,7 @@ func (j *AutoinstallSchema) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchema
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AutoinstallSchema: %w", err)
 	}
 	if 1 < plain.Version {
 		return fmt.Errorf("field %s: must be <= %v", "version", 1)
@@ -954,7 +954,7 @@ func (j *AutoinstallSchema) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for AutoinstallSchema: %w", err)
 	}
 	*j = AutoinstallSchema(plain)
 	return nil

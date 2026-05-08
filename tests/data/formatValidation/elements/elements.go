@@ -41,7 +41,7 @@ func (j *ElementsByName) UnmarshalJSON(value []byte) error {
 	type Plain ElementsByName
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ElementsByName: %w", err)
 	}
 	for k1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[k1])) {
@@ -57,7 +57,7 @@ func (j *ElementsByName) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ElementsByName
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ElementsByName: %w", err)
 	}
 	for k1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[k1])) {
@@ -75,7 +75,7 @@ func (j *ElementsListsByName) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ElementsListsByName
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ElementsListsByName: %w", err)
 	}
 	for k1 := range plain {
 		for i2 := range plain[k1] {
@@ -93,7 +93,7 @@ func (j *ElementsListsByName) UnmarshalJSON(value []byte) error {
 	type Plain ElementsListsByName
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ElementsListsByName: %w", err)
 	}
 	for k1 := range plain {
 		for i2 := range plain[k1] {
@@ -111,7 +111,7 @@ func (j *Elements) UnmarshalJSON(value []byte) error {
 	type Plain Elements
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Elements: %w", err)
 	}
 	for i1 := range plain.Emails {
 		if addr, err := mail.ParseAddress(string(plain.Emails[i1])); err != nil || addr.Name != "" || addr.Address != string(plain.Emails[i1]) {
@@ -146,7 +146,7 @@ func (j *Elements) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Elements
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Elements: %w", err)
 	}
 	for i1 := range plain.Emails {
 		if addr, err := mail.ParseAddress(string(plain.Emails[i1])); err != nil || addr.Name != "" || addr.Address != string(plain.Emails[i1]) {
@@ -184,7 +184,7 @@ func (j *IdList) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IdList
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IdList: %w", err)
 	}
 	for i1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[i1])) {
@@ -200,7 +200,7 @@ func (j *IdList) UnmarshalJSON(value []byte) error {
 	type Plain IdList
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IdList: %w", err)
 	}
 	for i1 := range plain {
 		if !regexpFormatUUID.MatchString(string(plain[i1])) {

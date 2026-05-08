@@ -53,7 +53,7 @@ func (j *Larger) UnmarshalJSON(value []byte) error {
 	type Plain Larger
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Larger: %w", err)
 	}
 	if plain.I16L != nil && 127 < *plain.I16L {
 		return fmt.Errorf("field %s: must be <= %v", "i16l", 127)
@@ -122,7 +122,7 @@ func (j *Larger) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Larger
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Larger: %w", err)
 	}
 	if plain.I16L != nil && 127 < *plain.I16L {
 		return fmt.Errorf("field %s: must be <= %v", "i16l", 127)

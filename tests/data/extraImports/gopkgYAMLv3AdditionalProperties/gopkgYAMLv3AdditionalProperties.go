@@ -28,7 +28,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
 	type Plain GopkgYAMLv3AdditionalProperties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal GopkgYAMLv3AdditionalProperties: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]interface{}{}
@@ -53,7 +53,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for GopkgYAMLv3AdditionalProperties: %w", err)
 	}
 	*j = GopkgYAMLv3AdditionalProperties(plain)
 	return nil
@@ -68,7 +68,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalYAML(value *yaml.Node) error 
 	type Plain GopkgYAMLv3AdditionalProperties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal GopkgYAMLv3AdditionalProperties: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]interface{}{}
@@ -93,7 +93,7 @@ func (j *GopkgYAMLv3AdditionalProperties) UnmarshalYAML(value *yaml.Node) error 
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for GopkgYAMLv3AdditionalProperties: %w", err)
 	}
 	*j = GopkgYAMLv3AdditionalProperties(plain)
 	return nil

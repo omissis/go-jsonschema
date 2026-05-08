@@ -28,7 +28,7 @@ func (j *YamlUntaggedFields) UnmarshalJSON(value []byte) error {
 	type Plain YamlUntaggedFields
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal YamlUntaggedFields: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]string{}
@@ -53,7 +53,7 @@ func (j *YamlUntaggedFields) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for YamlUntaggedFields: %w", err)
 	}
 	*j = YamlUntaggedFields(plain)
 	return nil
@@ -68,7 +68,7 @@ func (j *YamlUntaggedFields) UnmarshalYAML(value *yaml.Node) error {
 	type Plain YamlUntaggedFields
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal YamlUntaggedFields: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]string{}
@@ -93,7 +93,7 @@ func (j *YamlUntaggedFields) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for YamlUntaggedFields: %w", err)
 	}
 	*j = YamlUntaggedFields(plain)
 	return nil

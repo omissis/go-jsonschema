@@ -26,7 +26,7 @@ func (j *AllOfNestedRefs) UnmarshalJSON(value []byte) error {
 	type Plain AllOfNestedRefs
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOfNestedRefs: %w", err)
 	}
 	*j = AllOfNestedRefs(plain)
 	return nil
@@ -44,7 +44,7 @@ func (j *AllOfNestedRefs) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AllOfNestedRefs
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOfNestedRefs: %w", err)
 	}
 	*j = AllOfNestedRefs(plain)
 	return nil
@@ -75,7 +75,7 @@ func (j *RootObject) UnmarshalJSON(value []byte) error {
 	type Plain RootObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RootObject: %w", err)
 	}
 	*j = RootObject(plain)
 	return nil
@@ -93,7 +93,7 @@ func (j *RootObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RootObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RootObject: %w", err)
 	}
 	*j = RootObject(plain)
 	return nil

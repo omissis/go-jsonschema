@@ -25,7 +25,7 @@ func (j *BoolAdditionalProperties) UnmarshalJSON(value []byte) error {
 	type Plain BoolAdditionalProperties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BoolAdditionalProperties: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]bool{}
@@ -50,7 +50,7 @@ func (j *BoolAdditionalProperties) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for BoolAdditionalProperties: %w", err)
 	}
 	*j = BoolAdditionalProperties(plain)
 	return nil
@@ -65,7 +65,7 @@ func (j *BoolAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain BoolAdditionalProperties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BoolAdditionalProperties: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]bool{}
@@ -90,7 +90,7 @@ func (j *BoolAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for BoolAdditionalProperties: %w", err)
 	}
 	*j = BoolAdditionalProperties(plain)
 	return nil

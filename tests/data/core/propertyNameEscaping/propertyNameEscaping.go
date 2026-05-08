@@ -46,7 +46,7 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	type Plain PropertyNameEscaping
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal PropertyNameEscaping: %w", err)
 	}
 	if plain.ArrPctS != nil && len(plain.ArrPctS) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "arrPct%s", 1)
@@ -81,7 +81,7 @@ func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	type Plain PropertyNameEscaping
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal PropertyNameEscaping: %w", err)
 	}
 	if plain.ArrPctS != nil && len(plain.ArrPctS) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "arrPct%s", 1)
