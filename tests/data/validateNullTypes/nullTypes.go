@@ -35,7 +35,7 @@ func (j *NullTypes) UnmarshalJSON(value []byte) error {
 	type Plain NullTypes
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NullTypes: %w", err)
 	}
 	if plain.Tags != nil && len(plain.Tags) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "tags", 1)
@@ -65,7 +65,7 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	type Plain NullTypes
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NullTypes: %w", err)
 	}
 	if plain.Tags != nil && len(plain.Tags) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "tags", 1)

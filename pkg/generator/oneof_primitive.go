@@ -37,6 +37,15 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 		return false
 	}
 
+	// seen tracks the primitive kinds we've already accepted in this
+	// variant list. Duplicates mean two branches dispatch on the same JSON
+	// token kind, which the wrapper cannot represent: collapsing them via
+	// the kinds bitset would let one input satisfy multiple branches,
+	// violating JSON Schema's oneOf "exactly one matches" rule. Decline
+	// detection in that case and let the generic path handle (or reject)
+	// the schema.
+	seen := make(map[string]struct{}, len(t.OneOf))
+
 	for _, variant := range t.OneOf {
 		if variant == nil || len(variant.Type) != 1 {
 			return false
@@ -62,6 +71,12 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 		default:
 			return false
 		}
+
+		if _, dup := seen[variant.Type[0]]; dup {
+			return false
+		}
+
+		seen[variant.Type[0]] = struct{}{}
 	}
 
 	return true
@@ -123,11 +138,30 @@ func primitiveOneOfKinds(t *schemas.Type) oneOfKind {
 
 // generateOneOfPrimitive emits a wrapper type and the methods needed to
 // round-trip a primitive `oneOf` schema. The generated type stores the
-// decoded value in a single unexported `value any` field and exposes typed
-// accessors plus IsZero/Value helpers; UnmarshalJSON dispatches on the
-// JSON token kind so that overlapping schemas (e.g. number+integer) cannot
-// match more than one variant by accident.
+// decoded value in `value any` and tracks whether the wrapper has been
+// populated (by Unmarshal{JSON,YAML}) in `present bool` so that three
+// states stay distinct: untouched / decoded `null` / decoded primitive.
+// Without `present` the helpers and `omitzero` round-trip would conflate
+// the first two — explicit nulls would silently become "missing".
+// UnmarshalJSON dispatches on the JSON token kind so that overlapping
+// schemas (e.g. number+integer) cannot match more than one variant by
+// accident.
+//
+// Precondition: callers MUST NOT invoke this in `OnlyModels` mode — the
+// wrapper struct has unexported `value`/`present` fields and is unusable
+// without the marshalers/accessors emitted below. `OnlyModels` semantics
+// require the model type to be readable/writable by external code, which
+// this wrapper isn't. Callers in `generateDeclaredType` already gate on
+// `!g.config.OnlyModels`; this function panics rather than silently
+// emitting a broken type if that guard is ever bypassed.
 func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	if g.config.OnlyModels {
+		// Defensive: should be unreachable per the contract above.
+		// Panicking here turns a future routing bug (silent broken
+		// codegen) into a loud failure at codegen time.
+		panic("generateOneOfPrimitive called in OnlyModels mode; caller must guard")
+	}
+
 	kinds := primitiveOneOfKinds(t)
 
 	name := g.output.uniqueTypeName(scope)
@@ -141,6 +175,7 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 		Type: &codegen.StructType{
 			Fields: []codegen.StructField{
 				{Name: "value", Type: codegen.EmptyInterfaceType{}},
+				{Name: "present", Type: codegen.PrimitiveType{Type: "bool"}},
 			},
 		},
 		SchemaType: t,
@@ -149,10 +184,6 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	g.output.declsBySchema[t] = decl
 	g.output.declsByName[decl.Name] = decl
 	g.output.file.Package.AddDecl(decl)
-
-	if g.config.OnlyModels {
-		return &codegen.NamedType{Decl: decl}, nil
-	}
 
 	g.output.file.Package.AddImport("encoding/json", "")
 	g.output.file.Package.AddImport("fmt", "")
@@ -255,6 +286,12 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 		if kinds.has(oneOfKindNull) {
 			out.Printlnf("case nil:")
 			out.Indent(1)
+			// Validate the full payload to reject trailing garbage like
+			// `null 123`. dec.Token() above only consumed the leading null
+			// token; without this, the other branches' json.Unmarshal call
+			// asymmetry would silently accept malformed input here.
+			out.Printlnf("var v any")
+			out.Printlnf("if err := json.Unmarshal(value, &v); err != nil { return err }")
 			out.Printlnf("j.value = nil")
 			out.Indent(-1)
 		}
@@ -264,6 +301,7 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 		out.Printlnf(`return fmt.Errorf("%s: unsupported JSON value of type %%T", tok)`, typeName)
 		out.Indent(-1)
 		out.Printlnf("}")
+		out.Printlnf("j.present = true")
 		out.Printlnf("return nil")
 		out.Indent(-1)
 		out.Printlnf("}")
@@ -279,16 +317,25 @@ func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codeg
 		out.Indent(1)
 
 		if kinds.has(oneOfKindNull) {
-			// Schema includes null as a variant — emit null for the unset
-			// value so round-trip preserves the explicit-null variant.
-			out.Printlnf("if j == nil || j.value == nil { return []byte(\"null\"), nil }")
+			// Unset (no Unmarshal call has touched j) → emit null. The
+			// receiver's surrounding struct is responsible for using
+			// `omitzero` if it wants to omit the field entirely.
+			out.Printlnf("if j == nil || !j.present { return []byte(\"null\"), nil }")
+			// Explicit JSON null was decoded → preserve it.
+			out.Printlnf("if j.value == nil { return []byte(\"null\"), nil }")
 		} else {
-			// Schema does not include null — refuse to marshal an unset
-			// value rather than emit a null that the matching UnmarshalJSON
-			// would reject. Round-trip would otherwise be broken.
-			out.Printlnf("if j == nil || j.value == nil {")
+			// Schema does not include null → refuse to marshal either an
+			// unset wrapper or a wrapper whose value is nil (which would
+			// round-trip as null and the matching UnmarshalJSON would
+			// reject). Forces round-trip correctness.
+			out.Printlnf("if j == nil || !j.present {")
 			out.Indent(1)
 			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal unset value (schema does not allow null)")`, typeName)
+			out.Indent(-1)
+			out.Printlnf("}")
+			out.Printlnf("if j.value == nil {")
+			out.Indent(1)
+			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal nil value (schema does not allow null)")`, typeName)
 			out.Indent(-1)
 			out.Printlnf("}")
 		}
@@ -352,6 +399,7 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 		out.Printlnf(`return fmt.Errorf("%s: unsupported YAML scalar tag %%q", value.Tag)`, typeName)
 		out.Indent(-1)
 		out.Printlnf("}")
+		out.Printlnf("j.present = true")
 		out.Printlnf("return nil")
 		out.Indent(-1)
 		out.Printlnf("}")
@@ -367,11 +415,18 @@ func emitOneOfPrimitiveMarshalYAML(typeName string, kinds oneOfKind) func(*codeg
 		out.Indent(1)
 
 		if kinds.has(oneOfKindNull) {
-			out.Printlnf("if j == nil { return nil, nil }")
+			// Unset → emit null. Explicit null also yields nil (yaml.v3
+			// emits `null` for a nil interface).
+			out.Printlnf("if j == nil || !j.present { return nil, nil }")
 		} else {
-			out.Printlnf("if j == nil || j.value == nil {")
+			out.Printlnf("if j == nil || !j.present {")
 			out.Indent(1)
 			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal unset value (schema does not allow null)")`, typeName)
+			out.Indent(-1)
+			out.Printlnf("}")
+			out.Printlnf("if j.value == nil {")
+			out.Indent(1)
+			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal nil value (schema does not allow null)")`, typeName)
 			out.Indent(-1)
 			out.Printlnf("}")
 		}
@@ -400,11 +455,14 @@ func emitOneOfPrimitiveValue(typeName string) func(*codegen.Emitter) error {
 
 func emitOneOfPrimitiveIsZero(typeName string) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
-		out.Commentf("IsZero reports whether the value is unset; supports the encoding/json `omitzero` tag.")
+		out.Commentf(
+			"IsZero reports whether the wrapper has not been populated by " +
+				"Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. " +
+				"Note: an explicitly-decoded JSON `null` is NOT zero — see IsNull.",
+		)
 		out.Printlnf("func (j *%s) IsZero() bool {", typeName)
 		out.Indent(1)
-		out.Printlnf("if j == nil { return true }")
-		out.Printlnf("return j.value == nil")
+		out.Printlnf("return j == nil || !j.present")
 		out.Indent(-1)
 		out.Printlnf("}")
 
@@ -417,7 +475,7 @@ func emitOneOfPrimitiveAsString(typeName string) func(*codegen.Emitter) error {
 		out.Commentf("AsString returns the value as a string and reports whether it was a string.")
 		out.Printlnf("func (j *%s) AsString() (string, bool) {", typeName)
 		out.Indent(1)
-		out.Printlnf("if j == nil { return \"\", false }")
+		out.Printlnf("if j == nil || !j.present { return \"\", false }")
 		out.Printlnf("v, ok := j.value.(string)")
 		out.Printlnf("return v, ok")
 		out.Indent(-1)
@@ -432,7 +490,7 @@ func emitOneOfPrimitiveAsNumber(typeName string) func(*codegen.Emitter) error {
 		out.Commentf("AsNumber returns the value as a float64 and reports whether it was numeric.")
 		out.Printlnf("func (j *%s) AsNumber() (float64, bool) {", typeName)
 		out.Indent(1)
-		out.Printlnf("if j == nil { return 0, false }")
+		out.Printlnf("if j == nil || !j.present { return 0, false }")
 		out.Printlnf("v, ok := j.value.(float64)")
 		out.Printlnf("return v, ok")
 		out.Indent(-1)
@@ -447,7 +505,7 @@ func emitOneOfPrimitiveAsBool(typeName string) func(*codegen.Emitter) error {
 		out.Commentf("AsBool returns the value as a bool and reports whether it was a bool.")
 		out.Printlnf("func (j *%s) AsBool() (bool, bool) {", typeName)
 		out.Indent(1)
-		out.Printlnf("if j == nil { return false, false }")
+		out.Printlnf("if j == nil || !j.present { return false, false }")
 		out.Printlnf("v, ok := j.value.(bool)")
 		out.Printlnf("return v, ok")
 		out.Indent(-1)
@@ -459,10 +517,14 @@ func emitOneOfPrimitiveAsBool(typeName string) func(*codegen.Emitter) error {
 
 func emitOneOfPrimitiveIsNull(typeName string) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
-		out.Commentf("IsNull reports whether the decoded value was an explicit JSON null.")
+		out.Commentf(
+			"IsNull reports whether the wrapper was populated with an explicit " +
+				"JSON `null`. Returns false for unset wrappers (use IsZero) and " +
+				"for wrappers holding a non-null primitive.",
+		)
 		out.Printlnf("func (j *%s) IsNull() bool {", typeName)
 		out.Indent(1)
-		out.Printlnf("return j == nil || j.value == nil")
+		out.Printlnf("return j != nil && j.present && j.value == nil")
 		out.Indent(-1)
 		out.Printlnf("}")
 

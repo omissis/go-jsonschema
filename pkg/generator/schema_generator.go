@@ -1363,6 +1363,20 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
+// needsDeclaredType reports whether a schema must be routed through
+// generateDeclaredType rather than inlined.
+//
+// Every composition form that emits a named wrapper or holder needs a full
+// declaration: inlining one would collapse it to interface{} and drop the
+// generated methods along with it. Keeping the whole decision here means
+// generateTypeInline spends a single branch on the family rather than one per
+// form, and later forms extend this predicate instead of adding another branch
+// to an already-large function.
+func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
+	// A primitive `oneOf` carries no top-level `type`.
+	return len(t.OneOf) > 0 && isPrimitiveOneOf(t)
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -1385,10 +1399,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return g.generateAllOfType(t, scope)
 		}
 
-		// A primitive `oneOf` carries no top-level `type`, so this must run
-		// before the `len(t.Type) == 0` bail-out below or the wrapper would
-		// never be emitted.
-		if len(t.OneOf) > 0 && isPrimitiveOneOf(t) {
+		// Composition forms that emit a named wrapper or holder must be
+		// routed to generateDeclaredType before the `len(t.Type) == 0`
+		// bail-out below, since they carry no top-level `type` and would
+		// otherwise be emitted as interface{}. Collected in one predicate so
+		// this function keeps a single branch for the whole family.
+		if g.needsDeclaredType(t) {
 			return g.generateDeclaredType(t, scope)
 		}
 
