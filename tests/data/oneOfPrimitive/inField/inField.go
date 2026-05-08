@@ -17,11 +17,13 @@ type InField struct {
 
 type InFieldValue struct {
 	value interface{}
+
+	present bool
 }
 
 // AsBool returns the value as a bool and reports whether it was a bool.
 func (j *InFieldValue) AsBool() (bool, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return false, false
 	}
 	v, ok := j.value.(bool)
@@ -30,7 +32,7 @@ func (j *InFieldValue) AsBool() (bool, bool) {
 
 // AsNumber returns the value as a float64 and reports whether it was numeric.
 func (j *InFieldValue) AsNumber() (float64, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return 0, false
 	}
 	v, ok := j.value.(float64)
@@ -39,34 +41,38 @@ func (j *InFieldValue) AsNumber() (float64, bool) {
 
 // AsString returns the value as a string and reports whether it was a string.
 func (j *InFieldValue) AsString() (string, bool) {
-	if j == nil {
+	if j == nil || !j.present {
 		return "", false
 	}
 	v, ok := j.value.(string)
 	return v, ok
 }
 
-// IsZero reports whether the value is unset; supports the encoding/json `omitzero`
-// tag.
+// IsZero reports whether the wrapper has not been populated by
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
+// explicitly-decoded JSON `null` is NOT zero — see IsNull.
 func (j *InFieldValue) IsZero() bool {
-	if j == nil {
-		return true
-	}
-	return j.value == nil
+	return j == nil || !j.present
 }
 
 // MarshalJSON implements json.Marshaler.
 func (j *InFieldValue) MarshalJSON() ([]byte, error) {
-	if j == nil || j.value == nil {
+	if j == nil || !j.present {
 		return nil, fmt.Errorf("InFieldValue: cannot marshal unset value (schema does not allow null)")
+	}
+	if j.value == nil {
+		return nil, fmt.Errorf("InFieldValue: cannot marshal nil value (schema does not allow null)")
 	}
 	return json.Marshal(j.value)
 }
 
 // MarshalYAML implements yaml.Marshaler.
 func (j *InFieldValue) MarshalYAML() (interface{}, error) {
-	if j == nil || j.value == nil {
+	if j == nil || !j.present {
 		return nil, fmt.Errorf("InFieldValue: cannot marshal unset value (schema does not allow null)")
+	}
+	if j.value == nil {
+		return nil, fmt.Errorf("InFieldValue: cannot marshal nil value (schema does not allow null)")
 	}
 	return j.value, nil
 }
@@ -101,6 +107,7 @@ func (j *InFieldValue) UnmarshalJSON(value []byte) error {
 	default:
 		return fmt.Errorf("InFieldValue: unsupported JSON value of type %T", tok)
 	}
+	j.present = true
 	return nil
 }
 
@@ -131,6 +138,7 @@ func (j *InFieldValue) UnmarshalYAML(value *yaml.Node) error {
 	default:
 		return fmt.Errorf("InFieldValue: unsupported YAML scalar tag %q", value.Tag)
 	}
+	j.present = true
 	return nil
 }
 
