@@ -79,7 +79,13 @@ func (g *schemaGenerator) generateRootType() error {
 		}
 	}
 
-	if len(g.schema.Type) == 0 {
+	root := (*schemas.Type)(g.schema.ObjectAsType)
+
+	// The root may declare a `type` OR be a pure composition / $ref / enum
+	// (no `type`, but oneOf/anyOf/allOf/$ref/enum/const populated). Drop
+	// only when the root is structurally empty (e.g. `{}` or a schema that
+	// declares only metadata like `$schema`/`$id`).
+	if !rootHasGeneratable(root) {
 		return nil
 	}
 
@@ -88,9 +94,79 @@ func (g *schemaGenerator) generateRootType() error {
 		return nil
 	}
 
-	_, err := g.generateDeclaredType((*schemas.Type)(g.schema.ObjectAsType), newNameScope(rootTypeName))
+	root, err := constRootAsEnum(root)
+	if err != nil {
+		return err
+	}
+
+	_, err = g.generateDeclaredType(root, newNameScope(rootTypeName))
 
 	return err
+}
+
+// constRootAsEnum returns a root that is only a primitive `const`, explicit
+// null included, as the one-value `enum` it is equivalent to. With no `type`
+// to generate from, it would otherwise become an unchecked interface{}; the
+// enum path types it from its value and checks it. A root declaring an `enum`
+// as well, typed or not, has the enum narrowed to the const (narrowEnumToConst),
+// since the enum path would otherwise accept every enum value. An object or
+// array const stays as it is, since the enum path takes only primitives, and so
+// does any other root.
+func constRootAsEnum(root *schemas.Type) (*schemas.Type, error) {
+	if (root.Const == nil && !root.ConstIsSet) || !isPrimitiveJSONValue(root.Const) {
+		return root, nil
+	}
+
+	if root.Enum != nil {
+		return narrowEnumToConst(root)
+	}
+
+	if len(root.Type) > 0 || root.Ref != "" || len(root.OneOf)+len(root.AnyOf)+len(root.AllOf) > 0 {
+		return root, nil
+	}
+
+	enumRoot := *root
+	enumRoot.Enum = []any{root.Const}
+	enumRoot.Const = nil
+	enumRoot.ConstIsSet = false
+
+	return &enumRoot, nil
+}
+
+// narrowEnumToConst returns root with its enum narrowed to its const: both
+// keywords hold, so the const must be one of the enum's values. With none left
+// no value matches, and that fails as an empty enum does. A valid
+// x-enum-varnames list keeps the name at the const's position.
+func narrowEnumToConst(root *schemas.Type) (*schemas.Type, error) {
+	i := slices.IndexFunc(root.Enum, func(v any) bool { return reflect.DeepEqual(v, root.Const) })
+	if i < 0 {
+		return nil, fmt.Errorf("%w: %v", errRootConstNotInEnum, root.Const)
+	}
+
+	narrowed := *root
+	narrowed.Enum = []any{root.Const}
+	narrowed.Const = nil
+	narrowed.ConstIsSet = false
+
+	if len(root.XEnumVarnames) == len(root.Enum) {
+		narrowed.XEnumVarnames = []string{root.XEnumVarnames[i]}
+	}
+
+	return &narrowed, nil
+}
+
+// rootHasGeneratable reports whether the root carries any keyword that
+// should produce a Go declaration. `len(Type) > 0` already triggered the
+// pre-existing path; the additional keywords here are the ones the prior
+// `len(Type) == 0` early-out silently dropped.
+func rootHasGeneratable(t *schemas.Type) bool {
+	return len(t.Type) > 0 ||
+		t.Ref != "" ||
+		t.Enum != nil ||
+		t.Const != nil || t.ConstIsSet ||
+		len(t.OneOf) > 0 ||
+		len(t.AnyOf) > 0 ||
+		len(t.AllOf) > 0
 }
 
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {

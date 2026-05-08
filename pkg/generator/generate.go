@@ -23,6 +23,7 @@ var (
 	errSchemaHasNoRoot                = errors.New("schema has no root")
 	errEnumArrCannotBeEmpty           = errors.New("enum array cannot be empty")
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
+	errRootConstNotInEnum             = errors.New("root const is not one of its enum values, so no value matches")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errCannotResolveRef               = errors.New("cannot resolve reference")

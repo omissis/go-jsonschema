@@ -34,7 +34,7 @@ func (yf *yamlFormatter) enumMarshal(declType *codegen.TypeDecl) func(*codegen.E
 		out.Commentf("Marshal%s implements %s.Marshal.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Marshal%s() (interface{}, error) {", declType.Name, strings.ToUpper(formatYAML))
 		out.Indent(1)
-		out.Printlnf("return %s.Marshal(j.Value)", formatYAML)
+		out.Printlnf("return j.Value, nil")
 		out.Indent(-1)
 		out.Printlnf("}")
 
