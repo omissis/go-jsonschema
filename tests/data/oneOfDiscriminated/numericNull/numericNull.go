@@ -126,7 +126,7 @@ type NumericNullWithNullNullVersion struct {
 
 // MarshalYAML implements yaml.Marshal.
 func (j *NumericNullWithNullNullVersion) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(j.Value)
+	return j.Value, nil
 }
 
 // MarshalJSON implements json.Marshaler.

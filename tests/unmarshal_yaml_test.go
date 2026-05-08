@@ -19,6 +19,7 @@ import (
 	testFormatYAMLURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatYAMLURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatYAMLUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
+	testRootConstNull "github.com/atombender/go-jsonschema/tests/data/rootComposition/rootConstNull"
 	testYAMLStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testYAMLStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
 	testYAMLStrictAddlOmitted "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlOmitted"
@@ -297,4 +298,17 @@ func TestYamlUnmarshalStrictAdditionalProperties(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestYamlMarshalEnumWrapper: the struct wrapping an enum of mixed value types
+// marshals its value. Its MarshalYAML used to return the value's YAML encoding
+// as bytes, which the encoder then wrote as a sequence of numbers.
+func TestYamlMarshalEnumWrapper(t *testing.T) {
+	t.Parallel()
+
+	var v testRootConstNull.RootConstNull
+
+	out, err := yamlv3.Marshal(&v)
+	require.NoError(t, err)
+	require.Equal(t, "null\n", string(out))
 }
