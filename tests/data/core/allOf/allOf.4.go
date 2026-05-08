@@ -49,7 +49,7 @@ func (j *AllOf4Elem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AllOf4Elem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOf4Elem: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
@@ -79,7 +79,7 @@ func (j *AllOf4Elem) UnmarshalJSON(value []byte) error {
 	type Plain AllOf4Elem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOf4Elem: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
@@ -119,7 +119,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalJSON(value []byte) error {
 	type Plain EmbeddedlinkendFrom
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal EmbeddedlinkendFrom: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
@@ -140,7 +140,7 @@ func (j *EmbeddedlinkendFrom) UnmarshalYAML(value *yaml.Node) error {
 	type Plain EmbeddedlinkendFrom
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal EmbeddedlinkendFrom: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
@@ -211,7 +211,7 @@ func (j *Embeddedlinkend) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Embeddedlinkend
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Embeddedlinkend: %w", err)
 	}
 	*j = Embeddedlinkend(plain)
 	return nil
@@ -229,7 +229,7 @@ func (j *Embeddedlinkend) UnmarshalJSON(value []byte) error {
 	type Plain Embeddedlinkend
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Embeddedlinkend: %w", err)
 	}
 	*j = Embeddedlinkend(plain)
 	return nil
@@ -266,7 +266,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalYAML(value *yaml.Node) error {
 	type Plain EmbeddedlinkpathFrom
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal EmbeddedlinkpathFrom: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
@@ -287,7 +287,7 @@ func (j *EmbeddedlinkpathFrom) UnmarshalJSON(value []byte) error {
 	type Plain EmbeddedlinkpathFrom
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal EmbeddedlinkpathFrom: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
@@ -361,7 +361,7 @@ func (j *Embeddedlinkpath) UnmarshalJSON(value []byte) error {
 	type Plain Embeddedlinkpath
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Embeddedlinkpath: %w", err)
 	}
 	*j = Embeddedlinkpath(plain)
 	return nil
@@ -382,7 +382,7 @@ func (j *Embeddedlinkpath) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Embeddedlinkpath
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Embeddedlinkpath: %w", err)
 	}
 	*j = Embeddedlinkpath(plain)
 	return nil
@@ -462,7 +462,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalYAML(value *yaml.Node) error {
 	type Plain EmbeddedlinkrelationTarget
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal EmbeddedlinkrelationTarget: %w", err)
 	}
 	if plain.ContextId != nil && utf8.RuneCountInString(string(*plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
@@ -476,7 +476,7 @@ func (j *EmbeddedlinkrelationTarget) UnmarshalJSON(value []byte) error {
 	type Plain EmbeddedlinkrelationTarget
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal EmbeddedlinkrelationTarget: %w", err)
 	}
 	if plain.ContextId != nil && utf8.RuneCountInString(string(*plain.ContextId)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "contextId", 1)
@@ -503,7 +503,7 @@ func (j *Embeddedlinkrelation) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Embeddedlinkrelation
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Embeddedlinkrelation: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)
@@ -530,7 +530,7 @@ func (j *Embeddedlinkrelation) UnmarshalJSON(value []byte) error {
 	type Plain Embeddedlinkrelation
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Embeddedlinkrelation: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.LinkKind)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "linkKind", 1)

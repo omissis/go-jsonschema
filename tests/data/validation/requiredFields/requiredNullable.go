@@ -35,7 +35,7 @@ func (j *RequiredNullableMyNullableObject) UnmarshalJSON(value []byte) error {
 	type Plain RequiredNullableMyNullableObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredNullableMyNullableObject: %w", err)
 	}
 	*j = RequiredNullableMyNullableObject(plain)
 	return nil
@@ -53,7 +53,7 @@ func (j *RequiredNullableMyNullableObject) UnmarshalYAML(value *yaml.Node) error
 	type Plain RequiredNullableMyNullableObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredNullableMyNullableObject: %w", err)
 	}
 	*j = RequiredNullableMyNullableObject(plain)
 	return nil
@@ -81,7 +81,7 @@ func (j *RequiredNullable) UnmarshalJSON(value []byte) error {
 	type Plain RequiredNullable
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredNullable: %w", err)
 	}
 	*j = RequiredNullable(plain)
 	return nil
@@ -105,7 +105,7 @@ func (j *RequiredNullable) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RequiredNullable
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredNullable: %w", err)
 	}
 	*j = RequiredNullable(plain)
 	return nil

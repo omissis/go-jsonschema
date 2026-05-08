@@ -24,7 +24,7 @@ func (j *Regex) UnmarshalJSON(value []byte) error {
 	type Plain Regex
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Regex: %w", err)
 	}
 	if _, err := regexp.Compile(string(plain.Pattern)); err != nil {
 		return fmt.Errorf("field %s: must be a valid RE2 regular expression: %w", "pattern", err)
@@ -45,7 +45,7 @@ func (j *Regex) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Regex
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Regex: %w", err)
 	}
 	if _, err := regexp.Compile(string(plain.Pattern)); err != nil {
 		return fmt.Errorf("field %s: must be a valid RE2 regular expression: %w", "pattern", err)

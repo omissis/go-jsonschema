@@ -71,7 +71,7 @@ func (j *TypedDefaultEnums) UnmarshalJSON(value []byte) error {
 	type Plain TypedDefaultEnums
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TypedDefaultEnums: %w", err)
 	}
 	if v, ok := raw["some"]; !ok || v == nil {
 		plain.Some = "random"
@@ -89,7 +89,7 @@ func (j *TypedDefaultEnums) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TypedDefaultEnums
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TypedDefaultEnums: %w", err)
 	}
 	if v, ok := raw["some"]; !ok || v == nil {
 		plain.Some = "random"

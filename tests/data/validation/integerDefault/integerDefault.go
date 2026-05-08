@@ -37,7 +37,7 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 	type Plain IntegerDefault
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerDefault: %w", err)
 	}
 	if v, ok := raw["count"]; !ok || v == nil {
 		plain.Count = 42
@@ -72,7 +72,7 @@ func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IntegerDefault
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerDefault: %w", err)
 	}
 	if v, ok := raw["count"]; !ok || v == nil {
 		plain.Count = 42

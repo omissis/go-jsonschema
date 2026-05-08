@@ -151,7 +151,7 @@ func (j *NumStringBool) UnmarshalJSON(value []byte) error {
 	type Plain NumStringBool
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NumStringBool: %w", err)
 	}
 	*j = NumStringBool(plain)
 	return nil
@@ -169,7 +169,7 @@ func (j *NumStringBool) UnmarshalYAML(value *yaml.Node) error {
 	type Plain NumStringBool
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NumStringBool: %w", err)
 	}
 	*j = NumStringBool(plain)
 	return nil

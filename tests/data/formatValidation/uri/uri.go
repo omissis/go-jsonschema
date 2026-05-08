@@ -25,7 +25,7 @@ func (j *Uri) UnmarshalJSON(value []byte) error {
 	type Plain Uri
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Uri: %w", err)
 	}
 	if u, err := url.Parse(string(plain.Endpoint)); err != nil || !u.IsAbs() {
 		return fmt.Errorf("field %s: must be a valid absolute uri", "endpoint")
@@ -49,7 +49,7 @@ func (j *Uri) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Uri
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Uri: %w", err)
 	}
 	if u, err := url.Parse(string(plain.Endpoint)); err != nil || !u.IsAbs() {
 		return fmt.Errorf("field %s: must be a valid absolute uri", "endpoint")
