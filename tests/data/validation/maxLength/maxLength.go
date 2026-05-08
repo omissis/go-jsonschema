@@ -27,7 +27,7 @@ func (j *MaxLength) UnmarshalJSON(value []byte) error {
 	type Plain MaxLength
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MaxLength: %w", err)
 	}
 	if plain.MyNullableString != nil && utf8.RuneCountInString(string(*plain.MyNullableString)) > 10 {
 		return fmt.Errorf("field %s length: must be <= %d", "myNullableString", 10)
@@ -51,7 +51,7 @@ func (j *MaxLength) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MaxLength
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MaxLength: %w", err)
 	}
 	if plain.MyNullableString != nil && utf8.RuneCountInString(string(*plain.MyNullableString)) > 10 {
 		return fmt.Errorf("field %s length: must be <= %d", "myNullableString", 10)

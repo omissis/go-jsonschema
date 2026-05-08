@@ -14,7 +14,7 @@ func (j *MinStr) UnmarshalJSON(value []byte) error {
 	type Plain MinStr
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MinStr: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain)) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "", 5)
@@ -28,7 +28,7 @@ func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MinStr
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MinStr: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain)) < 5 {
 		return fmt.Errorf("field %s length: must be >= %d", "", 5)
@@ -57,7 +57,7 @@ func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 	type Plain PrimitiveDefs
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal PrimitiveDefs: %w", err)
 	}
 	*j = PrimitiveDefs(plain)
 	return nil
@@ -75,7 +75,7 @@ func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
 	type Plain PrimitiveDefs
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal PrimitiveDefs: %w", err)
 	}
 	*j = PrimitiveDefs(plain)
 	return nil

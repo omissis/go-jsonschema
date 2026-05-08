@@ -32,7 +32,7 @@ func (j *Primitives) UnmarshalJSON(value []byte) error {
 	type Plain Primitives
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Primitives: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")
@@ -50,7 +50,7 @@ func (j *Primitives) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Primitives
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Primitives: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")

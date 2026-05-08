@@ -28,7 +28,7 @@ func (j *ObjectMyObject) UnmarshalJSON(value []byte) error {
 	type Plain ObjectMyObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectMyObject: %w", err)
 	}
 	*j = ObjectMyObject(plain)
 	return nil
@@ -46,7 +46,7 @@ func (j *ObjectMyObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ObjectMyObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectMyObject: %w", err)
 	}
 	*j = ObjectMyObject(plain)
 	return nil

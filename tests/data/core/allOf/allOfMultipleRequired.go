@@ -40,7 +40,7 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 	type Plain ComposedWithMultipleRequired
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ComposedWithMultipleRequired: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -62,7 +62,7 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ComposedWithMultipleRequired: %w", err)
 	}
 	*j = ComposedWithMultipleRequired(plain)
 	return nil
@@ -86,7 +86,7 @@ func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ComposedWithMultipleRequired
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ComposedWithMultipleRequired: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -108,7 +108,7 @@ func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ComposedWithMultipleRequired: %w", err)
 	}
 	*j = ComposedWithMultipleRequired(plain)
 	return nil
@@ -131,7 +131,7 @@ func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 	type Plain MultipleRequiredBase
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
 	}
 	*j = MultipleRequiredBase(plain)
 	return nil
@@ -149,7 +149,7 @@ func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MultipleRequiredBase
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
 	}
 	*j = MultipleRequiredBase(plain)
 	return nil
@@ -172,7 +172,7 @@ func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 	type Plain MultipleRequiredMiddle
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
 	}
 	*j = MultipleRequiredMiddle(plain)
 	return nil
@@ -190,7 +190,7 @@ func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MultipleRequiredMiddle
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
 	}
 	*j = MultipleRequiredMiddle(plain)
 	return nil

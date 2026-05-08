@@ -130,7 +130,7 @@ func (j *NumString) UnmarshalJSON(value []byte) error {
 	type Plain NumString
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NumString: %w", err)
 	}
 	*j = NumString(plain)
 	return nil
@@ -148,7 +148,7 @@ func (j *NumString) UnmarshalYAML(value *yaml.Node) error {
 	type Plain NumString
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NumString: %w", err)
 	}
 	*j = NumString(plain)
 	return nil

@@ -29,7 +29,7 @@ func (j *IpMyObject) UnmarshalJSON(value []byte) error {
 	type Plain IpMyObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IpMyObject: %w", err)
 	}
 	*j = IpMyObject(plain)
 	return nil
@@ -47,7 +47,7 @@ func (j *IpMyObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IpMyObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IpMyObject: %w", err)
 	}
 	*j = IpMyObject(plain)
 	return nil

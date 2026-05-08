@@ -25,7 +25,7 @@ func (j *TypedAddl) UnmarshalJSON(value []byte) error {
 	type Plain TypedAddl
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TypedAddl: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]string{}
@@ -50,7 +50,7 @@ func (j *TypedAddl) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for TypedAddl: %w", err)
 	}
 	*j = TypedAddl(plain)
 	return nil
@@ -65,7 +65,7 @@ func (j *TypedAddl) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TypedAddl
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TypedAddl: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]string{}
@@ -90,7 +90,7 @@ func (j *TypedAddl) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for TypedAddl: %w", err)
 	}
 	*j = TypedAddl(plain)
 	return nil

@@ -84,6 +84,11 @@ func (yf *yamlFormatter) enumUnmarshal(
 
 func (yf *yamlFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl) {
 	out.Package.AddImport(YAMLPackage, "yaml")
+	// generateUnmarshalBody now wraps both the raw-decode and the typed
+	// Plain-decode errors with type context via fmt.Errorf, so fmt is
+	// required for every generated unmarshaler regardless of validators
+	// or additional-properties handling.
+	out.Package.AddImport("fmt", "")
 
 	if hasAdditionalPropertiesField(declType) {
 		out.Package.AddImport("reflect", "")
