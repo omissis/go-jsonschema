@@ -338,6 +338,12 @@ func TestRecursiveAllOf(t *testing.T) {
 	testExamples(t, basicConfig, "./data/recursiveAllOf")
 }
 
+func TestRootComposition(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/rootComposition")
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 

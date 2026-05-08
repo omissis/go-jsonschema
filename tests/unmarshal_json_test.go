@@ -29,6 +29,10 @@ import (
 	testOneOfNumStringBool "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
 	testOneOfWithNull "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withNull"
 	testRecursiveAllOfSelfRef "github.com/atombender/go-jsonschema/tests/data/recursiveAllOf/selfRef"
+	testRootAllOf "github.com/atombender/go-jsonschema/tests/data/rootComposition/rootAllOf"
+	testRootEnum "github.com/atombender/go-jsonschema/tests/data/rootComposition/rootEnum"
+	testRootOneOfDisc "github.com/atombender/go-jsonschema/tests/data/rootComposition/rootOneOfDiscriminator"
+	testRootOneOfTryEach "github.com/atombender/go-jsonschema/tests/data/rootComposition/rootOneOfTryEach"
 	testStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
 	testStrictAddlOmitted "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlOmitted"
@@ -1263,6 +1267,128 @@ func TestJsonUnmarshalRecursiveAllOf(t *testing.T) {
 		out, err := json.Marshal(&v)
 		require.NoError(t, err)
 		assert.JSONEq(t, string(input), string(out))
+	})
+}
+
+func TestJsonUnmarshalRootComposition(t *testing.T) {
+	t.Parallel()
+
+	// rootOneOfDiscriminator: schema is `{"oneOf":[...]}` at root with no
+	// surrounding `{"type":"object"}` wrapper. Pre-fix this was silently
+	// dropped; now the discriminator detection runs at root and emits a
+	// holder with per-variant pointer fields.
+
+	t.Run("rootOneOfDiscriminator: ping variant decodes into Ping field", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootOneOfDisc.RootOneOfDiscriminator
+
+		require.NoError(t, json.Unmarshal([]byte(`{"kind":"ping","ttl":30}`), &v))
+		require.NotNil(t, v.Ping)
+		assert.Nil(t, v.Pong)
+		assert.Equal(t, "ping", v.Ping.Kind)
+		assert.Equal(t, 30, v.Ping.Ttl)
+	})
+
+	t.Run("rootOneOfDiscriminator: pong variant decodes into Pong field", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootOneOfDisc.RootOneOfDiscriminator
+
+		require.NoError(t, json.Unmarshal([]byte(`{"kind":"pong","echo":"hi"}`), &v))
+		require.NotNil(t, v.Pong)
+		assert.Nil(t, v.Ping)
+		assert.Equal(t, "hi", v.Pong.Echo)
+	})
+
+	t.Run("rootOneOfDiscriminator: round-trip preserves variant", func(t *testing.T) {
+		t.Parallel()
+
+		input := []byte(`{"echo":"hello","kind":"pong"}`)
+
+		var v testRootOneOfDisc.RootOneOfDiscriminator
+
+		require.NoError(t, json.Unmarshal(input, &v))
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(input), string(out))
+	})
+
+	// rootOneOfTryEach: object oneOf at root with no natural discriminator
+	// — disambiguation happens via per-variant shape check.
+
+	t.Run("rootOneOfTryEach: variant with 'age' key selected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootOneOfTryEach.RootOneOfTryEach
+
+		require.NoError(t, json.Unmarshal([]byte(`{"name":"x","age":7}`), &v))
+		require.NotNil(t, v.Variant0)
+		assert.Nil(t, v.Variant1)
+	})
+
+	t.Run("rootOneOfTryEach: variant with 'label' key selected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootOneOfTryEach.RootOneOfTryEach
+
+		require.NoError(t, json.Unmarshal([]byte(`{"name":"x","label":"l"}`), &v))
+		require.NotNil(t, v.Variant1)
+		assert.Nil(t, v.Variant0)
+	})
+
+	t.Run("rootOneOfTryEach: input matching no variant rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootOneOfTryEach.RootOneOfTryEach
+
+		err := json.Unmarshal([]byte(`{"name":"x","other":1}`), &v)
+		assert.Error(t, err)
+	})
+
+	// rootAllOf: schema is `{"allOf":[{"$ref":Base},{inline}]}` at root.
+	// Pre-fix this was silently dropped. Now the merged struct gains
+	// fields from both branches.
+
+	t.Run("rootAllOf: merged struct decodes both Base and inline fields", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootAllOf.RootAllOf
+
+		require.NoError(t, json.Unmarshal([]byte(`{"name":"alice","extra":"data"}`), &v))
+		assert.Equal(t, "alice", v.Name)
+		assert.Equal(t, "data", v.Extra)
+	})
+
+	t.Run("rootAllOf: missing required field rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootAllOf.RootAllOf
+
+		err := json.Unmarshal([]byte(`{"name":"alice"}`), &v)
+		assert.Error(t, err)
+	})
+
+	// rootEnum: schema is `{"enum":[...]}` at root. Pre-fix this was
+	// silently dropped; now generates a typed string with named constants.
+
+	t.Run("rootEnum: declared value accepted", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootEnum.RootEnum
+
+		require.NoError(t, json.Unmarshal([]byte(`"red"`), &v))
+		assert.Equal(t, testRootEnum.RootEnumRed, v)
+	})
+
+	t.Run("rootEnum: undeclared value rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testRootEnum.RootEnum
+
+		err := json.Unmarshal([]byte(`"purple"`), &v)
+		assert.Error(t, err)
 	})
 }
 
