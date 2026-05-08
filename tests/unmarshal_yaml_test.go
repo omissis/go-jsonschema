@@ -94,11 +94,6 @@ func TestYamlUnmarshalFormatValidation(t *testing.T) {
 		{desc: "uuid valid", yaml: "id: 550e8400-e29b-41d4-a716-446655440000\n", target: &testFormatYAMLUUID.Uuid{}},
 		{desc: "uuid invalid", yaml: "id: not-a-uuid\n", target: &testFormatYAMLUUID.Uuid{}, expectErr: true},
 		{
-			desc:   "uuid optional absent ok",
-			yaml:   "id: 550e8400-e29b-41d4-a716-446655440000\n",
-			target: &testFormatYAMLUUID.Uuid{},
-		},
-		{
 			desc:   "uuid optional present and valid",
 			yaml:   "id: 550e8400-e29b-41d4-a716-446655440000\nparentId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8\n",
 			target: &testFormatYAMLUUID.Uuid{},
