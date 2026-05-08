@@ -29,7 +29,7 @@ func (j *IntegerFormatPrecedence) UnmarshalJSON(value []byte) error {
 	type Plain IntegerFormatPrecedence
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerFormatPrecedence: %w", err)
 	}
 	if plain.Bounded != nil && 100 < *plain.Bounded {
 		return fmt.Errorf("field %s: must be <= %v", "bounded", 100)
@@ -53,7 +53,7 @@ func (j *IntegerFormatPrecedence) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IntegerFormatPrecedence
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerFormatPrecedence: %w", err)
 	}
 	if plain.Bounded != nil && 100 < *plain.Bounded {
 		return fmt.Errorf("field %s: must be <= %v", "bounded", 100)

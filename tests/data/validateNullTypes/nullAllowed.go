@@ -42,7 +42,7 @@ func (j *NullAllowed) UnmarshalJSON(value []byte) error {
 	type Plain NullAllowed
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NullAllowed: %w", err)
 	}
 	*j = NullAllowed(plain)
 	return nil
@@ -63,7 +63,7 @@ func (j *NullAllowed) UnmarshalYAML(value *yaml.Node) error {
 	type Plain NullAllowed
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NullAllowed: %w", err)
 	}
 	*j = NullAllowed(plain)
 	return nil

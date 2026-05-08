@@ -25,7 +25,7 @@ func (j *UriReference) UnmarshalJSON(value []byte) error {
 	type Plain UriReference
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal UriReference: %w", err)
 	}
 	if _, err := url.Parse(string(plain.Ref)); err != nil {
 		return fmt.Errorf("field %s: must be a valid uri reference: %w", "ref", err)
@@ -49,7 +49,7 @@ func (j *UriReference) UnmarshalYAML(value *yaml.Node) error {
 	type Plain UriReference
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal UriReference: %w", err)
 	}
 	if _, err := url.Parse(string(plain.Ref)); err != nil {
 		return fmt.Errorf("field %s: must be a valid uri reference: %w", "ref", err)

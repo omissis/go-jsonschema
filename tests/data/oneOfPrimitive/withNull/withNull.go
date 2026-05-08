@@ -117,7 +117,7 @@ func (j *WithNull) UnmarshalJSON(value []byte) error {
 	type Plain WithNull
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal WithNull: %w", err)
 	}
 	*j = WithNull(plain)
 	return nil
@@ -135,7 +135,7 @@ func (j *WithNull) UnmarshalYAML(value *yaml.Node) error {
 	type Plain WithNull
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal WithNull: %w", err)
 	}
 	*j = WithNull(plain)
 	return nil

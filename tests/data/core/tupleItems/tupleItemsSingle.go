@@ -28,7 +28,7 @@ func (j *TupleItemsSingleLicensesElem) UnmarshalJSON(value []byte) error {
 	type Plain TupleItemsSingleLicensesElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TupleItemsSingleLicensesElem: %w", err)
 	}
 	*j = TupleItemsSingleLicensesElem(plain)
 	return nil
@@ -46,7 +46,7 @@ func (j *TupleItemsSingleLicensesElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TupleItemsSingleLicensesElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TupleItemsSingleLicensesElem: %w", err)
 	}
 	*j = TupleItemsSingleLicensesElem(plain)
 	return nil
@@ -57,7 +57,7 @@ func (j *TupleItemsSingle) UnmarshalJSON(value []byte) error {
 	type Plain TupleItemsSingle
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TupleItemsSingle: %w", err)
 	}
 	if plain.Licenses != nil && len(plain.Licenses) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "licenses", 1)
@@ -74,7 +74,7 @@ func (j *TupleItemsSingle) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TupleItemsSingle
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TupleItemsSingle: %w", err)
 	}
 	if plain.Licenses != nil && len(plain.Licenses) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "licenses", 1)

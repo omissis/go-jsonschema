@@ -38,7 +38,7 @@ func (j *Basic) UnmarshalJSON(value []byte) error {
 	type Plain Basic
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Basic: %w", err)
 	}
 	*j = Basic(plain)
 	return nil
@@ -70,7 +70,7 @@ func (j *Basic) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Basic
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Basic: %w", err)
 	}
 	*j = Basic(plain)
 	return nil

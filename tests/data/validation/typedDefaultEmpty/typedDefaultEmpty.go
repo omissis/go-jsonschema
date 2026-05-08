@@ -20,7 +20,7 @@ func (j *TypedDefaultEmpty) UnmarshalJSON(value []byte) error {
 	type Plain TypedDefaultEmpty
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TypedDefaultEmpty: %w", err)
 	}
 	if v, ok := raw["topLevelDomains"]; !ok || v == nil {
 		plain.TopLevelDomains = []string{}
@@ -38,7 +38,7 @@ func (j *TypedDefaultEmpty) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TypedDefaultEmpty
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TypedDefaultEmpty: %w", err)
 	}
 	if v, ok := raw["topLevelDomains"]; !ok || v == nil {
 		plain.TopLevelDomains = []string{}
