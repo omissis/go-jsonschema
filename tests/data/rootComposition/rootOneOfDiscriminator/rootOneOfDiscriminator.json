@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/rootOneOfDiscriminator",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "ping"
+        },
+        "ttl": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "ttl"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "pong"
+        },
+        "echo": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "echo"
+      ]
+    }
+  ]
+}
