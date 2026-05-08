@@ -27,7 +27,7 @@ func (j *Email) UnmarshalJSON(value []byte) error {
 	type Plain Email
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Email: %w", err)
 	}
 	if addr, err := mail.ParseAddress(string(plain.Primary)); err != nil || addr.Name != "" || addr.Address != string(plain.Primary) {
 		return fmt.Errorf("field %s: must be a valid email (RFC 5321 addr-spec)", "primary")
@@ -53,7 +53,7 @@ func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Email
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Email: %w", err)
 	}
 	if addr, err := mail.ParseAddress(string(plain.Primary)); err != nil || addr.Name != "" || addr.Address != string(plain.Primary) {
 		return fmt.Errorf("field %s: must be a valid email (RFC 5321 addr-spec)", "primary")

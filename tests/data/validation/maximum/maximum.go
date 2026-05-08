@@ -35,7 +35,7 @@ func (j *Maximum) UnmarshalJSON(value []byte) error {
 	type Plain Maximum
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Maximum: %w", err)
 	}
 	if 2 < plain.MyInteger {
 		return fmt.Errorf("field %s: must be <= %v", "myInteger", 2)
@@ -68,7 +68,7 @@ func (j *Maximum) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Maximum
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Maximum: %w", err)
 	}
 	if 2 < plain.MyInteger {
 		return fmt.Errorf("field %s: must be <= %v", "myInteger", 2)

@@ -49,7 +49,7 @@ func (j *Array) UnmarshalJSON(value []byte) error {
 	type Plain Array
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Array: %w", err)
 	}
 	for i0 := range plain.MyNestedNullArray {
 		for i1 := range plain.MyNestedNullArray[i0] {
@@ -76,7 +76,7 @@ func (j *Array) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Array
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Array: %w", err)
 	}
 	for i0 := range plain.MyNestedNullArray {
 		for i1 := range plain.MyNestedNullArray[i0] {

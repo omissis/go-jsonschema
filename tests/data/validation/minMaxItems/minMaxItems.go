@@ -19,7 +19,7 @@ func (j *MinMaxItems) UnmarshalJSON(value []byte) error {
 	type Plain MinMaxItems
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MinMaxItems: %w", err)
 	}
 	if plain.MyNestedArray != nil && len(plain.MyNestedArray) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNestedArray", 1)
@@ -50,7 +50,7 @@ func (j *MinMaxItems) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MinMaxItems
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MinMaxItems: %w", err)
 	}
 	if plain.MyNestedArray != nil && len(plain.MyNestedArray) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNestedArray", 1)

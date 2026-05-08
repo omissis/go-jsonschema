@@ -51,7 +51,7 @@ func (j *OmitZero) UnmarshalJSON(value []byte) error {
 	type Plain OmitZero
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal OmitZero: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")
@@ -74,7 +74,7 @@ func (j *OmitZero) UnmarshalYAML(value *yaml.Node) error {
 	type Plain OmitZero
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal OmitZero: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")

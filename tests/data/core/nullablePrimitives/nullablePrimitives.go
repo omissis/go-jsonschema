@@ -60,7 +60,7 @@ func (j *NullablePrimitives) UnmarshalJSON(value []byte) error {
 	type Plain NullablePrimitives
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NullablePrimitives: %w", err)
 	}
 	if plain.Name != nil && utf8.RuneCountInString(string(*plain.Name)) < 3 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 3)
@@ -77,7 +77,7 @@ func (j *NullablePrimitives) UnmarshalYAML(value *yaml.Node) error {
 	type Plain NullablePrimitives
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal NullablePrimitives: %w", err)
 	}
 	if plain.Name != nil && utf8.RuneCountInString(string(*plain.Name)) < 3 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 3)

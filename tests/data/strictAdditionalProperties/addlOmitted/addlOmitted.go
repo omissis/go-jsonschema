@@ -23,7 +23,7 @@ func (j *AddlOmitted) UnmarshalJSON(value []byte) error {
 	type Plain AddlOmitted
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AddlOmitted: %w", err)
 	}
 	*j = AddlOmitted(plain)
 	return nil
@@ -41,7 +41,7 @@ func (j *AddlOmitted) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AddlOmitted
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AddlOmitted: %w", err)
 	}
 	*j = AddlOmitted(plain)
 	return nil

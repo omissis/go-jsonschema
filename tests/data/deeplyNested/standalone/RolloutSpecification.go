@@ -39,7 +39,7 @@ func (j *Applications) UnmarshalJSON(value []byte) error {
 	type Plain Applications
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Applications: %w", err)
 	}
 	*j = Applications(plain)
 	return nil
@@ -63,7 +63,7 @@ func (j *Applications) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Applications
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Applications: %w", err)
 	}
 	*j = Applications(plain)
 	return nil
@@ -97,7 +97,7 @@ func (j *ApplyAcrossServiceResources) UnmarshalJSON(value []byte) error {
 	type Plain ApplyAcrossServiceResources
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ApplyAcrossServiceResources: %w", err)
 	}
 	*j = ApplyAcrossServiceResources(plain)
 	return nil
@@ -118,7 +118,7 @@ func (j *ApplyAcrossServiceResources) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ApplyAcrossServiceResources
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ApplyAcrossServiceResources: %w", err)
 	}
 	*j = ApplyAcrossServiceResources(plain)
 	return nil
@@ -143,7 +143,7 @@ func (j *BuildSource) UnmarshalJSON(value []byte) error {
 	type Plain BuildSource
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BuildSource: %w", err)
 	}
 	*j = BuildSource(plain)
 	return nil
@@ -161,7 +161,7 @@ func (j *BuildSource) UnmarshalYAML(value *yaml.Node) error {
 	type Plain BuildSource
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BuildSource: %w", err)
 	}
 	*j = BuildSource(plain)
 	return nil
@@ -198,7 +198,7 @@ func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Email
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Email: %w", err)
 	}
 	*j = Email(plain)
 	return nil
@@ -216,7 +216,7 @@ func (j *Email) UnmarshalJSON(value []byte) error {
 	type Plain Email
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Email: %w", err)
 	}
 	*j = Email(plain)
 	return nil
@@ -255,7 +255,7 @@ func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Incident
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Incident: %w", err)
 	}
 	*j = Incident(plain)
 	return nil
@@ -276,7 +276,7 @@ func (j *Incident) UnmarshalJSON(value []byte) error {
 	type Plain Incident
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Incident: %w", err)
 	}
 	*j = Incident(plain)
 	return nil
@@ -308,7 +308,7 @@ func (j *Options) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Options
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Options: %w", err)
 	}
 	if plain.Verbosity != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^All$|^SummaryOnly$|^Compact$)`, string(*plain.Verbosity)); !matched {
@@ -324,7 +324,7 @@ func (j *Options) UnmarshalJSON(value []byte) error {
 	type Plain Options
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Options: %w", err)
 	}
 	if plain.Verbosity != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^All$|^SummaryOnly$|^Compact$)`, string(*plain.Verbosity)); !matched {
@@ -375,7 +375,7 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	type Plain OrchestratedStep
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal OrchestratedStep: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
@@ -405,7 +405,7 @@ func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
 	type Plain OrchestratedStep
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal OrchestratedStep: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
@@ -440,7 +440,7 @@ func (j *Parameters) UnmarshalJSON(value []byte) error {
 	type Plain Parameters
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Parameters: %w", err)
 	}
 	*j = Parameters(plain)
 	return nil
@@ -458,7 +458,7 @@ func (j *Parameters) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Parameters
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Parameters: %w", err)
 	}
 	*j = Parameters(plain)
 	return nil
@@ -494,7 +494,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 	type Plain Properties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Properties: %w", err)
 	}
 	if plain.CorrelateBy != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^rollout$)`, string(*plain.CorrelateBy)); !matched {
@@ -525,7 +525,7 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Properties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Properties: %w", err)
 	}
 	if plain.CorrelateBy != nil {
 		if matched, _ := regexp.MatchString(`(?i)(^rollout$)`, string(*plain.CorrelateBy)); !matched {
@@ -591,7 +591,7 @@ func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 	type Plain RolloutMetadata
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RolloutMetadata: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
@@ -624,7 +624,7 @@ func (j *RolloutMetadata) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RolloutMetadata
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RolloutMetadata: %w", err)
 	}
 	if utf8.RuneCountInString(string(plain.Name)) < 1 {
 		return fmt.Errorf("field %s length: must be >= %d", "name", 1)
@@ -661,7 +661,7 @@ func (j *RolloutPolicyReference) UnmarshalJSON(value []byte) error {
 	type Plain RolloutPolicyReference
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RolloutPolicyReference: %w", err)
 	}
 	*j = RolloutPolicyReference(plain)
 	return nil
@@ -682,7 +682,7 @@ func (j *RolloutPolicyReference) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RolloutPolicyReference
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RolloutPolicyReference: %w", err)
 	}
 	*j = RolloutPolicyReference(plain)
 	return nil
@@ -719,7 +719,7 @@ func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
 	type Plain RolloutSpecification
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RolloutSpecification: %w", err)
 	}
 	if matched, _ := regexp.MatchString(`^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`, string(plain.ContentVersion)); !matched {
 		return fmt.Errorf("field %s pattern match: must match %s", "ContentVersion", `^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`)
@@ -746,7 +746,7 @@ func (j *RolloutSpecification) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RolloutSpecification
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RolloutSpecification: %w", err)
 	}
 	if matched, _ := regexp.MatchString(`^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`, string(plain.ContentVersion)); !matched {
 		return fmt.Errorf("field %s pattern match: must match %s", "ContentVersion", `^([0-9]+\.)?([0-9]+\.)?([0-9]+\.)?([0-9]+){1}$`)

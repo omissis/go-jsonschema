@@ -19,7 +19,7 @@ func (j *InlineMaps) UnmarshalJSON(value []byte) error {
 	type Plain InlineMaps
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal InlineMaps: %w", err)
 	}
 	for k1 := range plain.ByName {
 		if !regexpFormatUUID.MatchString(string(plain.ByName[k1])) {
@@ -35,7 +35,7 @@ func (j *InlineMaps) UnmarshalYAML(value *yaml.Node) error {
 	type Plain InlineMaps
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal InlineMaps: %w", err)
 	}
 	for k1 := range plain.ByName {
 		if !regexpFormatUUID.MatchString(string(plain.ByName[k1])) {

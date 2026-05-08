@@ -60,7 +60,7 @@ func (j *Pointer) UnmarshalJSON(value []byte) error {
 	type Plain Pointer
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Pointer: %w", err)
 	}
 	if v, ok := raw["boolWithDefault"]; !ok || v == nil {
 		var defaultBoolWithDefault bool = true
@@ -110,7 +110,7 @@ func (j *Pointer) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Pointer
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Pointer: %w", err)
 	}
 	if v, ok := raw["boolWithDefault"]; !ok || v == nil {
 		var defaultBoolWithDefault bool = true

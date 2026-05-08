@@ -36,7 +36,7 @@ func (j *AnyOf3_0) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf3_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3_0: %w", err)
 	}
 	*j = AnyOf3_0(plain)
 	return nil
@@ -54,7 +54,7 @@ func (j *AnyOf3_0) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf3_0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3_0: %w", err)
 	}
 	*j = AnyOf3_0(plain)
 	return nil
@@ -77,7 +77,7 @@ func (j *AnyOf3_1) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf3_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3_1: %w", err)
 	}
 	*j = AnyOf3_1(plain)
 	return nil
@@ -95,7 +95,7 @@ func (j *AnyOf3_1) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf3_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3_1: %w", err)
 	}
 	*j = AnyOf3_1(plain)
 	return nil
@@ -111,7 +111,7 @@ func (j *AnyOf3_2) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf3_2
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3_2: %w", err)
 	}
 	*j = AnyOf3_2(plain)
 	return nil
@@ -122,7 +122,7 @@ func (j *AnyOf3_2) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf3_2
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3_2: %w", err)
 	}
 	*j = AnyOf3_2(plain)
 	return nil
@@ -153,7 +153,7 @@ func (j *AnyOf3) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf3
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3: %w", err)
 	}
 	*j = AnyOf3(plain)
 	return nil
@@ -184,7 +184,7 @@ func (j *AnyOf3) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf3
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf3: %w", err)
 	}
 	*j = AnyOf3(plain)
 	return nil

@@ -26,7 +26,7 @@ func (j *AllOfWithIfThen) UnmarshalJSON(value []byte) error {
 	type Plain AllOfWithIfThen
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOfWithIfThen: %w", err)
 	}
 	*j = AllOfWithIfThen(plain)
 	return nil
@@ -44,7 +44,7 @@ func (j *AllOfWithIfThen) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AllOfWithIfThen
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOfWithIfThen: %w", err)
 	}
 	*j = AllOfWithIfThen(plain)
 	return nil

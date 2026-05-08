@@ -22,7 +22,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 	type Plain ObjectAdditionalProperties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectAdditionalProperties: %w", err)
 	}
 	if v, ok := raw["foo"]; !ok || v == nil {
 		plain.Foo = map[string]string{}
@@ -40,7 +40,7 @@ func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ObjectAdditionalProperties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectAdditionalProperties: %w", err)
 	}
 	if v, ok := raw["foo"]; !ok || v == nil {
 		plain.Foo = map[string]string{}

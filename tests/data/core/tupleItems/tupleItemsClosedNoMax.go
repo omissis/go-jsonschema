@@ -41,7 +41,7 @@ func (j *TupleItemsClosedNoMax) UnmarshalJSON(value []byte) error {
 	type Plain TupleItemsClosedNoMax
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TupleItemsClosedNoMax: %w", err)
 	}
 	if len(plain.LooseMax) > 1 {
 		return fmt.Errorf("field %s length: must be <= %d", "looseMax", 1)
@@ -64,7 +64,7 @@ func (j *TupleItemsClosedNoMax) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TupleItemsClosedNoMax
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TupleItemsClosedNoMax: %w", err)
 	}
 	if len(plain.LooseMax) > 1 {
 		return fmt.Errorf("field %s length: must be <= %d", "looseMax", 1)

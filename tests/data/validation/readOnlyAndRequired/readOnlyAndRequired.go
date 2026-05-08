@@ -27,7 +27,7 @@ func (j *ReadOnlyAndRequired) UnmarshalJSON(value []byte) error {
 	type Plain ReadOnlyAndRequired
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ReadOnlyAndRequired: %w", err)
 	}
 	*j = ReadOnlyAndRequired(plain)
 	return nil
@@ -48,7 +48,7 @@ func (j *ReadOnlyAndRequired) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ReadOnlyAndRequired
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ReadOnlyAndRequired: %w", err)
 	}
 	*j = ReadOnlyAndRequired(plain)
 	return nil

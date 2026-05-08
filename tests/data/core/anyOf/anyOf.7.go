@@ -40,7 +40,7 @@ func (j *AnyOf7BarElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf7BarElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7BarElem: %w", err)
 	}
 	*j = AnyOf7BarElem(plain)
 	return nil
@@ -63,7 +63,7 @@ func (j *AnyOf7BarElem) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf7BarElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7BarElem: %w", err)
 	}
 	*j = AnyOf7BarElem(plain)
 	return nil
@@ -81,7 +81,7 @@ func (j *Item) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Item
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Item: %w", err)
 	}
 	*j = Item(plain)
 	return nil
@@ -111,7 +111,7 @@ func (j *AnyOf7BazElem) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf7BazElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7BazElem: %w", err)
 	}
 	*j = AnyOf7BazElem(plain)
 	return nil
@@ -134,7 +134,7 @@ func (j *AnyOf7BazElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf7BazElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7BazElem: %w", err)
 	}
 	*j = AnyOf7BazElem(plain)
 	return nil
@@ -164,7 +164,7 @@ func (j *AnyOf7Foo) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf7Foo
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7Foo: %w", err)
 	}
 	*j = AnyOf7Foo(plain)
 	return nil
@@ -187,7 +187,7 @@ func (j *AnyOf7Foo) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf7Foo
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7Foo: %w", err)
 	}
 	*j = AnyOf7Foo(plain)
 	return nil
@@ -198,7 +198,7 @@ func (j *Item) UnmarshalJSON(value []byte) error {
 	type Plain Item
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Item: %w", err)
 	}
 	*j = Item(plain)
 	return nil
@@ -219,7 +219,7 @@ func (j *AnyOf7) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf7
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7: %w", err)
 	}
 	*j = AnyOf7(plain)
 	return nil
@@ -240,7 +240,7 @@ func (j *AnyOf7) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf7
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf7: %w", err)
 	}
 	*j = AnyOf7(plain)
 	return nil

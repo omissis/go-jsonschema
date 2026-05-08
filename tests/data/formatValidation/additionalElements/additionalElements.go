@@ -28,7 +28,7 @@ func (j *AdditionalElements) UnmarshalJSON(value []byte) error {
 	type Plain AdditionalElements
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AdditionalElements: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]string{}
@@ -53,7 +53,7 @@ func (j *AdditionalElements) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for AdditionalElements: %w", err)
 	}
 	for k1 := range plain.AdditionalProperties {
 		if !regexpFormatUUID.MatchString(string(plain.AdditionalProperties[k1])) {
@@ -73,7 +73,7 @@ func (j *AdditionalElements) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AdditionalElements
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AdditionalElements: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]string{}
@@ -98,7 +98,7 @@ func (j *AdditionalElements) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for AdditionalElements: %w", err)
 	}
 	for k1 := range plain.AdditionalProperties {
 		if !regexpFormatUUID.MatchString(string(plain.AdditionalProperties[k1])) {

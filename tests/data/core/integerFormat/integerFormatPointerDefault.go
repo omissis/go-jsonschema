@@ -25,7 +25,7 @@ func (j *IntegerFormatPointerDefault) UnmarshalJSON(value []byte) error {
 	type Plain IntegerFormatPointerDefault
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerFormatPointerDefault: %w", err)
 	}
 	if v, ok := raw["count"]; !ok || v == nil {
 		var defaultCount int64 = 5
@@ -45,7 +45,7 @@ func (j *IntegerFormatPointerDefault) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IntegerFormatPointerDefault
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IntegerFormatPointerDefault: %w", err)
 	}
 	if v, ok := raw["count"]; !ok || v == nil {
 		var defaultCount int64 = 5

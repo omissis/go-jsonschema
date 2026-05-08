@@ -25,7 +25,7 @@ func (j *TextContent) UnmarshalJSON(value []byte) error {
 	type Plain TextContent
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TextContent: %w", err)
 	}
 	*j = TextContent(plain)
 	return nil
@@ -43,7 +43,7 @@ func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TextContent
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TextContent: %w", err)
 	}
 	*j = TextContent(plain)
 	return nil
@@ -80,7 +80,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	type Plain CallToolResultContentElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal CallToolResultContentElem: %w", err)
 	}
 	*j = CallToolResultContentElem(plain)
 	return nil
@@ -103,7 +103,7 @@ func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain CallToolResultContentElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal CallToolResultContentElem: %w", err)
 	}
 	*j = CallToolResultContentElem(plain)
 	return nil

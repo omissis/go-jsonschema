@@ -68,7 +68,7 @@ func (j *RequiredFieldsMyObjectArrayElem) UnmarshalJSON(value []byte) error {
 	type Plain RequiredFieldsMyObjectArrayElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredFieldsMyObjectArrayElem: %w", err)
 	}
 	*j = RequiredFieldsMyObjectArrayElem(plain)
 	return nil
@@ -86,7 +86,7 @@ func (j *RequiredFieldsMyObjectArrayElem) UnmarshalYAML(value *yaml.Node) error 
 	type Plain RequiredFieldsMyObjectArrayElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredFieldsMyObjectArrayElem: %w", err)
 	}
 	*j = RequiredFieldsMyObjectArrayElem(plain)
 	return nil
@@ -104,7 +104,7 @@ func (j *RequiredFieldsMyObject) UnmarshalJSON(value []byte) error {
 	type Plain RequiredFieldsMyObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredFieldsMyObject: %w", err)
 	}
 	*j = RequiredFieldsMyObject(plain)
 	return nil
@@ -122,7 +122,7 @@ func (j *RequiredFieldsMyObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RequiredFieldsMyObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredFieldsMyObject: %w", err)
 	}
 	*j = RequiredFieldsMyObject(plain)
 	return nil
@@ -167,7 +167,7 @@ func (j *RequiredFields) UnmarshalJSON(value []byte) error {
 	type Plain RequiredFields
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredFields: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")
@@ -220,7 +220,7 @@ func (j *RequiredFields) UnmarshalYAML(value *yaml.Node) error {
 	type Plain RequiredFields
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal RequiredFields: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")

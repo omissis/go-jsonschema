@@ -86,7 +86,7 @@ func (j *GopkgYAMLv3) UnmarshalJSON(value []byte) error {
 	type Plain GopkgYAMLv3
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal GopkgYAMLv3: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")
@@ -104,7 +104,7 @@ func (j *GopkgYAMLv3) UnmarshalYAML(value *yaml.Node) error {
 	type Plain GopkgYAMLv3
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal GopkgYAMLv3: %w", err)
 	}
 	if plain.MyNull != nil {
 		return fmt.Errorf("field %s: must be null", "myNull")
