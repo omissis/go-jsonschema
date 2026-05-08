@@ -68,7 +68,13 @@ func (g *schemaGenerator) generateRootType() error {
 		}
 	}
 
-	if len(g.schema.Type) == 0 {
+	root := (*schemas.Type)(g.schema.ObjectAsType)
+
+	// The root may declare a `type` OR be a pure composition / $ref / enum
+	// (no `type`, but oneOf/anyOf/allOf/$ref/enum/const populated). Drop
+	// only when the root is structurally empty (e.g. `{}` or a schema that
+	// declares only metadata like `$schema`/`$id`).
+	if !rootHasGeneratable(root) {
 		return nil
 	}
 
@@ -77,9 +83,23 @@ func (g *schemaGenerator) generateRootType() error {
 		return nil
 	}
 
-	_, err := g.generateDeclaredType((*schemas.Type)(g.schema.ObjectAsType), newNameScope(rootTypeName))
+	_, err := g.generateDeclaredType(root, newNameScope(rootTypeName))
 
 	return err
+}
+
+// rootHasGeneratable reports whether the root carries any keyword that
+// should produce a Go declaration. `len(Type) > 0` already triggered the
+// pre-existing path; the additional keywords here are the ones the prior
+// `len(Type) == 0` early-out silently dropped.
+func rootHasGeneratable(t *schemas.Type) bool {
+	return len(t.Type) > 0 ||
+		t.Ref != "" ||
+		t.Enum != nil ||
+		t.Const != nil || t.ConstIsSet ||
+		len(t.OneOf) > 0 ||
+		len(t.AnyOf) > 0 ||
+		len(t.AllOf) > 0
 }
 
 func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type, error) {
