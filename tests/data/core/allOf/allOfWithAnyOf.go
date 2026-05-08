@@ -25,7 +25,7 @@ func (j *Agreement_0) UnmarshalJSON(value []byte) error {
 	type Plain Agreement_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement_0: %w", err)
 	}
 	*j = Agreement_0(plain)
 	return nil
@@ -36,7 +36,7 @@ func (j *Agreement_0) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Agreement_0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement_0: %w", err)
 	}
 	*j = Agreement_0(plain)
 	return nil
@@ -49,7 +49,7 @@ func (j *Agreement_1) UnmarshalJSON(value []byte) error {
 	type Plain Agreement_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement_1: %w", err)
 	}
 	*j = Agreement_1(plain)
 	return nil
@@ -60,7 +60,7 @@ func (j *Agreement_1) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Agreement_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement_1: %w", err)
 	}
 	*j = Agreement_1(plain)
 	return nil
@@ -87,7 +87,7 @@ func (j *Agreement) UnmarshalJSON(value []byte) error {
 	type Plain Agreement
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement: %w", err)
 	}
 	*j = Agreement(plain)
 	return nil
@@ -114,7 +114,7 @@ func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Agreement
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement: %w", err)
 	}
 	*j = Agreement(plain)
 	return nil

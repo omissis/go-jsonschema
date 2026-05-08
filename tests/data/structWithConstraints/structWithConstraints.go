@@ -25,7 +25,7 @@ func (j *StructWithConstraints) UnmarshalJSON(value []byte) error {
 	type Plain StructWithConstraints
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal StructWithConstraints: %w", err)
 	}
 	if plain.Prop != nil && 0 > *plain.Prop {
 		return fmt.Errorf("field %s: must be >= %v", "prop", 0)
@@ -50,7 +50,7 @@ func (j *StructWithConstraints) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for StructWithConstraints: %w", err)
 	}
 	*j = StructWithConstraints(plain)
 	return nil
@@ -65,7 +65,7 @@ func (j *StructWithConstraints) UnmarshalYAML(value *yaml.Node) error {
 	type Plain StructWithConstraints
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal StructWithConstraints: %w", err)
 	}
 	if plain.Prop != nil && 0 > *plain.Prop {
 		return fmt.Errorf("field %s: must be >= %v", "prop", 0)
@@ -90,7 +90,7 @@ func (j *StructWithConstraints) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for StructWithConstraints: %w", err)
 	}
 	*j = StructWithConstraints(plain)
 	return nil

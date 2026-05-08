@@ -646,41 +646,6 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 		}
 	}
 
-	// generateUnmarshalBody wraps the raw-map decode error with type
-	// context via `fmt.Errorf`, so fmt must be imported whenever the body
-	// emits the raw-decode branch — even when no hasError validator is
-	// present. The branch fires when (a) the struct has an
-	// additionalProperties field, or (b) any validator declares
-	// beforeJSONUnmarshal/requiresRawAfter (the latter covers
-	// `defaultValidator`, which has hasError=false but still triggers
-	// raw decoding).
-	needsRawDecode := false
-
-	for _, v := range validators {
-		d := v.desc()
-		if d.beforeJSONUnmarshal || d.requiresRawAfter {
-			needsRawDecode = true
-
-			break
-		}
-	}
-
-	if !needsRawDecode {
-		if structType, ok := decl.Type.(*codegen.StructType); ok {
-			for _, f := range structType.Fields {
-				if f.Name == additionalProperties {
-					needsRawDecode = true
-
-					break
-				}
-			}
-		}
-	}
-
-	if needsRawDecode {
-		g.output.file.Package.AddImport("fmt", "")
-	}
-
 	for _, formatter := range g.formatters {
 		formatter.addImport(g.output.file, decl)
 

@@ -25,7 +25,7 @@ func (j *Hostname) UnmarshalJSON(value []byte) error {
 	type Plain Hostname
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Hostname: %w", err)
 	}
 	if !regexpFormatHostname.MatchString(string(plain.Host)) || len(strings.TrimSuffix(string(plain.Host), ".")) > 253 {
 		return fmt.Errorf("field %s: must be a valid hostname", "host")
@@ -46,7 +46,7 @@ func (j *Hostname) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Hostname
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Hostname: %w", err)
 	}
 	if !regexpFormatHostname.MatchString(string(plain.Host)) || len(strings.TrimSuffix(string(plain.Host), ".")) > 253 {
 		return fmt.Errorf("field %s: must be a valid hostname", "host")

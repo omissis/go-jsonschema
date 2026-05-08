@@ -30,7 +30,7 @@ func (j *Pattern) UnmarshalJSON(value []byte) error {
 	type Plain Pattern
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Pattern: %w", err)
 	}
 	if plain.MyEscapedString != nil {
 		if matched, _ := regexp.MatchString(`^\$\{\{(.|[\r\n])*\}\}$`, string(*plain.MyEscapedString)); !matched {
@@ -61,7 +61,7 @@ func (j *Pattern) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Pattern
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Pattern: %w", err)
 	}
 	if plain.MyEscapedString != nil {
 		if matched, _ := regexp.MatchString(`^\$\{\{(.|[\r\n])*\}\}$`, string(*plain.MyEscapedString)); !matched {

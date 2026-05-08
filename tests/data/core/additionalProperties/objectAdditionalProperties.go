@@ -25,7 +25,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 	type Plain ObjectAdditionalProperties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectAdditionalProperties: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]interface{}{}
@@ -50,7 +50,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ObjectAdditionalProperties: %w", err)
 	}
 	*j = ObjectAdditionalProperties(plain)
 	return nil
@@ -65,7 +65,7 @@ func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ObjectAdditionalProperties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectAdditionalProperties: %w", err)
 	}
 	if v, ok := raw[""]; !ok || v == nil {
 		plain.AdditionalProperties = map[string]interface{}{}
@@ -90,7 +90,7 @@ func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ObjectAdditionalProperties: %w", err)
 	}
 	*j = ObjectAdditionalProperties(plain)
 	return nil

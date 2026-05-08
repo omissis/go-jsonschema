@@ -157,7 +157,7 @@ func (j *InField) UnmarshalJSON(value []byte) error {
 	type Plain InField
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal InField: %w", err)
 	}
 	*j = InField(plain)
 	return nil
@@ -178,7 +178,7 @@ func (j *InField) UnmarshalYAML(value *yaml.Node) error {
 	type Plain InField
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal InField: %w", err)
 	}
 	*j = InField(plain)
 	return nil

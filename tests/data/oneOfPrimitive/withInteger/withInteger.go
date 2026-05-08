@@ -23,7 +23,7 @@ func (j *WithInteger) UnmarshalJSON(value []byte) error {
 	type Plain WithInteger
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal WithInteger: %w", err)
 	}
 	*j = WithInteger(plain)
 	return nil
@@ -41,7 +41,7 @@ func (j *WithInteger) UnmarshalYAML(value *yaml.Node) error {
 	type Plain WithInteger
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal WithInteger: %w", err)
 	}
 	*j = WithInteger(plain)
 	return nil

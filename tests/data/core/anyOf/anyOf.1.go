@@ -44,7 +44,7 @@ func (j *AnyOf1ConfigurationsElem_0) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf1ConfigurationsElem_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_0: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_0(plain)
 	return nil
@@ -62,7 +62,7 @@ func (j *AnyOf1ConfigurationsElem_0) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf1ConfigurationsElem_0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_0: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_0(plain)
 	return nil
@@ -85,7 +85,7 @@ func (j *AnyOf1ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf1ConfigurationsElem_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_1: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_1(plain)
 	return nil
@@ -103,7 +103,7 @@ func (j *AnyOf1ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf1ConfigurationsElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_1: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_1(plain)
 	return nil
@@ -119,7 +119,7 @@ func (j *AnyOf1ConfigurationsElem_2) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf1ConfigurationsElem_2
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_2: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_2(plain)
 	return nil
@@ -130,7 +130,7 @@ func (j *AnyOf1ConfigurationsElem_2) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf1ConfigurationsElem_2
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_2: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_2(plain)
 	return nil
@@ -161,7 +161,7 @@ func (j *AnyOf1ConfigurationsElem) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf1ConfigurationsElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem(plain)
 	return nil
@@ -192,7 +192,7 @@ func (j *AnyOf1ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOf1ConfigurationsElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem(plain)
 	return nil

@@ -46,7 +46,7 @@ func (j *Eta) UnmarshalJSON(value []byte) error {
 	type Plain Eta
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Eta: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -68,7 +68,7 @@ func (j *Eta) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for Eta: %w", err)
 	}
 	*j = Eta(plain)
 	return nil
@@ -89,7 +89,7 @@ func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Eta
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Eta: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -111,7 +111,7 @@ func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for Eta: %w", err)
 	}
 	*j = Eta(plain)
 	return nil
@@ -150,7 +150,7 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Properties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Properties: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -172,7 +172,7 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for Properties: %w", err)
 	}
 	*j = Properties(plain)
 	return nil
@@ -190,7 +190,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 	type Plain Properties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Properties: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -212,7 +212,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for Properties: %w", err)
 	}
 	*j = Properties(plain)
 	return nil
@@ -233,7 +233,7 @@ func (j *Theta) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Theta
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Theta: %w", err)
 	}
 	if 65535 < plain {
 		return fmt.Errorf("field %s: must be <= %v", "", 65535)
@@ -250,7 +250,7 @@ func (j *Theta) UnmarshalJSON(value []byte) error {
 	type Plain Theta
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Theta: %w", err)
 	}
 	if 65535 < plain {
 		return fmt.Errorf("field %s: must be <= %v", "", 65535)

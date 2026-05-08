@@ -23,7 +23,7 @@ func (j *WithConstraint) UnmarshalJSON(value []byte) error {
 	type Plain WithConstraint
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal WithConstraint: %w", err)
 	}
 	*j = WithConstraint(plain)
 	return nil
@@ -41,7 +41,7 @@ func (j *WithConstraint) UnmarshalYAML(value *yaml.Node) error {
 	type Plain WithConstraint
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal WithConstraint: %w", err)
 	}
 	*j = WithConstraint(plain)
 	return nil

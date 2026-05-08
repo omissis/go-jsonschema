@@ -65,7 +65,7 @@ func (j *Exact) UnmarshalJSON(value []byte) error {
 	type Plain Exact
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Exact: %w", err)
 	}
 	*j = Exact(plain)
 	return nil
@@ -104,7 +104,7 @@ func (j *Exact) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Exact
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Exact: %w", err)
 	}
 	*j = Exact(plain)
 	return nil

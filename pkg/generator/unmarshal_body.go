@@ -105,7 +105,11 @@ func generateUnmarshalBody(
 
 		out.Printlnf("type %s %s", tp, declType.Name)
 		out.Printlnf("var %s %s", varNamePlainStruct, tp)
-		out.Printlnf("if err := %s; err != nil { return err }", ctx.decodeCall(varNamePlainStruct))
+		out.Printlnf("if err := %s; err != nil {", ctx.decodeCall(varNamePlainStruct))
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("unmarshal %s: %%w", err)`, declType.Name)
+		out.Indent(-1)
+		out.Printlnf("}")
 
 		for _, v := range afterValidators {
 			if err := v.generate(out, ctx.formatName); err != nil {
@@ -155,7 +159,7 @@ func generateUnmarshalBody(
 				varNameRawMap, varNamePlainStruct,
 			)
 			out.Indent(1)
-			out.Printlnf("return err")
+			out.Printlnf(`return fmt.Errorf("decode additional properties for %s: %%w", err)`, declType.Name)
 			out.Indent(-1)
 			out.Printlnf("}")
 		}

@@ -27,7 +27,7 @@ func (j *Uuid) UnmarshalJSON(value []byte) error {
 	type Plain Uuid
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Uuid: %w", err)
 	}
 	if !regexpFormatUUID.MatchString(string(plain.Id)) {
 		return fmt.Errorf("field %s: must be a valid uuid", "id")
@@ -53,7 +53,7 @@ func (j *Uuid) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Uuid
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Uuid: %w", err)
 	}
 	if !regexpFormatUUID.MatchString(string(plain.Id)) {
 		return fmt.Errorf("field %s: must be a valid uuid", "id")
