@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/ifThenSilentDrop",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "a",
+        "b"
+      ]
+    },
+    "x": {
+      "type": "string"
+    },
+    "y": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "a"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "x"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "b"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "y"
+        ]
+      }
+    }
+  ]
+}
