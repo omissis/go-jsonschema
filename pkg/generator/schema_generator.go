@@ -13,7 +13,20 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-var errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
+var (
+	//nolint: gochecknoglobals // global to avoid duplication
+	boolTypeVal = codegen.PrimitiveType{Type: "bool"}
+	//nolint: gochecknoglobals // global to avoid duplication
+	emptyInterfaceTypeVal = codegen.EmptyInterfaceType{}
+	//nolint: gochecknoglobals // global to avoid duplication
+	intTypeVal = codegen.PrimitiveType{Type: "int"}
+	//nolint: gochecknoglobals // global to avoid duplication
+	stringTypeVal = codegen.PrimitiveType{Type: "string"}
+	//nolint: gochecknoglobals // global to avoid duplication
+	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
+
+	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
+)
 
 const float64Type = "float64"
 
@@ -94,7 +107,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			}
 		}
 
-		return codegen.EmptyInterfaceType{}, nil
+		return emptyInterfaceTypeVal, nil
 	}
 
 	schema := g.schema
@@ -581,7 +594,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	switch typeName {
 	case schemas.TypeNameArray:
 		if t.Items == nil {
-			return codegen.ArrayType{Type: codegen.EmptyInterfaceType{}}, nil
+			return arrayTypeVal, nil
 		}
 
 		elemType, err := g.generateType(t.Items, g.singularScope(scope))
@@ -595,7 +608,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		return g.generateStructType(t, scope)
 
 	case schemas.TypeNameNull:
-		return codegen.EmptyInterfaceType{}, nil
+		return emptyInterfaceTypeVal, nil
 
 	default:
 		cg, err := codegen.PrimitiveTypeFromJSONSchemaType(
@@ -714,7 +727,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 				"skipping validation code for them since we don't know their types")
 		}
 
-		valueType := codegen.Type(codegen.EmptyInterfaceType{})
+		valueType := codegen.Type(emptyInterfaceTypeVal)
 
 		var err error
 
@@ -757,7 +770,7 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 	if t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil {
 		var (
 			defaultValue any          = nil
-			fieldType    codegen.Type = codegen.EmptyInterfaceType{}
+			fieldType    codegen.Type = emptyInterfaceTypeVal
 		)
 
 		if len(t.AdditionalProperties.Type) == 1 {
@@ -765,43 +778,43 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			case schemas.TypeNameString:
 				defaultValue = map[string]string{}
 				fieldType = codegen.MapType{
-					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.PrimitiveType{Type: "string"},
+					KeyType:   stringTypeVal,
+					ValueType: stringTypeVal,
 				}
 
 			case schemas.TypeNameArray:
 				defaultValue = map[string][]any{}
 				fieldType = codegen.MapType{
-					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.ArrayType{Type: codegen.EmptyInterfaceType{}},
+					KeyType:   stringTypeVal,
+					ValueType: arrayTypeVal,
 				}
 
 			case schemas.TypeNameNumber:
 				defaultValue = map[string]float64{}
 				fieldType = codegen.MapType{
-					KeyType:   codegen.PrimitiveType{Type: "string"},
+					KeyType:   stringTypeVal,
 					ValueType: codegen.PrimitiveType{Type: float64Type},
 				}
 
 			case schemas.TypeNameInteger:
 				defaultValue = map[string]int{}
 				fieldType = codegen.MapType{
-					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.PrimitiveType{Type: "int"},
+					KeyType:   stringTypeVal,
+					ValueType: intTypeVal,
 				}
 
 			case schemas.TypeNameBoolean:
 				defaultValue = map[string]bool{}
 				fieldType = codegen.MapType{
-					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.PrimitiveType{Type: "bool"},
+					KeyType:   stringTypeVal,
+					ValueType: boolTypeVal,
 				}
 
 			default:
 				defaultValue = map[string]any{}
 				fieldType = codegen.MapType{
-					KeyType:   codegen.PrimitiveType{Type: "string"},
-					ValueType: codegen.EmptyInterfaceType{},
+					KeyType:   stringTypeVal,
+					ValueType: emptyInterfaceTypeVal,
 				}
 			}
 		}
@@ -1034,7 +1047,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	}
 
 	if isCycle {
-		return codegen.EmptyInterfaceType{}, nil
+		return emptyInterfaceTypeVal, nil
 	}
 
 	anyOfType, err := schemas.AnyOf(rAnyOf, t)
@@ -1143,11 +1156,11 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if len(t.Type) > 1 && !typeIsNullable {
 			g.warner(fmt.Sprintf("Property %v has multiple types; will be represented as interface{} with no validation", scope))
 
-			return codegen.EmptyInterfaceType{}, nil
+			return emptyInterfaceTypeVal, nil
 		}
 
 		if len(t.Type) == 0 {
-			return codegen.EmptyInterfaceType{}, nil
+			return emptyInterfaceTypeVal, nil
 		}
 
 		if typeIndex != -1 && schemas.IsPrimitiveType(t.Type[typeIndex]) {
@@ -1197,7 +1210,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
-			var theType codegen.Type = codegen.EmptyInterfaceType{}
+			var theType codegen.Type = emptyInterfaceTypeVal
 
 			if t.Items != nil {
 				var err error
@@ -1212,7 +1225,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if typeIndex == -1 {
-			return codegen.EmptyInterfaceType{}, nil
+			return emptyInterfaceTypeVal, nil
 		}
 	}
 
