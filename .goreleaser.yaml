@@ -59,6 +59,7 @@ dockers_v2:
       - "omissis/go-jsonschema"
     flags:
       - "--target=go-jsonschema"
+      - "--driver=containerd"
     tags:
       - "v{{ .Version }}"
       - "{{ if .IsNightly }}nightly{{ end }}"
