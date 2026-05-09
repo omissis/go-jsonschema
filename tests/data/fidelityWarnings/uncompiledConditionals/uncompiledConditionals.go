@@ -87,6 +87,23 @@ func (j *Shape) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in Shape: required")
 	}
+	rawDisc, hasDisc := raw["kind"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field kind in Shape: must be a string for discriminator dispatch")
+		}
+		if discStr == "circle" {
+			if _, ok := raw["radius"]; !ok {
+				return fmt.Errorf("field radius in Shape (when kind='circle'): required")
+			}
+		}
+		if discStr == "square" {
+			if _, ok := raw["side"]; !ok {
+				return fmt.Errorf("field side in Shape (when kind='square'): required")
+			}
+		}
+	}
 	type Plain Shape
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -104,6 +121,23 @@ func (j *Shape) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in Shape: required")
+	}
+	rawDisc, hasDisc := raw["kind"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field kind in Shape: must be a string for discriminator dispatch")
+		}
+		if discStr == "circle" {
+			if _, ok := raw["radius"]; !ok {
+				return fmt.Errorf("field radius in Shape (when kind='circle'): required")
+			}
+		}
+		if discStr == "square" {
+			if _, ok := raw["side"]; !ok {
+				return fmt.Errorf("field side in Shape (when kind='square'): required")
+			}
+		}
 	}
 	type Plain Shape
 	var plain Plain
