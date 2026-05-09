@@ -269,7 +269,7 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 	return defName, fileName, nil
 }
 
-//nolint:gocyclo // todo: reduce cyclomatic complexity
+//nolint:gocyclo,maintidx // todo: reduce cyclomatic complexity / extract subroutines
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
@@ -386,6 +386,16 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 		if v := g.strictFieldsValidatorFor(t, tt, decl.Name); v != nil {
 			validators = append(validators, v)
+		}
+
+		// Attach the conditional-discriminator validator when the schema
+		// matches the allOf+if/then[/else] pattern. Detection is repeated
+		// here (also runs in generateType) — the cost is negligible for
+		// non-matching schemas, and re-detecting avoids threading state
+		// through generateType's return signature.
+		if cd, ok := g.detectConditionalDiscriminator(t); ok && !g.config.OnlyModels {
+			cd.declName = decl.Name
+			validators = append(validators, cd)
 		}
 
 		for _, f := range tt.Fields {
@@ -735,6 +745,19 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 
 		return dt, nil
+	}
+
+	// Conditional-discriminator pattern: allOf of {if: {<K>: const}, then,
+	// else?} keyed on a single discriminator property's const value.
+	// Bypass the AllOf merge (which would lose the parent's struct shape)
+	// and emit the struct as a regular object — the per-discriminator
+	// conditional checks attach as a runtime validator in
+	// generateDeclaredType.
+	if _, ok := g.detectConditionalDiscriminator(t); ok && !g.config.OnlyModels {
+		tCopy := *t
+		tCopy.AllOf = nil
+
+		return g.generateStructType(&tCopy, scope)
 	}
 
 	if len(t.AllOf) > 0 {

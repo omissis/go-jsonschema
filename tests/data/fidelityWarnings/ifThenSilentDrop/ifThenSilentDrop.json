@@ -4,51 +4,13 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "kind": {
-      "type": "string",
-      "enum": [
-        "a",
-        "b"
-      ]
-    },
-    "x": {
-      "type": "string"
-    },
-    "y": {
-      "type": "string"
-    }
+    "marker":  { "type": "boolean" },
+    "details": { "type": "string" },
+    "fallback": { "type": "string" }
   },
-  "required": [
-    "kind"
-  ],
+  "required": ["marker"],
   "allOf": [
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "a"
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "x"
-        ]
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "b"
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "y"
-        ]
-      }
-    }
+    { "if":   { "required": ["details"] },
+      "then": { "required": ["fallback"] } }
   ]
 }

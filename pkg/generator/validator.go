@@ -55,6 +55,7 @@ var (
 	_ validator = new(anyOfValidator)
 	_ validator = new(formatValidator)
 	_ validator = new(strictFieldsValidator)
+	_ validator = new(conditionalDiscriminatorValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -588,7 +589,8 @@ func (v *numericValidator) generate(out *codegen.Emitter, format string) error {
 			out.Indent(1)
 			out.Printlnf("remainder := math.Mod(%s%s, %v)", pointerPrefix, value, v.valueOf(*v.multipleOf))
 			out.Printlnf(
-				`if !(math.Abs(remainder) < 1e-10 || math.Abs(remainder - %v) < 1e-10) {`, v.valueOf(*v.multipleOf))
+				`if !(math.Abs(remainder) < 1e-10 || math.Abs(remainder - %v) < 1e-10) {`, v.valueOf(*v.multipleOf),
+			)
 			out.Indent(1)
 			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
 			out.Indent(-1)

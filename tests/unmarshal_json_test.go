@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	testCondDiscBasic "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/basic"
+	testCondDiscWithElse "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/withElse"
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
@@ -1389,6 +1391,115 @@ func TestJsonUnmarshalRootComposition(t *testing.T) {
 
 		err := json.Unmarshal([]byte(`"purple"`), &v)
 		assert.Error(t, err)
+	})
+}
+
+func TestJsonUnmarshalConditionalDiscriminator(t *testing.T) {
+	t.Parallel()
+
+	// basic: tagged-union with per-discriminator required fields. Generated
+	// as a single struct (all fields optional except the discriminator);
+	// runtime checks enforce the per-variant required set.
+
+	t.Run("basic: create variant requires payload", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscBasic.Basic
+
+		err := json.Unmarshal([]byte(`{"kind":"create","payload":"x"}`), &v)
+		require.NoError(t, err)
+		assert.Equal(t, testCondDiscBasic.BasicKindCreate, v.Kind)
+		require.NotNil(t, v.Payload)
+		assert.Equal(t, "x", *v.Payload)
+	})
+
+	t.Run("basic: create without payload rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscBasic.Basic
+
+		err := json.Unmarshal([]byte(`{"kind":"create"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "payload")
+		assert.Contains(t, err.Error(), "kind='create'")
+	})
+
+	t.Run("basic: update requires id, payload, and version", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscBasic.Basic
+
+		err := json.Unmarshal([]byte(`{"kind":"update","id":"1","payload":"x","version":2}`), &v)
+		require.NoError(t, err)
+	})
+
+	t.Run("basic: update missing version rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscBasic.Basic
+
+		err := json.Unmarshal([]byte(`{"kind":"update","id":"1","payload":"x"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "version")
+	})
+
+	t.Run("basic: delete requires id only", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscBasic.Basic
+
+		err := json.Unmarshal([]byte(`{"kind":"delete","id":"1"}`), &v)
+		require.NoError(t, err)
+	})
+
+	t.Run("basic: unknown discriminator rejected by enum check", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscBasic.Basic
+
+		err := json.Unmarshal([]byte(`{"kind":"unknown"}`), &v)
+		require.Error(t, err)
+	})
+
+	// withElse: discriminator with an else clause — different required set
+	// when the discriminator does NOT match the const.
+
+	t.Run("withElse: primary requires weight", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscWithElse.WithElse
+
+		err := json.Unmarshal([]byte(`{"category":"primary","weight":5}`), &v)
+		require.NoError(t, err)
+	})
+
+	t.Run("withElse: primary missing weight rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscWithElse.WithElse
+
+		err := json.Unmarshal([]byte(`{"category":"primary","label":"x"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "weight")
+	})
+
+	t.Run("withElse: secondary requires label (else branch)", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscWithElse.WithElse
+
+		err := json.Unmarshal([]byte(`{"category":"secondary","label":"x"}`), &v)
+		require.NoError(t, err)
+	})
+
+	t.Run("withElse: secondary missing label rejected (else branch)", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscWithElse.WithElse
+
+		err := json.Unmarshal([]byte(`{"category":"secondary","weight":5}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "label")
 	})
 }
 

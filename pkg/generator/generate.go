@@ -203,7 +203,8 @@ func (g *Generator) beginOutput(
 		if o.file.FileName == outputName && o.file.Package.QualifiedName != packageName {
 			return nil, fmt.Errorf(
 				"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
-				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id)
+				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id,
+			)
 		}
 
 		if o.file.FileName == outputName && o.file.Package.QualifiedName == packageName {
