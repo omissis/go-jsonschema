@@ -53,13 +53,12 @@ homebrew_casks:
           if OS.mac?
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/go-jsonschema"]
           end
-
 dockers_v2:
   - images:
       - "omissis/go-jsonschema"
     flags:
       - "--target=go-jsonschema"
-      - "--driver=containerd"
+      - "--builder=container"
     tags:
       - "v{{ .Version }}"
       - "{{ if .IsNightly }}nightly{{ end }}"
