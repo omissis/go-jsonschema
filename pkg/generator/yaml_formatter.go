@@ -37,6 +37,16 @@ func (yf *yamlFormatter) generate(
 		}
 	}
 
+	if structType, ok := declType.Type.(*codegen.StructType); ok {
+		for _, f := range structType.Fields {
+			if f.Name == additionalProperties {
+				forceBefore = true
+
+				break
+			}
+		}
+	}
+
 	return func(out *codegen.Emitter) error {
 		out.Commentf("Unmarshal%s implements %s.Unmarshaler.", strings.ToUpper(formatYAML), formatYAML)
 		out.Printlnf("func (j *%s) Unmarshal%s(value *yaml.Node) error {", declType.Name, strings.ToUpper(formatYAML))
