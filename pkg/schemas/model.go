@@ -395,7 +395,7 @@ func updateAllRefsValues(structValue *reflect.Value, refPath string) error {
 			}
 		}
 
-	case reflect.Ptr:
+	case reflect.Ptr: //nolint:govet // typical inlining false positive
 		elem := structValue.Elem()
 		if !structValue.IsNil() {
 			if err := updateAllRefsValues(&elem, refPath); err != nil {
