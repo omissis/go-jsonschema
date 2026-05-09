@@ -83,7 +83,8 @@ func (o *output) uniqueTypeName(scope nameScope) string {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
 		if _, ok := o.declsByName[suffixed]; !ok && !o.declaresConstant(suffixed) {
 			o.warner(fmt.Sprintf(
-				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
+				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed,
+			))
 
 			return suffixed
 		}
