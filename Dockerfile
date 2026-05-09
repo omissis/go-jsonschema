@@ -1,4 +1,4 @@
-FROM golang:1.25.7-alpine3.23 AS tools
+FROM golang:1.25.10-alpine3.23 AS tools
 
 ARG TARGETPLATFORM
 
