@@ -344,6 +344,12 @@ func TestRootComposition(t *testing.T) {
 	testExamples(t, basicConfig, "./data/rootComposition")
 }
 
+func TestFidelityWarnings(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/fidelityWarnings")
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 

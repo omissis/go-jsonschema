@@ -1274,7 +1274,70 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 
 	allOfType.AllOf = nil
 
+	// Detect a silent-loss case: when one or more allOf elements carry a
+	// composition keyword we don't compile (if/then/else/not), the merge
+	// can drop the parent's structural keywords (Type, Properties,
+	// AdditionalProperties, ...) leaving an empty result that downstream
+	// emits as interface{}. Surface a fidelity warning citing the
+	// originally-declared keywords so the user sees what features became
+	// no-ops on this type.
+	// Detect lossy merge from EITHER the parent OR any branch perspective —
+	// a thin allOf wrapper may carry no constraints at the parent level
+	// while individual branches do, in which case a parent-only check
+	// misses the silent degradation.
+	if mergeWasLossy(t, allOfType) || mergeWasLossyInAnyBranch(rAllOf, allOfType) {
+		trigger := "allOf merge produced empty result"
+
+		for _, child := range rAllOf {
+			if reason, has := hasUnsupportedComposition(child); has {
+				trigger = reason + " (in allOf branch)"
+
+				break
+			}
+		}
+
+		g.warnFallback(t, scope, trigger)
+	}
+
 	return g.generateTypeInline(allOfType, scope)
+}
+
+// mergeWasLossyInAnyBranch is mergeWasLossy applied to each child branch in
+// turn. Used so a thin allOf wrapper (parent-level constraints empty,
+// child branches carrying them) doesn't silently slip through the parent-
+// only check.
+func mergeWasLossyInAnyBranch(children []*schemas.Type, merged *schemas.Type) bool {
+	for _, child := range children {
+		if mergeWasLossy(child, merged) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// mergeWasLossy reports whether the merged result has dropped structural
+// content that the parent (pre-merge) carried. Used to detect the silent
+// degradation of object schemas with allOf branches the generator can't
+// compile end-to-end.
+func mergeWasLossy(parent, merged *schemas.Type) bool {
+	if len(parent.Type) > 0 && len(merged.Type) == 0 {
+		return true
+	}
+
+	if len(parent.Properties) > 0 && len(merged.Properties) == 0 {
+		return true
+	}
+
+	if parent.AdditionalProperties != nil && merged.AdditionalProperties == nil {
+		return true
+	}
+
+	if len(parent.Required) > 0 && len(merged.Required) == 0 {
+		return true
+	}
+
+	return false
 }
 
 func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
