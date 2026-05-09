@@ -15,8 +15,6 @@ import (
 
 var (
 	//nolint: gochecknoglobals // global to avoid duplication
-	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
-	//nolint: gochecknoglobals // global to avoid duplication
 	boolTypeVal = codegen.PrimitiveType{Type: "bool"}
 	//nolint: gochecknoglobals // global to avoid duplication
 	emptyInterfaceTypeVal = codegen.EmptyInterfaceType{}
@@ -24,6 +22,8 @@ var (
 	intTypeVal = codegen.PrimitiveType{Type: "int"}
 	//nolint: gochecknoglobals // global to avoid duplication
 	stringTypeVal = codegen.PrimitiveType{Type: "string"}
+	//nolint: gochecknoglobals // global to avoid duplication
+	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
 
 	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
 )
