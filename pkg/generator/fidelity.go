@@ -223,6 +223,10 @@ func hasUnsupportedComposition(t *schemas.Type) (string, bool) {
 	return "", false
 }
 
+// dedupAffected removes duplicate entries while preserving first-seen order.
+// Used by affectedConfigsFor to keep the warning's "affected configuration:"
+// list stable across runs and free of repeats when several dropped keywords
+// map to the same Config knob.
 func dedupAffected(in []string) []string {
 	seen := make(map[string]struct{}, len(in))
 	out := make([]string, 0, len(in))
