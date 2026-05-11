@@ -205,12 +205,22 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 // Returns (K, V, true) on match. The `then` is required to be present; the
 // `else` is optional and not validated here (we rely on the presence check
 // at emit time).
+//
+// The `if` subschema is required to be EXACTLY the single-property const
+// check — extra constraints (`required`, additional `properties`, nested
+// composition keywords, type/length/pattern/etc.) are rejected because the
+// generated dispatch only checks the discriminator's value, so any extra
+// branch condition would be silently under-validated.
 func singleConstIfClause(elem *schemas.Type) (string, string, bool) {
 	if elem == nil || elem.If == nil || elem.Then == nil {
 		return "", "", false
 	}
 
 	if len(elem.If.Properties) != 1 {
+		return "", "", false
+	}
+
+	if ifClauseHasExtraConstraints(elem.If) {
 		return "", "", false
 	}
 
@@ -233,6 +243,51 @@ func singleConstIfClause(elem *schemas.Type) (string, string, bool) {
 	}
 
 	return key, constStr, true
+}
+
+// ifClauseHasExtraConstraints reports whether an `if` subschema declares
+// anything beyond the single-property check that the conditional-discriminator
+// validator can dispatch on. Returns true for `required`, additional
+// validation keywords, and any composition keyword — all of which would mean
+// the branch's true entry condition is more than the discriminator's value,
+// so generating dispatch on the value alone would under-validate.
+//
+// Caller is responsible for the `len(if.Properties) == 1` check; this helper
+// only inspects the OTHER fields. `Type` is intentionally not checked because
+// the schemas parser auto-infers `type: object` whenever `properties` is
+// declared (see model.go's UnmarshalJSON), so requiring it to be empty would
+// reject every legitimate canonical-shape if clause.
+func ifClauseHasExtraConstraints(ifc *schemas.Type) bool {
+	if ifc == nil {
+		return false
+	}
+
+	return len(ifc.Required) > 0 ||
+		len(ifc.AllOf) > 0 ||
+		len(ifc.AnyOf) > 0 ||
+		len(ifc.OneOf) > 0 ||
+		ifc.Not != nil ||
+		ifc.If != nil ||
+		ifc.Then != nil ||
+		ifc.Else != nil ||
+		ifc.AdditionalProperties != nil ||
+		len(ifc.PatternProperties) > 0 ||
+		ifc.Const != nil || ifc.ConstIsSet ||
+		ifc.Enum != nil ||
+		ifc.Pattern != "" ||
+		ifc.Format != "" ||
+		ifc.MinLength != 0 || ifc.MaxLength != 0 ||
+		ifc.MinProperties != 0 || ifc.MaxProperties != 0 ||
+		ifc.MinItems != 0 || ifc.MaxItems != 0 ||
+		ifc.UniqueItems ||
+		ifc.Minimum != nil || ifc.Maximum != nil ||
+		ifc.ExclusiveMinimum != nil || ifc.ExclusiveMaximum != nil ||
+		ifc.MultipleOf != nil ||
+		ifc.Items != nil ||
+		ifc.AdditionalItems != nil ||
+		ifc.Ref != "" ||
+		len(ifc.DependentRequired) > 0 ||
+		len(ifc.DependentSchemas) > 0
 }
 
 // discriminatorInvalidReason returns "" when the parent schema validly
