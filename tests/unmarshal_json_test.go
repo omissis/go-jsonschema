@@ -1395,6 +1395,10 @@ func TestJsonUnmarshalRootComposition(t *testing.T) {
 	})
 }
 
+// TestJsonUnmarshalConditionalDiscriminator exercises the runtime behavior
+// of the allOf+if[const]/then[/else] tagged-union dispatch: per-variant
+// required-field enforcement, unknown-discriminator rejection, JSON
+// round-trip, and the missing/wrong-type discriminator error paths.
 func TestJsonUnmarshalConditionalDiscriminator(t *testing.T) {
 	t.Parallel()
 
