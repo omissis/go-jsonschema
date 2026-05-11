@@ -74,6 +74,34 @@ Note the flag format:
                  schema $id                  full import URL
 ```
 
+### Cross-tree `$ref`s without network access
+
+When a consumer schema `$ref`s a canonical schema by its `$id` URL (e.g.
+`https://schemas.example.com/header/v1/header.schema.json`), the loader will
+attempt an HTTP fetch unless the URL is pre-resolved. In CI environments
+behind a firewall — or when the canonical host is unreachable on principle —
+this fails with `dial tcp: lookup ...: no such host`.
+
+`--known-schema URL=PATH` pre-populates the loader cache from disk so
+references to URL resolve to PATH's contents without any network attempt.
+The schema is loaded for ref resolution only; no Go code is emitted for it.
+
+```shell
+$ go-jsonschema \
+  --known-schema=https://schemas.example.com/header/v1/header.schema.json=./vendor-schemas/header.schema.json \
+  --schema-package=https://schemas.example.com/header/v1/header.schema.json=example.com/lib/schemas/header/v1:headerv1 \
+  --schema-package=https://schemas.example.com/jobs/v1/jobs.schema.json=example.com/jobs/v1:jobsv1 \
+  consumer.schema.json
+```
+
+The `:ALIAS` suffix on `--schema-package` overrides the import alias used
+in generated code (default: the package path's last segment). Set it when
+two referenced packages share a last segment (e.g. both end in `/v1`) so
+the generated file doesn't get an `import v1 "..."` collision. The alias
+must be a valid non-keyword Go identifier; the parser splits the value on
+the **last** colon. Library callers can set the same overrides via
+`generator.Config.Cache` and `generator.SchemaMapping.ImportAlias`.
+
 ### Regenerating tests' golden files
 
 It sometimes happen that new features or bug fixes to the library require regenerating the tests' golden files, here's how to do it:

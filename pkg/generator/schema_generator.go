@@ -213,10 +213,12 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return dt, nil
 	}
 
+	alias := g.resolveImportAlias(sg.output.file.Package.QualifiedName)
+
 	var imp *codegen.Import
 
 	for _, i := range g.output.file.Package.Imports {
-		if i.Name == sg.output.file.Package.Name() && i.QualifiedName == sg.output.file.Package.QualifiedName {
+		if i.Name == alias && i.QualifiedName == sg.output.file.Package.QualifiedName {
 			imp = &i
 
 			break
@@ -224,12 +226,13 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	}
 
 	if imp == nil {
-		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, sg.output.file.Package.Name())
+		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, alias)
 	}
 
 	return &codegen.NamedType{
 		Package: &sg.output.file.Package,
 		Decl:    nt.Decl,
+		Alias:   alias,
 	}, nil
 }
 
