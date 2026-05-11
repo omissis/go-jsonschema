@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"go/token"
 	"os"
 	"strings"
 
@@ -56,6 +57,17 @@ func New(config Config) (*Generator, error) {
 			ErrInvalidStrictAdditionalPropertiesMode, config.StrictAdditionalProperties)
 	}
 
+	for _, m := range config.SchemaMappings {
+		if m.ImportAlias == "" {
+			continue
+		}
+
+		if token.IsKeyword(m.ImportAlias) || !token.IsIdentifier(m.ImportAlias) {
+			return nil, fmt.Errorf("%w: schema %q -> %q",
+				ErrInvalidImportAlias, m.SchemaID, m.ImportAlias)
+		}
+	}
+
 	formatters := []formatter{
 		&jsonFormatter{},
 	}
@@ -75,10 +87,43 @@ func New(config Config) (*Generator, error) {
 	}
 
 	if config.Loader == nil {
-		generator.loader = schemas.NewDefaultCacheLoader(config.ResolveExtensions, config.YAMLExtensions)
+		// When the caller supplied Cache, build the default chain by hand and
+		// hand the populated map to NewCachedLoader so cache hits short-circuit
+		// before any FileLoader / HTTPLoader work.
+		if config.Cache != nil {
+			generator.loader = schemas.NewCachedLoader(
+				schemas.NewDefaultMultiLoader(config.ResolveExtensions, config.YAMLExtensions),
+				config.Cache,
+			)
+		} else {
+			generator.loader = schemas.NewDefaultCacheLoader(config.ResolveExtensions, config.YAMLExtensions)
+		}
 	}
 
 	return generator, nil
+}
+
+// resolveImportAlias returns the alias to use for an `import` statement that
+// references the given Go package import path. When a SchemaMapping with a
+// non-empty ImportAlias is present for the path, that alias wins; otherwise
+// the historical last-path-segment derivation (codegen.Package.Name) is used.
+//
+// The same alias must be returned for the same qualifiedName at every call
+// site (in particular, the duplicate-import check and the AddImport call in
+// generateReferencedType) — otherwise the dup check mis-categorizes and two
+// imports for the same package end up emitted.
+func (g *Generator) resolveImportAlias(qualifiedName string) string {
+	for _, m := range g.config.SchemaMappings {
+		if m.PackageName == qualifiedName && m.ImportAlias != "" {
+			return m.ImportAlias
+		}
+	}
+
+	if i := strings.LastIndex(qualifiedName, "/"); i != -1 && i < len(qualifiedName)-1 {
+		return qualifiedName[i+1:]
+	}
+
+	return qualifiedName
 }
 
 func (g *Generator) Sources() (map[string][]byte, error) {
