@@ -35,6 +35,15 @@ type Config struct {
 	MinimalNames bool
 	// Loader provides a schema loader for the generator.
 	Loader schemas.Loader
+	// Cache pre-populates the default loader's URL → *schemas.Schema cache.
+	// When non-nil and Loader is nil, New() builds the default cached loader
+	// using this map so that any `$ref` to a URL listed here resolves to the
+	// pre-loaded schema without an HTTP fetch (or a file lookup, depending on
+	// the URL scheme). Schemas inserted this way are loaded for resolution
+	// only — no Go code is emitted for them. Ignored when Loader is non-nil
+	// (build your own pre-populated CachedLoader and pass it via Loader if
+	// you need full control over the loader chain).
+	Cache map[string]*schemas.Schema
 	// When DisableOmitempty is set to true,
 	// an "omitempty" tag will never be present in generated struct fields.
 	// When DisableOmitempty is set to false,
@@ -93,6 +102,13 @@ const (
 // not select.
 var ErrInvalidStrictAdditionalPropertiesMode = errors.New(
 	"invalid StrictAdditionalProperties mode (expected one of: \"\", \"respect-schema\", \"strict\")",
+)
+
+// ErrInvalidImportAlias is returned when a SchemaMapping carries an ImportAlias
+// that isn't a valid (non-keyword) Go identifier. Caught at startup so a typo
+// (e.g. "v 1") doesn't silently propagate into broken `import` statements.
+var ErrInvalidImportAlias = errors.New(
+	"invalid ImportAlias on SchemaMapping (must be a non-keyword Go identifier)",
 )
 
 // IsValid reports whether the mode is one of the documented values.
@@ -178,4 +194,10 @@ type SchemaMapping struct {
 	PackageName string
 	RootType    string
 	OutputName  string
+	// ImportAlias overrides the import alias used in generated code for this
+	// mapping's PackageName. When empty, the alias is derived from the last
+	// path segment via Package.Name() (the historical behavior). Set this when
+	// two mapped packages share a last path segment (e.g. both end in "/v1")
+	// to avoid an `import v1 "..." / import v1 "..."` collision.
+	ImportAlias string
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -302,6 +303,89 @@ func TestStrictAdditionalPropertiesAlways(t *testing.T) {
 	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesStrict
 
 	testExamples(t, cfg, "./data/strictAdditionalPropertiesAlways")
+}
+
+func TestKnownSchema(t *testing.T) {
+	t.Parallel()
+
+	// Pre-load the canonical schema and seed the loader cache keyed by the
+	// $id URL the consumer references. The URL is unreachable on principle
+	// (no DNS / no listener); a successful generation proves the cache short-
+	// circuits before any HTTP fetch is attempted.
+	canonical, err := schemas.FromJSONFile("./data/knownSchema/canonical/canonical.json")
+	if err != nil {
+		t.Fatalf("preload canonical: %v", err)
+	}
+
+	cfg := basicConfig
+	cfg.Cache = map[string]*schemas.Schema{
+		"https://example.com/canonical/v1/canonical.json": canonical,
+	}
+
+	testExampleFile(t, cfg, "./data/knownSchema/consumer/consumer.json")
+}
+
+// TestKnownSchemaFragmentRef proves the cache short-circuits even when the
+// consumer's $ref carries a fragment (#/$defs/...). The cache key is the
+// URL without fragment; the loader hands back the pre-loaded *Schema and
+// the generator's existing fragment-resolution logic walks into $defs.
+func TestKnownSchemaFragmentRef(t *testing.T) {
+	t.Parallel()
+
+	canonical, err := schemas.FromJSONFile("./data/knownSchemaFragment/canonical/canonical.json")
+	if err != nil {
+		t.Fatalf("preload canonical: %v", err)
+	}
+
+	cfg := basicConfig
+	cfg.Cache = map[string]*schemas.Schema{
+		"https://example.com/canonical/v1/canonical-fragment.json": canonical,
+	}
+
+	testExampleFile(t, cfg, "./data/knownSchemaFragment/consumer/consumer.json")
+}
+
+func TestSchemaPackageWithAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/header",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+			OutputName:  "../header/v1/header.go",
+			ImportAlias: "headerv1",
+		},
+		{
+			SchemaID:    "https://example.com/jobs",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+			OutputName:  "../jobs/v1/jobs.go",
+			ImportAlias: "jobsv1",
+		},
+	}
+	testExampleFile(t, cfg, "./data/schemaPackageAlias/consumer/consumer.json")
+}
+
+func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schema",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "1bad", // starts with digit, not a valid Go identifier
+		},
+	}
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject invalid ImportAlias, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrInvalidImportAlias) {
+		t.Errorf("expected ErrInvalidImportAlias, got %v", err)
+	}
 }
 
 func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {

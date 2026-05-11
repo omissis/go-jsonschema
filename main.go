@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 const (
@@ -31,6 +33,7 @@ var (
 	schemaPackages                []string
 	schemaOutputs                 []string
 	schemaRootTypes               []string
+	knownSchemas                  []string
 	capitalizations               []string
 	resolveExtensions             []string
 	yamlExtensions                []string
@@ -54,6 +57,12 @@ var (
 	errInvalidStrictAddlPropMode = errors.New(
 		"--strict-additional-properties: invalid mode (expected one of: off, respect-schema, strict)",
 	)
+	errInvalidImportAlias = errors.New(
+		"--schema-package: text after the final ':' must be a valid Go identifier" +
+			" (use the library API if your package path legitimately contains ':')",
+	)
+	errKnownSchemaLoad      = errors.New("--known-schema: failed to load file")
+	errKnownSchemaDuplicate = errors.New("--known-schema: duplicate URL")
 
 	rootCmd = &cobra.Command{
 		Use:   "go-jsonschema FILE ...",
@@ -92,6 +101,11 @@ var (
 				abortWithErr(err)
 			}
 
+			knownSchemaCache, err := loadKnownSchemas(knownSchemas, yamlExtensions)
+			if err != nil {
+				abortWithErr(err)
+			}
+
 			cfg := generator.Config{
 				Warner: func(message string) {
 					logf("Warning: %s", message)
@@ -114,12 +128,19 @@ var (
 				DisableOmitZero:            disableOmitZero,
 				FormatValidation:           formatValidation,
 				StrictAdditionalProperties: strictAddlProps,
+				Cache:                      knownSchemaCache,
 			}
 
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
 				mapping := generator.SchemaMapping{SchemaID: id}
 				if s, ok := schemaPackageMap[id]; ok {
-					mapping.PackageName = s
+					pkg, alias, err := splitPackageAlias(s)
+					if err != nil {
+						abortWithErr(err)
+					}
+
+					mapping.PackageName = pkg
+					mapping.ImportAlias = alias
 				} else {
 					mapping.PackageName = defaultPackage
 				}
@@ -203,7 +224,16 @@ func main() {
 		"File to write (- for standard output)")
 	rootCmd.PersistentFlags().StringSliceVar(&schemaPackages, "schema-package", nil,
 		`Name of package to declare Go files for a specific schema ID under;
-must be in the format URI=PACKAGE.`)
+must be in the format URI=PACKAGE or URI=PACKAGE:ALIAS. The optional :ALIAS
+suffix overrides the import alias used in generated code (defaults to the
+package path's last segment); set it when two referenced packages share a
+last segment (e.g. both end in /v1) to avoid an import-alias collision.`)
+	rootCmd.PersistentFlags().StringSliceVar(&knownSchemas, "known-schema", nil,
+		`Pre-populate the loader cache from a local file so that any $ref to URL
+resolves to the file's contents without an HTTP fetch (or, for URLs with
+file:// or relative scheme, without a disk lookup beyond this entry); must
+be in the format URL=PATH. The schema is loaded for ref resolution only —
+no Go code is emitted for it. Repeat for each cross-tree dependency.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
 		`File to write (- for standard output) a specific schema ID to;
 must be in the format URI=FILENAME.`)
@@ -337,6 +367,75 @@ func stringSliceToStringMap(s []string) (map[string]string, error) {
 	}
 
 	return result, nil
+}
+
+// loadKnownSchemas parses each --known-schema URL=PATH entry into a
+// pre-populated loader cache. Files with extensions in the YAML set are
+// parsed with FromYAMLFile; everything else with FromJSONFile, mirroring
+// FileLoader.parseFile. Duplicate URLs are rejected at flag-parse time
+// rather than silently overwriting (last-write-wins would mask copy/paste
+// mistakes in long flag lists).
+func loadKnownSchemas(entries, yamlExtensions []string) (map[string]*schemas.Schema, error) {
+	cache := make(map[string]*schemas.Schema, len(entries))
+	if len(entries) == 0 {
+		return cache, nil
+	}
+
+	yamlExtSet := map[string]bool{}
+	for _, ext := range yamlExtensions {
+		yamlExtSet[ext] = true
+	}
+
+	for _, entry := range entries {
+		i := strings.IndexRune(entry, '=')
+		if i == -1 {
+			return nil, fmt.Errorf("%w: %q", errFlagFormat, entry)
+		}
+
+		url, path := entry[0:i], entry[i+1:]
+		if _, exists := cache[url]; exists {
+			return nil, fmt.Errorf("%w: %q", errKnownSchemaDuplicate, url)
+		}
+
+		var (
+			sc  *schemas.Schema
+			err error
+		)
+		if yamlExtSet[filepath.Ext(path)] {
+			sc, err = schemas.FromYAMLFile(path)
+		} else {
+			sc, err = schemas.FromJSONFile(path)
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("%w %q: %w", errKnownSchemaLoad, path, err)
+		}
+
+		cache[url] = sc
+	}
+
+	return cache, nil
+}
+
+// splitPackageAlias parses the value side of a --schema-package mapping.
+// Grammar: PACKAGE[:ALIAS] (split on the LAST colon). When the suffix is
+// present, it must be a valid non-keyword Go identifier; otherwise the
+// caller gets errInvalidImportAlias and is told to use the library API
+// for the rare case of a package path that legitimately contains ':'.
+// When no colon is present, alias is empty and the entire input is the
+// package path (the historical behavior).
+func splitPackageAlias(value string) (string, string, error) {
+	i := strings.LastIndex(value, ":")
+	if i == -1 {
+		return value, "", nil
+	}
+
+	candidate := value[i+1:]
+	if candidate == "" || token.IsKeyword(candidate) || !token.IsIdentifier(candidate) {
+		return "", "", fmt.Errorf("%w: %q", errInvalidImportAlias, candidate)
+	}
+
+	return value[:i], candidate, nil
 }
 
 func allKeys(in ...map[string]string) []string {

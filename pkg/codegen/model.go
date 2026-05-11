@@ -347,6 +347,13 @@ func (a ArrayType) Generate(out *Emitter) error {
 type NamedType struct {
 	Package *Package
 	Decl    *TypeDecl
+	// Alias overrides the import alias used to qualify the type reference
+	// (e.g. emit `headerv1.Foo` instead of `v1.Foo`). When empty, the alias
+	// is derived from Package.QualifiedName via Package.Name(). Set this in
+	// pkg/generator when a SchemaMapping carries an explicit ImportAlias —
+	// keep pkg/codegen ignorant of the schema-side decision by treating the
+	// field as opaque IR data.
+	Alias string
 }
 
 func (t NamedType) GetName() string {
@@ -359,7 +366,12 @@ func (t NamedType) IsNillable() bool {
 
 func (t NamedType) Generate(out *Emitter) error {
 	if t.Package != nil {
-		out.Printf("%s", t.Package.Name())
+		prefix := t.Alias
+		if prefix == "" {
+			prefix = t.Package.Name()
+		}
+
+		out.Printf("%s", prefix)
 		out.Printf(".")
 	}
 

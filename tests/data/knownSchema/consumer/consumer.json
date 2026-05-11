@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/known-consumer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "envelope": {
+      "$ref": "https://example.com/canonical/v1/canonical.json"
+    }
+  }
+}
