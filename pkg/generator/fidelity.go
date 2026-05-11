@@ -41,51 +41,101 @@ func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger
 
 // collectDroppedKeywords lists schema keywords whose presence indicates the
 // user expects the generator to enforce something. The list returned here is
-// what gets silently lost when the type degrades to interface{}.
+// what gets silently lost when the type degrades to interface{}. Recurses
+// into allOf/anyOf/oneOf branches so constraints declared inside a branch
+// are surfaced even when the parent is a thin composition wrapper.
+//
+// Does NOT recurse into if/then/else/not — those are conditional or negated
+// schemas whose nested keywords aren't declarations on the parent type;
+// their unsupported-ness is reported via hasUnsupportedComposition's
+// trigger string instead. Results are deduplicated by literal keyword
+// string and visited-set protected against cyclic schemas.
 func collectDroppedKeywords(t *schemas.Type) []string {
-	var dropped []string
+	var (
+		dropped []string
+		seen    = make(map[string]struct{})
+		visited = make(map[*schemas.Type]struct{})
+	)
 
-	if t.AdditionalProperties != nil && isStrictAdditionalProperties(t.AdditionalProperties) {
-		dropped = append(dropped, "additionalProperties: false")
+	add := func(kw string) {
+		if _, dup := seen[kw]; dup {
+			return
+		}
+
+		seen[kw] = struct{}{}
+
+		dropped = append(dropped, kw)
 	}
 
-	if len(t.Required) > 0 {
-		dropped = append(dropped, "required")
+	var walk func(t *schemas.Type)
+	walk = func(t *schemas.Type) {
+		if t == nil {
+			return
+		}
+
+		if _, v := visited[t]; v {
+			return
+		}
+
+		visited[t] = struct{}{}
+
+		if t.AdditionalProperties != nil && isStrictAdditionalProperties(t.AdditionalProperties) {
+			add("additionalProperties: false")
+		}
+
+		if len(t.Required) > 0 {
+			add("required")
+		}
+
+		if t.Format != "" {
+			add("format: " + t.Format)
+		}
+
+		if t.Pattern != "" {
+			add("pattern")
+		}
+
+		if t.MinLength != 0 || t.MaxLength != 0 {
+			add("string length constraint")
+		}
+
+		if t.Minimum != nil || t.Maximum != nil ||
+			t.ExclusiveMinimum != nil || t.ExclusiveMaximum != nil ||
+			t.MultipleOf != nil {
+			add("numeric constraint")
+		}
+
+		if t.MinItems != 0 || t.MaxItems != 0 || t.UniqueItems {
+			add("array constraint")
+		}
+
+		if len(t.Properties) > 0 {
+			add(fmt.Sprintf("%d declared property(ies)", len(t.Properties)))
+		}
+
+		if t.Enum != nil {
+			add("enum")
+		}
+
+		if t.ConstIsSet {
+			add("const")
+		}
+
+		for _, child := range t.AllOf {
+			walk(child)
+		}
+
+		for _, child := range t.AnyOf {
+			walk(child)
+		}
+
+		for _, child := range t.OneOf {
+			walk(child)
+		}
+
 	}
 
-	if t.Format != "" {
-		dropped = append(dropped, "format: "+t.Format)
-	}
-
-	if t.Pattern != "" {
-		dropped = append(dropped, "pattern")
-	}
-
-	if t.MinLength != 0 || t.MaxLength != 0 {
-		dropped = append(dropped, "string length constraint")
-	}
-
-	if t.Minimum != nil || t.Maximum != nil ||
-		t.ExclusiveMinimum != nil || t.ExclusiveMaximum != nil ||
-		t.MultipleOf != nil {
-		dropped = append(dropped, "numeric constraint")
-	}
-
-	if t.MinItems != 0 || t.MaxItems != 0 || t.UniqueItems {
-		dropped = append(dropped, "array constraint")
-	}
-
-	if len(t.Properties) > 0 {
-		dropped = append(dropped, fmt.Sprintf("%d declared property(ies)", len(t.Properties)))
-	}
-
-	if t.Enum != nil {
-		dropped = append(dropped, "enum")
-	}
-
-	if t.Const != nil {
-		dropped = append(dropped, "const")
-	}
+	walk(t)
 
 	return dropped
 }
