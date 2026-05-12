@@ -260,7 +260,7 @@ func compositionFallbackTrigger(t *schemas.Type) string {
 	switch {
 	case len(t.OneOf) > 1:
 		for i, v := range t.OneOf {
-			if v != nil && variantHasValidationConstraints(v) {
+			if v != nil && primitiveHasValidationConstraints(v) {
 				return fmt.Sprintf(
 					"oneOf variant %d declares constraints the primitive wrapper cannot enforce", i,
 				)

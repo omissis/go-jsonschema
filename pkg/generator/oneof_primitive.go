@@ -5,22 +5,22 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
-// oneOfKind is a bit-set of JSON kinds that the variants of a primitive
-// `oneOf` cover. `integer` is intentionally not represented here: schemas
-// that include an `integer` variant are routed away from the wrapper path
+// primitiveKind is a bit-set of JSON kinds the wrapper-type emission
+// strategy can dispatch on. Used by both the primitive `oneOf` path and
+// the multi-type union path. `integer` is intentionally not represented
+// here: schemas including `integer` are routed away from the wrapper path
 // because the wire-level JSON token kind cannot distinguish `1` from `1.5`,
-// and silently widening `oneOf:[string,integer]` to accept `1.5` would
-// violate the schema.
-type oneOfKind uint8
+// and silently widening would violate the schema.
+type primitiveKind uint8
 
 const (
-	oneOfKindString oneOfKind = 1 << iota
-	oneOfKindNumber
-	oneOfKindBoolean
-	oneOfKindNull
+	primitiveKindString primitiveKind = 1 << iota
+	primitiveKindNumber
+	primitiveKindBoolean
+	primitiveKindNull
 )
 
-func (k oneOfKind) has(other oneOfKind) bool { return k&other == other }
+func (k primitiveKind) has(other primitiveKind) bool { return k&other == other }
 
 // isPrimitiveOneOf reports whether t is a `oneOf` whose variants are all
 // simple JSON primitives suitable for the wrapper-type emission strategy.
@@ -59,7 +59,7 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 			return false
 		}
 
-		if variantHasValidationConstraints(variant) {
+		if primitiveHasValidationConstraints(variant) {
 			return false
 		}
 
@@ -81,12 +81,6 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 
 	return true
 }
-
-// variantHasValidationConstraints reports whether a primitive `oneOf` variant
-// declares any constraint that the wrapper-type emission strategy can't
-// honor. The wrapper only dispatches on the JSON token kind, so a variant
-// that needs e.g. `format`, `minimum`, or `pattern` checked would silently
-// pass invalid values if routed through this path.
 
 // accessorNameString is the accessor suffix for a string branch that keeps its
 // Go type, i.e. every format except the temporal ones.
@@ -170,8 +164,15 @@ func temporalAccessorName(format string) string {
 	return accessorNameString
 }
 
-func variantHasValidationConstraints(v *schemas.Type) bool {
-	// `format` deliberately absent: the wrapper's string branch now behaves
+// primitiveHasValidationConstraints reports whether a schema declares any
+// constraint that the primitive-wrapper emission strategy can't honor.
+// Called on both single oneOf variants AND multi-type union schemas (the
+// constraint set is the same in both contexts). The wrapper only
+// dispatches on the JSON token kind, so anything needing e.g. `minimum`
+// or `pattern` checked would silently pass invalid values if routed
+// through this path.
+func primitiveHasValidationConstraints(v *schemas.Type) bool {
+	// `format` deliberately absent: the wrapper's string branch behaves
 	// exactly like the non-oneOf string path. A temporal format maps the
 	// branch to time.Time, a validator-backed format is checked after the
 	// decode when format validation is enabled, and anything else is
@@ -206,19 +207,19 @@ func variantHasValidationConstraints(v *schemas.Type) bool {
 // primitiveOneOfKinds returns the set of JSON kinds the variants of t cover.
 // Caller must have already filtered out schemas containing `integer` via
 // isPrimitiveOneOf — this function only handles the surviving primitive set.
-func primitiveOneOfKinds(t *schemas.Type) oneOfKind {
-	var kinds oneOfKind
+func primitiveOneOfKinds(t *schemas.Type) primitiveKind {
+	var kinds primitiveKind
 
 	for _, variant := range t.OneOf {
 		switch variant.Type[0] {
 		case schemas.TypeNameString:
-			kinds |= oneOfKindString
+			kinds |= primitiveKindString
 		case schemas.TypeNameNumber:
-			kinds |= oneOfKindNumber
+			kinds |= primitiveKindNumber
 		case schemas.TypeNameBoolean:
-			kinds |= oneOfKindBoolean
+			kinds |= primitiveKindBoolean
 		case schemas.TypeNameNull:
-			kinds |= oneOfKindNull
+			kinds |= primitiveKindNull
 		}
 	}
 
@@ -340,19 +341,19 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	addMethod("Value", emitOneOfPrimitiveValue(name))
 	addMethod("IsZero", emitOneOfPrimitiveIsZero(name))
 
-	if kinds.has(oneOfKindString) {
+	if kinds.has(primitiveKindString) {
 		addMethod("As"+strFormat.accessor, emitOneOfPrimitiveAsString(name, strFormat))
 	}
 
-	if kinds.has(oneOfKindNumber) {
+	if kinds.has(primitiveKindNumber) {
 		addMethod("AsNumber", emitOneOfPrimitiveAsNumber(name))
 	}
 
-	if kinds.has(oneOfKindBoolean) {
+	if kinds.has(primitiveKindBoolean) {
 		addMethod("AsBool", emitOneOfPrimitiveAsBool(name))
 	}
 
-	if kinds.has(oneOfKindNull) {
+	if kinds.has(primitiveKindNull) {
 		addMethod("IsNull", emitOneOfPrimitiveIsNull(name))
 	}
 
@@ -361,7 +362,7 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 
 func emitOneOfPrimitiveUnmarshalJSON(
 	typeName string,
-	kinds oneOfKind,
+	kinds primitiveKind,
 	sf stringVariantFormat,
 ) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
@@ -371,7 +372,7 @@ func emitOneOfPrimitiveUnmarshalJSON(
 
 		out.Printlnf("dec := json.NewDecoder(bytes.NewReader(value))")
 
-		if kinds.has(oneOfKindNumber) {
+		if kinds.has(primitiveKindNumber) {
 			out.Printlnf("dec.UseNumber()")
 		}
 
@@ -379,7 +380,7 @@ func emitOneOfPrimitiveUnmarshalJSON(
 		out.Printlnf("if err != nil { return err }")
 		out.Printlnf("switch tok.(type) {")
 
-		if kinds.has(oneOfKindString) {
+		if kinds.has(primitiveKindString) {
 			// Decoding into the mapped type IS the format check for temporal
 			// variants: a malformed timestamp fails to unmarshal.
 			out.Printlnf("case string:")
@@ -395,7 +396,7 @@ func emitOneOfPrimitiveUnmarshalJSON(
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNumber) {
+		if kinds.has(primitiveKindNumber) {
 			out.Printlnf("case json.Number:")
 			out.Indent(1)
 			out.Printlnf("var v float64")
@@ -404,7 +405,7 @@ func emitOneOfPrimitiveUnmarshalJSON(
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindBoolean) {
+		if kinds.has(primitiveKindBoolean) {
 			out.Printlnf("case bool:")
 			out.Indent(1)
 			out.Printlnf("var v bool")
@@ -413,7 +414,7 @@ func emitOneOfPrimitiveUnmarshalJSON(
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			out.Printlnf("case nil:")
 			out.Indent(1)
 			// Validate the full payload to reject trailing garbage like
@@ -440,13 +441,13 @@ func emitOneOfPrimitiveUnmarshalJSON(
 	}
 }
 
-func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveMarshalJSON(typeName string, kinds primitiveKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalJSON implements json.Marshaler.")
 		out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", typeName)
 		out.Indent(1)
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			// Unset (no Unmarshal call has touched j) → emit null. The
 			// receiver's surrounding struct is responsible for using
 			// `omitzero` if it wants to omit the field entirely.
@@ -480,7 +481,7 @@ func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codeg
 
 func emitOneOfPrimitiveUnmarshalYAML(
 	typeName string,
-	kinds oneOfKind,
+	kinds primitiveKind,
 	sf stringVariantFormat,
 ) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
@@ -494,7 +495,7 @@ func emitOneOfPrimitiveUnmarshalYAML(
 		out.Printlnf("}")
 		out.Printlnf("switch value.Tag {")
 
-		if kinds.has(oneOfKindString) {
+		if kinds.has(primitiveKindString) {
 			out.Printlnf(`case "!!str":`)
 			out.Indent(1)
 			// Same mapped type as the JSON path, so YAML and JSON agree on
@@ -510,7 +511,7 @@ func emitOneOfPrimitiveUnmarshalYAML(
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNumber) {
+		if kinds.has(primitiveKindNumber) {
 			out.Printlnf(`case "!!int", "!!float":`)
 			out.Indent(1)
 			out.Printlnf("var v float64")
@@ -519,7 +520,7 @@ func emitOneOfPrimitiveUnmarshalYAML(
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindBoolean) {
+		if kinds.has(primitiveKindBoolean) {
 			out.Printlnf(`case "!!bool":`)
 			out.Indent(1)
 			out.Printlnf("var v bool")
@@ -528,7 +529,7 @@ func emitOneOfPrimitiveUnmarshalYAML(
 			out.Indent(-1)
 		}
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			out.Printlnf(`case "!!null":`)
 			out.Indent(1)
 			out.Printlnf("j.value = nil")
@@ -549,13 +550,13 @@ func emitOneOfPrimitiveUnmarshalYAML(
 	}
 }
 
-func emitOneOfPrimitiveMarshalYAML(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveMarshalYAML(typeName string, kinds primitiveKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalYAML implements yaml.Marshaler.")
 		out.Printlnf("func (j *%s) MarshalYAML() (interface{}, error) {", typeName)
 		out.Indent(1)
 
-		if kinds.has(oneOfKindNull) {
+		if kinds.has(primitiveKindNull) {
 			// Unset → emit null. Explicit null also yields nil (yaml.v3
 			// emits `null` for a nil interface).
 			out.Printlnf("if j == nil || !j.present { return nil, nil }")
