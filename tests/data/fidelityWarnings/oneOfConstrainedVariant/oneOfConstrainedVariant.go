@@ -53,8 +53,7 @@ func (j *OneOfConstrainedVariantTimeOrNumber) AsNumber() (float64, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *OneOfConstrainedVariantTimeOrNumber) IsZero() bool {
 	return j == nil || !j.present
 }
@@ -178,8 +177,7 @@ func (j *OneOfConstrainedVariantUnconstrained) AsString() (string, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *OneOfConstrainedVariantUnconstrained) IsZero() bool {
 	return j == nil || !j.present
 }
