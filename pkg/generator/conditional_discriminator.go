@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
@@ -31,12 +32,15 @@ type conditionalDiscriminatorValidator struct {
 }
 
 // conditionalBranch is one element of the parent's `allOf`. It pairs the
-// discriminator's expected value with the `then` and (optional) `else`
-// subschemas to apply when matched / not matched.
+// discriminator's expected value(s) with the `then` and (optional) `else`
+// subschemas to apply when matched / not matched. matchValues is OR-ed:
+// the branch fires if discStr matches ANY entry. The single-`const` form
+// produces a one-element slice; the future enum form produces N entries
+// in declaration order.
 type conditionalBranch struct {
-	constValue string
-	thenSchema *schemas.Type
-	elseSchema *schemas.Type
+	matchValues []string
+	thenSchema  *schemas.Type
+	elseSchema  *schemas.Type
 }
 
 // desc satisfies the validator interface. Runs against the raw decoded map
@@ -83,23 +87,61 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 	return nil
 }
 
-// emitBranch writes one if/else block: when discStr matches the branch's
-// const, run thenSchema's required checks; when it doesn't and an else is
-// present, run elseSchema's required checks.
+// emitBranch writes one if/else block: when discStr matches any of the
+// branch's match values, run thenSchema's required checks; when it doesn't
+// and an else is present, run elseSchema's required checks. The single-
+// value case (the only shape today) emits the same `if discStr == "X"`
+// form as before; multi-value support arrives in a follow-up commit and
+// will OR-chain the predicate.
 func (v *conditionalDiscriminatorValidator) emitBranch(out *codegen.Emitter, branch conditionalBranch) {
-	out.Printlnf(`if discStr == %q {`, branch.constValue)
+	out.Printlnf(`if %s {`, matchPredicate(branch.matchValues))
 	out.Indent(1)
-	v.emitRequiredChecks(out, branch.thenSchema, fmt.Sprintf("when %s='%s'", v.discriminator, branch.constValue))
+	v.emitRequiredChecks(out, branch.thenSchema, branchContextLabel(v.discriminator, branch.matchValues, false))
 	out.Indent(-1)
 
 	if branch.elseSchema != nil && len(branch.elseSchema.Required) > 0 {
 		out.Printlnf(`} else {`)
 		out.Indent(1)
-		v.emitRequiredChecks(out, branch.elseSchema, fmt.Sprintf("when %s!='%s'", v.discriminator, branch.constValue))
+		v.emitRequiredChecks(out, branch.elseSchema, branchContextLabel(v.discriminator, branch.matchValues, true))
 		out.Indent(-1)
 	}
 
 	out.Printlnf(`}`)
+}
+
+// matchPredicate builds the `discStr == "X"` (or `discStr == "X" || ... ||
+// discStr == "Y"`) predicate for a branch's match values. Order is
+// preserved so generated goldens are deterministic.
+func matchPredicate(values []string) string {
+	parts := make([]string, len(values))
+	for i, v := range values {
+		parts[i] = fmt.Sprintf("discStr == %q", v)
+	}
+
+	return strings.Join(parts, " || ")
+}
+
+// branchContextLabel produces the human-readable phrase interpolated into
+// the per-branch required-field error message. Single-value branches use
+// the static `when K='V'` form (or `when K!='V'` for the else side);
+// the multi-value form will switch to a runtime discStr template in the
+// follow-up commit so the error names the actual observed value rather
+// than a list.
+func branchContextLabel(discriminator string, values []string, isElse bool) string {
+	op := "='"
+	if isElse {
+		op = "!='"
+	}
+
+	if len(values) == 1 {
+		return fmt.Sprintf("when %s%s%s'", discriminator, op, values[0])
+	}
+
+	// Multi-value (commit 2): caller emits the format string with `discStr`
+	// interpolated at runtime via a separate emit path. This branch is
+	// unreachable in commit 1 since detection only produces one value per
+	// branch; kept here as a deliberate placeholder.
+	panic("multi-value branchContextLabel: not yet implemented (commit 2)")
 }
 
 // emitRequiredChecks writes a presence check per field listed in the
@@ -152,7 +194,7 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 	)
 
 	for i, elem := range t.AllOf {
-		key, constStr, ok := singleConstIfClause(elem)
+		key, matchValues, ok := discriminatorIfClause(elem)
 		if !ok {
 			return nil, false
 		}
@@ -174,9 +216,9 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 		}
 
 		branches = append(branches, conditionalBranch{
-			constValue: constStr,
-			thenSchema: elem.Then,
-			elseSchema: elem.Else,
+			matchValues: matchValues,
+			thenSchema:  elem.Then,
+			elseSchema:  elem.Else,
 		})
 	}
 
@@ -200,28 +242,30 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 	}, true
 }
 
-// singleConstIfClause matches an allOf element of shape
+// discriminatorIfClause matches an allOf element of shape
 // `{if: {properties: {<K>: {const: <string V>}}}, then: <subschema>, else?: <subschema>}`.
-// Returns (K, V, true) on match. The `then` is required to be present; the
-// `else` is optional and not validated here (we rely on the presence check
-// at emit time).
+// Returns (K, [V], true) on match — the single value is wrapped in a
+// one-element slice so the rest of the pipeline is uniform with the
+// future enum form. The `then` is required to be present; the `else` is
+// optional and not validated here (we rely on the presence check at
+// emit time).
 //
 // The `if` subschema is required to be EXACTLY the single-property const
 // check — extra constraints (`required`, additional `properties`, nested
 // composition keywords, type/length/pattern/etc.) are rejected because the
 // generated dispatch only checks the discriminator's value, so any extra
 // branch condition would be silently under-validated.
-func singleConstIfClause(elem *schemas.Type) (string, string, bool) {
+func discriminatorIfClause(elem *schemas.Type) (string, []string, bool) {
 	if elem == nil || elem.If == nil || elem.Then == nil {
-		return "", "", false
+		return "", nil, false
 	}
 
 	if len(elem.If.Properties) != 1 {
-		return "", "", false
+		return "", nil, false
 	}
 
 	if ifClauseHasExtraConstraints(elem.If) {
-		return "", "", false
+		return "", nil, false
 	}
 
 	var (
@@ -234,15 +278,15 @@ func singleConstIfClause(elem *schemas.Type) (string, string, bool) {
 	}
 
 	if sub == nil || sub.Const == nil {
-		return "", "", false
+		return "", nil, false
 	}
 
 	constStr, ok := sub.Const.(string)
 	if !ok {
-		return "", "", false
+		return "", nil, false
 	}
 
-	return key, constStr, true
+	return key, []string{constStr}, true
 }
 
 // ifClauseHasExtraConstraints reports whether an `if` subschema declares
@@ -318,12 +362,14 @@ func discriminatorInvalidReason(t *schemas.Type, discriminator string, branches 
 		}
 	}
 
-	for _, b := range branches {
-		if _, ok := enumValues[b.constValue]; !ok {
-			return fmt.Sprintf(
-				"branch const %q is not a member of the %q enum",
-				b.constValue, discriminator,
-			)
+	for branchIdx, b := range branches {
+		for _, val := range b.matchValues {
+			if _, ok := enumValues[val]; !ok {
+				return fmt.Sprintf(
+					"branch %d value %q is not a member of the %q enum",
+					branchIdx, val, discriminator,
+				)
+			}
 		}
 	}
 
