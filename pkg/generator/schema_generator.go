@@ -294,6 +294,14 @@ func (g *schemaGenerator) generateOneOfComposition(
 		return g.generateOneOfPrimitive(t, scope), true, nil
 	}
 
+	// The multi-type-union form `{"type": ["string", "number"]}` is
+	// wire-equivalent to a primitive `oneOf` of single-typed variants and is
+	// routed through the same wrapper. Mutually exclusive with the case
+	// above: one reads t.OneOf, the other t.Type.
+	if isPrimitiveMultiTypeUnion(t) {
+		return g.generatePrimitiveMultiTypeUnion(t, scope), true, nil
+	}
+
 	if len(t.OneOf) > 1 {
 		// A natural discriminator gives a direct dispatch; otherwise fall
 		// back to try-each, which checks each variant and accepts only when
@@ -1557,6 +1565,14 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
 	// A primitive `oneOf` carries no top-level `type`.
 	if len(t.OneOf) > 0 && isPrimitiveOneOf(t) {
+		return true
+	}
+
+	// The multi-type-union form `{"type": ["string", "number"]}` routes to
+	// the same wrapper. It declines the `["X", "null"]` shape, which stays
+	// with the nullable handling further down, and integer/constrained
+	// unions, which fall through to the warn-and-interface{} path.
+	if isPrimitiveMultiTypeUnion(t) {
 		return true
 	}
 
