@@ -1151,10 +1151,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return emptyInterfaceTypeVal, nil
 		}
 
-		if len(t.Type) == 2 &&
+		if typeIndex != -1 &&
 			typeIsNullable &&
 			schemas.IsPrimitiveType(t.Type[typeIndex]) &&
-			isTypeTemporal(t) {
+			isTypeTemporal(t.Type[typeIndex], t.Format) {
 			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
 		}
 
@@ -1508,12 +1508,6 @@ func isTypeNullable(t *schemas.Type) (int, bool) {
 	return -1, false
 }
 
-func isTypeTemporal(t *schemas.Type) bool {
-	for _, typ := range t.Type {
-		if typ == schemas.TypeNameString && (t.Format == "date-time" || t.Format == "date" || t.Format == "time") {
-			return true
-		}
-	}
-
-	return false
+func isTypeTemporal(typ, format string) bool {
+	return typ == schemas.TypeNameString && (format == "date-time" || format == "date" || format == "time")
 }
