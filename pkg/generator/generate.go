@@ -57,6 +57,13 @@ func New(config Config) (*Generator, error) {
 			ErrInvalidStrictAdditionalPropertiesMode, config.StrictAdditionalProperties)
 	}
 
+	// aliasByPackage tracks the alias each PackageName has been bound to
+	// so far. Two SchemaMappings with the same PackageName but different
+	// ImportAlias values would have resolveImportAlias silently picking
+	// one and ignoring the other — reject at New() time so the
+	// inconsistency surfaces loudly.
+	aliasByPackage := make(map[string]string, len(config.SchemaMappings))
+
 	for _, m := range config.SchemaMappings {
 		if m.ImportAlias == "" {
 			continue
@@ -66,6 +73,13 @@ func New(config Config) (*Generator, error) {
 			return nil, fmt.Errorf("%w: schema %q -> %q",
 				ErrInvalidImportAlias, m.SchemaID, m.ImportAlias)
 		}
+
+		if prev, exists := aliasByPackage[m.PackageName]; exists && prev != m.ImportAlias {
+			return nil, fmt.Errorf("%w: package %q has conflicting aliases %q and %q",
+				ErrConflictingImportAlias, m.PackageName, prev, m.ImportAlias)
+		}
+
+		aliasByPackage[m.PackageName] = m.ImportAlias
 	}
 
 	formatters := []formatter{
