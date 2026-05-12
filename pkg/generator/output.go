@@ -22,7 +22,7 @@ type output struct {
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
 	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
 	// accepts.
-	primitiveWrapperKinds map[*codegen.TypeDecl]oneOfKind
+	primitiveWrapperKinds map[*codegen.TypeDecl]primitiveKind
 	processedSchemas      map[string]bool
 	warner                func(string)
 }

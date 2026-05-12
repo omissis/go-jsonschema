@@ -1085,7 +1085,7 @@ func (g *schemaGenerator) defaultValidatorFor(
 	if nt, ok := dvType.(*codegen.NamedType); ok {
 		if kinds, ok := g.output.primitiveWrapperKinds[nt.Decl]; ok {
 			encoded, err := json.Marshal(f.DefaultValue)
-			if err != nil || !kinds.has(oneOfKindOf(f.DefaultValue)) {
+			if err != nil || !kinds.has(primitiveKindOf(f.DefaultValue)) {
 				g.warner(fmt.Sprintf(
 					"default %s for field %q is not a value its type %s accepts; it is left out",
 					encoded, f.JSONName, nt.Decl.Name,
@@ -1098,7 +1098,7 @@ func (g *schemaGenerator) defaultValidatorFor(
 				jsonName:    f.JSONName,
 				fieldName:   f.Name,
 				encoded:     string(encoded),
-				acceptsNull: kinds.has(oneOfKindNull),
+				acceptsNull: kinds.has(primitiveKindNull),
 			}
 		}
 	}
