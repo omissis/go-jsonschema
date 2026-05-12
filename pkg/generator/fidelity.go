@@ -68,6 +68,7 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 	}
 
 	var walk func(t *schemas.Type)
+
 	walk = func(t *schemas.Type) {
 		if t == nil {
 			return
@@ -132,7 +133,6 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 		for _, child := range t.OneOf {
 			walk(child)
 		}
-
 	}
 
 	walk(t)
