@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"slices"
+
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
@@ -138,16 +140,124 @@ func primitiveOneOfKinds(t *schemas.Type) primitiveKind {
 	return kinds
 }
 
-// generateOneOfPrimitive emits a wrapper type and the methods needed to
-// round-trip a primitive `oneOf` schema. The generated type stores the
-// decoded value in `value any` and tracks whether the wrapper has been
-// populated (by Unmarshal{JSON,YAML}) in `present bool` so that three
-// states stay distinct: untouched / decoded `null` / decoded primitive.
-// Without `present` the helpers and `omitzero` round-trip would conflate
-// the first two — explicit nulls would silently become "missing".
-// UnmarshalJSON dispatches on the JSON token kind so that overlapping
-// schemas (e.g. number+integer) cannot match more than one variant by
-// accident.
+// isPrimitiveMultiTypeUnion reports whether t uses the multi-type-union
+// shape — a single Type node whose `type` slice holds multiple primitive
+// names — AND every other condition needed for the wrapper-type emission
+// strategy applies. Semantically equivalent to a primitive `oneOf` of the
+// same types from the wire's POV; routed through the same emit helpers.
+//
+// Declines on:
+//   - the `["X", "null"]` shape — the existing pointer-to-X path at
+//     schema_generator.go:1441 is better Go ergonomics for nullable
+//     scalars; this detection only fires for genuine multi-type unions
+//     (2+ non-null types or 3+ types total).
+//   - `integer` in the type list — same reason as the oneOf path:
+//     wire-level JSON tokens cannot distinguish 1 from 1.5.
+//   - mixed with composition keywords, ref, enum, const.
+//   - validation constraints on the union schema itself
+//     (`format`/`minimum`/etc. would silently not be enforced).
+//   - duplicate kinds (defensive — JSON Schema spec requires unique
+//     entries in `type`, but the parser doesn't enforce).
+//   - non-primitive types in the union (e.g. `["string", "object"]`).
+func isPrimitiveMultiTypeUnion(t *schemas.Type) bool {
+	if t == nil || len(t.Type) < 2 {
+		return false
+	}
+
+	if len(t.OneOf)+len(t.AnyOf)+len(t.AllOf) > 0 {
+		return false
+	}
+
+	if t.Ref != "" || t.Enum != nil || t.Const != nil {
+		return false
+	}
+
+	if primitiveHasValidationConstraints(t) {
+		return false
+	}
+
+	// Decline the `["X", "null"]` nullable-scalar shape so the existing
+	// pointer path at schema_generator.go:1441 keeps producing the more
+	// idiomatic *X.
+	if len(t.Type) == 2 && slices.Contains(t.Type, schemas.TypeNameNull) {
+		return false
+	}
+
+	seen := make(map[string]struct{}, len(t.Type))
+
+	for _, kind := range t.Type {
+		switch kind {
+		case schemas.TypeNameString,
+			schemas.TypeNameNumber,
+			schemas.TypeNameBoolean,
+			schemas.TypeNameNull:
+		default:
+			return false
+		}
+
+		if _, dup := seen[kind]; dup {
+			return false
+		}
+
+		seen[kind] = struct{}{}
+	}
+
+	return true
+}
+
+// primitiveMultiTypeKinds returns the set of JSON kinds the multi-type
+// union covers. Caller must have already filtered out unsupported types
+// via isPrimitiveMultiTypeUnion — this function only handles the
+// surviving primitive set.
+func primitiveMultiTypeKinds(t *schemas.Type) primitiveKind {
+	var kinds primitiveKind
+
+	for _, kind := range t.Type {
+		switch kind {
+		case schemas.TypeNameString:
+			kinds |= primitiveKindString
+		case schemas.TypeNameNumber:
+			kinds |= primitiveKindNumber
+		case schemas.TypeNameBoolean:
+			kinds |= primitiveKindBoolean
+		case schemas.TypeNameNull:
+			kinds |= primitiveKindNull
+		}
+	}
+
+	return kinds
+}
+
+// generateOneOfPrimitive routes a primitive `oneOf` schema through the
+// shared emitPrimitiveWrapper. The wrapper stores the decoded value in
+// `value any` and tracks population in `present bool` so untouched /
+// decoded-null / decoded-primitive stay distinct (without `present` the
+// helpers and `omitzero` round-trip would conflate the first two —
+// explicit nulls would silently become "missing"). UnmarshalJSON
+// dispatches on the JSON token kind so overlapping schemas (e.g.
+// number+integer) cannot match more than one variant by accident.
+//
+// Precondition documented on emitPrimitiveWrapper (OnlyModels guard).
+func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	return g.emitPrimitiveWrapper(t, scope, primitiveOneOfKinds(t))
+}
+
+// generatePrimitiveMultiTypeUnion routes a multi-type-union schema —
+// `{"type": ["string", "number", ...]}` — through the same shared wrapper
+// emit as primitive `oneOf`. The two shapes are wire-equivalent (a single
+// JSON value satisfying any of the listed types), so the generated Go
+// type, methods, and round-trip semantics are identical; only the entry
+// point differs.
+//
+// Precondition documented on emitPrimitiveWrapper (OnlyModels guard).
+func (g *schemaGenerator) generatePrimitiveMultiTypeUnion(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+	return g.emitPrimitiveWrapper(t, scope, primitiveMultiTypeKinds(t))
+}
+
+// emitPrimitiveWrapper builds the wrapper struct + methods for the kind
+// set, parameterized only by the schema's name/description (via t) and
+// the resolved kinds. Both `oneOf` (variants in t.OneOf) and multi-type
+// (kinds in t.Type) entry points compute their kinds and dispatch here.
 //
 // Precondition: callers MUST NOT invoke this in `OnlyModels` mode — the
 // wrapper struct has unexported `value`/`present` fields and is unusable
@@ -156,15 +266,15 @@ func primitiveOneOfKinds(t *schemas.Type) primitiveKind {
 // this wrapper isn't. Callers in `generateDeclaredType` already gate on
 // `!g.config.OnlyModels`; this function panics rather than silently
 // emitting a broken type if that guard is ever bypassed.
-func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+func (g *schemaGenerator) emitPrimitiveWrapper(
+	t *schemas.Type, scope nameScope, kinds primitiveKind,
+) (codegen.Type, error) {
 	if g.config.OnlyModels {
 		// Defensive: should be unreachable per the contract above.
 		// Panicking here turns a future routing bug (silent broken
 		// codegen) into a loud failure at codegen time.
-		panic("generateOneOfPrimitive called in OnlyModels mode; caller must guard")
+		panic("emitPrimitiveWrapper called in OnlyModels mode; caller must guard")
 	}
-
-	kinds := primitiveOneOfKinds(t)
 
 	name := g.output.uniqueTypeName(scope)
 	if g.config.StructNameFromTitle && t.Title != "" {
