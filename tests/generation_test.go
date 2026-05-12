@@ -467,6 +467,18 @@ func TestOneOfPrimitive(t *testing.T) {
 	testExamples(t, basicConfig, "./data/oneOfPrimitive")
 }
 
+// TestMultiTypePrimitive walks fixtures for the multi-type-union form
+// (`{"type": ["string", "number", ...]}`). Activate cases (stringOrNumber,
+// stringNumberBoolNull, embeddedInStruct) emit the primitive wrapper;
+// decline cases (nullableString, integerRejected, constraintRejected,
+// duplicateInTypeList, nonPrimitiveType) pin the existing fallback
+// behavior so a future relaxation surfaces as a deliberate diff.
+func TestMultiTypePrimitive(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/multiTypePrimitive")
+}
+
 func TestOneOfDiscriminated(t *testing.T) {
 	t.Parallel()
 

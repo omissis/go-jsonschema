@@ -2,20 +2,433 @@
 
 package test
 
+import "bytes"
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+
 type TypeMultiple struct {
 	// All corresponds to the JSON schema field "all".
 	All interface{} `json:"all,omitempty,omitzero" yaml:"all,omitempty" mapstructure:"all,omitempty"`
 
 	// AllPrimitives corresponds to the JSON schema field "allPrimitives".
-	AllPrimitives interface{} `json:"allPrimitives,omitempty,omitzero" yaml:"allPrimitives,omitempty" mapstructure:"allPrimitives,omitempty"`
+	AllPrimitives *TypeMultipleAllPrimitives `json:"allPrimitives,omitempty,omitzero" yaml:"allPrimitives,omitempty" mapstructure:"allPrimitives,omitempty"`
 
 	// ArrayOfAll corresponds to the JSON schema field "arrayOfAll".
 	ArrayOfAll []interface{} `json:"arrayOfAll,omitempty,omitzero" yaml:"arrayOfAll,omitempty" mapstructure:"arrayOfAll,omitempty"`
 
 	// ArrayOfAllPrimitives corresponds to the JSON schema field
 	// "arrayOfAllPrimitives".
-	ArrayOfAllPrimitives []interface{} `json:"arrayOfAllPrimitives,omitempty,omitzero" yaml:"arrayOfAllPrimitives,omitempty" mapstructure:"arrayOfAllPrimitives,omitempty"`
+	ArrayOfAllPrimitives []TypeMultipleArrayOfAllPrimitivesElem `json:"arrayOfAllPrimitives,omitempty,omitzero" yaml:"arrayOfAllPrimitives,omitempty" mapstructure:"arrayOfAllPrimitives,omitempty"`
 
 	// OnlyTwoOptions corresponds to the JSON schema field "onlyTwoOptions".
-	OnlyTwoOptions interface{} `json:"onlyTwoOptions,omitempty,omitzero" yaml:"onlyTwoOptions,omitempty" mapstructure:"onlyTwoOptions,omitempty"`
+	OnlyTwoOptions *TypeMultipleOnlyTwoOptions `json:"onlyTwoOptions,omitempty,omitzero" yaml:"onlyTwoOptions,omitempty" mapstructure:"onlyTwoOptions,omitempty"`
+}
+
+type TypeMultipleAllPrimitives struct {
+	value interface{}
+
+	present bool
+}
+
+// AsBool returns the value as a bool and reports whether it was a bool.
+func (j *TypeMultipleAllPrimitives) AsBool() (bool, bool) {
+	if j == nil || !j.present {
+		return false, false
+	}
+	v, ok := j.value.(bool)
+	return v, ok
+}
+
+// AsNumber returns the value as a float64 and reports whether it was numeric.
+func (j *TypeMultipleAllPrimitives) AsNumber() (float64, bool) {
+	if j == nil || !j.present {
+		return 0, false
+	}
+	v, ok := j.value.(float64)
+	return v, ok
+}
+
+// AsString returns the value as a string and reports whether it was a string.
+func (j *TypeMultipleAllPrimitives) AsString() (string, bool) {
+	if j == nil || !j.present {
+		return "", false
+	}
+	v, ok := j.value.(string)
+	return v, ok
+}
+
+// IsNull reports whether the wrapper was populated with an explicit JSON `null`.
+// Returns false for unset wrappers (use IsZero) and for wrappers holding a
+// non-null primitive.
+func (j *TypeMultipleAllPrimitives) IsNull() bool {
+	return j != nil && j.present && j.value == nil
+}
+
+// IsZero reports whether the wrapper has not been populated by
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
+// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+func (j *TypeMultipleAllPrimitives) IsZero() bool {
+	return j == nil || !j.present
+}
+
+// MarshalJSON implements json.Marshaler.
+func (j *TypeMultipleAllPrimitives) MarshalJSON() ([]byte, error) {
+	if j == nil || !j.present {
+		return []byte("null"), nil
+	}
+	if j.value == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(j.value)
+}
+
+// MarshalYAML implements yaml.Marshaler.
+func (j *TypeMultipleAllPrimitives) MarshalYAML() (interface{}, error) {
+	if j == nil || !j.present {
+		return nil, nil
+	}
+	return j.value, nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TypeMultipleAllPrimitives) UnmarshalJSON(value []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(value))
+	dec.UseNumber()
+	tok, err := dec.Token()
+	if err != nil {
+		return err
+	}
+	switch tok.(type) {
+	case string:
+		var v string
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case json.Number:
+		var v float64
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case bool:
+		var v bool
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case nil:
+		var v any
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = nil
+	default:
+		return fmt.Errorf("TypeMultipleAllPrimitives: unsupported JSON value of type %T", tok)
+	}
+	j.present = true
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TypeMultipleAllPrimitives) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.ScalarNode {
+		return fmt.Errorf("TypeMultipleAllPrimitives: expected scalar YAML node")
+	}
+	switch value.Tag {
+	case "!!str":
+		var v string
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!int", "!!float":
+		var v float64
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!bool":
+		var v bool
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!null":
+		j.value = nil
+	default:
+		return fmt.Errorf("TypeMultipleAllPrimitives: unsupported YAML scalar tag %q", value.Tag)
+	}
+	j.present = true
+	return nil
+}
+
+// Value returns the decoded primitive payload.
+func (j *TypeMultipleAllPrimitives) Value() any {
+	if j == nil {
+		return nil
+	}
+	return j.value
+}
+
+type TypeMultipleArrayOfAllPrimitivesElem struct {
+	value interface{}
+
+	present bool
+}
+
+// AsBool returns the value as a bool and reports whether it was a bool.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) AsBool() (bool, bool) {
+	if j == nil || !j.present {
+		return false, false
+	}
+	v, ok := j.value.(bool)
+	return v, ok
+}
+
+// AsNumber returns the value as a float64 and reports whether it was numeric.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) AsNumber() (float64, bool) {
+	if j == nil || !j.present {
+		return 0, false
+	}
+	v, ok := j.value.(float64)
+	return v, ok
+}
+
+// AsString returns the value as a string and reports whether it was a string.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) AsString() (string, bool) {
+	if j == nil || !j.present {
+		return "", false
+	}
+	v, ok := j.value.(string)
+	return v, ok
+}
+
+// IsNull reports whether the wrapper was populated with an explicit JSON `null`.
+// Returns false for unset wrappers (use IsZero) and for wrappers holding a
+// non-null primitive.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) IsNull() bool {
+	return j != nil && j.present && j.value == nil
+}
+
+// IsZero reports whether the wrapper has not been populated by
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
+// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) IsZero() bool {
+	return j == nil || !j.present
+}
+
+// MarshalJSON implements json.Marshaler.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) MarshalJSON() ([]byte, error) {
+	if j == nil || !j.present {
+		return []byte("null"), nil
+	}
+	if j.value == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(j.value)
+}
+
+// MarshalYAML implements yaml.Marshaler.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) MarshalYAML() (interface{}, error) {
+	if j == nil || !j.present {
+		return nil, nil
+	}
+	return j.value, nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) UnmarshalJSON(value []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(value))
+	dec.UseNumber()
+	tok, err := dec.Token()
+	if err != nil {
+		return err
+	}
+	switch tok.(type) {
+	case string:
+		var v string
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case json.Number:
+		var v float64
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case bool:
+		var v bool
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case nil:
+		var v any
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = nil
+	default:
+		return fmt.Errorf("TypeMultipleArrayOfAllPrimitivesElem: unsupported JSON value of type %T", tok)
+	}
+	j.present = true
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.ScalarNode {
+		return fmt.Errorf("TypeMultipleArrayOfAllPrimitivesElem: expected scalar YAML node")
+	}
+	switch value.Tag {
+	case "!!str":
+		var v string
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!int", "!!float":
+		var v float64
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!bool":
+		var v bool
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!null":
+		j.value = nil
+	default:
+		return fmt.Errorf("TypeMultipleArrayOfAllPrimitivesElem: unsupported YAML scalar tag %q", value.Tag)
+	}
+	j.present = true
+	return nil
+}
+
+// Value returns the decoded primitive payload.
+func (j *TypeMultipleArrayOfAllPrimitivesElem) Value() any {
+	if j == nil {
+		return nil
+	}
+	return j.value
+}
+
+type TypeMultipleOnlyTwoOptions struct {
+	value interface{}
+
+	present bool
+}
+
+// AsBool returns the value as a bool and reports whether it was a bool.
+func (j *TypeMultipleOnlyTwoOptions) AsBool() (bool, bool) {
+	if j == nil || !j.present {
+		return false, false
+	}
+	v, ok := j.value.(bool)
+	return v, ok
+}
+
+// AsNumber returns the value as a float64 and reports whether it was numeric.
+func (j *TypeMultipleOnlyTwoOptions) AsNumber() (float64, bool) {
+	if j == nil || !j.present {
+		return 0, false
+	}
+	v, ok := j.value.(float64)
+	return v, ok
+}
+
+// IsZero reports whether the wrapper has not been populated by
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
+// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+func (j *TypeMultipleOnlyTwoOptions) IsZero() bool {
+	return j == nil || !j.present
+}
+
+// MarshalJSON implements json.Marshaler.
+func (j *TypeMultipleOnlyTwoOptions) MarshalJSON() ([]byte, error) {
+	if j == nil || !j.present {
+		return nil, fmt.Errorf("TypeMultipleOnlyTwoOptions: cannot marshal unset value (schema does not allow null)")
+	}
+	if j.value == nil {
+		return nil, fmt.Errorf("TypeMultipleOnlyTwoOptions: cannot marshal nil value (schema does not allow null)")
+	}
+	return json.Marshal(j.value)
+}
+
+// MarshalYAML implements yaml.Marshaler.
+func (j *TypeMultipleOnlyTwoOptions) MarshalYAML() (interface{}, error) {
+	if j == nil || !j.present {
+		return nil, fmt.Errorf("TypeMultipleOnlyTwoOptions: cannot marshal unset value (schema does not allow null)")
+	}
+	if j.value == nil {
+		return nil, fmt.Errorf("TypeMultipleOnlyTwoOptions: cannot marshal nil value (schema does not allow null)")
+	}
+	return j.value, nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TypeMultipleOnlyTwoOptions) UnmarshalJSON(value []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(value))
+	dec.UseNumber()
+	tok, err := dec.Token()
+	if err != nil {
+		return err
+	}
+	switch tok.(type) {
+	case json.Number:
+		var v float64
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	case bool:
+		var v bool
+		if err := json.Unmarshal(value, &v); err != nil {
+			return err
+		}
+		j.value = v
+	default:
+		return fmt.Errorf("TypeMultipleOnlyTwoOptions: unsupported JSON value of type %T", tok)
+	}
+	j.present = true
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TypeMultipleOnlyTwoOptions) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.ScalarNode {
+		return fmt.Errorf("TypeMultipleOnlyTwoOptions: expected scalar YAML node")
+	}
+	switch value.Tag {
+	case "!!int", "!!float":
+		var v float64
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	case "!!bool":
+		var v bool
+		if err := value.Decode(&v); err != nil {
+			return err
+		}
+		j.value = v
+	default:
+		return fmt.Errorf("TypeMultipleOnlyTwoOptions: unsupported YAML scalar tag %q", value.Tag)
+	}
+	j.present = true
+	return nil
+}
+
+// Value returns the decoded primitive payload.
+func (j *TypeMultipleOnlyTwoOptions) Value() any {
+	if j == nil {
+		return nil
+	}
+	return j.value
 }

@@ -28,6 +28,9 @@ import (
 	testFormatURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
 	testFormatURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
+	testMultiTypeEmbedded "github.com/atombender/go-jsonschema/tests/data/multiTypePrimitive/embeddedInStruct"
+	testMultiTypeAll "github.com/atombender/go-jsonschema/tests/data/multiTypePrimitive/stringNumberBoolNull"
+	testMultiTypeStrNum "github.com/atombender/go-jsonschema/tests/data/multiTypePrimitive/stringOrNumber"
 	testOneOfDiscAnimal "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/animal"
 	testOneOfNoDisc "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/noDiscriminator"
 	testOneOfDiscNumeric "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/numericKind"
@@ -1689,6 +1692,123 @@ func TestJsonUnmarshalConditionalDiscriminatorEnumForm(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "hex")
 		assert.Contains(t, err.Error(), "color='navy'")
+	})
+}
+
+// TestJsonUnmarshalMultiTypePrimitive exercises the runtime behavior of
+// the multi-type-union wrapper: each kind round-trips correctly,
+// out-of-set kinds are rejected, and the per-input/MarshalJSON contract
+// matches the existing primitive `oneOf` wrapper (since they share emit).
+func TestJsonUnmarshalMultiTypePrimitive(t *testing.T) {
+	t.Parallel()
+
+	// stringOrNumber: 2 kinds, no null. Round-trip + cross-kind rejection.
+	t.Run("stringOrNumber: string round-trips", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeStrNum.StringOrNumber
+
+		require.NoError(t, json.Unmarshal([]byte(`"hello"`), &v))
+		s, ok := v.AsString()
+		require.True(t, ok)
+		assert.Equal(t, "hello", s)
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, `"hello"`, string(out))
+	})
+
+	t.Run("stringOrNumber: number round-trips", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeStrNum.StringOrNumber
+
+		require.NoError(t, json.Unmarshal([]byte(`42.5`), &v))
+		n, ok := v.AsNumber()
+		require.True(t, ok)
+		assert.InDelta(t, 42.5, n, 1e-9)
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, `42.5`, string(out))
+	})
+
+	t.Run("stringOrNumber: wrong kind (boolean) rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeStrNum.StringOrNumber
+
+		err := json.Unmarshal([]byte(`true`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "StringOrNumber")
+		assert.Contains(t, err.Error(), "unsupported JSON value of type bool")
+	})
+
+	t.Run("stringOrNumber: explicit null rejected (null not in union)", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeStrNum.StringOrNumber
+
+		err := json.Unmarshal([]byte(`null`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported JSON value of type <nil>")
+	})
+
+	// stringNumberBoolNull: all 4 kinds. One subtest per kind + null
+	// behavior since this union DOES include null.
+	t.Run("stringNumberBoolNull: each kind accepted and round-trips", func(t *testing.T) {
+		t.Parallel()
+
+		cases := []struct {
+			payload string
+		}{
+			{`"x"`},
+			{`1.5`},
+			{`true`},
+			{`null`},
+		}
+
+		for _, tc := range cases {
+			var v testMultiTypeAll.StringNumberBoolNull
+			require.NoError(t, json.Unmarshal([]byte(tc.payload), &v),
+				"payload %q failed to unmarshal", tc.payload)
+
+			out, err := json.Marshal(&v)
+			require.NoError(t, err)
+			assert.JSONEq(t, tc.payload, string(out))
+		}
+	})
+
+	t.Run("stringNumberBoolNull: explicit null sets IsNull", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeAll.StringNumberBoolNull
+		require.NoError(t, json.Unmarshal([]byte(`null`), &v))
+		assert.True(t, v.IsNull())
+	})
+
+	// embeddedInStruct: confirms the wrapper integrates into a parent
+	// struct's UnmarshalJSON correctly with pointer policy applied.
+	t.Run("embeddedInStruct: required parent field + optional wrapper field", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeEmbedded.EmbeddedInStruct
+
+		require.NoError(t, json.Unmarshal([]byte(`{"label":"l","valueOptional":"v"}`), &v))
+		assert.Equal(t, "l", v.Label)
+		require.NotNil(t, v.ValueOptional)
+		s, ok := v.ValueOptional.AsString()
+		require.True(t, ok)
+		assert.Equal(t, "v", s)
+	})
+
+	t.Run("embeddedInStruct: optional field absent → wrapper pointer nil", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiTypeEmbedded.EmbeddedInStruct
+		require.NoError(t, json.Unmarshal([]byte(`{"label":"l"}`), &v))
+		assert.Equal(t, "l", v.Label)
+		assert.Nil(t, v.ValueOptional)
 	})
 }
 

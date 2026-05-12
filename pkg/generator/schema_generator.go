@@ -315,9 +315,18 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	// `oneOf` wrapper has no other API surface (only an unexported `value`
 	// field), so without those methods consumers can't construct, inspect,
 	// or unmarshal the type. Fall back to the regular generation path in
-	// that mode so the resulting type stays usable.
+	// that mode so the resulting type stays usable. Same reasoning applies
+	// to the multi-type-union form below.
 	if isPrimitiveOneOf(t) && !g.config.OnlyModels {
 		return g.generateOneOfPrimitive(t, scope)
+	}
+
+	// Multi-type-union form: `{"type": ["string", "number", ...]}`.
+	// Wire-equivalent to a primitive `oneOf` of single-typed variants;
+	// routed through the same wrapper. Mutually exclusive with
+	// isPrimitiveOneOf above (one uses t.OneOf, the other uses t.Type).
+	if isPrimitiveMultiTypeUnion(t) && !g.config.OnlyModels {
+		return g.generatePrimitiveMultiTypeUnion(t, scope)
 	}
 
 	// Object oneOf with a natural discriminator: emit the holder + variant
@@ -1445,6 +1454,18 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			}
 
 			return codegen.WrapTypeInPointer(dt), nil
+		}
+
+		// Multi-type-union form: route through generateDeclaredType so the
+		// wrapper gets a full declaration rather than being inlined as
+		// interface{}. Same delegation pattern as primitive oneOf (line
+		// 1437) and the discriminated oneOf paths (1444). isPrimitiveMulti-
+		// TypeUnion declines on the `["X", "null"]` shape (handled by line
+		// 1450 above as *X) and on integer/non-primitive/constrained
+		// unions (which fall through to the warn-and-interface{} path
+		// below, preserving existing behavior).
+		if isPrimitiveMultiTypeUnion(t) {
+			return g.generateDeclaredType(t, scope)
 		}
 
 		if len(t.Type) > 1 && !typeIsNullable {
