@@ -142,7 +142,7 @@ func TestLoadKnownSchemas(t *testing.T) {
 
 	yamlExts := []string{".yml", ".yaml"}
 
-	t.Run("nil entries returns empty cache", func(t *testing.T) {
+	t.Run("nil entries returns nil cache (preserves default-loader path)", func(t *testing.T) {
 		t.Parallel()
 
 		got, err := loadKnownSchemas(nil, yamlExts)
@@ -150,12 +150,11 @@ func TestLoadKnownSchemas(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if got == nil {
-			t.Fatal("expected non-nil empty cache, got nil")
-		}
-
-		if len(got) != 0 {
-			t.Fatalf("expected empty cache, got %v", got)
+		// Must be nil (not empty-non-nil) so the caller's nil-check on
+		// Config.Cache stays accurate and the default loader chain is
+		// used. CR finding from fork PR #15.
+		if got != nil {
+			t.Fatalf("expected nil cache for empty entries, got %v", got)
 		}
 	})
 
