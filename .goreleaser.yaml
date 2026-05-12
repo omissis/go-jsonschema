@@ -37,62 +37,36 @@ release:
     name: go-jsonschema
   name_template: "{{ .Tag }}"
   prerelease: auto
-brews:
+homebrew_casks:
   - name: go-jsonschema
+    description: go-jsonschema binary
+    url:
+      verified: github.com/omissis/go-jsonschema
+    homepage: https://github.com/omissis/go-jsonschema
     repository:
       owner: omissis
       name: homebrew-go-jsonschema
     skip_upload: auto
-    directory: Formula
-    homepage: https://gihub.com/omissis/go-jsonschema
-    description: go-jsonschema binary
-    test: |
-      system "#{bin}/go-jsonschema"
-    install: |
-      bin.install 'go-jsonschema'
-dockers:
-  - skip_push: auto
-    use: buildx
-    image_templates:
-      - omissis/go-jsonschema:{{ .Version }}-amd64
-    build_flag_templates:
-      - --target=go-jsonschema
-      - --label=org.opencontainers.image.created={{.Date}}
-      - --label=org.opencontainers.image.title={{.ProjectName}}
-      - --label=org.opencontainers.image.revision={{.FullCommit}}
-      - --label=org.opencontainers.image.version={{.Version}}
-      - --platform=linux/amd64
-    goarch: amd64
-  - skip_push: auto
-    use: buildx
-    image_templates:
-      - omissis/go-jsonschema:{{ .Version }}-arm64v8
-    build_flag_templates:
-      - --target=go-jsonschema
-      - --label=org.opencontainers.image.created={{.Date}}
-      - --label=org.opencontainers.image.title={{.ProjectName}}
-      - --label=org.opencontainers.image.revision={{.FullCommit}}
-      - --label=org.opencontainers.image.version={{.Version}}
-      - --platform=linux/arm64/v8
-    goarch: arm64
-docker_manifests:
-  - skip_push: auto
-    name_template: omissis/go-jsonschema:latest
-    image_templates:
-      - omissis/go-jsonschema:{{ .Version }}-amd64
-      - omissis/go-jsonschema:{{ .Version }}-arm64v8
-  - skip_push: auto
-    name_template: omissis/go-jsonschema:{{ .Major }}
-    image_templates:
-      - omissis/go-jsonschema:{{ .Version }}-amd64
-      - omissis/go-jsonschema:{{ .Version }}-arm64v8
-  - skip_push: auto
-    name_template: omissis/go-jsonschema:{{ .Major }}.{{ .Minor }}
-    image_templates:
-      - omissis/go-jsonschema:{{ .Version }}-amd64
-      - omissis/go-jsonschema:{{ .Version }}-arm64v8
-  - skip_push: auto
-    name_template: omissis/go-jsonschema:{{ .Version }}
-    image_templates:
-      - omissis/go-jsonschema:{{ .Version }}-amd64
-      - omissis/go-jsonschema:{{ .Version }}-arm64v8
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/go-jsonschema"]
+          end
+dockers_v2:
+  - images:
+      - "omissis/go-jsonschema"
+    flags:
+      - "--target=go-jsonschema"
+      - "--builder=container"
+    tags:
+      - "v{{ .Version }}"
+      - "{{ if .IsNightly }}nightly{{ end }}"
+      - "{{ if not .IsNightly }}latest{{ end }}"
+    labels:
+      "org.opencontainers.image.description": "A tool to generate Go data types from JSON Schema definitions."
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"

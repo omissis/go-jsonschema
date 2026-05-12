@@ -17,20 +17,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
       - name: Fetch all tags
         run: git fetch --force --tags
       - name: Setup Golang
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
-          go-version: 1.25.7
+          go-version: 1.25.10
       - name: Setup workspace
         run: cp go.work.dist go.work
+      - name: Create dedicated docker buildx builder instance
+        run: docker buildx create --driver=docker-container --name container
       - name: Run GoReleaser for release
-        uses: goreleaser/goreleaser-action@v7
+        uses: goreleaser/goreleaser-action@1a80836c5c9d9e5755a25cb59ec6f45a3b5f41a8 # v7
         with:
           distribution: goreleaser
-          version: 2.14.1
+          version: 2.15.4
           args: release --verbose --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GO_VERSION: 1.25.7
+          GO_VERSION: 1.25.10

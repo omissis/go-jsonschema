@@ -20,6 +20,8 @@ linters:
     - perfsprint
     - revive
     - varnamelen
+    # deprecated
+    - gomodguard
     # unsupported
     - rowserrcheck
     - sqlclosecheck
@@ -28,10 +30,14 @@ linters:
     # disabled
     - noinlineerr
   settings:
+    goconst:
+      ignore-string-values:
+        - 'bool'
+        - 'int'
+        - 'string'
+        - 'time'
     gosec:
       excludes:
-        # todo
-        - G704
         # disabled
         - G705
     govet:
