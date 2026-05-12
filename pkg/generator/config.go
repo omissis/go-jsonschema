@@ -111,6 +111,15 @@ var ErrInvalidImportAlias = errors.New(
 	"invalid ImportAlias on SchemaMapping (must be a non-keyword Go identifier)",
 )
 
+// ErrConflictingImportAlias is returned when two SchemaMappings declare the
+// same PackageName but different ImportAlias values. resolveImportAlias picks
+// whichever it iterates over first, so the inconsistency would silently
+// degrade to one alias winning and the other being ignored. Reject at New()
+// so the conflict surfaces at the configuration boundary.
+var ErrConflictingImportAlias = errors.New(
+	"conflicting ImportAlias values for the same PackageName on SchemaMappings",
+)
+
 // IsValid reports whether the mode is one of the documented values.
 func (m StrictAdditionalPropertiesMode) IsValid() bool {
 	switch m {

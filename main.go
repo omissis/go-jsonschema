@@ -375,11 +375,20 @@ func stringSliceToStringMap(s []string) (map[string]string, error) {
 // FileLoader.parseFile. Duplicate URLs are rejected at flag-parse time
 // rather than silently overwriting (last-write-wins would mask copy/paste
 // mistakes in long flag lists).
+//
+// Returns (nil, nil) when no entries are supplied so that
+// generator.Config.Cache stays nil and the caller takes the historical
+// NewDefaultCacheLoader path. Without the explicit nil, an empty
+// non-nil map would route through NewCachedLoader with a no-op
+// pre-populated cache — same runtime behavior in practice but a
+// behavior-different code path that bypasses the default-loader path
+// for no benefit.
 func loadKnownSchemas(entries, yamlExtensions []string) (map[string]*schemas.Schema, error) {
-	cache := make(map[string]*schemas.Schema, len(entries))
 	if len(entries) == 0 {
-		return cache, nil
+		return nil, nil //nolint: nilnil // see docstring: nil cache => default-loader path
 	}
+
+	cache := make(map[string]*schemas.Schema, len(entries))
 
 	yamlExtSet := map[string]bool{}
 	for _, ext := range yamlExtensions {

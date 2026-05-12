@@ -388,6 +388,63 @@ func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
 	}
 }
 
+// TestSchemaPackageRejectsConflictingImportAlias asserts New() rejects two
+// SchemaMappings that bind the same PackageName to different aliases —
+// resolveImportAlias would silently pick whichever it iterates over first
+// and ignore the other. CR finding from fork PR #15.
+func TestSchemaPackageRejectsConflictingImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schemaA",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1",
+		},
+		{
+			SchemaID:    "https://example.com/schemaB",
+			PackageName: "example.com/foo/v1", // same package
+			ImportAlias: "different",          // conflicting alias
+		},
+	}
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject conflicting aliases, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrConflictingImportAlias) {
+		t.Errorf("expected ErrConflictingImportAlias, got %v", err)
+	}
+}
+
+// TestSchemaPackageAcceptsRedundantImportAlias confirms the conflict guard
+// only fires on DIFFERENT aliases for the same package — two mappings with
+// the SAME alias are redundant but legal (both happen to want the same
+// override, so resolveImportAlias picks consistently).
+func TestSchemaPackageAcceptsRedundantImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schemaA",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1",
+		},
+		{
+			SchemaID:    "https://example.com/schemaB",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1", // same alias — no conflict
+		},
+	}
+
+	if _, err := generator.New(cfg); err != nil {
+		t.Fatalf("expected redundant-but-matching aliases to be accepted, got %v", err)
+	}
+}
+
 func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
 	t.Parallel()
 
