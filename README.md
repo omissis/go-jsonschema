@@ -193,6 +193,7 @@ only specific validations remain to be fully implemented.
     * [ ] `anyOf`
     * [x] `oneOf` (primitive variants only — `string`, `number`, `boolean`, `null`; **note**: `integer`-typed variants are not currently routed through the wrapper, and object discriminated unions are pending)
     * [ ] `not`
+  * [x] Multi-type unions (§4.2.1) — `{"type": ["string", "number", "boolean", "null"]}` is wire-equivalent to a primitive `oneOf` and routes through the same wrapper. Same primitive set as `oneOf`; same `integer` exclusion. The `["X", "null"]` shape continues to use `*X` for ergonomics; non-primitive types in the union (`object`, `array`) and per-value validation keywords on the union (`format`, `minimum`, etc.) decline detection and fall back to `interface{}`.
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times
     * [x] Email addresses (opt-in via `Config.FormatValidation`)
