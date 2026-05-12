@@ -156,10 +156,10 @@ only specific validations remain to be fully implemented.
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
-  * [ ] Conditional subschemas (§6.6)
-    * [ ] `if`
-    * [ ] `then`
-    * [ ] `else`
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's required-field check. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check (extra `required`/composition/validation keywords decline detection)
+    * [x] `if`
+    * [x] `then`
+    * [x] `else`
   * [ ] Boolean subschemas (§6.7)
     * [ ] `allOf`
     * [ ] `anyOf`

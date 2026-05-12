@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	testCondDiscBasic "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/basic"
+	testCondDiscEnumIf "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIf"
+	testCondDiscConstAndEnum "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfConstAndEnum"
+	testCondDiscManyValues "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfManyValues"
+	testCondDiscMixed "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfMixedWithConst"
+	testCondDiscOverlap "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfOverlapping"
+	testCondDiscEnumElse "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfWithElse"
 	testCondDiscWithElse "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/withElse"
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
@@ -1504,6 +1510,185 @@ func TestJsonUnmarshalConditionalDiscriminator(t *testing.T) {
 		err := json.Unmarshal([]byte(`{"category":"secondary","weight":5}`), &v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "label")
+	})
+}
+
+// TestJsonUnmarshalConditionalDiscriminatorEnumForm exercises the runtime
+// behavior of the enum-form discriminator dispatch: per-variant required
+// enforcement when discStr is in the branch's value set, runtime
+// interpolation of the offending value into the error message, and the
+// const-vs-enum precedence + overlapping-branch semantics.
+func TestJsonUnmarshalConditionalDiscriminatorEnumForm(t *testing.T) {
+	t.Parallel()
+
+	// enumIf: 4-value enum branch requires `value`; the parent enum has a
+	// fifth value `eq` that does NOT trigger the branch.
+	t.Run("enumIf: gt with value succeeds", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumIf.EnumIf
+		require.NoError(t, json.Unmarshal([]byte(`{"operator":"gt","value":1.5}`), &v))
+	})
+
+	t.Run("enumIf: gt without value rejected with operator='gt' in error", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumIf.EnumIf
+
+		err := json.Unmarshal([]byte(`{"operator":"gt"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "value")
+		assert.Contains(t, err.Error(), "operator='gt'")
+	})
+
+	t.Run("enumIf: lte without value rejected with operator='lte' in error", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumIf.EnumIf
+
+		err := json.Unmarshal([]byte(`{"operator":"lte"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "operator='lte'")
+	})
+
+	t.Run("enumIf: eq is in parent enum but NOT in branch set, no value required", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumIf.EnumIf
+		require.NoError(t, json.Unmarshal([]byte(`{"operator":"eq"}`), &v))
+	})
+
+	// enumIfWithElse: 3-value enum then-branch requires billingId; else
+	// branch fires for the fourth value (free) and requires freeReason.
+	t.Run("enumIfWithElse: premium requires billingId", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumElse.EnumIfWithElse
+		require.NoError(t, json.Unmarshal([]byte(`{"tier":"premium","billingId":"b1"}`), &v))
+	})
+
+	t.Run("enumIfWithElse: silver missing billingId rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumElse.EnumIfWithElse
+
+		err := json.Unmarshal([]byte(`{"tier":"silver"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "billingId")
+		assert.Contains(t, err.Error(), "tier='silver'")
+	})
+
+	t.Run("enumIfWithElse: free triggers else, requires freeReason", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscEnumElse.EnumIfWithElse
+		require.NoError(t, json.Unmarshal([]byte(`{"tier":"free","freeReason":"trial"}`), &v))
+
+		err := json.Unmarshal([]byte(`{"tier":"free"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "freeReason")
+		assert.Contains(t, err.Error(), "tier!='free'")
+	})
+
+	t.Run("enumIfWithElse: premium does NOT trigger else", func(t *testing.T) {
+		t.Parallel()
+
+		// premium with billingId but no freeReason should succeed.
+		var v testCondDiscEnumElse.EnumIfWithElse
+		require.NoError(t, json.Unmarshal([]byte(`{"tier":"premium","billingId":"b1"}`), &v))
+	})
+
+	// enumIfMixedWithConst: const branch + enum branch on the same key.
+	// create requires payload (const form), update/patch require id+payload
+	// (enum form with runtime discStr in error).
+	t.Run("enumIfMixedWithConst: const branch error uses static format", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscMixed.EnumIfMixedWithConst
+
+		err := json.Unmarshal([]byte(`{"kind":"create"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "payload")
+		assert.Contains(t, err.Error(), "kind='create'")
+	})
+
+	t.Run("enumIfMixedWithConst: enum branch error interpolates discStr", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscMixed.EnumIfMixedWithConst
+
+		err := json.Unmarshal([]byte(`{"kind":"patch","id":"x"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "payload")
+		// Specifically `kind='patch'` not `kind='update'` — proves the runtime
+		// interpolation works and didn't pin to the first value in the set.
+		assert.Contains(t, err.Error(), "kind='patch'")
+	})
+
+	t.Run("enumIfMixedWithConst: delete fires no branch, accepts minimal input", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscMixed.EnumIfMixedWithConst
+		require.NoError(t, json.Unmarshal([]byte(`{"kind":"delete"}`), &v))
+	})
+
+	// enumIfOverlapping: const "dog" + enum ["dog","cat"]. dog activates
+	// BOTH branches; cat only the second.
+	t.Run("enumIfOverlapping: dog requires both bark and age", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscOverlap.EnumIfOverlapping
+		require.NoError(t, json.Unmarshal([]byte(`{"species":"dog","bark":"woof","age":3}`), &v))
+
+		err := json.Unmarshal([]byte(`{"species":"dog","bark":"woof"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "age")
+
+		err = json.Unmarshal([]byte(`{"species":"dog","age":3}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "bark")
+	})
+
+	t.Run("enumIfOverlapping: cat requires age only (const-dog branch silent)", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscOverlap.EnumIfOverlapping
+		require.NoError(t, json.Unmarshal([]byte(`{"species":"cat","age":7}`), &v))
+
+		err := json.Unmarshal([]byte(`{"species":"cat"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "age")
+		assert.Contains(t, err.Error(), "species='cat'")
+	})
+
+	// enumIfConstAndEnum: const "a" + enum ["a","b"] on the same property.
+	// Const wins (more specific) — only kind == "a" should trigger the
+	// required check, not "b".
+	t.Run("enumIfConstAndEnum: const precedence — only 'a' triggers", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscConstAndEnum.EnumIfConstAndEnum
+
+		err := json.Unmarshal([]byte(`{"kind":"a"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "details")
+
+		// `b` is in the parent enum and the if-clause enum, but const-precedence
+		// means only the const value `a` activates the branch.
+		require.NoError(t, json.Unmarshal([]byte(`{"kind":"b"}`), &v))
+	})
+
+	// enumIfManyValues: 20-value enum, all require hex.
+	t.Run("enumIfManyValues: arbitrary value triggers requirement", func(t *testing.T) {
+		t.Parallel()
+
+		var v testCondDiscManyValues.EnumIfManyValues
+		require.NoError(t, json.Unmarshal([]byte(`{"color":"magenta","hex":"#f0f"}`), &v))
+
+		err := json.Unmarshal([]byte(`{"color":"navy"}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "hex")
+		assert.Contains(t, err.Error(), "color='navy'")
 	})
 }
 
