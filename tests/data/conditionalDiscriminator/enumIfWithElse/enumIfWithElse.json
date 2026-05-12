@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumIfWithElse",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tier": {
+      "type": "string",
+      "enum": [
+        "premium",
+        "gold",
+        "silver",
+        "free"
+      ]
+    },
+    "billingId": {
+      "type": "string"
+    },
+    "freeReason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tier"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tier": {
+            "enum": [
+              "premium",
+              "gold",
+              "silver"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "billingId"
+        ]
+      },
+      "else": {
+        "required": [
+          "freeReason"
+        ]
+      }
+    }
+  ]
+}
