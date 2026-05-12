@@ -331,7 +331,7 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 	}
 
 	addMethod("Value", emitOneOfPrimitiveValue(name))
-	addMethod("IsZero", emitOneOfPrimitiveIsZero(name))
+	addMethod("IsZero", emitOneOfPrimitiveIsZero(name, kinds.has(primitiveKindNull)))
 
 	if kinds.has(primitiveKindString) {
 		addMethod("AsString", emitOneOfPrimitiveAsString(name))
@@ -565,13 +565,21 @@ func emitOneOfPrimitiveValue(typeName string) func(*codegen.Emitter) error {
 	}
 }
 
-func emitOneOfPrimitiveIsZero(typeName string) func(*codegen.Emitter) error {
+// emitOneOfPrimitiveIsZero emits the IsZero accessor + its docstring. The
+// `see IsNull` cross-reference is conditional on hasNull because IsNull is
+// only emitted when the union includes `null` (see line 348-349); without
+// the condition the docstring would point at a non-existent method on
+// non-nullable wrappers.
+func emitOneOfPrimitiveIsZero(typeName string, hasNull bool) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
-		out.Commentf(
-			"IsZero reports whether the wrapper has not been populated by " +
-				"Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. " +
-				"Note: an explicitly-decoded JSON `null` is NOT zero — see IsNull.",
-		)
+		comment := "IsZero reports whether the wrapper has not been populated by " +
+			"Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag."
+
+		if hasNull {
+			comment += " Note: an explicitly-decoded JSON `null` is NOT zero — see IsNull."
+		}
+
+		out.Commentf(comment)
 		out.Printlnf("func (j *%s) IsZero() bool {", typeName)
 		out.Indent(1)
 		out.Printlnf("return j == nil || !j.present")
