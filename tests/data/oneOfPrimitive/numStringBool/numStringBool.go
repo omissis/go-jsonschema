@@ -46,8 +46,7 @@ func (j *NumStringBoolValue) AsString() (string, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *NumStringBoolValue) IsZero() bool {
 	return j == nil || !j.present
 }

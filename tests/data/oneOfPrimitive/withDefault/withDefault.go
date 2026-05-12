@@ -54,8 +54,7 @@ func (j *WithDefaultDebug) AsString() (string, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *WithDefaultDebug) IsZero() bool {
 	return j == nil || !j.present
 }
@@ -167,8 +166,7 @@ func (j *WithDefaultLabel) AsString() (string, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *WithDefaultLabel) IsZero() bool {
 	return j == nil || !j.present
 }
@@ -281,8 +279,7 @@ func (j *WithDefaultMismatch) AsString() (string, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *WithDefaultMismatch) IsZero() bool {
 	return j == nil || !j.present
 }
@@ -520,8 +517,7 @@ func (j *WithDefaultTab) AsString() (string, bool) {
 }
 
 // IsZero reports whether the wrapper has not been populated by
-// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag. Note: an
-// explicitly-decoded JSON `null` is NOT zero — see IsNull.
+// Unmarshal{JSON,YAML}; supports the encoding/json `omitzero` tag.
 func (j *WithDefaultTab) IsZero() bool {
 	return j == nil || !j.present
 }
