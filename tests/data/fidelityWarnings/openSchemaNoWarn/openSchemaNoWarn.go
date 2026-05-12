@@ -2,4 +2,4 @@
 
 package test
 
-type OpenSchemaNoWarn interface{}
+type OpenSchemaNoWarn map[string]interface{}

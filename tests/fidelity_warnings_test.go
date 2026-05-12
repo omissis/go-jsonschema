@@ -16,6 +16,17 @@ import (
 // emitted when a schema declares enforcement-implying keywords but degrades
 // to interface{} fires for the right schemas and stays silent for genuinely
 // open schemas.
+//
+// Note on the ifThenSilentDrop fixture: its allOf deliberately carries a
+// `{"type": "string"}` member alongside the if/then branches. Upstream
+// (omissis/go-jsonschema#590) made isPrimitiveTypeList require at least one
+// member to contribute a real primitive type, so an allOf of *only* typeless
+// conditionals no longer collapses the surrounding object — it now generates a
+// proper struct, and this warning correctly stays silent for it. The primitive
+// member is what still drives MergeTypes down its primitive short circuit,
+// dropping the parent's object shape and producing the interface{} fallback
+// this test is about. Do not remove it as redundant: without it the schema
+// generates cleanly and the test no longer exercises the warning at all.
 func TestFidelityWarningsBehavior(t *testing.T) {
 	t.Parallel()
 
