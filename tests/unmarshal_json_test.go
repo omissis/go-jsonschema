@@ -612,12 +612,13 @@ func TestOneOfEnvelopeRefEnumDiscriminatorOptionalTypeUnmarshalJSON(t *testing.T
 		assert.Contains(t, err.Error(), `"x"`)
 	})
 
-	t.Run("failure/missing_type_unknown_discriminator", func(t *testing.T) {
+	t.Run("success/missing_type_selects_no_branch", func(t *testing.T) {
 		t.Parallel()
 
 		var v testOneOfEnvelopeRefEnumDiscriminatorOptionalType.OneOfEnvelopeRefEnumDiscriminatorOptionalType
-		err := json.Unmarshal([]byte(`{"value":{"sub_a":"hello"}}`), &v)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "unknown discriminator value")
+		require.NoError(t, json.Unmarshal([]byte(`{"value":{"sub_a":"hello"}}`), &v))
+		assert.Nil(t, v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.Nil(t, v.Value.B)
 	})
 }

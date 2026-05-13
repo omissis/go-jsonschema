@@ -276,6 +276,13 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 
 	// Required fields (for presence check).
 	requiredFields := schemaType.Required
+	discRequired := false
+	for _, req := range requiredFields {
+		if req == ext.Discriminator {
+			discRequired = true
+			break
+		}
+	}
 	discJSONName := ext.Discriminator
 	discGoName := g.caser.Identifierize(discJSONName)
 	discTypeName := ""
@@ -326,6 +333,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	capturedBranches := branches
 	capturedPayloadTypeName := payloadTypeName
 	capturedRequired := requiredFields
+	capturedDiscRequired := discRequired
 	capturedDiscJSON := discJSONName
 	capturedDiscGoName := discGoName
 	capturedDiscTypeName := discTypeName
@@ -383,6 +391,13 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				out.Printlnf("discriminator := j.%s", capturedDiscGoName)
 			} else {
 				out.Printlnf("discriminator, _ := raw[%q].(string)", capturedDiscJSON)
+			}
+			if !capturedDiscRequired {
+				out.Printlnf("if _, ok := raw[%q]; !ok {", capturedDiscJSON)
+				out.Indent(1)
+				out.Printlnf("return nil")
+				out.Indent(-1)
+				out.Printlnf("}")
 			}
 
 			// --- discriminator routing ---

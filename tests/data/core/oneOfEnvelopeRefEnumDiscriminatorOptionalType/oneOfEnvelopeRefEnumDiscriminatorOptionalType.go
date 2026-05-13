@@ -179,6 +179,9 @@ func (j *OneOfEnvelopeRefEnumDiscriminatorOptionalType) UnmarshalJSON(b []byte) 
 		}
 	}
 	discriminator, _ := raw["type"].(string)
+	if _, ok := raw["type"]; !ok {
+		return nil
+	}
 	switch discriminator {
 	case "a":
 		var v AValue
