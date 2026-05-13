@@ -275,11 +275,44 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	// Required fields (for presence check).
 	requiredFields := schemaType.Required
 	discJSONName := ext.Discriminator
+	discGoName := g.caser.Identifierize(discJSONName)
+	discTypeName := ""
+	useEnumRouting := false
+
+	// Try to resolve the generated Go field/type for discriminator routing.
+	if outerStruct, ok := decl.Type.(*codegen.StructType); ok {
+		for _, sf := range outerStruct.Fields {
+			if sf.JSONName != discJSONName {
+				continue
+			}
+
+			discGoName = sf.Name
+
+			switch ft := sf.Type.(type) {
+			case *codegen.NamedType:
+				discTypeName = ft.Decl.Name
+			case *codegen.PointerType:
+				if nt, ok := ft.Type.(*codegen.NamedType); ok {
+					discTypeName = nt.Decl.Name
+				}
+			}
+
+			break
+		}
+	}
+
+	// Use enum constants for switch routing only when discriminator is an enum.
+	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && len(discProp.Enum) > 0 {
+		useEnumRouting = true
+	}
 
 	capturedBranches := branches
 	capturedPayloadTypeName := payloadTypeName
 	capturedRequired := requiredFields
 	capturedDiscJSON := discJSONName
+	capturedDiscGoName := discGoName
+	capturedDiscTypeName := discTypeName
+	capturedUseEnumRouting := useEnumRouting
 	capturedEnvJSONName := envJSONName
 	capturedEnvGoName := envGoName
 	capturedDeclName := decl.Name
@@ -314,8 +347,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				out.Printlnf("}")
 			}
 
-			// --- grab discriminator + raw value payload ---
-			out.Printlnf("discriminator, _ := raw[%q].(string)", capturedDiscJSON)
+			// --- grab raw value payload ---
 			out.Printlnf("valueRaw, err := json.Marshal(raw[%q])", capturedEnvJSONName)
 			out.Printlnf("if err != nil { return err }")
 
@@ -325,11 +357,25 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			out.Printlnf("if err := json.Unmarshal(b, &plain); err != nil { return err }")
 			out.Printlnf("*j = %s(plain)", capturedDeclName)
 
+			if capturedUseEnumRouting {
+				out.Printlnf("discriminator := j.%s", capturedDiscGoName)
+			} else {
+				out.Printlnf("discriminator, _ := raw[%q].(string)", capturedDiscJSON)
+			}
+
 			// --- discriminator routing ---
-			out.Printlnf("switch discriminator {")
+			if capturedUseEnumRouting {
+				out.Printlnf("switch j.%s {", capturedDiscGoName)
+			} else {
+				out.Printlnf("switch discriminator {")
+			}
 
 			for _, b := range capturedBranches {
-				out.Printlnf("case %q:", b.discVal)
+				if capturedUseEnumRouting {
+					out.Printlnf("case %s:", g.makeEnumConstantName(capturedDiscTypeName, b.discVal))
+				} else {
+					out.Printlnf("case %q:", b.discVal)
+				}
 				out.Indent(1)
 				out.Printlnf("var v %s", b.typeName)
 				out.Printlnf("if err := json.Unmarshal(valueRaw, &v); err != nil {")
