@@ -163,6 +163,12 @@ func (g *schemaGenerator) generateOneOfEnvelopeValueType(
 // generateOneOfEnvelopeMarshal attaches a MarshalJSON to the union container type.
 // It marshals whichever of the pointer fields is non-nil; if the count is not
 // exactly one it returns an error.
+//
+// Note: UnmarshalJSON is intentionally NOT generated for the union container.
+// Decoding depends on the discriminator field of the outer envelope struct, so
+// the routing entry point is always the outer type's UnmarshalJSON. Generating
+// a standalone UnmarshalJSON on the container would require guessing the branch
+// without the discriminator context and could silently accept ambiguous payloads.
 func (g *schemaGenerator) generateOneOfEnvelopeMarshal(
 	decl *codegen.TypeDecl,
 	branches []envelopeBranchInfo,

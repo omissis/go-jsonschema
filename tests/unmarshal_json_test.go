@@ -448,7 +448,7 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(`{"dummy":"x","type":"a","value":{"sub_a":"hello"}}`), &v))
 
 		assert.Equal(t, ptr("x"), v.Dummy)
-		assert.Equal(t, "a", v.Type)
+		assert.Equal(t, testOneOfEnvelope.OneOfEnvelopeTypeA, v.Type)
 		assert.NotNil(t, v.Value.A)
 		assert.Equal(t, "hello", v.Value.A.SubA)
 		assert.Nil(t, v.Value.B)
@@ -462,7 +462,7 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(`{"dummy":"x","type":"b","value":{"sub_b":10}}`), &v))
 
 		assert.Equal(t, ptr("x"), v.Dummy)
-		assert.Equal(t, "b", v.Type)
+		assert.Equal(t, testOneOfEnvelope.OneOfEnvelopeTypeB, v.Type)
 		assert.Nil(t, v.Value.A)
 		assert.NotNil(t, v.Value.B)
 		assert.Equal(t, 10, v.Value.B.SubB)
@@ -476,7 +476,7 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(`{"dummy":"x","type":"c","value":{"sub_c":true}}`), &v))
 
 		assert.Equal(t, ptr("x"), v.Dummy)
-		assert.Equal(t, "c", v.Type)
+		assert.Equal(t, testOneOfEnvelope.OneOfEnvelopeTypeC, v.Type)
 		assert.Nil(t, v.Value.A)
 		assert.Nil(t, v.Value.B)
 		assert.NotNil(t, v.Value.C)
@@ -486,10 +486,13 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 	t.Run("failure/unknown_discriminator", func(t *testing.T) {
 		t.Parallel()
 
+		// "x" is not a valid enum value for the type field; the enum validator
+		// fires before the envelope routing switch, so the error is about
+		// the invalid enum value rather than an unknown discriminator.
 		var v testOneOfEnvelope.OneOfEnvelope
 		err := json.Unmarshal([]byte(`{"dummy":"x","type":"x","value":{}}`), &v)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "unknown discriminator")
+		assert.Contains(t, err.Error(), `"x"`)
 	})
 
 	t.Run("failure/type_a_pattern_violation", func(t *testing.T) {

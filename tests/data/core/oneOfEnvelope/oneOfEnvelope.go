@@ -6,6 +6,7 @@ import "encoding/json"
 import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "reflect"
 import "regexp"
 
 type AValue struct {
@@ -149,10 +150,62 @@ type OneOfEnvelope struct {
 	Dummy *string `json:"dummy,omitempty,omitzero" yaml:"dummy,omitempty" mapstructure:"dummy,omitempty"`
 
 	// Type corresponds to the JSON schema field "type".
-	Type string `json:"type" yaml:"type" mapstructure:"type"`
+	Type OneOfEnvelopeType `json:"type" yaml:"type" mapstructure:"type"`
 
 	// Value corresponds to the JSON schema field "value".
 	Value Payload `json:"value" yaml:"value" mapstructure:"value"`
+}
+
+type OneOfEnvelopeType string
+
+const OneOfEnvelopeTypeA OneOfEnvelopeType = "a"
+const OneOfEnvelopeTypeB OneOfEnvelopeType = "b"
+const OneOfEnvelopeTypeC OneOfEnvelopeType = "c"
+
+var enumValues_OneOfEnvelopeType = []interface{}{
+	"a",
+	"b",
+	"c",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *OneOfEnvelopeType) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_OneOfEnvelopeType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_OneOfEnvelopeType, v)
+	}
+	*j = OneOfEnvelopeType(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *OneOfEnvelopeType) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_OneOfEnvelopeType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_OneOfEnvelopeType, v)
+	}
+	*j = OneOfEnvelopeType(v)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
