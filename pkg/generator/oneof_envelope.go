@@ -279,6 +279,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	discJSONName := ext.Discriminator
 	discGoName := g.caser.Identifierize(discJSONName)
 	discTypeName := ""
+	discTypeIsPointer := false
 	useEnumRouting := false
 
 	// Try to resolve the generated Go field/type for discriminator routing.
@@ -296,6 +297,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			case *codegen.PointerType:
 				if nt, ok := ft.Type.(*codegen.NamedType); ok {
 					discTypeName = nt.Decl.Name
+					discTypeIsPointer = true
 				}
 			}
 
@@ -305,7 +307,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 
 	// Use enum constants for switch routing only when discriminator is an enum.
 	// Support both inline enum and $ref to enum schema.
-	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" {
+	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && !discTypeIsPointer {
 		discEnumSchema := discProp
 		if discProp.Ref != "" {
 			resolved, err := g.resolveRef(discProp)
