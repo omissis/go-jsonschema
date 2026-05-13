@@ -6,10 +6,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
+	testOneOfEnvelope "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelope"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
@@ -431,4 +433,92 @@ func formatGopkgYAMLv3(v test.GopkgYAMLv3) string {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+// TestOneOfEnvelopeUnmarshalJSON verifies that the discriminator-based
+// routing produced by x-go-oneof-envelope works correctly, and that the
+// sub-type validators (pattern, minimum, required) are still executed.
+func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success/type_a", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelope.OneOfEnvelope
+		require.NoError(t, json.Unmarshal([]byte(`{"dummy":"x","type":"a","value":{"sub_a":"hello"}}`), &v))
+
+		assert.Equal(t, ptr("x"), v.Dummy)
+		assert.Equal(t, "a", v.Type)
+		assert.NotNil(t, v.Value.A)
+		assert.Equal(t, "hello", v.Value.A.SubA)
+		assert.Nil(t, v.Value.B)
+		assert.Nil(t, v.Value.C)
+	})
+
+	t.Run("success/type_b", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelope.OneOfEnvelope
+		require.NoError(t, json.Unmarshal([]byte(`{"dummy":"x","type":"b","value":{"sub_b":10}}`), &v))
+
+		assert.Equal(t, ptr("x"), v.Dummy)
+		assert.Equal(t, "b", v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.NotNil(t, v.Value.B)
+		assert.Equal(t, 10, v.Value.B.SubB)
+		assert.Nil(t, v.Value.C)
+	})
+
+	t.Run("success/type_c", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelope.OneOfEnvelope
+		require.NoError(t, json.Unmarshal([]byte(`{"dummy":"x","type":"c","value":{"sub_c":true}}`), &v))
+
+		assert.Equal(t, ptr("x"), v.Dummy)
+		assert.Equal(t, "c", v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.Nil(t, v.Value.B)
+		assert.NotNil(t, v.Value.C)
+		assert.True(t, v.Value.C.SubC)
+	})
+
+	t.Run("failure/unknown_discriminator", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelope.OneOfEnvelope
+		err := json.Unmarshal([]byte(`{"dummy":"x","type":"x","value":{}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown discriminator")
+	})
+
+	t.Run("failure/type_a_pattern_violation", func(t *testing.T) {
+		t.Parallel()
+
+		// AValue.sub_a must match ^[a-z]+$ — uppercase fails.
+		var v testOneOfEnvelope.OneOfEnvelope
+		err := json.Unmarshal([]byte(`{"dummy":"x","type":"a","value":{"sub_a":"HELLO"}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern")
+	})
+
+	t.Run("failure/type_b_minimum_violation", func(t *testing.T) {
+		t.Parallel()
+
+		// BValue.sub_b must be >= 1 — zero fails.
+		var v testOneOfEnvelope.OneOfEnvelope
+		err := json.Unmarshal([]byte(`{"dummy":"x","type":"b","value":{"sub_b":0}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be >=")
+	})
+
+	t.Run("failure/type_c_wrong_payload_shape", func(t *testing.T) {
+		t.Parallel()
+
+		// sub_c is required by CValue — supplying sub_b instead fails.
+		var v testOneOfEnvelope.OneOfEnvelope
+		err := json.Unmarshal([]byte(`{"dummy":"x","type":"c","value":{"sub_b":1}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "sub_c")
+	})
 }

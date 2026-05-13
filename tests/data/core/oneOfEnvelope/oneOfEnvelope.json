@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OneOfEnvelope",
+  "description": "Envelope with discriminator-based oneOf routing",
+  "type": "object",
+  "required": ["type", "value"],
+  "properties": {
+    "dummy": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "value": {
+      "title": "Payload",
+      "oneOf": [
+        { "$ref": "#/$defs/AValue" },
+        {
+          "title": "BValue",
+          "type": "object",
+          "required": ["sub_b"],
+          "properties": {
+            "sub_b": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        { "$ref": "#/$defs/CValue" }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "type",
+        "mapping": {
+          "a": "AValue",
+          "b": "BValue",
+          "c": "CValue"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "AValue": {
+      "title": "AValue",
+      "type": "object",
+      "required": ["sub_a"],
+      "properties": {
+        "sub_a": {
+          "type": "string",
+          "pattern": "^[a-z]+$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CValue": {
+      "title": "CValue",
+      "type": "object",
+      "required": ["sub_c"],
+      "properties": {
+        "sub_c": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
