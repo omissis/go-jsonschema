@@ -418,6 +418,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 // is preserved even when deserializing from YAML sources.
 func (g *schemaGenerator) generateEnvelopeOuterUnmarshalYAML(decl *codegen.TypeDecl) {
 	g.output.file.Package.AddImport("encoding/json", "")
+	g.output.file.Package.AddImport(YAMLPackage, "yaml")
 
 	capturedDeclName := decl.Name
 
