@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/tuotuoxp/go-jsonschema/pkg/generator"
 )
 
 var (
@@ -122,12 +122,12 @@ func TestCrossPackage(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			PackageName: "github.com/tuotuoxp/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/atombender/go-jsonschema/tests/data/crossPackage/other",
+			PackageName: "github.com/tuotuoxp/go-jsonschema/tests/data/crossPackage/other",
 			OutputName:  "../other/other.go",
 		},
 	}
@@ -141,12 +141,12 @@ func TestCrossPackageAllOf(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			PackageName: "github.com/tuotuoxp/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/atombender/go-jsonschema/tests/data/crossPackageAllOf/other",
+			PackageName: "github.com/tuotuoxp/go-jsonschema/tests/data/crossPackageAllOf/other",
 			OutputName:  "../other/other.go",
 		},
 	}
@@ -160,12 +160,12 @@ func TestCrossPackageNoOutput(t *testing.T) {
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			PackageName: "github.com/tuotuoxp/go-jsonschema/tests/helpers/schema",
 			OutputName:  "schema.go",
 		},
 		{
 			SchemaID:    "https://example.com/other",
-			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/other",
+			PackageName: "github.com/tuotuoxp/go-jsonschema/tests/helpers/other",
 		},
 	}
 	testExampleFile(t, cfg, "./data/crossPackageNoOutput/schema/schema.json")

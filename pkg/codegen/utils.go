@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/atombender/go-jsonschema/pkg/mathutils"
-	"github.com/atombender/go-jsonschema/pkg/schemas"
+	"github.com/tuotuoxp/go-jsonschema/pkg/mathutils"
+	"github.com/tuotuoxp/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -86,7 +86,7 @@ func PrimitiveTypeFromJSONSchemaType(
 					QualifiedName: "types",
 					Imports: []Import{
 						{
-							QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
+							QualifiedName: "github.com/tuotuoxp/go-jsonschema/pkg/types",
 						},
 					},
 				},
@@ -101,7 +101,7 @@ func PrimitiveTypeFromJSONSchemaType(
 					QualifiedName: "types",
 					Imports: []Import{
 						{
-							QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
+							QualifiedName: "github.com/tuotuoxp/go-jsonschema/pkg/types",
 						},
 					},
 				},

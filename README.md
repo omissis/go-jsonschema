@@ -20,13 +20,13 @@ along with unmarshalling code that validates the input JSON according to the sch
 
 ## Installing
 
-* **Download**: Get a release [here](https://github.com/atombender/go-jsonschema/releases).
+* **Download**: Get a release [here](https://github.com/tuotuoxp/go-jsonschema/releases).
 
 * **Install from source**: To install with Go 1.25+:
 
 ```shell
-go get github.com/atombender/go-jsonschema/...
-go install github.com/atombender/go-jsonschema@latest
+go get github.com/tuotuoxp/go-jsonschema/...
+go install github.com/tuotuoxp/go-jsonschema@latest
 ```
 
 * **Install with Brew**: To install with [Homebrew](https://brew.sh):
