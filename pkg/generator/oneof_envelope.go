@@ -284,9 +284,9 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		requiredFields[required] = struct{}{}
 	}
 
-	outerStruct, _ := decl.Type.(*codegen.StructType)
+	outerStruct, hasOuterStruct := decl.Type.(*codegen.StructType)
 	structFieldByJSONName := map[string]*codegen.StructField{}
-	if outerStruct != nil {
+	if hasOuterStruct {
 		for i := range outerStruct.Fields {
 			sf := &outerStruct.Fields[i]
 			structFieldByJSONName[sf.JSONName] = sf
@@ -445,6 +445,8 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 					out.Indent(1)
 				}
 				if !routing.envRequired {
+					// Optional payload fields should not trigger routing when omitted
+					// or explicitly provided as null.
 					out.Printlnf("%s, ok := raw[%q]", routing.valueFieldVar, routing.envJSONName)
 					out.Printlnf("if ok && %s != nil {", routing.valueFieldVar)
 					out.Indent(1)
