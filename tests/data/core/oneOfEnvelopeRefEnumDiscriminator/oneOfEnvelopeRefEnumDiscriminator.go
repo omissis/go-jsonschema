@@ -166,38 +166,34 @@ func (j *OneOfEnvelopeRefEnumDiscriminator) UnmarshalJSON(b []byte) error {
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in OneOfEnvelopeRefEnumDiscriminator: required")
 	}
-	valueRaw, err := json.Marshal(raw["value"])
-	if err != nil {
-		return err
-	}
 	type Plain OneOfEnvelopeRefEnumDiscriminator
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = OneOfEnvelopeRefEnumDiscriminator(plain)
-	if validator, ok := interface{}(j).(interface{ Validate() error }); ok {
-		if err := validator.Validate(); err != nil {
-			return err
-		}
+	result := OneOfEnvelopeRefEnumDiscriminator(plain)
+	valueRaw, err := json.Marshal(raw["value"])
+	if err != nil {
+		return err
 	}
-	discriminator := j.Type
-	switch j.Type {
+	valueDiscriminator := result.Type
+	switch result.Type {
 	case EnvelopeTypeA:
 		var v AValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
-			return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: invalid value for type %q: %w", discriminator, err)
+			return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
 		}
-		j.Value = Payload{A: &v}
+		result.Value = Payload{A: &v}
 	case EnvelopeTypeB:
 		var v BValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
-			return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: invalid value for type %q: %w", discriminator, err)
+			return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
 		}
-		j.Value = Payload{B: &v}
+		result.Value = Payload{B: &v}
 	default:
-		return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: unknown discriminator value %q", discriminator)
+		return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: unknown discriminator type=%q for envelope field value", valueDiscriminator)
 	}
+	*j = result
 	return nil
 }
 

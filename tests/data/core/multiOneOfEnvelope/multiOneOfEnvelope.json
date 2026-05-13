@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MultiOneOfEnvelope",
+  "description": "Object with multiple discriminator-driven oneOf envelope fields, including nested envelopes",
+  "type": "object",
+  "required": ["type", "value", "mode", "payload"],
+  "properties": {
+    "dummy": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["a", "b", "c"]
+    },
+    "value": {
+      "title": "ValuePayload",
+      "oneOf": [
+        { "$ref": "#/$defs/AValue" },
+        {
+          "title": "BValue",
+          "type": "object",
+          "required": ["sub_b"],
+          "properties": {
+            "sub_b": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        { "$ref": "#/$defs/CValue" }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "type",
+        "mapping": {
+          "a": "AValue",
+          "b": "BValue",
+          "c": "CValue"
+        }
+      }
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["x", "y", "z"]
+    },
+    "payload": {
+      "title": "ModePayload",
+      "oneOf": [
+        {
+          "title": "PayloadX",
+          "type": "object",
+          "required": ["sub_x"],
+          "properties": {
+            "sub_x": {
+              "type": "string",
+              "pattern": "^x+$"
+            }
+          },
+          "additionalProperties": false
+        },
+        { "$ref": "#/$defs/PayloadY" },
+        {
+          "title": "PayloadZ",
+          "type": "object",
+          "required": ["sub_z"],
+          "properties": {
+            "sub_z": {
+              "type": "integer",
+              "minimum": 10
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "mode",
+        "mapping": {
+          "x": "PayloadX",
+          "y": "PayloadY",
+          "z": "PayloadZ"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "AValue": {
+      "title": "AValue",
+      "type": "object",
+      "required": ["sub_a", "nested_type", "nested_value"],
+      "properties": {
+        "sub_a": {
+          "type": "string",
+          "pattern": "^[a-z]+$"
+        },
+        "nested_type": {
+          "type": "string",
+          "enum": ["n1", "n2"]
+        },
+        "nested_value": {
+          "title": "NestedPayload",
+          "oneOf": [
+            {
+              "title": "NestedValue1",
+              "type": "object",
+              "required": ["leaf_a"],
+              "properties": {
+                "leaf_a": {
+                  "type": "string",
+                  "pattern": "^leaf$"
+                }
+              },
+              "additionalProperties": false
+            },
+            { "$ref": "#/$defs/NestedValue2" }
+          ],
+          "x-go-oneof-envelope": {
+            "discriminator": "nested_type",
+            "mapping": {
+              "n1": "NestedValue1",
+              "n2": "NestedValue2"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CValue": {
+      "title": "CValue",
+      "type": "object",
+      "required": ["sub_c"],
+      "properties": {
+        "sub_c": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PayloadY": {
+      "title": "PayloadY",
+      "type": "object",
+      "required": ["sub_y"],
+      "properties": {
+        "sub_y": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NestedValue2": {
+      "title": "NestedValue2",
+      "type": "object",
+      "required": ["leaf_b"],
+      "properties": {
+        "leaf_b": {
+          "type": "integer",
+          "minimum": 2
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

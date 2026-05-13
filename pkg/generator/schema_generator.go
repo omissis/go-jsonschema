@@ -334,27 +334,19 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
-		// Detect oneOf-envelope pattern: one of the struct's properties has
-		// x-go-oneof-envelope.  In that case we generate a custom UnmarshalJSON
-		// (and, when extra imports are enabled, a YAML shim) instead of the
-		// default validator-based one.
-		if envJSONName, envFieldSchema, found := findOneOfEnvelopeField(t); found {
-			ext := envFieldSchema.GoOneOfEnvelope
-			if len(envFieldSchema.OneOf) == 0 || ext == nil || ext.Discriminator == "" || len(ext.Mapping) == 0 {
-				return nil, fmt.Errorf(
-					"x-go-oneof-envelope on field %q requires oneOf, discriminator, and mapping",
-					envJSONName,
-				)
+		// Detect oneOf-envelope pattern: one or more struct properties carry
+		// x-go-oneof-envelope.
+		envFields := findOneOfEnvelopeFields(t)
+		if len(envFields) > 0 {
+			for _, envField := range envFields {
+				ext := envField.prop.GoOneOfEnvelope
+				if len(envField.prop.OneOf) == 0 || ext == nil || ext.Discriminator == "" || len(ext.Mapping) == 0 {
+					return nil, fmt.Errorf(
+						"x-go-oneof-envelope on field %q requires oneOf, discriminator, and mapping",
+						envField.jsonName,
+					)
+				}
 			}
-
-			envGoName := g.caser.Identifierize(envJSONName)
-			g.generateEnvelopeOuterUnmarshal(&decl, t, envJSONName, envGoName, envFieldSchema)
-
-			if g.config.ExtraImports {
-				g.generateEnvelopeOuterUnmarshalYAML(&decl)
-			}
-
-			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
 		for _, f := range tt.RequiredJSONFields {
@@ -396,7 +388,14 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			validators = g.structFieldValidators(validators, f, f.Type, false)
 		}
 
-		if t.IsSubSchemaTypeElem() || len(validators) > 0 {
+		if len(envFields) > 0 {
+			g.addValidatorImports(validators)
+			g.generateEnvelopeOuterUnmarshal(&decl, t, envFields, validators)
+
+			if g.config.ExtraImports {
+				g.generateEnvelopeOuterUnmarshalYAML(&decl)
+			}
+		} else if t.IsSubSchemaTypeElem() || len(validators) > 0 {
 			g.generateUnmarshaler(&decl, validators)
 		}
 
@@ -552,19 +551,7 @@ func (g *schemaGenerator) structFieldValidators(
 	return validators
 }
 
-func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
-	if g.config.OnlyModels {
-		return
-	}
-
-	if hasUnmarshallers, ok := g.output.unmarshallersByTypeDecl[decl]; ok || hasUnmarshallers {
-		return
-	}
-
-	defer func() {
-		g.output.unmarshallersByTypeDecl[decl] = true
-	}()
-
+func (g *schemaGenerator) addValidatorImports(validators []validator) {
 	for _, v := range validators {
 		if _, ok := v.(*anyOfValidator); ok {
 			g.output.file.Package.AddImport("errors", "")
@@ -582,6 +569,22 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport("fmt", "")
 		}
 	}
+}
+
+func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
+	if g.config.OnlyModels {
+		return
+	}
+
+	if hasUnmarshallers, ok := g.output.unmarshallersByTypeDecl[decl]; ok || hasUnmarshallers {
+		return
+	}
+
+	defer func() {
+		g.output.unmarshallersByTypeDecl[decl] = true
+	}()
+
+	g.addValidatorImports(validators)
 
 	for _, formatter := range g.formatters {
 		formatter.addImport(g.output.file, decl)

@@ -11,6 +11,7 @@ import (
 	testAdditionalProperties "github.com/tuotuoxp/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/tuotuoxp/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/tuotuoxp/go-jsonschema/tests/data/core/anyOf"
+	testMultiOneOfEnvelope "github.com/tuotuoxp/go-jsonschema/tests/data/core/multiOneOfEnvelope"
 	testOneOfEnvelope "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelope"
 	testOneOfEnvelopeRefEnumDiscriminator "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
 	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
@@ -525,6 +526,177 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		err := json.Unmarshal([]byte(`{"dummy":"x","type":"c","value":{"sub_b":1}}`), &v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "sub_c")
+	})
+}
+
+func TestMultiOneOfEnvelopeUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success/type_a_mode_y_nested_n1", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		require.NoError(t, json.Unmarshal([]byte(`{
+			"dummy":"x",
+			"type":"a",
+			"value":{
+				"sub_a":"hello",
+				"nested_type":"n1",
+				"nested_value":{"leaf_a":"leaf"}
+			},
+			"mode":"y",
+			"payload":{"sub_y":true}
+		}`), &v))
+
+		assert.Equal(t, ptr("x"), v.Dummy)
+		assert.Equal(t, testMultiOneOfEnvelope.MultiOneOfEnvelopeTypeA, v.Type)
+		assert.Equal(t, testMultiOneOfEnvelope.MultiOneOfEnvelopeModeY, v.Mode)
+		assert.NotNil(t, v.Value.A)
+		assert.Nil(t, v.Value.B)
+		assert.Nil(t, v.Value.C)
+		assert.Equal(t, "hello", v.Value.A.SubA)
+		assert.Equal(t, testMultiOneOfEnvelope.AValueNestedTypeN1, v.Value.A.NestedType)
+		assert.NotNil(t, v.Value.A.NestedValue.N1)
+		assert.Nil(t, v.Value.A.NestedValue.N2)
+		assert.Equal(t, "leaf", v.Value.A.NestedValue.N1.LeafA)
+		assert.Nil(t, v.Payload.X)
+		assert.NotNil(t, v.Payload.Y)
+		assert.Nil(t, v.Payload.Z)
+		assert.True(t, v.Payload.Y.SubY)
+	})
+
+	t.Run("success/type_b_mode_x", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		require.NoError(t, json.Unmarshal([]byte(`{
+			"dummy":"x",
+			"type":"b",
+			"value":{"sub_b":10},
+			"mode":"x",
+			"payload":{"sub_x":"xxx"}
+		}`), &v))
+
+		assert.Equal(t, ptr("x"), v.Dummy)
+		assert.Equal(t, testMultiOneOfEnvelope.MultiOneOfEnvelopeTypeB, v.Type)
+		assert.Equal(t, testMultiOneOfEnvelope.MultiOneOfEnvelopeModeX, v.Mode)
+		assert.Nil(t, v.Value.A)
+		assert.NotNil(t, v.Value.B)
+		assert.Nil(t, v.Value.C)
+		assert.Equal(t, 10, v.Value.B.SubB)
+		assert.NotNil(t, v.Payload.X)
+		assert.Nil(t, v.Payload.Y)
+		assert.Nil(t, v.Payload.Z)
+		assert.Equal(t, "xxx", v.Payload.X.SubX)
+	})
+
+	t.Run("success/type_c_mode_z", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		require.NoError(t, json.Unmarshal([]byte(`{
+			"dummy":"x",
+			"type":"c",
+			"value":{"sub_c":true},
+			"mode":"z",
+			"payload":{"sub_z":11}
+		}`), &v))
+
+		assert.Equal(t, ptr("x"), v.Dummy)
+		assert.Equal(t, testMultiOneOfEnvelope.MultiOneOfEnvelopeTypeC, v.Type)
+		assert.Equal(t, testMultiOneOfEnvelope.MultiOneOfEnvelopeModeZ, v.Mode)
+		assert.Nil(t, v.Value.A)
+		assert.Nil(t, v.Value.B)
+		assert.NotNil(t, v.Value.C)
+		assert.True(t, v.Value.C.SubC)
+		assert.Nil(t, v.Payload.X)
+		assert.Nil(t, v.Payload.Y)
+		assert.NotNil(t, v.Payload.Z)
+		assert.Equal(t, 11, v.Payload.Z.SubZ)
+	})
+
+	t.Run("failure/type_a_pattern_violation", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		err := json.Unmarshal([]byte(`{
+			"type":"a",
+			"value":{"sub_a":"HELLO","nested_type":"n1","nested_value":{"leaf_a":"leaf"}},
+			"mode":"y",
+			"payload":{"sub_y":true}
+		}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern")
+	})
+
+	t.Run("failure/mode_z_minimum_violation", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		err := json.Unmarshal([]byte(`{
+			"type":"c",
+			"value":{"sub_c":true},
+			"mode":"z",
+			"payload":{"sub_z":9}
+		}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be >=")
+	})
+
+	t.Run("failure/nested_type_n2_minimum_violation", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		err := json.Unmarshal([]byte(`{
+			"type":"a",
+			"value":{"sub_a":"hello","nested_type":"n2","nested_value":{"leaf_b":1}},
+			"mode":"y",
+			"payload":{"sub_y":true}
+		}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be >=")
+	})
+
+	t.Run("failure/invalid_top_level_type", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		err := json.Unmarshal([]byte(`{
+			"type":"invalid",
+			"value":{"sub_c":true},
+			"mode":"z",
+			"payload":{"sub_z":11}
+		}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"invalid"`)
+	})
+
+	t.Run("failure/invalid_top_level_mode", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		err := json.Unmarshal([]byte(`{
+			"type":"c",
+			"value":{"sub_c":true},
+			"mode":"invalid",
+			"payload":{"sub_z":11}
+		}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"invalid"`)
+	})
+
+	t.Run("failure/type_a_invalid_nested_type", func(t *testing.T) {
+		t.Parallel()
+
+		var v testMultiOneOfEnvelope.MultiOneOfEnvelope
+		err := json.Unmarshal([]byte(`{
+			"type":"a",
+			"value":{"sub_a":"hello","nested_type":"invalid","nested_value":{"leaf_a":"leaf"}},
+			"mode":"y",
+			"payload":{"sub_y":true}
+		}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"invalid"`)
 	})
 }
 
