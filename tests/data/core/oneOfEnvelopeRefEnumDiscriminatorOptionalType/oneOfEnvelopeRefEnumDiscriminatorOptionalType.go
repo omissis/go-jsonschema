@@ -169,11 +169,11 @@ func (j *OneOfEnvelopeRefEnumDiscriminatorOptionalType) UnmarshalJSON(b []byte) 
 		return err
 	}
 	result := OneOfEnvelopeRefEnumDiscriminatorOptionalType(plain)
-	valueRaw, err := json.Marshal(raw["value"])
-	if err != nil {
-		return err
-	}
 	if _, ok := raw["type"]; ok {
+		valueRaw, err := json.Marshal(raw["value"])
+		if err != nil {
+			return err
+		}
 		valueDiscriminator, _ := raw["type"].(string)
 		switch valueDiscriminator {
 		case "a":

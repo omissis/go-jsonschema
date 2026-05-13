@@ -262,6 +262,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		discTypeName     string
 		useEnumRouting   bool
 		discriminatorVar string
+		valueFieldVar    string
 		valueRawVar      string
 		branches         []envelopeBranchInfo
 	}
@@ -400,6 +401,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			discTypeName:     discTypeName,
 			useEnumRouting:   useEnumRouting,
 			discriminatorVar: fmt.Sprintf("%sDiscriminator", localName),
+			valueFieldVar:    fmt.Sprintf("%sField", localName),
 			valueRawVar:      fmt.Sprintf("%sRaw", localName),
 			branches:         branches,
 		})
@@ -445,18 +447,18 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			out.Printlnf("result := %s(plain)", capturedDeclName)
 
 			for _, routing := range capturedRoutings {
-				if !routing.envRequired {
-					out.Printlnf("if %s, ok := raw[%q]; ok && %s != nil {", routing.valueRawVar, routing.envJSONName, routing.valueRawVar)
-					out.Indent(1)
-					out.Printlnf("%s, err := json.Marshal(%s)", routing.valueRawVar, routing.valueRawVar)
-				} else {
-					out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
-				}
-				out.Printlnf("if err != nil { return err }")
 				if !routing.discRequired {
 					out.Printlnf("if _, ok := raw[%q]; ok {", routing.discJSONName)
 					out.Indent(1)
 				}
+				if !routing.envRequired {
+					out.Printlnf("if %s, ok := raw[%q]; ok && %s != nil {", routing.valueFieldVar, routing.envJSONName, routing.valueFieldVar)
+					out.Indent(1)
+					out.Printlnf("%s, err := json.Marshal(%s)", routing.valueRawVar, routing.valueFieldVar)
+				} else {
+					out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
+				}
+				out.Printlnf("if err != nil { return err }")
 				if routing.useEnumRouting {
 					out.Printlnf("%s := result.%s", routing.discriminatorVar, routing.discGoName)
 					out.Printlnf("switch result.%s {", routing.discGoName)
