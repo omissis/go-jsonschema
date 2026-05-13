@@ -208,7 +208,7 @@ type Type struct {
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
 
 	// GoOneOfEnvelope configures discriminator-based oneOf routing for this field.
-	GoOneOfEnvelope *GoOneOfEnvelopeExtension `json:"x-go-oneof-envelope,omitempty"`
+	GoOneOfEnvelope *GoOneOfEnvelopeExtension `json:"x-go-oneof-envelope,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
 
 	// SubSchemaType marks the type as being a subschema type.
 	subSchemaType     SubSchemaType `json:"-"`
