@@ -290,23 +290,22 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			out.Printlnf("func (j *%s) UnmarshalJSON(b []byte) error {", capturedDeclName)
 			out.Indent(1)
 
-			// --- required-field checks ---
-			if len(capturedRequired) > 0 {
-				out.Printlnf("var raw map[string]interface{}")
-				out.Printlnf("if err := json.Unmarshal(b, &raw); err != nil { return err }")
+			// raw is always needed for discriminator and value extraction.
+			out.Printlnf("var raw map[string]interface{}")
+			out.Printlnf("if err := json.Unmarshal(b, &raw); err != nil { return err }")
 
-				for _, req := range capturedRequired {
-					out.Printlnf(
-						`if _, ok := raw["%s"]; raw != nil && !ok {`, req,
-					)
-					out.Indent(1)
-					out.Printlnf(
-						`return fmt.Errorf("field %s in %s: required")`,
-						req, capturedDeclName,
-					)
-					out.Indent(-1)
-					out.Printlnf("}")
-				}
+			// --- required-field checks ---
+			for _, req := range capturedRequired {
+				out.Printlnf(
+					`if _, ok := raw["%s"]; raw != nil && !ok {`, req,
+				)
+				out.Indent(1)
+				out.Printlnf(
+					`return fmt.Errorf("field %s in %s: required")`,
+					req, capturedDeclName,
+				)
+				out.Indent(-1)
+				out.Printlnf("}")
 			}
 
 			// --- grab discriminator + raw value payload ---
