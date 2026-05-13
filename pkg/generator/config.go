@@ -1,6 +1,6 @@
 package generator
 
-import "github.com/atombender/go-jsonschema/pkg/schemas"
+import "github.com/tuotuoxp/go-jsonschema/pkg/schemas"
 
 type Config struct {
 	SchemaMappings []SchemaMapping

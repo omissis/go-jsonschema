@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
-	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
-	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
-	testMultiOneOfEnvelope "github.com/atombender/go-jsonschema/tests/data/core/multiOneOfEnvelope"
-	testOneOfEnvelope "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelope"
-	testOneOfEnvelopeRefEnumDiscriminator "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
-	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
-	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
-	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
+	testAdditionalProperties "github.com/tuotuoxp/go-jsonschema/tests/data/core/additionalProperties"
+	testAllOf "github.com/tuotuoxp/go-jsonschema/tests/data/core/allOf"
+	testAnyOf "github.com/tuotuoxp/go-jsonschema/tests/data/core/anyOf"
+	testMultiOneOfEnvelope "github.com/tuotuoxp/go-jsonschema/tests/data/core/multiOneOfEnvelope"
+	testOneOfEnvelope "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelope"
+	testOneOfEnvelopeRefEnumDiscriminator "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
+	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
+	test "github.com/tuotuoxp/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testValudationRequiredFields "github.com/tuotuoxp/go-jsonschema/tests/data/validation/requiredFields"
 )
 
 func TestJsonUnmarshalValidation(t *testing.T) {
