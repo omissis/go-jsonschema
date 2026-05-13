@@ -7,7 +7,6 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
-import "regexp"
 
 type AValue struct {
 	// SubA corresponds to the JSON schema field "sub_a".
@@ -28,9 +27,6 @@ func (j *AValue) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if matched, _ := regexp.MatchString(`^[a-z]+$`, string(plain.SubA)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", "SubA", `^[a-z]+$`)
-	}
 	*j = AValue(plain)
 	return nil
 }
@@ -49,9 +45,6 @@ func (j *AValue) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if matched, _ := regexp.MatchString(`^[a-z]+$`, string(plain.SubA)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", "SubA", `^[a-z]+$`)
-	}
 	*j = AValue(plain)
 	return nil
 }
@@ -59,27 +52,6 @@ func (j *AValue) UnmarshalYAML(value *yaml.Node) error {
 type BValue struct {
 	// SubB corresponds to the JSON schema field "sub_b".
 	SubB int `json:"sub_b" yaml:"sub_b" mapstructure:"sub_b"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *BValue) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["sub_b"]; raw != nil && !ok {
-		return fmt.Errorf("field sub_b in BValue: required")
-	}
-	type Plain BValue
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if 1 > plain.SubB {
-		return fmt.Errorf("field %s: must be >= %v", "sub_b", 1)
-	}
-	*j = BValue(plain)
-	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -103,162 +75,130 @@ func (j *BValue) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type CValue struct {
-	// SubC corresponds to the JSON schema field "sub_c".
-	SubC bool `json:"sub_c" yaml:"sub_c" mapstructure:"sub_c"`
-}
-
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *CValue) UnmarshalYAML(value *yaml.Node) error {
+func (j *BValue) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if _, ok := raw["sub_c"]; raw != nil && !ok {
-		return fmt.Errorf("field sub_c in CValue: required")
+	if _, ok := raw["sub_b"]; raw != nil && !ok {
+		return fmt.Errorf("field sub_b in BValue: required")
 	}
-	type Plain CValue
+	type Plain BValue
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	*j = CValue(plain)
+	if 1 > plain.SubB {
+		return fmt.Errorf("field %s: must be >= %v", "sub_b", 1)
+	}
+	*j = BValue(plain)
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *CValue) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["sub_c"]; raw != nil && !ok {
-		return fmt.Errorf("field sub_c in CValue: required")
-	}
-	type Plain CValue
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	*j = CValue(plain)
-	return nil
-}
+type EnvelopeType string
 
-// Envelope with discriminator-based oneOf routing
-type OneOfEnvelope struct {
-	// Dummy corresponds to the JSON schema field "dummy".
-	Dummy *string `json:"dummy,omitempty,omitzero" yaml:"dummy,omitempty" mapstructure:"dummy,omitempty"`
+const EnvelopeTypeA EnvelopeType = "a"
+const EnvelopeTypeB EnvelopeType = "b"
 
-	// Type corresponds to the JSON schema field "type".
-	Type OneOfEnvelopeType `json:"type" yaml:"type" mapstructure:"type"`
-
-	// Value corresponds to the JSON schema field "value".
-	Value Payload `json:"value" yaml:"value" mapstructure:"value"`
-}
-
-type OneOfEnvelopeType string
-
-const OneOfEnvelopeTypeA OneOfEnvelopeType = "a"
-const OneOfEnvelopeTypeB OneOfEnvelopeType = "b"
-const OneOfEnvelopeTypeC OneOfEnvelopeType = "c"
-
-var enumValues_OneOfEnvelopeType = []interface{}{
+var enumValues_EnvelopeType = []interface{}{
 	"a",
 	"b",
-	"c",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *OneOfEnvelopeType) UnmarshalJSON(value []byte) error {
+func (j *EnvelopeType) UnmarshalJSON(value []byte) error {
 	var v string
 	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_OneOfEnvelopeType {
+	for _, expected := range enumValues_EnvelopeType {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_OneOfEnvelopeType, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnvelopeType, v)
 	}
-	*j = OneOfEnvelopeType(v)
+	*j = EnvelopeType(v)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *OneOfEnvelopeType) UnmarshalYAML(value *yaml.Node) error {
+func (j *EnvelopeType) UnmarshalYAML(value *yaml.Node) error {
 	var v string
 	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_OneOfEnvelopeType {
+	for _, expected := range enumValues_EnvelopeType {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_OneOfEnvelopeType, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_EnvelopeType, v)
 	}
-	*j = OneOfEnvelopeType(v)
+	*j = EnvelopeType(v)
 	return nil
 }
 
+type OneOfEnvelopeRefEnumDiscriminator struct {
+	// Type corresponds to the JSON schema field "type".
+	Type EnvelopeType `json:"type" yaml:"type" mapstructure:"type"`
+
+	// Value corresponds to the JSON schema field "value".
+	Value Payload `json:"value" yaml:"value" mapstructure:"value"`
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *OneOfEnvelope) UnmarshalJSON(b []byte) error {
+func (j *OneOfEnvelopeRefEnumDiscriminator) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["type"]; raw != nil && !ok {
-		return fmt.Errorf("field type in OneOfEnvelope: required")
+		return fmt.Errorf("field type in OneOfEnvelopeRefEnumDiscriminator: required")
 	}
 	if _, ok := raw["value"]; raw != nil && !ok {
-		return fmt.Errorf("field value in OneOfEnvelope: required")
+		return fmt.Errorf("field value in OneOfEnvelopeRefEnumDiscriminator: required")
 	}
-	type Plain OneOfEnvelope
+	type Plain OneOfEnvelopeRefEnumDiscriminator
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	result := OneOfEnvelope(plain)
+	result := OneOfEnvelopeRefEnumDiscriminator(plain)
 	valueRaw, err := json.Marshal(raw["value"])
 	if err != nil {
 		return err
 	}
 	valueDiscriminator := result.Type
 	switch result.Type {
-	case OneOfEnvelopeTypeA:
+	case EnvelopeTypeA:
 		var v AValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
-			return fmt.Errorf("OneOfEnvelope: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
+			return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
 		}
 		result.Value = Payload{A: &v}
-	case OneOfEnvelopeTypeB:
+	case EnvelopeTypeB:
 		var v BValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
-			return fmt.Errorf("OneOfEnvelope: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
+			return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
 		}
 		result.Value = Payload{B: &v}
-	case OneOfEnvelopeTypeC:
-		var v CValue
-		if err := json.Unmarshal(valueRaw, &v); err != nil {
-			return fmt.Errorf("OneOfEnvelope: invalid value for discriminator type=%q: %w", valueDiscriminator, err)
-		}
-		result.Value = Payload{C: &v}
 	default:
-		return fmt.Errorf("OneOfEnvelope: unknown discriminator type=%q for envelope field value", valueDiscriminator)
+		return fmt.Errorf("OneOfEnvelopeRefEnumDiscriminator: unknown discriminator type=%q for envelope field value", valueDiscriminator)
 	}
 	*j = result
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *OneOfEnvelope) UnmarshalYAML(value *yaml.Node) error {
+func (j *OneOfEnvelopeRefEnumDiscriminator) UnmarshalYAML(value *yaml.Node) error {
 	var raw interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
@@ -274,8 +214,6 @@ type Payload struct {
 	A *AValue
 
 	B *BValue
-
-	C *CValue
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -289,10 +227,6 @@ func (j Payload) MarshalJSON() ([]byte, error) {
 	if j.B != nil {
 		count++
 		value = j.B
-	}
-	if j.C != nil {
-		count++
-		value = j.C
 	}
 	if count != 1 {
 		return nil, errors.New("Payload: exactly one branch must be non-nil")

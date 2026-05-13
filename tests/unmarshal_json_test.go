@@ -13,6 +13,8 @@ import (
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	testMultiOneOfEnvelope "github.com/atombender/go-jsonschema/tests/data/core/multiOneOfEnvelope"
 	testOneOfEnvelope "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelope"
+	testOneOfEnvelopeRefEnumDiscriminator "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
+	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
@@ -695,5 +697,100 @@ func TestMultiOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		}`), &v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `"invalid"`)
+	})
+}
+
+func TestOneOfEnvelopeRefEnumDiscriminatorUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success/type_a", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		require.NoError(t, json.Unmarshal([]byte(`{"type":"a","value":{"sub_a":"hello"}}`), &v))
+
+		assert.Equal(t, testOneOfEnvelopeRefEnumDiscriminator.EnvelopeTypeA, v.Type)
+		assert.NotNil(t, v.Value.A)
+		assert.Equal(t, "hello", v.Value.A.SubA)
+		assert.Nil(t, v.Value.B)
+	})
+
+	t.Run("success/type_b", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		require.NoError(t, json.Unmarshal([]byte(`{"type":"b","value":{"sub_b":10}}`), &v))
+
+		assert.Equal(t, testOneOfEnvelopeRefEnumDiscriminator.EnvelopeTypeB, v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.NotNil(t, v.Value.B)
+		assert.Equal(t, 10, v.Value.B.SubB)
+	})
+
+	t.Run("failure/invalid_type_enum_value", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		err := json.Unmarshal([]byte(`{"type":"x","value":{}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"x"`)
+	})
+
+	t.Run("failure/type_b_minimum_violation", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		err := json.Unmarshal([]byte(`{"type":"b","value":{"sub_b":0}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be >=")
+	})
+}
+
+func TestOneOfEnvelopeRefEnumDiscriminatorOptionalTypeUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success/type_a", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminatorOptionalType.OneOfEnvelopeRefEnumDiscriminatorOptionalType
+		require.NoError(t, json.Unmarshal([]byte(`{"type":"a","value":{"sub_a":"hello"}}`), &v))
+
+		require.NotNil(t, v.Type)
+		assert.Equal(t, testOneOfEnvelopeRefEnumDiscriminatorOptionalType.EnvelopeTypeA, *v.Type)
+		assert.NotNil(t, v.Value.A)
+		assert.Equal(t, "hello", v.Value.A.SubA)
+		assert.Nil(t, v.Value.B)
+	})
+
+	t.Run("success/type_b", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminatorOptionalType.OneOfEnvelopeRefEnumDiscriminatorOptionalType
+		require.NoError(t, json.Unmarshal([]byte(`{"type":"b","value":{"sub_b":10}}`), &v))
+
+		require.NotNil(t, v.Type)
+		assert.Equal(t, testOneOfEnvelopeRefEnumDiscriminatorOptionalType.EnvelopeTypeB, *v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.NotNil(t, v.Value.B)
+		assert.Equal(t, 10, v.Value.B.SubB)
+	})
+
+	t.Run("failure/invalid_type_enum_value", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminatorOptionalType.OneOfEnvelopeRefEnumDiscriminatorOptionalType
+		err := json.Unmarshal([]byte(`{"type":"x","value":{}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"x"`)
+	})
+
+	t.Run("success/missing_type_selects_no_branch", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminatorOptionalType.OneOfEnvelopeRefEnumDiscriminatorOptionalType
+		require.NoError(t, json.Unmarshal([]byte(`{"value":{"sub_a":"hello"}}`), &v))
+		assert.Nil(t, v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.Nil(t, v.Value.B)
 	})
 }

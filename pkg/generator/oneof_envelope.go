@@ -258,6 +258,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		envGoName        string
 		payloadTypeName  string
 		discJSONName     string
+		discRequired     bool
 		discGoName       string
 		discTypeName     string
 		useEnumRouting   bool
@@ -322,8 +323,17 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		}
 
 		discJSONName := ext.Discriminator
+		discRequired := false
+		for _, req := range schemaType.Required {
+			if req == discJSONName {
+				discRequired = true
+				break
+			}
+		}
+
 		discGoName := g.caser.Identifierize(discJSONName)
 		discTypeName := ""
+		discTypeIsPointer := false
 		useEnumRouting := false
 
 		if outerStruct, ok := decl.Type.(*codegen.StructType); ok {
@@ -340,6 +350,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				case *codegen.PointerType:
 					if nt, ok := ft.Type.(*codegen.NamedType); ok {
 						discTypeName = nt.Decl.Name
+						discTypeIsPointer = true
 					}
 				}
 
@@ -347,8 +358,20 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			}
 		}
 
-		if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && len(discProp.Enum) > 0 {
-			useEnumRouting = true
+		if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && !discTypeIsPointer {
+			discEnumSchema := discProp
+			if discProp.Ref != "" {
+				resolved, err := g.resolveRef(discProp)
+				if err != nil {
+					g.warner(fmt.Sprintf("Could not resolve discriminator ref %q: %v", discProp.Ref, err))
+				} else {
+					discEnumSchema = resolved
+				}
+			}
+
+			if len(discEnumSchema.Enum) > 0 {
+				useEnumRouting = true
+			}
 		}
 
 		localName := unexported(envField.goName)
@@ -358,6 +381,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			envGoName:        envField.goName,
 			payloadTypeName:  payloadTypeName,
 			discJSONName:     discJSONName,
+			discRequired:     discRequired,
 			discGoName:       discGoName,
 			discTypeName:     discTypeName,
 			useEnumRouting:   useEnumRouting,
@@ -404,10 +428,13 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 					return fmt.Errorf("cannot generate after validators: %w", err)
 				}
 			}
-
 			out.Printlnf("result := %s(plain)", capturedDeclName)
 
 			for _, routing := range capturedRoutings {
+				if !routing.discRequired {
+					out.Printlnf("if _, ok := raw[%q]; ok {", routing.discJSONName)
+					out.Indent(1)
+				}
 				out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
 				out.Printlnf("if err != nil { return err }")
 				if routing.useEnumRouting {
@@ -430,8 +457,10 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 					out.Printlnf("if err := json.Unmarshal(%s, &v); err != nil {", routing.valueRawVar)
 					out.Indent(1)
 					out.Printlnf(
-						`return fmt.Errorf("%s: invalid value for type %%q: %%w", %s, err)`,
+						`return fmt.Errorf("%s: invalid %s for discriminator %s=%%q: %%w", %s, err)`,
 						capturedDeclName,
+						routing.envJSONName,
+						routing.discJSONName,
 						routing.discriminatorVar,
 					)
 					out.Indent(-1)
@@ -443,13 +472,20 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				out.Printlnf("default:")
 				out.Indent(1)
 				out.Printlnf(
-					`return fmt.Errorf("%s: unknown discriminator value %%q", %s)`,
+					`return fmt.Errorf("%s: unknown discriminator %s=%%q for envelope field %s", %s)`,
 					capturedDeclName,
+					routing.discJSONName,
+					routing.envJSONName,
 					routing.discriminatorVar,
 				)
 				out.Indent(-1)
 				out.Printlnf("}")
 				out.Indent(-1)
+
+				if !routing.discRequired {
+					out.Indent(-1)
+					out.Printlnf("}")
+				}
 			}
 
 			out.Printlnf("*j = result")

@@ -76,65 +76,12 @@ Note the flag format:
 
 ### Schema extension: `x-go-oneof-envelope`
 
-`x-go-oneof-envelope` is a second-stage extension for discriminator-driven envelope
-shapes such as `{ "type": "...", "value": { ... } }`.
+`x-go-oneof-envelope` is a fork extension for discriminator-driven envelope
+shapes such as `{ "type": "...", "value": { ... } }`. It supports single-field,
+multi-field, and nested envelope routing.
 
-- Use it on envelope payload fields (for example, `value`, `payload`) that contain `oneOf`.
-- `discriminator` is the sibling field name (for example, `type`) used for routing.
-- `mapping` keys are discriminator values, and mapping values must match the resolved
-  branch `title` values.
-- `oneOf` branches may be `$ref` or inline, but each branch must resolve to a unique
-  `title`.
-- Multiple envelope fields on the same object are supported.
-- Nested objects can also use `x-go-oneof-envelope`.
-- This is targeted support for discriminator-driven envelope routing, not generic
-  inference for arbitrary `oneOf` unions.
-
-Example:
-
-```json
-{
-  "type": "object",
-  "required": ["type", "value"],
-  "properties": {
-    "type": {
-      "type": "string",
-      "enum": ["a", "b"]
-    },
-    "value": {
-      "title": "Payload",
-      "oneOf": [
-        { "$ref": "#/$defs/AValue" },
-        {
-          "title": "BValue",
-          "type": "object",
-          "required": ["sub_b"],
-          "properties": {
-            "sub_b": { "type": "integer" }
-          }
-        }
-      ],
-      "x-go-oneof-envelope": {
-        "discriminator": "type",
-        "mapping": {
-          "a": "AValue",
-          "b": "BValue"
-        }
-      }
-    }
-  },
-  "$defs": {
-    "AValue": {
-      "title": "AValue",
-      "type": "object",
-      "required": ["sub_a"],
-      "properties": {
-        "sub_a": { "type": "string" }
-      }
-    }
-  }
-}
-```
+For the complete fork-specific guide (patterns, mapping rules, constraints, and
+examples), see [`docs/fork-extensions.md`](docs/fork-extensions.md).
 
 ### Regenerating tests' golden files
 

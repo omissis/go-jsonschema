@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OneOfEnvelopeRefEnumDiscriminator",
+  "type": "object",
+  "required": ["type", "value"],
+  "properties": {
+    "type": {
+      "$ref": "#/$defs/EnvelopeType"
+    },
+    "value": {
+      "title": "Payload",
+      "oneOf": [
+        { "$ref": "#/$defs/AValue" },
+        { "$ref": "#/$defs/BValue" }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "type",
+        "mapping": {
+          "a": "AValue",
+          "b": "BValue"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "EnvelopeType": {
+      "type": "string",
+      "enum": ["a", "b"]
+    },
+    "AValue": {
+      "title": "AValue",
+      "type": "object",
+      "required": ["sub_a"],
+      "properties": {
+        "sub_a": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BValue": {
+      "title": "BValue",
+      "type": "object",
+      "required": ["sub_b"],
+      "properties": {
+        "sub_b": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
