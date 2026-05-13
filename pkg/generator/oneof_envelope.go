@@ -21,13 +21,12 @@ type envelopeBranchInfo struct {
 
 type envelopeFieldInfo struct {
 	jsonName string
-	goName   string
 	prop     *schemas.Type
 }
 
 // findOneOfEnvelopeFields returns all properties on t that carry
 // x-go-oneof-envelope, sorted by JSON field name for deterministic generation.
-func findOneOfEnvelopeFields(t *schemas.Type, identifierize func(string) string) []envelopeFieldInfo {
+func findOneOfEnvelopeFields(t *schemas.Type) []envelopeFieldInfo {
 	names := make([]string, 0)
 	for name, p := range t.Properties {
 		if p.GoOneOfEnvelope != nil {
@@ -41,7 +40,6 @@ func findOneOfEnvelopeFields(t *schemas.Type, identifierize func(string) string)
 	for _, name := range names {
 		fields = append(fields, envelopeFieldInfo{
 			jsonName: name,
-			goName:   identifierize(name),
 			prop:     t.Properties[name],
 		})
 	}
@@ -256,6 +254,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	type envelopeRoutingInfo struct {
 		envJSONName      string
 		envGoName        string
+		envRequired      bool
 		payloadTypeName  string
 		discJSONName     string
 		discRequired     bool
@@ -278,6 +277,13 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			afterValidators = append(afterValidators, v)
 		}
 	}
+
+	requiredFields := make(map[string]struct{}, len(schemaType.Required))
+	for _, required := range schemaType.Required {
+		requiredFields[required] = struct{}{}
+	}
+
+	outerStruct, _ := decl.Type.(*codegen.StructType)
 
 	for _, envField := range envFields {
 		ext := envField.prop.GoOneOfEnvelope
@@ -322,21 +328,28 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			payloadTypeName = payloadDecl.Name
 		}
 
-		discJSONName := ext.Discriminator
-		discRequired := false
-		for _, req := range schemaType.Required {
-			if req == discJSONName {
-				discRequired = true
-				break
+		envGoName := g.caser.Identifierize(envField.jsonName)
+		if outerStruct != nil {
+			for _, sf := range outerStruct.Fields {
+				if sf.JSONName == envField.jsonName {
+					envGoName = sf.Name
+
+					break
+				}
 			}
 		}
+
+		_, envRequired := requiredFields[envField.jsonName]
+
+		discJSONName := ext.Discriminator
+		_, discRequired := requiredFields[discJSONName]
 
 		discGoName := g.caser.Identifierize(discJSONName)
 		discTypeName := ""
 		discTypeIsPointer := false
 		useEnumRouting := false
 
-		if outerStruct, ok := decl.Type.(*codegen.StructType); ok {
+		if outerStruct != nil {
 			for _, sf := range outerStruct.Fields {
 				if sf.JSONName != discJSONName {
 					continue
@@ -374,11 +387,12 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			}
 		}
 
-		localName := unexported(envField.goName)
+		localName := unexported(envGoName)
 
 		routings = append(routings, envelopeRoutingInfo{
 			envJSONName:      envField.jsonName,
-			envGoName:        envField.goName,
+			envGoName:        envGoName,
+			envRequired:      envRequired,
 			payloadTypeName:  payloadTypeName,
 			discJSONName:     discJSONName,
 			discRequired:     discRequired,
@@ -431,12 +445,18 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			out.Printlnf("result := %s(plain)", capturedDeclName)
 
 			for _, routing := range capturedRoutings {
+				if !routing.envRequired {
+					out.Printlnf("if %s, ok := raw[%q]; ok && %s != nil {", routing.valueRawVar, routing.envJSONName, routing.valueRawVar)
+					out.Indent(1)
+					out.Printlnf("%s, err := json.Marshal(%s)", routing.valueRawVar, routing.valueRawVar)
+				} else {
+					out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
+				}
+				out.Printlnf("if err != nil { return err }")
 				if !routing.discRequired {
 					out.Printlnf("if _, ok := raw[%q]; ok {", routing.discJSONName)
 					out.Indent(1)
 				}
-				out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
-				out.Printlnf("if err != nil { return err }")
 				if routing.useEnumRouting {
 					out.Printlnf("%s := result.%s", routing.discriminatorVar, routing.discGoName)
 					out.Printlnf("switch result.%s {", routing.discGoName)
@@ -483,6 +503,11 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				out.Indent(-1)
 
 				if !routing.discRequired {
+					out.Indent(-1)
+					out.Printlnf("}")
+				}
+
+				if !routing.envRequired {
 					out.Indent(-1)
 					out.Printlnf("}")
 				}

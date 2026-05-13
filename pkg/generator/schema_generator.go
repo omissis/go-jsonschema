@@ -336,7 +336,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 		// Detect oneOf-envelope pattern: one or more struct properties carry
 		// x-go-oneof-envelope.
-		envFields := findOneOfEnvelopeFields(t, g.caser.Identifierize)
+		envFields := findOneOfEnvelopeFields(t)
 		if len(envFields) > 0 {
 			for _, envField := range envFields {
 				ext := envField.prop.GoOneOfEnvelope
