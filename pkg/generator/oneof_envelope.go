@@ -19,6 +19,8 @@ type envelopeBranchInfo struct {
 
 // findOneOfEnvelopeField returns the JSON property name and schema of the first
 // property on t that carries a GoOneOfEnvelope extension, if any.
+// TODO: Support and validate multiple x-go-oneof-envelope fields per object.
+// Current rollout assumes at most one envelope field on an object.
 func findOneOfEnvelopeField(t *schemas.Type) (jsonName string, prop *schemas.Type, found bool) {
 	for name, p := range t.Properties {
 		if p.GoOneOfEnvelope != nil {

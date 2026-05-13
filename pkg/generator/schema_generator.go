@@ -339,6 +339,14 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		// (and, when extra imports are enabled, a YAML shim) instead of the
 		// default validator-based one.
 		if envJSONName, envFieldSchema, found := findOneOfEnvelopeField(t); found {
+			ext := envFieldSchema.GoOneOfEnvelope
+			if len(envFieldSchema.OneOf) == 0 || ext == nil || ext.Discriminator == "" || len(ext.Mapping) == 0 {
+				return nil, fmt.Errorf(
+					"x-go-oneof-envelope on field %q requires oneOf, discriminator, and mapping",
+					envJSONName,
+				)
+			}
+
 			envGoName := g.caser.Identifierize(envJSONName)
 			g.generateEnvelopeOuterUnmarshal(&decl, t, envJSONName, envGoName, envFieldSchema)
 

@@ -230,6 +230,11 @@ func (j *OneOfEnvelope) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = OneOfEnvelope(plain)
+	if validator, ok := interface{}(j).(interface{ Validate() error }); ok {
+		if err := validator.Validate(); err != nil {
+			return err
+		}
+	}
 	discriminator := j.Type
 	switch j.Type {
 	case OneOfEnvelopeTypeA:

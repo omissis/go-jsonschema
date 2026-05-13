@@ -483,7 +483,7 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		assert.True(t, v.Value.C.SubC)
 	})
 
-	t.Run("failure/unknown_discriminator", func(t *testing.T) {
+	t.Run("failure/invalid_type_enum_value", func(t *testing.T) {
 		t.Parallel()
 
 		// "x" is not a valid enum value for the type field; the enum validator
