@@ -33,7 +33,7 @@ go install github.com/tuotuoxp/go-jsonschema@latest
 
 ```shell
 brew tap tuotuoxp/homebrew-go-jsonschema
-brew install --cask go-jsonschema
+brew install go-jsonschema
 ```
 
 ## Contributing
