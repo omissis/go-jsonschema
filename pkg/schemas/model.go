@@ -207,6 +207,9 @@ type Type struct {
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
 
+	// GoOneOfEnvelope configures discriminator-based oneOf routing for this field.
+	GoOneOfEnvelope *GoOneOfEnvelopeExtension `json:"x-go-oneof-envelope,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
+
 	// SubSchemaType marks the type as being a subschema type.
 	subSchemaType     SubSchemaType `json:"-"`
 	subSchemasCount   int           `json:"-"`
@@ -442,4 +445,14 @@ type GoJSONSchemaExtension struct {
 	Pointer    *bool             `json:"pointer,omitempty"`
 	Imports    []string          `json:"imports,omitempty"`
 	ExtraTags  map[string]string `json:"extraTags,omitempty"`
+}
+
+// GoOneOfEnvelopeExtension configures discriminator-based oneOf routing for a field.
+// When present on a field with "oneOf", the generator produces a union container struct
+// whose non-nil branch is selected by the named discriminator field on the parent object.
+type GoOneOfEnvelopeExtension struct {
+	// Discriminator is the name of the sibling field whose value selects the active branch.
+	Discriminator string `json:"discriminator"`
+	// Mapping maps each discriminator value to the title of the oneOf branch it selects.
+	Mapping map[string]string `json:"mapping"`
 }

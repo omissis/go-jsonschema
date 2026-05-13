@@ -334,6 +334,29 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
+		// Detect oneOf-envelope pattern: one of the struct's properties has
+		// x-go-oneof-envelope.  In that case we generate a custom UnmarshalJSON
+		// (and, when extra imports are enabled, a YAML shim) instead of the
+		// default validator-based one.
+		if envJSONName, envFieldSchema, found := findOneOfEnvelopeField(t); found {
+			ext := envFieldSchema.GoOneOfEnvelope
+			if len(envFieldSchema.OneOf) == 0 || ext == nil || ext.Discriminator == "" || len(ext.Mapping) == 0 {
+				return nil, fmt.Errorf(
+					"x-go-oneof-envelope on field %q requires oneOf, discriminator, and mapping",
+					envJSONName,
+				)
+			}
+
+			envGoName := g.caser.Identifierize(envJSONName)
+			g.generateEnvelopeOuterUnmarshal(&decl, t, envJSONName, envGoName, envFieldSchema)
+
+			if g.config.ExtraImports {
+				g.generateEnvelopeOuterUnmarshalYAML(&decl)
+			}
+
+			return &codegen.NamedType{Decl: &decl}, nil
+		}
+
 		for _, f := range tt.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
@@ -1124,6 +1147,11 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := g.isTypeNullable(t)
+
+	// Handle x-go-oneof-envelope: generate a union container struct.
+	if t.GoOneOfEnvelope != nil && len(t.OneOf) > 0 {
+		return g.generateOneOfEnvelopeValueType(t, scope)
+	}
 
 	if t.Enum == nil && t.Ref == "" {
 		if ext := t.GoJSONSchemaExtension; ext != nil {
