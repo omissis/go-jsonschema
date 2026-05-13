@@ -2,6 +2,8 @@ package generator
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
@@ -17,18 +19,34 @@ type envelopeBranchInfo struct {
 	typeName string
 }
 
-// findOneOfEnvelopeField returns the JSON property name and schema of the first
-// property on t that carries a GoOneOfEnvelope extension, if any.
-// TODO: Support and validate multiple x-go-oneof-envelope fields per object.
-// Current rollout assumes at most one envelope field on an object.
-func findOneOfEnvelopeField(t *schemas.Type) (jsonName string, prop *schemas.Type, found bool) {
+type envelopeFieldInfo struct {
+	jsonName string
+	goName   string
+	prop     *schemas.Type
+}
+
+// findOneOfEnvelopeFields returns all properties on t that carry
+// x-go-oneof-envelope, sorted by JSON field name for deterministic generation.
+func findOneOfEnvelopeFields(t *schemas.Type, identifierize func(string) string) []envelopeFieldInfo {
+	names := make([]string, 0)
 	for name, p := range t.Properties {
 		if p.GoOneOfEnvelope != nil {
-			return name, p, true
+			names = append(names, name)
 		}
 	}
 
-	return "", nil, false
+	sort.Strings(names)
+
+	fields := make([]envelopeFieldInfo, 0, len(names))
+	for _, name := range names {
+		fields = append(fields, envelopeFieldInfo{
+			jsonName: name,
+			goName:   identifierize(name),
+			prop:     t.Properties[name],
+		})
+	}
+
+	return fields
 }
 
 // generateOneOfEnvelopeValueType generates the union container type (e.g. "Payload")
@@ -222,102 +240,125 @@ func (g *schemaGenerator) generateOneOfEnvelopeMarshal(
 func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	decl *codegen.TypeDecl,
 	schemaType *schemas.Type,
-	envJSONName string, // e.g. "value"
-	envGoName string, // e.g. "Value"
-	envFieldSchema *schemas.Type,
+	envFields []envelopeFieldInfo,
+	validators []validator,
 ) {
-	ext := envFieldSchema.GoOneOfEnvelope
+	type envelopeRoutingInfo struct {
+		envJSONName      string
+		envGoName        string
+		payloadTypeName  string
+		discJSONName     string
+		discGoName       string
+		discTypeName     string
+		useEnumRouting   bool
+		discriminatorVar string
+		valueRawVar      string
+		branches         []envelopeBranchInfo
+	}
 
-	// Look up the Payload type and its branch fields.
-	payloadDecl := g.output.declsBySchema[envFieldSchema]
+	routings := make([]envelopeRoutingInfo, 0, len(envFields))
+	var beforeValidators []validator
+	var afterValidators []validator
 
-	var branches []envelopeBranchInfo
+	for _, v := range validators {
+		if v.desc().beforeJSONUnmarshal {
+			beforeValidators = append(beforeValidators, v)
+		} else {
+			afterValidators = append(afterValidators, v)
+		}
+	}
 
-	discVals := sortedKeys(ext.Mapping)
+	for _, envField := range envFields {
+		ext := envField.prop.GoOneOfEnvelope
+		payloadDecl := g.output.declsBySchema[envField.prop]
 
-	for _, discVal := range discVals {
-		goField := g.caser.Identifierize(discVal)
+		branches := make([]envelopeBranchInfo, 0, len(ext.Mapping))
+		discVals := sortedKeys(ext.Mapping)
 
-		// Look up the concrete type name from the Payload struct fields.
-		var typeName string
+		for _, discVal := range discVals {
+			goField := g.caser.Identifierize(discVal)
 
-		if payloadDecl != nil {
-			if ps, ok := payloadDecl.Type.(*codegen.StructType); ok {
-				for _, pf := range ps.Fields {
-					if pf.Name == goField {
-						if pt, ok2 := pf.Type.(*codegen.PointerType); ok2 {
-							if nt, ok3 := pt.Type.(*codegen.NamedType); ok3 {
-								typeName = nt.Decl.Name
+			var typeName string
+			if payloadDecl != nil {
+				if ps, ok := payloadDecl.Type.(*codegen.StructType); ok {
+					for _, pf := range ps.Fields {
+						if pf.Name == goField {
+							if pt, ok2 := pf.Type.(*codegen.PointerType); ok2 {
+								if nt, ok3 := pt.Type.(*codegen.NamedType); ok3 {
+									typeName = nt.Decl.Name
+								}
 							}
-						}
 
-						break
+							break
+						}
 					}
 				}
 			}
+
+			if typeName == "" {
+				typeName = g.caser.Identifierize(ext.Mapping[discVal])
+			}
+
+			branches = append(branches, envelopeBranchInfo{
+				discVal:  discVal,
+				goField:  goField,
+				typeName: typeName,
+			})
 		}
 
-		if typeName == "" {
-			// Fallback: identifierize the branch title.
-			typeName = g.caser.Identifierize(ext.Mapping[discVal])
+		payloadTypeName := ""
+		if payloadDecl != nil {
+			payloadTypeName = payloadDecl.Name
 		}
 
-		branches = append(branches, envelopeBranchInfo{
-			discVal:  discVal,
-			goField:  goField,
-			typeName: typeName,
+		discJSONName := ext.Discriminator
+		discGoName := g.caser.Identifierize(discJSONName)
+		discTypeName := ""
+		useEnumRouting := false
+
+		if outerStruct, ok := decl.Type.(*codegen.StructType); ok {
+			for _, sf := range outerStruct.Fields {
+				if sf.JSONName != discJSONName {
+					continue
+				}
+
+				discGoName = sf.Name
+
+				switch ft := sf.Type.(type) {
+				case *codegen.NamedType:
+					discTypeName = ft.Decl.Name
+				case *codegen.PointerType:
+					if nt, ok := ft.Type.(*codegen.NamedType); ok {
+						discTypeName = nt.Decl.Name
+					}
+				}
+
+				break
+			}
+		}
+
+		if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && len(discProp.Enum) > 0 {
+			useEnumRouting = true
+		}
+
+		routings = append(routings, envelopeRoutingInfo{
+			envJSONName:      envField.jsonName,
+			envGoName:        envField.goName,
+			payloadTypeName:  payloadTypeName,
+			discJSONName:     discJSONName,
+			discGoName:       discGoName,
+			discTypeName:     discTypeName,
+			useEnumRouting:   useEnumRouting,
+			discriminatorVar: fmt.Sprintf("%sDiscriminator", strings.ToLower(envField.goName[:1])+envField.goName[1:]),
+			valueRawVar:      fmt.Sprintf("%sRaw", strings.ToLower(envField.goName[:1])+envField.goName[1:]),
+			branches:         branches,
 		})
 	}
 
-	payloadTypeName := ""
-	if payloadDecl != nil {
-		payloadTypeName = payloadDecl.Name
-	}
-
-	// Required fields (for presence check).
-	requiredFields := schemaType.Required
-	discJSONName := ext.Discriminator
-	discGoName := g.caser.Identifierize(discJSONName)
-	discTypeName := ""
-	useEnumRouting := false
-
-	// Try to resolve the generated Go field/type for discriminator routing.
-	if outerStruct, ok := decl.Type.(*codegen.StructType); ok {
-		for _, sf := range outerStruct.Fields {
-			if sf.JSONName != discJSONName {
-				continue
-			}
-
-			discGoName = sf.Name
-
-			switch ft := sf.Type.(type) {
-			case *codegen.NamedType:
-				discTypeName = ft.Decl.Name
-			case *codegen.PointerType:
-				if nt, ok := ft.Type.(*codegen.NamedType); ok {
-					discTypeName = nt.Decl.Name
-				}
-			}
-
-			break
-		}
-	}
-
-	// Use enum constants for switch routing only when discriminator is an enum.
-	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && len(discProp.Enum) > 0 {
-		useEnumRouting = true
-	}
-
-	capturedBranches := branches
-	capturedPayloadTypeName := payloadTypeName
-	capturedRequired := requiredFields
-	capturedDiscJSON := discJSONName
-	capturedDiscGoName := discGoName
-	capturedDiscTypeName := discTypeName
-	capturedUseEnumRouting := useEnumRouting
-	capturedEnvJSONName := envJSONName
-	capturedEnvGoName := envGoName
+	capturedRoutings := routings
 	capturedDeclName := decl.Name
+	capturedBeforeValidators := beforeValidators
+	capturedAfterValidators := afterValidators
 
 	g.output.file.Package.AddImport("encoding/json", "")
 	g.output.file.Package.AddImport("fmt", "")
@@ -335,76 +376,69 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			out.Printlnf("var raw map[string]interface{}")
 			out.Printlnf("if err := json.Unmarshal(b, &raw); err != nil { return err }")
 
-			// --- required-field checks ---
-			for _, req := range capturedRequired {
-				out.Printlnf(
-					`if _, ok := raw["%s"]; raw != nil && !ok {`, req,
-				)
-				out.Indent(1)
-				out.Printlnf(
-					`return fmt.Errorf("field %s in %s: required")`,
-					req, capturedDeclName,
-				)
-				out.Indent(-1)
-				out.Printlnf("}")
+			for _, v := range capturedBeforeValidators {
+				if err := v.generate(out, "json"); err != nil {
+					return fmt.Errorf("cannot generate before validators: %w", err)
+				}
 			}
-
-			// --- grab raw value payload ---
-			out.Printlnf("valueRaw, err := json.Marshal(raw[%q])", capturedEnvJSONName)
-			out.Printlnf("if err != nil { return err }")
 
 			// --- decode all regular fields via type-alias trick ---
 			out.Printlnf("type Plain %s", capturedDeclName)
 			out.Printlnf("var plain Plain")
 			out.Printlnf("if err := json.Unmarshal(b, &plain); err != nil { return err }")
+
+			for _, v := range capturedAfterValidators {
+				if err := v.generate(out, "json"); err != nil {
+					return fmt.Errorf("cannot generate after validators: %w", err)
+				}
+			}
+
 			out.Printlnf("*j = %s(plain)", capturedDeclName)
-			out.Printlnf("if validator, ok := interface{}(j).(interface{ Validate() error }); ok {")
-			out.Indent(1)
-			out.Printlnf("if err := validator.Validate(); err != nil { return err }")
-			out.Indent(-1)
-			out.Printlnf("}")
 
-			if capturedUseEnumRouting {
-				out.Printlnf("discriminator := j.%s", capturedDiscGoName)
-			} else {
-				out.Printlnf("discriminator, _ := raw[%q].(string)", capturedDiscJSON)
-			}
-
-			// --- discriminator routing ---
-			if capturedUseEnumRouting {
-				out.Printlnf("switch j.%s {", capturedDiscGoName)
-			} else {
-				out.Printlnf("switch discriminator {")
-			}
-
-			for _, b := range capturedBranches {
-				if capturedUseEnumRouting {
-					out.Printlnf("case %s:", g.makeEnumConstantName(capturedDiscTypeName, b.discVal))
+			for _, routing := range capturedRoutings {
+				out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
+				out.Printlnf("if err != nil { return err }")
+				if routing.useEnumRouting {
+					out.Printlnf("%s := j.%s", routing.discriminatorVar, routing.discGoName)
+					out.Printlnf("switch j.%s {", routing.discGoName)
 				} else {
-					out.Printlnf("case %q:", b.discVal)
+					out.Printlnf("%s, _ := raw[%q].(string)", routing.discriminatorVar, routing.discJSONName)
+					out.Printlnf("switch %s {", routing.discriminatorVar)
 				}
 				out.Indent(1)
-				out.Printlnf("var v %s", b.typeName)
-				out.Printlnf("if err := json.Unmarshal(valueRaw, &v); err != nil {")
+
+				for _, b := range routing.branches {
+					if routing.useEnumRouting {
+						out.Printlnf("case %s:", g.makeEnumConstantName(routing.discTypeName, b.discVal))
+					} else {
+						out.Printlnf("case %q:", b.discVal)
+					}
+					out.Indent(1)
+					out.Printlnf("var v %s", b.typeName)
+					out.Printlnf("if err := json.Unmarshal(%s, &v); err != nil {", routing.valueRawVar)
+					out.Indent(1)
+					out.Printlnf(
+						`return fmt.Errorf("%s: invalid value for type %%q: %%w", %s, err)`,
+						capturedDeclName,
+						routing.discriminatorVar,
+					)
+					out.Indent(-1)
+					out.Printlnf("}")
+					out.Printlnf("j.%s = %s{%s: &v}", routing.envGoName, routing.payloadTypeName, b.goField)
+					out.Indent(-1)
+				}
+
+				out.Printlnf("default:")
 				out.Indent(1)
 				out.Printlnf(
-					`return fmt.Errorf("%s: invalid value for type %%q: %%w", discriminator, err)`,
+					`return fmt.Errorf("%s: unknown discriminator value %%q", %s)`,
 					capturedDeclName,
+					routing.discriminatorVar,
 				)
 				out.Indent(-1)
 				out.Printlnf("}")
-				out.Printlnf("j.%s = %s{%s: &v}", capturedEnvGoName, capturedPayloadTypeName, b.goField)
 				out.Indent(-1)
 			}
-
-			out.Printlnf("default:")
-			out.Indent(1)
-			out.Printlnf(
-				`return fmt.Errorf("%s: unknown discriminator value %%q", discriminator)`,
-				capturedDeclName,
-			)
-			out.Indent(-1)
-			out.Printlnf("}")
 
 			out.Printlnf("return nil")
 			out.Indent(-1)

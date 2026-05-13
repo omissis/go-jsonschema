@@ -76,16 +76,19 @@ Note the flag format:
 
 ### Schema extension: `x-go-oneof-envelope`
 
-`x-go-oneof-envelope` is a first-stage extension for discriminator-driven envelope
+`x-go-oneof-envelope` is a second-stage extension for discriminator-driven envelope
 shapes such as `{ "type": "...", "value": { ... } }`.
 
-- Use it on the envelope payload field (for example, `value`) that contains `oneOf`.
+- Use it on envelope payload fields (for example, `value`, `payload`) that contain `oneOf`.
 - `discriminator` is the sibling field name (for example, `type`) used for routing.
 - `mapping` keys are discriminator values, and mapping values must match the resolved
   branch `title` values.
 - `oneOf` branches may be `$ref` or inline, but each branch must resolve to a unique
   `title`.
-- Current supported usage assumes one such envelope field per object.
+- Multiple envelope fields on the same object are supported.
+- Nested objects can also use `x-go-oneof-envelope`.
+- This is targeted support for discriminator-driven envelope routing, not generic
+  inference for arbitrary `oneOf` unions.
 
 Example:
 
