@@ -3,4 +3,4 @@
 set -e
 set -o errexit -o nounset
 
-docker build --tag omissis/go-jsonschema:latest --file Dockerfile --target go-jsonschema .
+docker build --tag tuotuoxp/go-jsonschema:latest --file Dockerfile --target go-jsonschema .
