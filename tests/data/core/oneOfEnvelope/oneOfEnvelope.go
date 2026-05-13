@@ -225,34 +225,35 @@ func (j *OneOfEnvelope) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = OneOfEnvelope(plain)
+	result := OneOfEnvelope(plain)
 	valueRaw, err := json.Marshal(raw["value"])
 	if err != nil {
 		return err
 	}
-	valueDiscriminator := j.Type
-	switch j.Type {
+	valueDiscriminator := result.Type
+	switch result.Type {
 	case OneOfEnvelopeTypeA:
 		var v AValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("OneOfEnvelope: invalid value for type %q: %w", valueDiscriminator, err)
 		}
-		j.Value = Payload{A: &v}
+		result.Value = Payload{A: &v}
 	case OneOfEnvelopeTypeB:
 		var v BValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("OneOfEnvelope: invalid value for type %q: %w", valueDiscriminator, err)
 		}
-		j.Value = Payload{B: &v}
+		result.Value = Payload{B: &v}
 	case OneOfEnvelopeTypeC:
 		var v CValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("OneOfEnvelope: invalid value for type %q: %w", valueDiscriminator, err)
 		}
-		j.Value = Payload{C: &v}
+		result.Value = Payload{C: &v}
 	default:
 		return fmt.Errorf("OneOfEnvelope: unknown discriminator value %q", valueDiscriminator)
 	}
+	*j = result
 	return nil
 }
 

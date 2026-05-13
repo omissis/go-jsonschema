@@ -106,28 +106,29 @@ func (j *AValue) UnmarshalJSON(b []byte) error {
 	if matched, _ := regexp.MatchString(`^[a-z]+$`, string(plain.SubA)); !matched {
 		return fmt.Errorf("field %s pattern match: must match %s", "SubA", `^[a-z]+$`)
 	}
-	*j = AValue(plain)
+	result := AValue(plain)
 	nestedValueRaw, err := json.Marshal(raw["nested_value"])
 	if err != nil {
 		return err
 	}
-	nestedValueDiscriminator := j.NestedType
-	switch j.NestedType {
+	nestedValueDiscriminator := result.NestedType
+	switch result.NestedType {
 	case AValueNestedTypeN1:
 		var v NestedValue1
 		if err := json.Unmarshal(nestedValueRaw, &v); err != nil {
 			return fmt.Errorf("AValue: invalid value for type %q: %w", nestedValueDiscriminator, err)
 		}
-		j.NestedValue = NestedPayload{N1: &v}
+		result.NestedValue = NestedPayload{N1: &v}
 	case AValueNestedTypeN2:
 		var v NestedValue2
 		if err := json.Unmarshal(nestedValueRaw, &v); err != nil {
 			return fmt.Errorf("AValue: invalid value for type %q: %w", nestedValueDiscriminator, err)
 		}
-		j.NestedValue = NestedPayload{N2: &v}
+		result.NestedValue = NestedPayload{N2: &v}
 	default:
 		return fmt.Errorf("AValue: unknown discriminator value %q", nestedValueDiscriminator)
 	}
+	*j = result
 	return nil
 }
 
@@ -408,31 +409,31 @@ func (j *MultiOneOfEnvelope) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	*j = MultiOneOfEnvelope(plain)
+	result := MultiOneOfEnvelope(plain)
 	payloadRaw, err := json.Marshal(raw["payload"])
 	if err != nil {
 		return err
 	}
-	payloadDiscriminator := j.Mode
-	switch j.Mode {
+	payloadDiscriminator := result.Mode
+	switch result.Mode {
 	case MultiOneOfEnvelopeModeX:
 		var v PayloadX
 		if err := json.Unmarshal(payloadRaw, &v); err != nil {
 			return fmt.Errorf("MultiOneOfEnvelope: invalid value for type %q: %w", payloadDiscriminator, err)
 		}
-		j.Payload = ModePayload{X: &v}
+		result.Payload = ModePayload{X: &v}
 	case MultiOneOfEnvelopeModeY:
 		var v PayloadY
 		if err := json.Unmarshal(payloadRaw, &v); err != nil {
 			return fmt.Errorf("MultiOneOfEnvelope: invalid value for type %q: %w", payloadDiscriminator, err)
 		}
-		j.Payload = ModePayload{Y: &v}
+		result.Payload = ModePayload{Y: &v}
 	case MultiOneOfEnvelopeModeZ:
 		var v PayloadZ
 		if err := json.Unmarshal(payloadRaw, &v); err != nil {
 			return fmt.Errorf("MultiOneOfEnvelope: invalid value for type %q: %w", payloadDiscriminator, err)
 		}
-		j.Payload = ModePayload{Z: &v}
+		result.Payload = ModePayload{Z: &v}
 	default:
 		return fmt.Errorf("MultiOneOfEnvelope: unknown discriminator value %q", payloadDiscriminator)
 	}
@@ -440,29 +441,30 @@ func (j *MultiOneOfEnvelope) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	valueDiscriminator := j.Type
-	switch j.Type {
+	valueDiscriminator := result.Type
+	switch result.Type {
 	case MultiOneOfEnvelopeTypeA:
 		var v AValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("MultiOneOfEnvelope: invalid value for type %q: %w", valueDiscriminator, err)
 		}
-		j.Value = ValuePayload{A: &v}
+		result.Value = ValuePayload{A: &v}
 	case MultiOneOfEnvelopeTypeB:
 		var v BValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("MultiOneOfEnvelope: invalid value for type %q: %w", valueDiscriminator, err)
 		}
-		j.Value = ValuePayload{B: &v}
+		result.Value = ValuePayload{B: &v}
 	case MultiOneOfEnvelopeTypeC:
 		var v CValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("MultiOneOfEnvelope: invalid value for type %q: %w", valueDiscriminator, err)
 		}
-		j.Value = ValuePayload{C: &v}
+		result.Value = ValuePayload{C: &v}
 	default:
 		return fmt.Errorf("MultiOneOfEnvelope: unknown discriminator value %q", valueDiscriminator)
 	}
+	*j = result
 	return nil
 }
 

@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 	"sort"
-	"strings"
+	"unicode"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
@@ -243,6 +243,16 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	envFields []envelopeFieldInfo,
 	validators []validator,
 ) {
+	unexported := func(name string) string {
+		runes := []rune(name)
+		if len(runes) == 0 {
+			return "envelope"
+		}
+
+		runes[0] = unicode.ToLower(runes[0])
+		return string(runes)
+	}
+
 	type envelopeRoutingInfo struct {
 		envJSONName      string
 		envGoName        string
@@ -341,6 +351,8 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			useEnumRouting = true
 		}
 
+		localName := unexported(envField.goName)
+
 		routings = append(routings, envelopeRoutingInfo{
 			envJSONName:      envField.jsonName,
 			envGoName:        envField.goName,
@@ -349,8 +361,8 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			discGoName:       discGoName,
 			discTypeName:     discTypeName,
 			useEnumRouting:   useEnumRouting,
-			discriminatorVar: fmt.Sprintf("%sDiscriminator", strings.ToLower(envField.goName[:1])+envField.goName[1:]),
-			valueRawVar:      fmt.Sprintf("%sRaw", strings.ToLower(envField.goName[:1])+envField.goName[1:]),
+			discriminatorVar: fmt.Sprintf("%sDiscriminator", localName),
+			valueRawVar:      fmt.Sprintf("%sRaw", localName),
 			branches:         branches,
 		})
 	}
@@ -393,14 +405,14 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				}
 			}
 
-			out.Printlnf("*j = %s(plain)", capturedDeclName)
+			out.Printlnf("result := %s(plain)", capturedDeclName)
 
 			for _, routing := range capturedRoutings {
 				out.Printlnf("%s, err := json.Marshal(raw[%q])", routing.valueRawVar, routing.envJSONName)
 				out.Printlnf("if err != nil { return err }")
 				if routing.useEnumRouting {
-					out.Printlnf("%s := j.%s", routing.discriminatorVar, routing.discGoName)
-					out.Printlnf("switch j.%s {", routing.discGoName)
+					out.Printlnf("%s := result.%s", routing.discriminatorVar, routing.discGoName)
+					out.Printlnf("switch result.%s {", routing.discGoName)
 				} else {
 					out.Printlnf("%s, _ := raw[%q].(string)", routing.discriminatorVar, routing.discJSONName)
 					out.Printlnf("switch %s {", routing.discriminatorVar)
@@ -424,7 +436,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 					)
 					out.Indent(-1)
 					out.Printlnf("}")
-					out.Printlnf("j.%s = %s{%s: &v}", routing.envGoName, routing.payloadTypeName, b.goField)
+					out.Printlnf("result.%s = %s{%s: &v}", routing.envGoName, routing.payloadTypeName, b.goField)
 					out.Indent(-1)
 				}
 
@@ -440,6 +452,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				out.Indent(-1)
 			}
 
+			out.Printlnf("*j = result")
 			out.Printlnf("return nil")
 			out.Indent(-1)
 			out.Printlnf("}")
