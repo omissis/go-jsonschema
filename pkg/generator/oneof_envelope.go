@@ -285,6 +285,13 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	}
 
 	outerStruct, _ := decl.Type.(*codegen.StructType)
+	structFieldByJSONName := map[string]*codegen.StructField{}
+	if outerStruct != nil {
+		for i := range outerStruct.Fields {
+			sf := &outerStruct.Fields[i]
+			structFieldByJSONName[sf.JSONName] = sf
+		}
+	}
 
 	for _, envField := range envFields {
 		ext := envField.prop.GoOneOfEnvelope
@@ -330,14 +337,8 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		}
 
 		envGoName := g.caser.Identifierize(envField.jsonName)
-		if outerStruct != nil {
-			for _, sf := range outerStruct.Fields {
-				if sf.JSONName == envField.jsonName {
-					envGoName = sf.Name
-
-					break
-				}
-			}
+		if sf, ok := structFieldByJSONName[envField.jsonName]; ok {
+			envGoName = sf.Name
 		}
 
 		_, envRequired := requiredFields[envField.jsonName]
@@ -350,25 +351,17 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		discTypeIsPointer := false
 		useEnumRouting := false
 
-		if outerStruct != nil {
-			for _, sf := range outerStruct.Fields {
-				if sf.JSONName != discJSONName {
-					continue
+		if sf, ok := structFieldByJSONName[discJSONName]; ok {
+			discGoName = sf.Name
+
+			switch ft := sf.Type.(type) {
+			case *codegen.NamedType:
+				discTypeName = ft.Decl.Name
+			case *codegen.PointerType:
+				if nt, ok := ft.Type.(*codegen.NamedType); ok {
+					discTypeName = nt.Decl.Name
+					discTypeIsPointer = true
 				}
-
-				discGoName = sf.Name
-
-				switch ft := sf.Type.(type) {
-				case *codegen.NamedType:
-					discTypeName = ft.Decl.Name
-				case *codegen.PointerType:
-					if nt, ok := ft.Type.(*codegen.NamedType); ok {
-						discTypeName = nt.Decl.Name
-						discTypeIsPointer = true
-					}
-				}
-
-				break
 			}
 		}
 
@@ -452,7 +445,8 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 					out.Indent(1)
 				}
 				if !routing.envRequired {
-					out.Printlnf("if %s, ok := raw[%q]; ok && %s != nil {", routing.valueFieldVar, routing.envJSONName, routing.valueFieldVar)
+					out.Printlnf("%s, ok := raw[%q]", routing.valueFieldVar, routing.envJSONName)
+					out.Printlnf("if ok && %s != nil {", routing.valueFieldVar)
 					out.Indent(1)
 					out.Printlnf("%s, err := json.Marshal(%s)", routing.valueRawVar, routing.valueFieldVar)
 				} else {
