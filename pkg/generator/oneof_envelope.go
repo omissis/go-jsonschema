@@ -356,6 +356,11 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			out.Printlnf("var plain Plain")
 			out.Printlnf("if err := json.Unmarshal(b, &plain); err != nil { return err }")
 			out.Printlnf("*j = %s(plain)", capturedDeclName)
+			out.Printlnf("if validator, ok := interface{}(j).(interface{ Validate() error }); ok {")
+			out.Indent(1)
+			out.Printlnf("if err := validator.Validate(); err != nil { return err }")
+			out.Indent(-1)
+			out.Printlnf("}")
 
 			if capturedUseEnumRouting {
 				out.Printlnf("discriminator := j.%s", capturedDiscGoName)
