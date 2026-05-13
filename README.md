@@ -32,8 +32,8 @@ go install github.com/tuotuoxp/go-jsonschema@latest
 * **Install with Brew**: To install with [Homebrew](https://brew.sh):
 
 ```shell
-brew tap tuotuoxp/go-jsonschema
-brew install go-jsonschema
+brew tap tuotuoxp/homebrew-go-jsonschema
+brew install --cask go-jsonschema
 ```
 
 ## Contributing
