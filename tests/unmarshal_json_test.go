@@ -12,6 +12,7 @@ import (
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	testOneOfEnvelope "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelope"
+	testOneOfEnvelopeRefEnumDiscriminator "github.com/atombender/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
@@ -523,5 +524,42 @@ func TestOneOfEnvelopeUnmarshalJSON(t *testing.T) {
 		err := json.Unmarshal([]byte(`{"dummy":"x","type":"c","value":{"sub_b":1}}`), &v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "sub_c")
+	})
+}
+
+func TestOneOfEnvelopeRefEnumDiscriminatorUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success/type_a", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		require.NoError(t, json.Unmarshal([]byte(`{"type":"a","value":{"sub_a":"hello"}}`), &v))
+
+		assert.Equal(t, testOneOfEnvelopeRefEnumDiscriminator.EnvelopeTypeA, v.Type)
+		assert.NotNil(t, v.Value.A)
+		assert.Equal(t, "hello", v.Value.A.SubA)
+		assert.Nil(t, v.Value.B)
+	})
+
+	t.Run("success/type_b", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		require.NoError(t, json.Unmarshal([]byte(`{"type":"b","value":{"sub_b":10}}`), &v))
+
+		assert.Equal(t, testOneOfEnvelopeRefEnumDiscriminator.EnvelopeTypeB, v.Type)
+		assert.Nil(t, v.Value.A)
+		assert.NotNil(t, v.Value.B)
+		assert.Equal(t, 10, v.Value.B.SubB)
+	})
+
+	t.Run("failure/invalid_type_enum_value", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		err := json.Unmarshal([]byte(`{"type":"x","value":{}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"x"`)
 	})
 }

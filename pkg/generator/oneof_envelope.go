@@ -304,8 +304,21 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	}
 
 	// Use enum constants for switch routing only when discriminator is an enum.
-	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && len(discProp.Enum) > 0 {
-		useEnumRouting = true
+	// Support both inline enum and $ref to enum schema.
+	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" {
+		discEnumSchema := discProp
+		if discProp.Ref != "" {
+			resolved, err := g.resolveRef(discProp)
+			if err != nil {
+				g.warner(fmt.Sprintf("Could not resolve discriminator ref %q: %v", discProp.Ref, err))
+			} else {
+				discEnumSchema = resolved
+			}
+		}
+
+		if len(discEnumSchema.Enum) > 0 {
+			useEnumRouting = true
+		}
 	}
 
 	capturedBranches := branches
