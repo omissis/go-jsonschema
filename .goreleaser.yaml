@@ -33,7 +33,7 @@ changelog:
       - "^test:"
 release:
   github:
-    owner: omissis
+    owner: tuotuoxp
     name: go-jsonschema
   name_template: "{{ .Tag }}"
   prerelease: auto
@@ -41,10 +41,10 @@ homebrew_casks:
   - name: go-jsonschema
     description: go-jsonschema binary
     url:
-      verified: github.com/omissis/go-jsonschema
-    homepage: https://github.com/omissis/go-jsonschema
+      verified: github.com/tuotuoxp/go-jsonschema
+    homepage: https://github.com/tuotuoxp/go-jsonschema
     repository:
-      owner: omissis
+      owner: tuotuoxp
       name: homebrew-go-jsonschema
     skip_upload: auto
     hooks:
@@ -55,7 +55,7 @@ homebrew_casks:
           end
 dockers_v2:
   - images:
-      - "omissis/go-jsonschema"
+      - "tuotuoxp/go-jsonschema"
     flags:
       - "--target=go-jsonschema"
       - "--builder=container"
