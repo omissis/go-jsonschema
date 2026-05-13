@@ -71,7 +71,66 @@ Note the flag format:
 --schema-package=https://example.com/schema1=github.com/myuser/myproject \
                  ^                           ^
                  |                           |
-                 schema $id                  full import URL
+                  schema $id                  full import URL
+```
+
+### Schema extension: `x-go-oneof-envelope`
+
+`x-go-oneof-envelope` is a first-stage extension for discriminator-driven envelope
+shapes such as `{ "type": "...", "value": { ... } }`.
+
+- Use it on the envelope payload field (for example, `value`) that contains `oneOf`.
+- `discriminator` is the sibling field name (for example, `type`) used for routing.
+- `mapping` keys are discriminator values, and mapping values must match the resolved
+  branch `title` values.
+- `oneOf` branches may be `$ref` or inline, but each branch must resolve to a unique
+  `title`.
+- Current supported usage assumes one such envelope field per object.
+
+Example:
+
+```json
+{
+  "type": "object",
+  "required": ["type", "value"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["a", "b"]
+    },
+    "value": {
+      "title": "Payload",
+      "oneOf": [
+        { "$ref": "#/$defs/AValue" },
+        {
+          "title": "BValue",
+          "type": "object",
+          "required": ["sub_b"],
+          "properties": {
+            "sub_b": { "type": "integer" }
+          }
+        }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "type",
+        "mapping": {
+          "a": "AValue",
+          "b": "BValue"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "AValue": {
+      "title": "AValue",
+      "type": "object",
+      "required": ["sub_a"],
+      "properties": {
+        "sub_a": { "type": "string" }
+      }
+    }
+  }
+}
 ```
 
 ### Regenerating tests' golden files
