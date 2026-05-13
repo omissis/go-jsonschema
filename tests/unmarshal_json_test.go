@@ -562,4 +562,13 @@ func TestOneOfEnvelopeRefEnumDiscriminatorUnmarshalJSON(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), `"x"`)
 	})
+
+	t.Run("failure/type_b_minimum_violation", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfEnvelopeRefEnumDiscriminator.OneOfEnvelopeRefEnumDiscriminator
+		err := json.Unmarshal([]byte(`{"type":"b","value":{"sub_b":0}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be >=")
+	})
 }
