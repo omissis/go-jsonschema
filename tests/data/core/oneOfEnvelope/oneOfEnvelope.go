@@ -220,7 +220,6 @@ func (j *OneOfEnvelope) UnmarshalJSON(b []byte) error {
 	if _, ok := raw["value"]; raw != nil && !ok {
 		return fmt.Errorf("field value in OneOfEnvelope: required")
 	}
-	discriminator, _ := raw["type"].(string)
 	valueRaw, err := json.Marshal(raw["value"])
 	if err != nil {
 		return err
@@ -231,20 +230,21 @@ func (j *OneOfEnvelope) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*j = OneOfEnvelope(plain)
-	switch discriminator {
-	case "a":
+	discriminator := j.Type
+	switch j.Type {
+	case OneOfEnvelopeTypeA:
 		var v AValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("OneOfEnvelope: invalid value for type %q: %w", discriminator, err)
 		}
 		j.Value = Payload{A: &v}
-	case "b":
+	case OneOfEnvelopeTypeB:
 		var v BValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("OneOfEnvelope: invalid value for type %q: %w", discriminator, err)
 		}
 		j.Value = Payload{B: &v}
-	case "c":
+	case OneOfEnvelopeTypeC:
 		var v CValue
 		if err := json.Unmarshal(valueRaw, &v); err != nil {
 			return fmt.Errorf("OneOfEnvelope: invalid value for type %q: %w", discriminator, err)
