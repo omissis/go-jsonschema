@@ -276,9 +276,17 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 
 	// Required fields (for presence check).
 	requiredFields := schemaType.Required
+	discRequired := false
+	for _, req := range requiredFields {
+		if req == ext.Discriminator {
+			discRequired = true
+			break
+		}
+	}
 	discJSONName := ext.Discriminator
 	discGoName := g.caser.Identifierize(discJSONName)
 	discTypeName := ""
+	discTypeIsPointer := false
 	useEnumRouting := false
 
 	// Try to resolve the generated Go field/type for discriminator routing.
@@ -296,6 +304,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			case *codegen.PointerType:
 				if nt, ok := ft.Type.(*codegen.NamedType); ok {
 					discTypeName = nt.Decl.Name
+					discTypeIsPointer = true
 				}
 			}
 
@@ -304,13 +313,27 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 	}
 
 	// Use enum constants for switch routing only when discriminator is an enum.
-	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && len(discProp.Enum) > 0 {
-		useEnumRouting = true
+	// Support both inline enum and $ref to enum schema.
+	if discProp, ok := schemaType.Properties[discJSONName]; ok && discTypeName != "" && !discTypeIsPointer {
+		discEnumSchema := discProp
+		if discProp.Ref != "" {
+			resolved, err := g.resolveRef(discProp)
+			if err != nil {
+				g.warner(fmt.Sprintf("Could not resolve discriminator ref %q: %v", discProp.Ref, err))
+			} else {
+				discEnumSchema = resolved
+			}
+		}
+
+		if len(discEnumSchema.Enum) > 0 {
+			useEnumRouting = true
+		}
 	}
 
 	capturedBranches := branches
 	capturedPayloadTypeName := payloadTypeName
 	capturedRequired := requiredFields
+	capturedDiscRequired := discRequired
 	capturedDiscJSON := discJSONName
 	capturedDiscGoName := discGoName
 	capturedDiscTypeName := discTypeName
@@ -368,6 +391,13 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 				out.Printlnf("discriminator := j.%s", capturedDiscGoName)
 			} else {
 				out.Printlnf("discriminator, _ := raw[%q].(string)", capturedDiscJSON)
+			}
+			if !capturedDiscRequired {
+				out.Printlnf("if _, ok := raw[%q]; !ok {", capturedDiscJSON)
+				out.Indent(1)
+				out.Printlnf("return nil")
+				out.Indent(-1)
+				out.Printlnf("}")
 			}
 
 			// --- discriminator routing ---
