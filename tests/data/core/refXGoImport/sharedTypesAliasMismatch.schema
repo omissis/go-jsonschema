@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refXGoImport/sharedTypesAliasMismatch",
+  "$defs": {
+    "SharedUser": {
+      "type": "object",
+      "x-go-type": "User",
+      "x-go-ref": {
+        "path": "github.com/tuotuoxp/go-jsonschema/tests/helpers/shared",
+        "alias": ""
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

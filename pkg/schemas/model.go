@@ -210,6 +210,9 @@ type Type struct {
 	// XGoType is a legacy/custom extension used to signal an explicit Go type intent.
 	XGoType *string `json:"x-go-type,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
 
+	// XGoRef configures import path/alias for referenced-definition Go type reuse.
+	XGoRef *XGoRefExtension `json:"x-go-ref,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
+
 	// GoOneOfEnvelope configures discriminator-based oneOf routing for this field.
 	GoOneOfEnvelope *GoOneOfEnvelopeExtension `json:"x-go-oneof-envelope,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
 
@@ -448,6 +451,11 @@ type GoJSONSchemaExtension struct {
 	Pointer    *bool             `json:"pointer,omitempty"`
 	Imports    []string          `json:"imports,omitempty"`
 	ExtraTags  map[string]string `json:"extraTags,omitempty"`
+}
+
+type XGoRefExtension struct {
+	Path  string `json:"path"`
+	Alias string `json:"alias"`
 }
 
 // GoOneOfEnvelopeExtension configures discriminator-based oneOf routing for a field.

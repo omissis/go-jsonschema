@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/tuotuoxp/go-jsonschema/pkg/schemas"
 )
 
 func TestResolveStructFieldSchemaTypeKeepsDereferencedCacheState(t *testing.T) {
@@ -63,4 +65,22 @@ func TestResolveStructFieldSchemaTypeKeepsDereferencedCacheState(t *testing.T) {
 	cached := sg.schemaTypesByRef[prop.Ref]
 	require.NotNil(t, cached)
 	require.True(t, cached.Dereferenced)
+}
+
+func TestResolveReferencedDefinitionTypeNameRejectsQualifiedXGoTypeWithXGoRef(t *testing.T) {
+	t.Parallel()
+
+	sg := &schemaGenerator{}
+	xGoType := "shared.User"
+	definition := &schemas.Type{
+		XGoType: &xGoType,
+		XGoRef: &schemas.XGoRefExtension{
+			Path:  "github.com/example/shared",
+			Alias: "shared",
+		},
+	}
+
+	_, err := sg.resolveReferencedDefinitionTypeName(definition, "User", "#/$defs/User")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "must be a valid Go identifier")
 }

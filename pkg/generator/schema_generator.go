@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -26,6 +27,9 @@ var (
 	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
 
 	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
+
+	//nolint:gochecknoglobals // compiled once for schema extension validation
+	goIdentifierRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
 const float64Type = "float64"
@@ -61,8 +65,22 @@ func (g *schemaGenerator) generateRootType() error {
 
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
+		ref := fmt.Sprintf("#/$defs/%s", name)
+		scopeName, err := g.resolveReferencedDefinitionTypeName(def, g.caser.Identifierize(name), ref)
+		if err != nil {
+			return err
+		}
 
-		_, err := g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
+		_, _, _, hasRefMapping, err := g.resolveReferencedXGoRefMapping(def, ref)
+		if err != nil {
+			return err
+		}
+
+		if hasRefMapping {
+			continue
+		}
+
+		_, err = g.generateDeclaredType(def, newNameScope(scopeName))
 		if err != nil {
 			return err
 		}
@@ -89,8 +107,20 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	}
 
 	if fileName == "" {
+		defLookupName := defName
+		if schemaDef, ok := g.schema.Definitions[defName]; ok && schemaDef.XGoRef != nil {
+			defLookupName, err = g.resolveReferencedDefinitionTypeName(
+				schemaDef,
+				g.caser.Identifierize(defName),
+				t.Ref,
+			)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
-			if decl, ok := schemaOutput.declsByName[defName]; ok {
+			if decl, ok := schemaOutput.declsByName[defLookupName]; ok {
 				if decl != nil {
 					return &codegen.NamedType{Decl: decl}, nil
 				}
@@ -121,6 +151,24 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", t.Ref, fileName, serr)
 		}
 
+		if defName != "" {
+			definition, ok := schema.Definitions[defName]
+			if !ok {
+				return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+			}
+
+			mappedType, importPath, importAlias, mappingOK, mappingErr := g.resolveReferencedXGoRefMapping(definition, t.Ref)
+			if mappingErr != nil {
+				return nil, mappingErr
+			}
+
+			if mappingOK {
+				g.output.file.Package.AddImport(importPath, importAlias)
+
+				return &codegen.CustomNameType{Type: mappedType}, nil
+			}
+		}
+
 		qualified, qerr := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
 		if qerr != nil {
 			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, qerr)
@@ -149,7 +197,10 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
 		}
 
-		defName = g.caser.Identifierize(defName)
+		defName, err = g.resolveReferencedDefinitionTypeName(def, g.caser.Identifierize(defName), t.Ref)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -952,6 +1003,14 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 
 	resolvedRefSchema, err := g.resolveRef(prop)
 	if err != nil {
+		if _, _, _, hasRefMapping, refMappingErr := g.resolveReferencedXGoRefMappingForRef(prop); refMappingErr != nil {
+			g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, refMappingErr))
+
+			return prop, false
+		} else if hasRefMapping {
+			return prop, false
+		}
+
 		g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, err))
 
 		return prop, false
@@ -966,6 +1025,101 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 	}
 
 	return resolvedRefSchema, true
+}
+
+func (g *schemaGenerator) resolveReferencedXGoRefMappingForRef(
+	refType *schemas.Type,
+) (string, string, string, bool, error) {
+	if refType.Ref == "" {
+		return "", "", "", false, nil
+	}
+
+	defName, fileName, err := g.extractRefNames(refType)
+	if err != nil || fileName == "" || defName == "" {
+		return "", "", "", false, nil
+	}
+
+	schema, err := g.loader.Load(fileName, g.schemaFileName)
+	if err != nil {
+		return "", "", "", false, nil
+	}
+
+	definition, ok := schema.Definitions[defName]
+	if !ok {
+		return "", "", "", false, nil
+	}
+
+	return g.resolveReferencedXGoRefMapping(definition, refType.Ref)
+}
+
+func (g *schemaGenerator) resolveReferencedDefinitionTypeName(
+	definition *schemas.Type,
+	fallback string,
+	ref string,
+) (string, error) {
+	if definition == nil || definition.XGoRef == nil {
+		return fallback, nil
+	}
+
+	if definition.XGoType == nil || strings.TrimSpace(*definition.XGoType) == "" {
+		return "", fmt.Errorf("x-go-type is required when x-go-ref is present for ref %q", ref)
+	}
+
+	goType := strings.TrimSpace(*definition.XGoType)
+	if err := validateGoIdentifier(goType, "x-go-type", ref); err != nil {
+		return "", err
+	}
+
+	return goType, nil
+}
+
+func (g *schemaGenerator) resolveReferencedXGoRefMapping(
+	definition *schemas.Type,
+	ref string,
+) (string, string, string, bool, error) {
+	if definition == nil || definition.XGoRef == nil {
+		return "", "", "", false, nil
+	}
+
+	goType, err := g.resolveReferencedDefinitionTypeName(definition, "", ref)
+	if err != nil {
+		return "", "", "", false, err
+	}
+
+	importPath := strings.TrimSpace(definition.XGoRef.Path)
+	if importPath == "" {
+		return "", "", "", false, fmt.Errorf(
+			"x-go-ref.path is required when x-go-ref is present for ref %q",
+			ref,
+		)
+	}
+
+	importAlias := strings.TrimSpace(definition.XGoRef.Alias)
+	if importAlias == "" {
+		return "", "", "", false, fmt.Errorf(
+			"x-go-ref.alias is required when x-go-ref is present for ref %q",
+			ref,
+		)
+	}
+
+	if err := validateGoIdentifier(importAlias, "x-go-ref.alias", ref); err != nil {
+		return "", "", "", false, err
+	}
+
+	return importAlias + "." + goType, importPath, importAlias, true, nil
+}
+
+func validateGoIdentifier(value, partName, ref string) error {
+	if goIdentifierRe.MatchString(value) {
+		return nil
+	}
+
+	return fmt.Errorf(
+		"invalid %s %q for ref %q: must be a valid Go identifier",
+		partName,
+		value,
+		ref,
+	)
 }
 
 func (g *schemaGenerator) shouldKeepReferencedSchemaAsNamedType(schemaType *schemas.Type) bool {
@@ -1341,6 +1495,21 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if typeIndex == -1 {
 			return emptyInterfaceTypeVal, nil
+		}
+	}
+
+	if t.Ref != "" {
+		mappedType, importPath, importAlias, hasXGoTypeMapping, err := g.resolveReferencedXGoRefMappingForRef(t)
+		if err != nil {
+			return nil, err
+		}
+
+		if hasXGoTypeMapping {
+			if importPath != "" {
+				g.output.file.Package.AddImport(importPath, importAlias)
+			}
+
+			return &codegen.CustomNameType{Type: mappedType}, nil
 		}
 	}
 
