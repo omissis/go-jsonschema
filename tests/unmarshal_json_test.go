@@ -824,7 +824,9 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		return out
 	}
 
-	toJSON := func(m map[string]any) []byte {
+	toJSON := func(t *testing.T, m map[string]any) []byte {
+		t.Helper()
+
 		value, err := json.Marshal(m)
 		require.NoError(t, err)
 
@@ -835,7 +837,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		t.Parallel()
 
 		var value testRefSemanticInline.RefSemanticInline
-		require.NoError(t, json.Unmarshal(toJSON(cloneBase()), &value))
+		require.NoError(t, json.Unmarshal(toJSON(t, cloneBase()), &value))
 	})
 
 	t.Run("failure/inline_pattern", func(t *testing.T) {
@@ -845,7 +847,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["inlineName"] = "INVALID"
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "pattern match")
 	})
@@ -857,7 +859,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["refName"] = "INVALID"
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "pattern match")
 	})
@@ -869,7 +871,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["refCode"] = "ab"
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be >=")
 	})
@@ -881,7 +883,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["refStringConst"] = "unstable"
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be equal")
 	})
@@ -893,7 +895,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["refInteger"] = 10
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be <")
 	})
@@ -905,7 +907,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["refNumber"] = 4.5
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be equal")
 	})
@@ -917,7 +919,7 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		payload["refFlag"] = false
 
 		var value testRefSemanticInline.RefSemanticInline
-		err := json.Unmarshal(toJSON(payload), &value)
+		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be equal to true")
 	})
@@ -962,4 +964,5 @@ func TestRefSemanticNamedUnmarshalJSON(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "pattern match")
 	})
+
 }

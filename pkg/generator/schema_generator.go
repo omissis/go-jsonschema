@@ -254,6 +254,11 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
 			if decl.Name != scope.string() {
+				if existingDecl, exists := g.output.declsByName[scope.string()]; exists &&
+					existingDecl != decl && existingDecl.Type != nil {
+					return &codegen.NamedType{Decl: decl}, nil
+				}
+
 				declAlias := &codegen.AliasType{
 					Alias: scope.string(),
 					Name:  decl.Name,
@@ -945,11 +950,6 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 		return prop, false
 	}
 
-	previousDereferenced := false
-	if cached, ok := g.schemaTypesByRef[prop.Ref]; ok {
-		previousDereferenced = cached.Dereferenced
-	}
-
 	resolvedRefSchema, err := g.resolveRef(prop)
 	if err != nil {
 		g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, err))
@@ -958,14 +958,10 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 	}
 
 	if g.shouldKeepReferencedSchemaAsNamedType(resolvedRefSchema) {
-		resolvedRefSchema.Dereferenced = previousDereferenced
-
 		return prop, false
 	}
 
 	if !g.isSemanticInlinePrimitiveSchema(resolvedRefSchema) {
-		resolvedRefSchema.Dereferenced = previousDereferenced
-
 		return prop, false
 	}
 
