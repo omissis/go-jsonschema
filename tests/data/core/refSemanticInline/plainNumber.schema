@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refSemanticInline/plainNumber",
+  "type": "number",
+  "exclusiveMinimum": 0,
+  "maximum": 10.5,
+  "const": 3.5
+}

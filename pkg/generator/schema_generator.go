@@ -254,6 +254,11 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	if decl, ok := g.output.declsBySchema[t]; ok {
 		if t.Dereferenced {
 			if decl.Name != scope.string() {
+				if existingDecl, exists := g.output.declsByName[scope.string()]; exists &&
+					existingDecl != decl && existingDecl.Type != nil {
+					return &codegen.NamedType{Decl: decl}, nil
+				}
+
 				declAlias := &codegen.AliasType{
 					Alias: scope.string(),
 					Name:  decl.Name,
@@ -908,7 +913,12 @@ func (g *schemaGenerator) addStructField(
 		comment = fmt.Sprintf("%s corresponds to the JSON schema field %q.", fieldName, name)
 	}
 
-	structFieldType, err := g.generateStructFieldType(prop, scope.add(fieldName), isRequired)
+	schemaTypeForField := prop
+	if resolvedRefSchema, shouldSemanticInlineRef := g.resolveStructFieldSchemaType(prop); shouldSemanticInlineRef {
+		schemaTypeForField = resolvedRefSchema
+	}
+
+	structFieldType, err := g.generateStructFieldType(schemaTypeForField, scope.add(fieldName), isRequired)
 	if err != nil {
 		return fmt.Errorf("cannot add struct field: %w", err)
 	}
@@ -917,7 +927,7 @@ func (g *schemaGenerator) addStructField(
 		Name:         fieldName,
 		Comment:      comment,
 		JSONName:     name,
-		SchemaType:   prop,
+		SchemaType:   schemaTypeForField,
 		Tags:         g.generateStructFieldTags(name, extraTags, isRequired),
 		DefaultValue: g.generateStructFieldDefaultValue(prop),
 		Type:         structFieldType,
@@ -928,6 +938,80 @@ func (g *schemaGenerator) addStructField(
 	structType.AddField(structField)
 
 	return nil
+}
+
+func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*schemas.Type, bool) {
+	if prop.Ref == "" {
+		return prop, false
+	}
+
+	_, fileName, err := g.extractRefNames(prop)
+	if err != nil || fileName == "" {
+		return prop, false
+	}
+
+	resolvedRefSchema, err := g.resolveRef(prop)
+	if err != nil {
+		g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, err))
+
+		return prop, false
+	}
+
+	if g.shouldKeepReferencedSchemaAsNamedType(resolvedRefSchema) {
+		return prop, false
+	}
+
+	if !g.isSemanticInlinePrimitiveSchema(resolvedRefSchema) {
+		return prop, false
+	}
+
+	return resolvedRefSchema, true
+}
+
+func (g *schemaGenerator) shouldKeepReferencedSchemaAsNamedType(schemaType *schemas.Type) bool {
+	if schemaType.Title != "" {
+		return true
+	}
+
+	if ext := schemaType.GoJSONSchemaExtension; ext != nil && ext.Type != nil {
+		return true
+	}
+
+	return schemaType.XGoType != nil && strings.TrimSpace(*schemaType.XGoType) != ""
+}
+
+func (g *schemaGenerator) isSemanticInlinePrimitiveSchema(schemaType *schemas.Type) bool {
+	typeIndex, _ := g.isTypeNullable(schemaType)
+	if typeIndex == -1 {
+		return false
+	}
+
+	primitiveType := schemaType.Type[typeIndex]
+	if !g.hasSemanticInlinePrimitiveConstraints(schemaType, primitiveType) {
+		return false
+	}
+
+	return schemas.IsPrimitiveType(primitiveType) && primitiveType != schemas.TypeNameNull
+}
+
+func (g *schemaGenerator) hasSemanticInlinePrimitiveConstraints(schemaType *schemas.Type, primitiveType string) bool {
+	switch primitiveType {
+	case schemas.TypeNameString:
+		return schemaType.Pattern != "" ||
+			schemaType.MinLength != 0 ||
+			schemaType.MaxLength != 0 ||
+			schemaType.Const != nil
+	case schemas.TypeNameInteger, schemas.TypeNameNumber:
+		return schemaType.Minimum != nil ||
+			schemaType.Maximum != nil ||
+			schemaType.ExclusiveMinimum != nil ||
+			schemaType.ExclusiveMaximum != nil ||
+			schemaType.Const != nil
+	case schemas.TypeNameBoolean:
+		return schemaType.Const != nil
+	default:
+		return false
+	}
 }
 
 func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []string, isRequired bool) string {
