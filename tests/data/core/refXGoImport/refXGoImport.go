@@ -10,9 +10,6 @@ type PlainUser struct {
 }
 
 type RefXGoImport struct {
-	// LocalUser corresponds to the JSON schema field "localUser".
-	LocalUser *User `json:"localUser,omitempty,omitzero" yaml:"localUser,omitempty" mapstructure:"localUser,omitempty"`
-
 	// PlainUser corresponds to the JSON schema field "plainUser".
 	PlainUser *PlainUser `json:"plainUser,omitempty,omitzero" yaml:"plainUser,omitempty" mapstructure:"plainUser,omitempty"`
 

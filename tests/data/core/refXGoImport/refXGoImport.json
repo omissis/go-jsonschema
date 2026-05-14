@@ -6,9 +6,6 @@
     "sharedUser": {
       "$ref": "./sharedTypes.schema#/$defs/SharedUser"
     },
-    "localUser": {
-      "$ref": "./sharedTypes.schema#/$defs/LocalUser"
-    },
     "plainUser": {
       "$ref": "./sharedTypes.schema#/$defs/PlainUser"
     }
