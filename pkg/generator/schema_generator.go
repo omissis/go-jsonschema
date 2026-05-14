@@ -29,10 +29,14 @@ var (
 	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
 
 	//nolint:gochecknoglobals // compiled once for schema extension validation
-	goIdentifierRegexp = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+	goIdentifierRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
 const float64Type = "float64"
+
+// invalidXGoTypeChars enumerates expression tokens we intentionally reject for
+// x-go-type. This feature only supports simple Name or pkg.Name mappings.
+const invalidXGoTypeChars = "*[]{}()"
 
 func newSchemaGenerator(
 	g *Generator,
@@ -994,7 +998,11 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 
 	resolvedRefSchema, err := g.resolveRef(prop)
 	if err != nil {
-		if _, _, _, mapped, mappingErr := g.resolveReferencedXGoTypeMappingForRef(prop); mappingErr == nil && mapped {
+		if _, _, _, mapped, mappingErr := g.resolveReferencedXGoTypeMappingForRef(prop); mappingErr != nil {
+			g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, mappingErr))
+
+			return prop, false
+		} else if mapped {
 			return prop, false
 		}
 
@@ -1055,33 +1063,37 @@ func (g *schemaGenerator) resolveReferencedXGoTypeMapping(
 		return "", "", "", false, nil
 	}
 
-	if strings.Count(goType, ".") > 1 {
+	if strings.ContainsAny(goType, invalidXGoTypeChars) {
 		return "", "", "", false, fmt.Errorf(
-			"invalid x-go-type %q for ref %q: supported forms are Name or pkg.Name",
+			"invalid x-go-type %q for ref %q: contains unsupported characters (any of: * [ ] { } ( )); supported forms are Name or pkg.Name",
 			goType,
 			ref,
 		)
-	}
-
-	if !strings.Contains(goType, ".") {
-		if !goIdentifierRegexp.MatchString(goType) {
-			return "", "", "", false, fmt.Errorf(
-				"invalid x-go-type %q for ref %q: supported forms are Name or pkg.Name",
-				goType,
-				ref,
-			)
-		}
-
-		return goType, "", "", true, nil
 	}
 
 	parts := strings.Split(goType, ".")
-	if len(parts) != 2 || !goIdentifierRegexp.MatchString(parts[0]) || !goIdentifierRegexp.MatchString(parts[1]) {
+	if len(parts) > 2 {
 		return "", "", "", false, fmt.Errorf(
 			"invalid x-go-type %q for ref %q: supported forms are Name or pkg.Name",
 			goType,
 			ref,
 		)
+	}
+
+	if len(parts) == 1 {
+		if err := validateGoIdentifier(parts[0], "x-go-type", ref); err != nil {
+			return "", "", "", false, err
+		}
+
+		return parts[0], "", "", true, nil
+	}
+
+	if err := validateGoIdentifier(parts[0], "x-go-type qualifier", ref); err != nil {
+		return "", "", "", false, err
+	}
+
+	if err := validateGoIdentifier(parts[1], "x-go-type name", ref); err != nil {
+		return "", "", "", false, err
 	}
 
 	if definition.XGoImport == nil {
@@ -1121,6 +1133,19 @@ func (g *schemaGenerator) resolveReferencedXGoTypeMapping(
 	}
 
 	return goType, importPath, importAlias, true, nil
+}
+
+func validateGoIdentifier(value, partName, ref string) error {
+	if goIdentifierRe.MatchString(value) {
+		return nil
+	}
+
+	return fmt.Errorf(
+		"invalid %s %q for ref %q: must be a valid Go identifier",
+		partName,
+		value,
+		ref,
+	)
 }
 
 func (g *schemaGenerator) shouldKeepReferencedSchemaAsNamedType(schemaType *schemas.Type) bool {
