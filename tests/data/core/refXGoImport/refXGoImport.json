@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refXGoImport",
+  "type": "object",
+  "properties": {
+    "sharedUser": {
+      "$ref": "./sharedTypes.schema#/$defs/SharedUser"
+    },
+    "localUser": {
+      "$ref": "./sharedTypes.schema#/$defs/LocalUser"
+    },
+    "plainUser": {
+      "$ref": "./sharedTypes.schema#/$defs/PlainUser"
+    }
+  }
+}

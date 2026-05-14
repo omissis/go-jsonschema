@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refXGoImport/sharedTypesUnsupportedType",
+  "$defs": {
+    "SharedUser": {
+      "type": "object",
+      "x-go-type": "*shared.User",
+      "x-go-import": {
+        "path": "github.com/tuotuoxp/go-jsonschema/tests/helpers/shared",
+        "alias": "shared"
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

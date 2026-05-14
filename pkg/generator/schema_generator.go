@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -26,6 +27,9 @@ var (
 	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
 
 	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
+
+	//nolint:gochecknoglobals // compiled once for schema extension validation
+	goIdentifierRegexp = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
 const float64Type = "float64"
@@ -61,8 +65,18 @@ func (g *schemaGenerator) generateRootType() error {
 
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
+		ref := fmt.Sprintf("#/$defs/%s", name)
 
-		_, err := g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
+		_, _, _, hasXGoTypeMapping, err := g.resolveReferencedXGoTypeMapping(def, ref)
+		if err != nil {
+			return err
+		}
+
+		if hasXGoTypeMapping {
+			continue
+		}
+
+		_, err = g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
 		if err != nil {
 			return err
 		}
@@ -89,6 +103,21 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	}
 
 	if fileName == "" {
+		if schemaDef, ok := g.schema.Definitions[defName]; ok {
+			mappedType, importPath, importAlias, ok, mappingErr := g.resolveReferencedXGoTypeMapping(schemaDef, t.Ref)
+			if mappingErr != nil {
+				return nil, mappingErr
+			}
+
+			if ok {
+				if importPath != "" {
+					g.output.file.Package.AddImport(importPath, importAlias)
+				}
+
+				return &codegen.CustomNameType{Type: mappedType}, nil
+			}
+		}
+
 		if schemaOutput, ok := g.outputs[g.schema.ID]; ok {
 			if decl, ok := schemaOutput.declsByName[defName]; ok {
 				if decl != nil {
@@ -147,6 +176,19 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		def, ok = schema.Definitions[defName]
 		if !ok {
 			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+		}
+
+		mappedType, importPath, importAlias, mappingOK, mappingErr := g.resolveReferencedXGoTypeMapping(def, t.Ref)
+		if mappingErr != nil {
+			return nil, mappingErr
+		}
+
+		if mappingOK {
+			if importPath != "" {
+				g.output.file.Package.AddImport(importPath, importAlias)
+			}
+
+			return &codegen.CustomNameType{Type: mappedType}, nil
 		}
 
 		defName = g.caser.Identifierize(defName)
@@ -952,6 +994,10 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 
 	resolvedRefSchema, err := g.resolveRef(prop)
 	if err != nil {
+		if _, _, _, mapped, mappingErr := g.resolveReferencedXGoTypeMappingForRef(prop); mappingErr == nil && mapped {
+			return prop, false
+		}
+
 		g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, err))
 
 		return prop, false
@@ -966,6 +1012,115 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 	}
 
 	return resolvedRefSchema, true
+}
+
+func (g *schemaGenerator) resolveReferencedXGoTypeMappingForRef(
+	refType *schemas.Type,
+) (string, string, string, bool, error) {
+	if refType.Ref == "" {
+		return "", "", "", false, nil
+	}
+
+	defName, fileName, err := g.extractRefNames(refType)
+	if err != nil || defName == "" {
+		return "", "", "", false, nil
+	}
+
+	schema := g.schema
+	if fileName != "" {
+		schema, err = g.loader.Load(fileName, g.schemaFileName)
+		if err != nil {
+			return "", "", "", false, nil
+		}
+	}
+
+	definition, ok := schema.Definitions[defName]
+	if !ok {
+		return "", "", "", false, nil
+	}
+
+	return g.resolveReferencedXGoTypeMapping(definition, refType.Ref)
+}
+
+func (g *schemaGenerator) resolveReferencedXGoTypeMapping(
+	definition *schemas.Type,
+	ref string,
+) (string, string, string, bool, error) {
+	if definition == nil || definition.XGoType == nil {
+		return "", "", "", false, nil
+	}
+
+	goType := strings.TrimSpace(*definition.XGoType)
+	if goType == "" {
+		return "", "", "", false, nil
+	}
+
+	if strings.Count(goType, ".") > 1 {
+		return "", "", "", false, fmt.Errorf(
+			"invalid x-go-type %q for ref %q: supported forms are Name or pkg.Name",
+			goType,
+			ref,
+		)
+	}
+
+	if !strings.Contains(goType, ".") {
+		if !goIdentifierRegexp.MatchString(goType) {
+			return "", "", "", false, fmt.Errorf(
+				"invalid x-go-type %q for ref %q: supported forms are Name or pkg.Name",
+				goType,
+				ref,
+			)
+		}
+
+		return goType, "", "", true, nil
+	}
+
+	parts := strings.Split(goType, ".")
+	if len(parts) != 2 || !goIdentifierRegexp.MatchString(parts[0]) || !goIdentifierRegexp.MatchString(parts[1]) {
+		return "", "", "", false, fmt.Errorf(
+			"invalid x-go-type %q for ref %q: supported forms are Name or pkg.Name",
+			goType,
+			ref,
+		)
+	}
+
+	if definition.XGoImport == nil {
+		return "", "", "", false, fmt.Errorf(
+			"x-go-import is required when x-go-type %q is qualified for ref %q",
+			goType,
+			ref,
+		)
+	}
+
+	importPath := strings.TrimSpace(definition.XGoImport.Path)
+	importAlias := strings.TrimSpace(definition.XGoImport.Alias)
+	if importPath == "" {
+		return "", "", "", false, fmt.Errorf(
+			"x-go-import.path is required when x-go-type %q is qualified for ref %q",
+			goType,
+			ref,
+		)
+	}
+
+	if importAlias == "" {
+		return "", "", "", false, fmt.Errorf(
+			"x-go-import.alias is required when x-go-type %q is qualified for ref %q",
+			goType,
+			ref,
+		)
+	}
+
+	if importAlias != parts[0] {
+		return "", "", "", false, fmt.Errorf(
+			"x-go-import.alias %q must match qualifier %q from x-go-type %q for ref %q",
+			importAlias,
+			parts[0],
+			goType,
+			ref,
+		)
+	}
+
+	return goType, importPath, importAlias, true, nil
 }
 
 func (g *schemaGenerator) shouldKeepReferencedSchemaAsNamedType(schemaType *schemas.Type) bool {
@@ -1341,6 +1496,21 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if typeIndex == -1 {
 			return emptyInterfaceTypeVal, nil
+		}
+	}
+
+	if t.Ref != "" {
+		mappedType, importPath, importAlias, hasXGoTypeMapping, err := g.resolveReferencedXGoTypeMappingForRef(t)
+		if err != nil {
+			return nil, err
+		}
+
+		if hasXGoTypeMapping {
+			if importPath != "" {
+				g.output.file.Package.AddImport(importPath, importAlias)
+			}
+
+			return &codegen.CustomNameType{Type: mappedType}, nil
 		}
 	}
 
