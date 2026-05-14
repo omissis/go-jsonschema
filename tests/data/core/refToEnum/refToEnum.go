@@ -8,56 +8,151 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
 type RefToEnum struct {
-	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing `json:"myThing,omitempty,omitzero" yaml:"myThing,omitempty" mapstructure:"myThing,omitempty"`
+	// InlineThing corresponds to the JSON schema field "inlineThing".
+	InlineThing RefToEnumInlineThing `json:"inlineThing" yaml:"inlineThing" mapstructure:"inlineThing"`
+
+	// RefThing corresponds to the JSON schema field "refThing".
+	RefThing ThingSchema `json:"refThing" yaml:"refThing" mapstructure:"refThing"`
 }
 
-type Thing string
+type RefToEnumInlineThing string
 
-const ThingX Thing = "x"
-const ThingY Thing = "y"
+const RefToEnumInlineThingX RefToEnumInlineThing = "x"
+const RefToEnumInlineThingY RefToEnumInlineThing = "y"
 
-var enumValues_Thing = []interface{}{
+var enumValues_RefToEnumInlineThing = []interface{}{
 	"x",
 	"y",
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Thing) UnmarshalJSON(value []byte) error {
+func (j *RefToEnumInlineThing) UnmarshalJSON(value []byte) error {
 	var v string
 	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_Thing {
+	for _, expected := range enumValues_RefToEnumInlineThing {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Thing, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_RefToEnumInlineThing, v)
 	}
-	*j = Thing(v)
+	*j = RefToEnumInlineThing(v)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Thing) UnmarshalYAML(value *yaml.Node) error {
+func (j *RefToEnumInlineThing) UnmarshalYAML(value *yaml.Node) error {
 	var v string
 	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_Thing {
+	for _, expected := range enumValues_RefToEnumInlineThing {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Thing, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_RefToEnumInlineThing, v)
 	}
-	*j = Thing(v)
+	*j = RefToEnumInlineThing(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RefToEnum) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["inlineThing"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineThing in RefToEnum: required")
+	}
+	if _, ok := raw["refThing"]; raw != nil && !ok {
+		return fmt.Errorf("field refThing in RefToEnum: required")
+	}
+	type Plain RefToEnum
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = RefToEnum(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *RefToEnum) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["inlineThing"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineThing in RefToEnum: required")
+	}
+	if _, ok := raw["refThing"]; raw != nil && !ok {
+		return fmt.Errorf("field refThing in RefToEnum: required")
+	}
+	type Plain RefToEnum
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = RefToEnum(plain)
+	return nil
+}
+
+type ThingSchema string
+
+const ThingSchemaX ThingSchema = "x"
+const ThingSchemaY ThingSchema = "y"
+
+var enumValues_ThingSchema = []interface{}{
+	"x",
+	"y",
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ThingSchema) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ThingSchema {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ThingSchema, v)
+	}
+	*j = ThingSchema(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ThingSchema) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ThingSchema {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ThingSchema, v)
+	}
+	*j = ThingSchema(v)
 	return nil
 }

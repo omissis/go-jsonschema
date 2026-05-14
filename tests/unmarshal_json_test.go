@@ -17,6 +17,8 @@ import (
 	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
 	testRefSemanticInline "github.com/tuotuoxp/go-jsonschema/tests/data/core/refSemanticInline"
 	testRefSemanticNamed "github.com/tuotuoxp/go-jsonschema/tests/data/core/refSemanticNamed"
+	testRefToEnum "github.com/tuotuoxp/go-jsonschema/tests/data/core/refToEnum"
+	testRefToPrimitiveString "github.com/tuotuoxp/go-jsonschema/tests/data/core/refToPrimitiveString"
 	test "github.com/tuotuoxp/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 	testValudationRequiredFields "github.com/tuotuoxp/go-jsonschema/tests/data/validation/requiredFields"
 )
@@ -813,6 +815,8 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		"refNumber":         3.5,
 		"inlineFlag":        true,
 		"refFlag":           true,
+		"inlineDateTime":    "2024-04-20T10:30:00Z",
+		"refDateTime":       "2024-04-20T10:30:00Z",
 	}
 
 	cloneBase := func() map[string]any {
@@ -922,6 +926,88 @@ func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
 		err := json.Unmarshal(toJSON(t, payload), &value)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "must be equal to true")
+	})
+
+	t.Run("failure/inline_date_time_format", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["inlineDateTime"] = "bad"
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(t, payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot parse")
+	})
+
+	t.Run("failure/ref_date_time_format", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refDateTime"] = "bad"
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(t, payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot parse")
+	})
+}
+
+func TestRefToPrimitiveStringUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefToPrimitiveString.RefToPrimitiveString
+		require.NoError(t, json.Unmarshal([]byte(`{"inlineThing":"abc.example","refThing":"def.example"}`), &value))
+	})
+
+	t.Run("failure/inline_pattern", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefToPrimitiveString.RefToPrimitiveString
+		err := json.Unmarshal([]byte(`{"inlineThing":"INVALID","refThing":"def.example"}`), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern match")
+	})
+
+	t.Run("failure/ref_pattern", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefToPrimitiveString.RefToPrimitiveString
+		err := json.Unmarshal([]byte(`{"inlineThing":"abc.example","refThing":"INVALID"}`), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern match")
+	})
+}
+
+func TestRefToEnumUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefToEnum.RefToEnum
+		require.NoError(t, json.Unmarshal([]byte(`{"inlineThing":"x","refThing":"y"}`), &value))
+	})
+
+	t.Run("failure/inline_enum", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefToEnum.RefToEnum
+		err := json.Unmarshal([]byte(`{"inlineThing":"z","refThing":"y"}`), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"z"`)
+	})
+
+	t.Run("failure/ref_enum", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefToEnum.RefToEnum
+		err := json.Unmarshal([]byte(`{"inlineThing":"x","refThing":"z"}`), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `"z"`)
 	})
 }
 

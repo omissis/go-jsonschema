@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refToPrimitive/thing",
+  "type": "string",
+  "pattern": "^[a-z0-9.-]+$"
+}
