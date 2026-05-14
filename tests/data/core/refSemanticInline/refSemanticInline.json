@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refSemanticInline",
+  "type": "object",
+  "properties": {
+    "inlineName": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+$"
+    },
+    "refName": {
+      "$ref": "./plainName.schema"
+    },
+    "inlineCode": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 5
+    },
+    "refCode": {
+      "$ref": "./plainCode.schema"
+    },
+    "inlineStringConst": {
+      "type": "string",
+      "const": "stable"
+    },
+    "refStringConst": {
+      "$ref": "./plainStringConst.schema"
+    },
+    "inlineInteger": {
+      "type": "integer",
+      "minimum": 1,
+      "exclusiveMaximum": 10
+    },
+    "refInteger": {
+      "$ref": "./plainInteger.schema"
+    },
+    "inlineNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 10.5,
+      "const": 3.5
+    },
+    "refNumber": {
+      "$ref": "./plainNumber.schema"
+    },
+    "inlineFlag": {
+      "type": "boolean",
+      "const": true
+    },
+    "refFlag": {
+      "$ref": "./plainFlag.schema"
+    }
+  },
+  "required": [
+    "inlineName",
+    "refName",
+    "inlineCode",
+    "refCode",
+    "inlineStringConst",
+    "refStringConst",
+    "inlineInteger",
+    "refInteger",
+    "inlineNumber",
+    "refNumber",
+    "inlineFlag",
+    "refFlag"
+  ]
+}

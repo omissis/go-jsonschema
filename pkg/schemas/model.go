@@ -207,6 +207,9 @@ type Type struct {
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
 
+	// XGoType is a legacy/custom extension used to signal an explicit Go type intent.
+	XGoType *string `json:"x-go-type,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
+
 	// GoOneOfEnvelope configures discriminator-based oneOf routing for this field.
 	GoOneOfEnvelope *GoOneOfEnvelopeExtension `json:"x-go-oneof-envelope,omitempty"` //nolint:tagliatelle // external schema extension name uses hyphens
 

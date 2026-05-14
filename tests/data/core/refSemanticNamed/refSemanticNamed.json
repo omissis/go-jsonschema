@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refSemanticNamed",
+  "type": "object",
+  "properties": {
+    "titleName": {
+      "$ref": "./namedTitle.schema"
+    },
+    "goJSONSchemaTypeName": {
+      "$ref": "./namedGoJSONSchemaType.schema"
+    },
+    "xGoTypeName": {
+      "$ref": "./namedXGoType.schema"
+    }
+  },
+  "required": [
+    "titleName",
+    "goJSONSchemaTypeName",
+    "xGoTypeName"
+  ]
+}

@@ -15,6 +15,8 @@ import (
 	testOneOfEnvelope "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelope"
 	testOneOfEnvelopeRefEnumDiscriminator "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
 	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
+	testRefSemanticInline "github.com/tuotuoxp/go-jsonschema/tests/data/core/refSemanticInline"
+	testRefSemanticNamed "github.com/tuotuoxp/go-jsonschema/tests/data/core/refSemanticNamed"
 	test "github.com/tuotuoxp/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 	testValudationRequiredFields "github.com/tuotuoxp/go-jsonschema/tests/data/validation/requiredFields"
 )
@@ -792,5 +794,172 @@ func TestOneOfEnvelopeRefEnumDiscriminatorOptionalTypeUnmarshalJSON(t *testing.T
 		assert.Nil(t, v.Type)
 		assert.Nil(t, v.Value.A)
 		assert.Nil(t, v.Value.B)
+	})
+}
+
+func TestRefSemanticInlineUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	basePayload := map[string]any{
+		"inlineName":        "abc.example",
+		"refName":           "def.example",
+		"inlineCode":        "abcd",
+		"refCode":           "bcde",
+		"inlineStringConst": "stable",
+		"refStringConst":    "stable",
+		"inlineInteger":     5,
+		"refInteger":        6,
+		"inlineNumber":      3.5,
+		"refNumber":         3.5,
+		"inlineFlag":        true,
+		"refFlag":           true,
+	}
+
+	cloneBase := func() map[string]any {
+		out := make(map[string]any, len(basePayload))
+		for key, val := range basePayload {
+			out[key] = val
+		}
+
+		return out
+	}
+
+	toJSON := func(m map[string]any) []byte {
+		value, err := json.Marshal(m)
+		require.NoError(t, err)
+
+		return value
+	}
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefSemanticInline.RefSemanticInline
+		require.NoError(t, json.Unmarshal(toJSON(cloneBase()), &value))
+	})
+
+	t.Run("failure/inline_pattern", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["inlineName"] = "INVALID"
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern match")
+	})
+
+	t.Run("failure/ref_pattern", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refName"] = "INVALID"
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern match")
+	})
+
+	t.Run("failure/ref_string_length", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refCode"] = "ab"
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be >=")
+	})
+
+	t.Run("failure/ref_string_const", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refStringConst"] = "unstable"
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be equal")
+	})
+
+	t.Run("failure/ref_integer_range", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refInteger"] = 10
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be <")
+	})
+
+	t.Run("failure/ref_number_const", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refNumber"] = 4.5
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be equal")
+	})
+
+	t.Run("failure/ref_boolean_const", func(t *testing.T) {
+		t.Parallel()
+
+		payload := cloneBase()
+		payload["refFlag"] = false
+
+		var value testRefSemanticInline.RefSemanticInline
+		err := json.Unmarshal(toJSON(payload), &value)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be equal to true")
+	})
+}
+
+func TestRefSemanticNamedUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefSemanticNamed.RefSemanticNamed
+		require.NoError(
+			t,
+			json.Unmarshal(
+				[]byte(`{"titleName":"abc.example","goJSONSchemaTypeName":"abc","xGoTypeName":"AB"}`),
+				&value,
+			),
+		)
+	})
+
+	t.Run("failure/title_ref_pattern", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefSemanticNamed.RefSemanticNamed
+		err := json.Unmarshal(
+			[]byte(`{"titleName":"INVALID","goJSONSchemaTypeName":"abc","xGoTypeName":"AB"}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern match")
+	})
+
+	t.Run("failure/x_go_type_ref_pattern", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefSemanticNamed.RefSemanticNamed
+		err := json.Unmarshal(
+			[]byte(`{"titleName":"abc.example","goJSONSchemaTypeName":"abc","xGoTypeName":"ab"}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pattern match")
 	})
 }
