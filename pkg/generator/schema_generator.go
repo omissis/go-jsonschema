@@ -1046,7 +1046,10 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 	// Phase 2: this replaces the previous resolveRef-based external-ref path.
 
 	// Schemas with an x-go-ref mapping are handled by the named-type path.
-	if _, _, _, hasRefMapping, _ := g.resolveReferencedXGoRefMappingForRef(prop); hasRefMapping {
+	// If the referenced schema has an invalid x-go-ref mapping, do not suppress
+	// that error by continuing down the semantic-inline path; instead, fall back
+	// to the normal $ref handling path, which will surface the validation error.
+	if _, _, _, hasRefMapping, mappingErr := g.resolveReferencedXGoRefMappingForRef(prop); mappingErr != nil || hasRefMapping {
 		return prop, false
 	}
 
