@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["type", "payload"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["A", "B", "C"]
+    },
+    "payload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "APayload",
+          "required": ["a0", "a1"],
+          "properties": {
+            "a0": { "type": "string" },
+            "a1": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeA" }
+          }
+        },
+        {
+          "type": "object",
+          "title": "BPayload",
+          "required": ["b0"],
+          "properties": {
+            "b0": { "type": "string" },
+            "b1": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeB" },
+            "b2": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeB" }
+          }
+        },
+        {
+          "type": "object",
+          "title": "CPayload",
+          "properties": {
+            "c1": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeC" },
+            "c2": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeC" }
+          }
+        }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "type",
+        "mapping": {
+          "A": "APayload",
+          "B": "BPayload",
+          "C": "CPayload"
+        }
+      }
+    }
+  }
+}
