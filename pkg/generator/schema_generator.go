@@ -46,7 +46,7 @@ func newSchemaGenerator(
 			_, rootSchemaTarget = g.rootSchemaID[schema.ID]
 		}
 		if !rootSchemaTarget && fileName != "" {
-			_, rootSchemaTarget = g.rootSchemaFN[fileName]
+			_, rootSchemaTarget = g.rootSchemaFileName[fileName]
 		}
 	}
 

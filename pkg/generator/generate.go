@@ -38,7 +38,7 @@ type Generator struct {
 	inScope      map[qualifiedDefinition]struct{}
 	outputs      map[string]*output
 	rootSchemaID map[string]struct{}
-	rootSchemaFN map[string]struct{}
+	rootSchemaFileName map[string]struct{}
 	warner       func(string)
 	formatters   []formatter
 	loader       schemas.Loader
@@ -66,7 +66,7 @@ func New(config Config) (*Generator, error) {
 		inScope:      map[qualifiedDefinition]struct{}{},
 		outputs:      map[string]*output{},
 		rootSchemaID: map[string]struct{}{},
-		rootSchemaFN: map[string]struct{}{},
+		rootSchemaFileName: map[string]struct{}{},
 		warner:       config.Warner,
 		formatters:   formatters,
 		loader:       config.Loader,
@@ -146,7 +146,7 @@ func (g *Generator) DoFile(fileName string) error {
 	}
 
 	if fileName != "" {
-		g.rootSchemaFN[fileName] = struct{}{}
+		g.rootSchemaFileName[fileName] = struct{}{}
 	}
 
 	return g.AddFile(fileName, schema)
