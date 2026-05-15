@@ -2,9 +2,99 @@
 
 package test
 
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+import "regexp"
+
 type RefToPrimitiveString struct {
-	// MyThing corresponds to the JSON schema field "myThing".
-	MyThing *Thing `json:"myThing,omitempty,omitzero" yaml:"myThing,omitempty" mapstructure:"myThing,omitempty"`
+	// InlineThing corresponds to the JSON schema field "inlineThing".
+	InlineThing string `json:"inlineThing" yaml:"inlineThing" mapstructure:"inlineThing"`
+
+	// RefThing corresponds to the JSON schema field "refThing".
+	RefThing string `json:"refThing" yaml:"refThing" mapstructure:"refThing"`
 }
 
-type Thing string
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *RefToPrimitiveString) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["inlineThing"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineThing in RefToPrimitiveString: required")
+	}
+	if _, ok := raw["refThing"]; raw != nil && !ok {
+		return fmt.Errorf("field refThing in RefToPrimitiveString: required")
+	}
+	type Plain RefToPrimitiveString
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.InlineThing)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "InlineThing", `^[a-z0-9.-]+$`)
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.RefThing)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "RefThing", `^[a-z0-9.-]+$`)
+	}
+	*j = RefToPrimitiveString(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RefToPrimitiveString) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["inlineThing"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineThing in RefToPrimitiveString: required")
+	}
+	if _, ok := raw["refThing"]; raw != nil && !ok {
+		return fmt.Errorf("field refThing in RefToPrimitiveString: required")
+	}
+	type Plain RefToPrimitiveString
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.InlineThing)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "InlineThing", `^[a-z0-9.-]+$`)
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.RefThing)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "RefThing", `^[a-z0-9.-]+$`)
+	}
+	*j = RefToPrimitiveString(plain)
+	return nil
+}
+
+type ThingSchema string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ThingSchema) UnmarshalJSON(value []byte) error {
+	type Plain ThingSchema
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "", `^[a-z0-9.-]+$`)
+	}
+	*j = ThingSchema(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ThingSchema) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ThingSchema
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "", `^[a-z0-9.-]+$`)
+	}
+	*j = ThingSchema(plain)
+	return nil
+}

@@ -5,44 +5,254 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "regexp"
 import "unicode/utf8"
 
-type MinStr string
+type BoundedInteger int
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *MinStr) UnmarshalJSON(value []byte) error {
-	type Plain MinStr
+func (j *BoundedInteger) UnmarshalJSON(value []byte) error {
+	type Plain BoundedInteger
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if utf8.RuneCountInString(string(plain)) < 5 {
-		return fmt.Errorf("field %s length: must be >= %d", "", 5)
+	if 10 <= plain {
+		return fmt.Errorf("field %s: must be < %v", "", 10)
 	}
-	*j = MinStr(plain)
+	if 1 > plain {
+		return fmt.Errorf("field %s: must be >= %v", "", 1)
+	}
+	*j = BoundedInteger(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *MinStr) UnmarshalYAML(value *yaml.Node) error {
-	type Plain MinStr
+func (j *BoundedInteger) UnmarshalYAML(value *yaml.Node) error {
+	type Plain BoundedInteger
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if utf8.RuneCountInString(string(plain)) < 5 {
-		return fmt.Errorf("field %s length: must be >= %d", "", 5)
+	if 10 <= plain {
+		return fmt.Errorf("field %s: must be < %v", "", 10)
 	}
-	*j = MinStr(plain)
+	if 1 > plain {
+		return fmt.Errorf("field %s: must be >= %v", "", 1)
+	}
+	*j = BoundedInteger(plain)
+	return nil
+}
+
+type BoundedNumber float64
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *BoundedNumber) UnmarshalJSON(value []byte) error {
+	type Plain BoundedNumber
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain != 3.5 {
+		return fmt.Errorf("field %s: must be equal to %v", "", 3.5)
+	}
+	if 10.5 < plain {
+		return fmt.Errorf("field %s: must be <= %v", "", 10.5)
+	}
+	if 0 >= plain {
+		return fmt.Errorf("field %s: must be > %v", "", 0)
+	}
+	*j = BoundedNumber(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *BoundedNumber) UnmarshalYAML(value *yaml.Node) error {
+	type Plain BoundedNumber
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if plain != 3.5 {
+		return fmt.Errorf("field %s: must be equal to %v", "", 3.5)
+	}
+	if 10.5 < plain {
+		return fmt.Errorf("field %s: must be <= %v", "", 10.5)
+	}
+	if 0 >= plain {
+		return fmt.Errorf("field %s: must be > %v", "", 0)
+	}
+	*j = BoundedNumber(plain)
+	return nil
+}
+
+type BoundedString string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *BoundedString) UnmarshalJSON(value []byte) error {
+	type Plain BoundedString
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "", 3)
+	}
+	if utf8.RuneCountInString(string(plain)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "", 5)
+	}
+	*j = BoundedString(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *BoundedString) UnmarshalYAML(value *yaml.Node) error {
+	type Plain BoundedString
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if utf8.RuneCountInString(string(plain)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "", 3)
+	}
+	if utf8.RuneCountInString(string(plain)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "", 5)
+	}
+	*j = BoundedString(plain)
+	return nil
+}
+
+type ConstBoolean bool
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConstBoolean) UnmarshalJSON(value []byte) error {
+	type Plain ConstBoolean
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain != true {
+		return fmt.Errorf("field %s: must be equal to %t", "", true)
+	}
+	*j = ConstBoolean(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConstBoolean) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ConstBoolean
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if plain != true {
+		return fmt.Errorf("field %s: must be equal to %t", "", true)
+	}
+	*j = ConstBoolean(plain)
+	return nil
+}
+
+type ConstString string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConstString) UnmarshalJSON(value []byte) error {
+	type Plain ConstString
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain != "stable" {
+		return fmt.Errorf("field %s: must be equal to %s", "", "stable")
+	}
+	*j = ConstString(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConstString) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ConstString
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if plain != "stable" {
+		return fmt.Errorf("field %s: must be equal to %s", "", "stable")
+	}
+	*j = ConstString(plain)
+	return nil
+}
+
+type PatternString string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *PatternString) UnmarshalJSON(value []byte) error {
+	type Plain PatternString
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "", `^[a-z0-9.-]+$`)
+	}
+	*j = PatternString(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *PatternString) UnmarshalYAML(value *yaml.Node) error {
+	type Plain PatternString
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "", `^[a-z0-9.-]+$`)
+	}
+	*j = PatternString(plain)
 	return nil
 }
 
 type PrimitiveDefs struct {
-	// MyNullableString corresponds to the JSON schema field "myNullableString".
-	MyNullableString *MinStr `json:"myNullableString,omitempty,omitzero" yaml:"myNullableString,omitempty" mapstructure:"myNullableString,omitempty"`
+	// InlineBoundedInteger corresponds to the JSON schema field
+	// "inlineBoundedInteger".
+	InlineBoundedInteger int `json:"inlineBoundedInteger" yaml:"inlineBoundedInteger" mapstructure:"inlineBoundedInteger"`
 
-	// MyString corresponds to the JSON schema field "myString".
-	MyString MinStr `json:"myString" yaml:"myString" mapstructure:"myString"`
+	// InlineBoundedNumber corresponds to the JSON schema field "inlineBoundedNumber".
+	InlineBoundedNumber float64 `json:"inlineBoundedNumber" yaml:"inlineBoundedNumber" mapstructure:"inlineBoundedNumber"`
+
+	// InlineBoundedString corresponds to the JSON schema field "inlineBoundedString".
+	InlineBoundedString string `json:"inlineBoundedString" yaml:"inlineBoundedString" mapstructure:"inlineBoundedString"`
+
+	// InlineConstBoolean corresponds to the JSON schema field "inlineConstBoolean".
+	InlineConstBoolean bool `json:"inlineConstBoolean" yaml:"inlineConstBoolean" mapstructure:"inlineConstBoolean"`
+
+	// InlineConstString corresponds to the JSON schema field "inlineConstString".
+	InlineConstString string `json:"inlineConstString" yaml:"inlineConstString" mapstructure:"inlineConstString"`
+
+	// InlinePatternString corresponds to the JSON schema field "inlinePatternString".
+	InlinePatternString string `json:"inlinePatternString" yaml:"inlinePatternString" mapstructure:"inlinePatternString"`
+
+	// LegacyNullableBoundedString corresponds to the JSON schema field
+	// "legacyNullableBoundedString".
+	LegacyNullableBoundedString *BoundedString `json:"legacyNullableBoundedString,omitempty,omitzero" yaml:"legacyNullableBoundedString,omitempty" mapstructure:"legacyNullableBoundedString,omitempty"`
+
+	// RefBoundedInteger corresponds to the JSON schema field "refBoundedInteger".
+	RefBoundedInteger BoundedInteger `json:"refBoundedInteger" yaml:"refBoundedInteger" mapstructure:"refBoundedInteger"`
+
+	// RefBoundedNumber corresponds to the JSON schema field "refBoundedNumber".
+	RefBoundedNumber BoundedNumber `json:"refBoundedNumber" yaml:"refBoundedNumber" mapstructure:"refBoundedNumber"`
+
+	// RefBoundedString corresponds to the JSON schema field "refBoundedString".
+	RefBoundedString BoundedString `json:"refBoundedString" yaml:"refBoundedString" mapstructure:"refBoundedString"`
+
+	// RefConstBoolean corresponds to the JSON schema field "refConstBoolean".
+	RefConstBoolean ConstBoolean `json:"refConstBoolean" yaml:"refConstBoolean" mapstructure:"refConstBoolean"`
+
+	// RefConstString corresponds to the JSON schema field "refConstString".
+	RefConstString ConstString `json:"refConstString" yaml:"refConstString" mapstructure:"refConstString"`
+
+	// RefPatternString corresponds to the JSON schema field "refPatternString".
+	RefPatternString PatternString `json:"refPatternString" yaml:"refPatternString" mapstructure:"refPatternString"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -51,13 +261,76 @@ func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["myString"]; raw != nil && !ok {
-		return fmt.Errorf("field myString in PrimitiveDefs: required")
+	if _, ok := raw["inlineBoundedInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineBoundedInteger in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineBoundedNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineBoundedNumber in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineBoundedString"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineBoundedString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineConstBoolean"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineConstBoolean in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineConstString"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineConstString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlinePatternString"]; raw != nil && !ok {
+		return fmt.Errorf("field inlinePatternString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refBoundedInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field refBoundedInteger in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refBoundedNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field refBoundedNumber in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refBoundedString"]; raw != nil && !ok {
+		return fmt.Errorf("field refBoundedString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refConstBoolean"]; raw != nil && !ok {
+		return fmt.Errorf("field refConstBoolean in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refConstString"]; raw != nil && !ok {
+		return fmt.Errorf("field refConstString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refPatternString"]; raw != nil && !ok {
+		return fmt.Errorf("field refPatternString in PrimitiveDefs: required")
 	}
 	type Plain PrimitiveDefs
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
+	}
+	if 10 <= plain.InlineBoundedInteger {
+		return fmt.Errorf("field %s: must be < %v", "inlineBoundedInteger", 10)
+	}
+	if 1 > plain.InlineBoundedInteger {
+		return fmt.Errorf("field %s: must be >= %v", "inlineBoundedInteger", 1)
+	}
+	if plain.InlineBoundedNumber != 3.5 {
+		return fmt.Errorf("field %s: must be equal to %v", "inlineBoundedNumber", 3.5)
+	}
+	if 10.5 < plain.InlineBoundedNumber {
+		return fmt.Errorf("field %s: must be <= %v", "inlineBoundedNumber", 10.5)
+	}
+	if 0 >= plain.InlineBoundedNumber {
+		return fmt.Errorf("field %s: must be > %v", "inlineBoundedNumber", 0)
+	}
+	if utf8.RuneCountInString(string(plain.InlineBoundedString)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "inlineBoundedString", 3)
+	}
+	if utf8.RuneCountInString(string(plain.InlineBoundedString)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "inlineBoundedString", 5)
+	}
+	if plain.InlineConstBoolean != true {
+		return fmt.Errorf("field %s: must be equal to %t", "inlineConstBoolean", true)
+	}
+	if plain.InlineConstString != "stable" {
+		return fmt.Errorf("field %s: must be equal to %s", "inlineConstString", "stable")
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.InlinePatternString)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "InlinePatternString", `^[a-z0-9.-]+$`)
 	}
 	*j = PrimitiveDefs(plain)
 	return nil
@@ -69,13 +342,76 @@ func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if _, ok := raw["myString"]; raw != nil && !ok {
-		return fmt.Errorf("field myString in PrimitiveDefs: required")
+	if _, ok := raw["inlineBoundedInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineBoundedInteger in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineBoundedNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineBoundedNumber in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineBoundedString"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineBoundedString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineConstBoolean"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineConstBoolean in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlineConstString"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineConstString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["inlinePatternString"]; raw != nil && !ok {
+		return fmt.Errorf("field inlinePatternString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refBoundedInteger"]; raw != nil && !ok {
+		return fmt.Errorf("field refBoundedInteger in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refBoundedNumber"]; raw != nil && !ok {
+		return fmt.Errorf("field refBoundedNumber in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refBoundedString"]; raw != nil && !ok {
+		return fmt.Errorf("field refBoundedString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refConstBoolean"]; raw != nil && !ok {
+		return fmt.Errorf("field refConstBoolean in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refConstString"]; raw != nil && !ok {
+		return fmt.Errorf("field refConstString in PrimitiveDefs: required")
+	}
+	if _, ok := raw["refPatternString"]; raw != nil && !ok {
+		return fmt.Errorf("field refPatternString in PrimitiveDefs: required")
 	}
 	type Plain PrimitiveDefs
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
+	}
+	if 10 <= plain.InlineBoundedInteger {
+		return fmt.Errorf("field %s: must be < %v", "inlineBoundedInteger", 10)
+	}
+	if 1 > plain.InlineBoundedInteger {
+		return fmt.Errorf("field %s: must be >= %v", "inlineBoundedInteger", 1)
+	}
+	if plain.InlineBoundedNumber != 3.5 {
+		return fmt.Errorf("field %s: must be equal to %v", "inlineBoundedNumber", 3.5)
+	}
+	if 10.5 < plain.InlineBoundedNumber {
+		return fmt.Errorf("field %s: must be <= %v", "inlineBoundedNumber", 10.5)
+	}
+	if 0 >= plain.InlineBoundedNumber {
+		return fmt.Errorf("field %s: must be > %v", "inlineBoundedNumber", 0)
+	}
+	if utf8.RuneCountInString(string(plain.InlineBoundedString)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "inlineBoundedString", 3)
+	}
+	if utf8.RuneCountInString(string(plain.InlineBoundedString)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "inlineBoundedString", 5)
+	}
+	if plain.InlineConstBoolean != true {
+		return fmt.Errorf("field %s: must be equal to %t", "inlineConstBoolean", true)
+	}
+	if plain.InlineConstString != "stable" {
+		return fmt.Errorf("field %s: must be equal to %s", "inlineConstString", "stable")
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.InlinePatternString)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "InlinePatternString", `^[a-z0-9.-]+$`)
 	}
 	*j = PrimitiveDefs(plain)
 	return nil

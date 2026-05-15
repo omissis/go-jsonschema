@@ -48,6 +48,15 @@
     },
     "refFlag": {
       "$ref": "./plainFlag.schema"
+    },
+    "inlineDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "minLength": 20,
+      "maxLength": 30
+    },
+    "refDateTime": {
+      "$ref": "./plainDateTime.schema"
     }
   },
   "required": [
@@ -62,6 +71,8 @@
     "inlineNumber",
     "refNumber",
     "inlineFlag",
-    "refFlag"
+    "refFlag",
+    "inlineDateTime",
+    "refDateTime"
   ]
 }

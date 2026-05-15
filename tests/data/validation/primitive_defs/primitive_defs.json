@@ -1,22 +1,100 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://example.com/array",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/primitiveDefs",
   "type": "object",
   "$defs": {
-    "minStr": {
+    "patternString": {
       "type": "string",
-      "minLength": 5
+      "pattern": "^[a-z0-9.-]+$"
+    },
+    "boundedString": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 5
+    },
+    "constString": {
+      "type": "string",
+      "const": "stable"
+    },
+    "boundedInteger": {
+      "type": "integer",
+      "minimum": 1,
+      "exclusiveMaximum": 10
+    },
+    "boundedNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 10.5,
+      "const": 3.5
+    },
+    "constBoolean": {
+      "type": "boolean",
+      "const": true
     }
   },
   "properties": {
-    "myString": {
-      "$ref": "#/$defs/minStr"
+    "inlinePatternString": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+$"
     },
-    "myNullableString": {
-      "$ref": "#/$defs/minStr"
+    "refPatternString": {
+      "$ref": "#/$defs/patternString"
+    },
+    "inlineBoundedString": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 5
+    },
+    "refBoundedString": {
+      "$ref": "#/$defs/boundedString"
+    },
+    "inlineConstString": {
+      "type": "string",
+      "const": "stable"
+    },
+    "refConstString": {
+      "$ref": "#/$defs/constString"
+    },
+    "inlineBoundedInteger": {
+      "type": "integer",
+      "minimum": 1,
+      "exclusiveMaximum": 10
+    },
+    "refBoundedInteger": {
+      "$ref": "#/$defs/boundedInteger"
+    },
+    "inlineBoundedNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 10.5,
+      "const": 3.5
+    },
+    "refBoundedNumber": {
+      "$ref": "#/$defs/boundedNumber"
+    },
+    "inlineConstBoolean": {
+      "type": "boolean",
+      "const": true
+    },
+    "refConstBoolean": {
+      "$ref": "#/$defs/constBoolean"
+    },
+    "legacyNullableBoundedString": {
+      "$ref": "#/$defs/boundedString"
     }
   },
   "required": [
-    "myString"
+    "inlinePatternString",
+    "refPatternString",
+    "inlineBoundedString",
+    "refBoundedString",
+    "inlineConstString",
+    "refConstString",
+    "inlineBoundedInteger",
+    "refBoundedInteger",
+    "inlineBoundedNumber",
+    "refBoundedNumber",
+    "inlineConstBoolean",
+    "refConstBoolean"
   ]
 }

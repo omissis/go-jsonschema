@@ -3,6 +3,7 @@ package tests_test
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	testExclusiveMaximum "github.com/tuotuoxp/go-jsonschema/tests/data/validation/exclusiveMaximum"
@@ -292,31 +293,133 @@ func TestPattern(t *testing.T) {
 func TestPrimitiveDefs(t *testing.T) {
 	t.Parallel()
 
+	basePayload := map[string]any{
+		"inlinePatternString":  "abc.example",
+		"refPatternString":     "def.example",
+		"inlineBoundedString":  "abcd",
+		"refBoundedString":     "bcde",
+		"inlineConstString":    "stable",
+		"refConstString":       "stable",
+		"inlineBoundedInteger": 5,
+		"refBoundedInteger":    6,
+		"inlineBoundedNumber":  3.5,
+		"refBoundedNumber":     3.5,
+		"inlineConstBoolean":   true,
+		"refConstBoolean":      true,
+	}
+
+	cloneBase := func() map[string]any {
+		out := make(map[string]any, len(basePayload))
+		for key, val := range basePayload {
+			out[key] = val
+		}
+
+		return out
+	}
+
+	toJSON := func(t *testing.T, m map[string]any) []byte {
+		t.Helper()
+
+		value, err := json.Marshal(m)
+		if err != nil {
+			t.Fatalf("marshal payload: %v", err)
+		}
+
+		return value
+	}
+
 	testCases := []struct {
-		desc    string
-		data    string
-		wantErr error
+		desc           string
+		mutate         func(payload map[string]any)
+		wantErrContain string
 	}{
 		{
-			desc: "no violations",
-			data: `{"myString": "hello"}`,
+			desc:           "failure/inline_pattern",
+			mutate:         func(payload map[string]any) { payload["inlinePatternString"] = "INVALID" },
+			wantErrContain: "pattern match",
 		},
 		{
-			desc:    "myString too short",
-			data:    `{"myString": "hi"}`,
-			wantErr: errors.New("field  length: must be >= 5"),
+			desc:           "failure/ref_pattern",
+			mutate:         func(payload map[string]any) { payload["refPatternString"] = "INVALID" },
+			wantErrContain: "pattern match",
+		},
+		{
+			desc:           "failure/inline_string_length",
+			mutate:         func(payload map[string]any) { payload["inlineBoundedString"] = "ab" },
+			wantErrContain: "must be >=",
+		},
+		{
+			desc:           "failure/ref_string_length",
+			mutate:         func(payload map[string]any) { payload["refBoundedString"] = "ab" },
+			wantErrContain: "must be >=",
+		},
+		{
+			desc:           "failure/inline_string_const",
+			mutate:         func(payload map[string]any) { payload["inlineConstString"] = "unstable" },
+			wantErrContain: "must be equal",
+		},
+		{
+			desc:           "failure/ref_string_const",
+			mutate:         func(payload map[string]any) { payload["refConstString"] = "unstable" },
+			wantErrContain: "must be equal",
+		},
+		{
+			desc:           "failure/inline_integer_range",
+			mutate:         func(payload map[string]any) { payload["inlineBoundedInteger"] = 10 },
+			wantErrContain: "must be <",
+		},
+		{
+			desc:           "failure/ref_integer_range",
+			mutate:         func(payload map[string]any) { payload["refBoundedInteger"] = 10 },
+			wantErrContain: "must be <",
+		},
+		{
+			desc:           "failure/inline_number_const",
+			mutate:         func(payload map[string]any) { payload["inlineBoundedNumber"] = 4.5 },
+			wantErrContain: "must be equal",
+		},
+		{
+			desc:           "failure/ref_number_const",
+			mutate:         func(payload map[string]any) { payload["refBoundedNumber"] = 4.5 },
+			wantErrContain: "must be equal",
+		},
+		{
+			desc:           "failure/inline_boolean_const",
+			mutate:         func(payload map[string]any) { payload["inlineConstBoolean"] = false },
+			wantErrContain: "must be equal to true",
+		},
+		{
+			desc:           "failure/ref_boolean_const",
+			mutate:         func(payload map[string]any) { payload["refConstBoolean"] = false },
+			wantErrContain: "must be equal to true",
 		},
 	}
 
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var prim testPrimitiveDefs.PrimitiveDefs
+		if err := json.Unmarshal(toJSON(t, cloneBase()), &prim); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
 	for _, tC := range testCases {
+		tC := tC
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			prim := testPrimitiveDefs.PrimitiveDefs{}
+			payload := cloneBase()
+			tC.mutate(payload)
 
-			err := json.Unmarshal([]byte(tC.data), &prim)
-
-			helpers.CheckError(t, tC.wantErr, err)
+			var prim testPrimitiveDefs.PrimitiveDefs
+			err := json.Unmarshal(toJSON(t, payload), &prim)
+			if err == nil {
+				t.Fatalf("expected error containing %q", tC.wantErrContain)
+			}
+			if !strings.Contains(err.Error(), tC.wantErrContain) {
+				t.Fatalf("expected error containing %q, got %q", tC.wantErrContain, err.Error())
+			}
 		})
 	}
 }

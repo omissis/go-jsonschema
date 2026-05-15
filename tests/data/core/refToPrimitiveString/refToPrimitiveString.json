@@ -1,15 +1,18 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "id": "https://example.com/refToPrimitive",
   "type": "object",
   "properties": {
-    "myThing": {
-      "$ref": "#/$defs/Thing"
+    "inlineThing": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+$"
+    },
+    "refThing": {
+      "$ref": "./thing.schema"
     }
   },
-  "$defs": {
-    "Thing": {
-      "type": "string"
-    }
-  }
+  "required": [
+    "inlineThing",
+    "refThing"
+  ]
 }

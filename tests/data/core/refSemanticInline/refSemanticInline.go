@@ -6,6 +6,7 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "regexp"
+import "time"
 import "unicode/utf8"
 
 type PlainCodeSchema string
@@ -43,6 +44,8 @@ func (j *PlainCodeSchema) UnmarshalYAML(value *yaml.Node) error {
 	*j = PlainCodeSchema(plain)
 	return nil
 }
+
+type PlainDateTimeSchema time.Time
 
 type PlainFlagSchema bool
 
@@ -216,6 +219,9 @@ type RefSemanticInline struct {
 	// InlineCode corresponds to the JSON schema field "inlineCode".
 	InlineCode string `json:"inlineCode" yaml:"inlineCode" mapstructure:"inlineCode"`
 
+	// InlineDateTime corresponds to the JSON schema field "inlineDateTime".
+	InlineDateTime time.Time `json:"inlineDateTime" yaml:"inlineDateTime" mapstructure:"inlineDateTime"`
+
 	// InlineFlag corresponds to the JSON schema field "inlineFlag".
 	InlineFlag bool `json:"inlineFlag" yaml:"inlineFlag" mapstructure:"inlineFlag"`
 
@@ -233,6 +239,9 @@ type RefSemanticInline struct {
 
 	// RefCode corresponds to the JSON schema field "refCode".
 	RefCode string `json:"refCode" yaml:"refCode" mapstructure:"refCode"`
+
+	// RefDateTime corresponds to the JSON schema field "refDateTime".
+	RefDateTime time.Time `json:"refDateTime" yaml:"refDateTime" mapstructure:"refDateTime"`
 
 	// RefFlag corresponds to the JSON schema field "refFlag".
 	RefFlag bool `json:"refFlag" yaml:"refFlag" mapstructure:"refFlag"`
@@ -259,6 +268,9 @@ func (j *RefSemanticInline) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["inlineCode"]; raw != nil && !ok {
 		return fmt.Errorf("field inlineCode in RefSemanticInline: required")
 	}
+	if _, ok := raw["inlineDateTime"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineDateTime in RefSemanticInline: required")
+	}
 	if _, ok := raw["inlineFlag"]; raw != nil && !ok {
 		return fmt.Errorf("field inlineFlag in RefSemanticInline: required")
 	}
@@ -276,6 +288,9 @@ func (j *RefSemanticInline) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["refCode"]; raw != nil && !ok {
 		return fmt.Errorf("field refCode in RefSemanticInline: required")
+	}
+	if _, ok := raw["refDateTime"]; raw != nil && !ok {
+		return fmt.Errorf("field refDateTime in RefSemanticInline: required")
 	}
 	if _, ok := raw["refFlag"]; raw != nil && !ok {
 		return fmt.Errorf("field refFlag in RefSemanticInline: required")
@@ -370,6 +385,9 @@ func (j *RefSemanticInline) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["inlineCode"]; raw != nil && !ok {
 		return fmt.Errorf("field inlineCode in RefSemanticInline: required")
 	}
+	if _, ok := raw["inlineDateTime"]; raw != nil && !ok {
+		return fmt.Errorf("field inlineDateTime in RefSemanticInline: required")
+	}
 	if _, ok := raw["inlineFlag"]; raw != nil && !ok {
 		return fmt.Errorf("field inlineFlag in RefSemanticInline: required")
 	}
@@ -387,6 +405,9 @@ func (j *RefSemanticInline) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["refCode"]; raw != nil && !ok {
 		return fmt.Errorf("field refCode in RefSemanticInline: required")
+	}
+	if _, ok := raw["refDateTime"]; raw != nil && !ok {
+		return fmt.Errorf("field refDateTime in RefSemanticInline: required")
 	}
 	if _, ok := raw["refFlag"]; raw != nil && !ok {
 		return fmt.Errorf("field refFlag in RefSemanticInline: required")
