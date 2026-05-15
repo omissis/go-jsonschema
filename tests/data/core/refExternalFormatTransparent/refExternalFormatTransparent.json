@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refExternalFormatTransparent",
+  "description": "Test A: an external $ref to a pure format string schema (no explicit constraints) should produce the same Go representation as an inline field — time.Time — without generating a leftover named declaration for the referenced schema.",
+  "type": "object",
+  "properties": {
+    "inlineUpdatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "refUpdatedAt": {
+      "$ref": "./plainDateTimeOnly.schema"
+    }
+  },
+  "required": [
+    "inlineUpdatedAt",
+    "refUpdatedAt"
+  ]
+}

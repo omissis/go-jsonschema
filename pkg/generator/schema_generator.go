@@ -996,6 +996,14 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 	// and apply the same transparency checks as for external refs.  This makes
 	// extracting a primitive schema into $defs behave equivalently to leaving it
 	// inline, which is the intended $ref semantic-transparency policy.
+	//
+	// Phase 2: the wouldProducePlainGoType guard is extended to also allow
+	// inlining when the backend type is a named/value Go type (e.g. time.Time
+	// from a date-time format, netip.Addr from ipv4/ipv6).  Specialised integer
+	// types from MinSizedInts are still excluded because the shared schema object
+	// is mutated during standalone declaration generation (PrimitiveTypeFromJSONSchemaType
+	// sets Minimum/Maximum to nil for elided bounds), which would cause the inline
+	// path to see corrupted bounds and produce an inconsistent field type.
 	if fileName == "" {
 		if defName == "" {
 			return prop, false
@@ -1014,33 +1022,55 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 			return prop, false
 		}
 
-		// Determine what Go type the def would produce, using deep copies of the
-		// bounds so we don't mutate the schema (PrimitiveTypeFromJSONSchemaType has
-		// a side-effect of setting bounds to nil when they can be elided).  This
-		// check is order-independent: it does not rely on declsBySchema being
-		// populated, which would fail when the referencing struct definition is
-		// alphabetically earlier than the primitive definition.
-		if !g.wouldProducePlainGoType(def) {
+		// Inline only when the resulting Go type is either a plain primitive (int,
+		// float64, string, bool) — already handled by the original check — or a
+		// named/value type produced by format-mapping (e.g. time.Time).  Specialised
+		// integer types (int8, uint16, …) are excluded to avoid the mutation issue
+		// described above.
+		if !g.wouldProducePlainGoType(def) && !g.wouldProduceNamedGoType(def) {
 			return prop, false
 		}
 
 		return def, true
 	}
 
-	// For external refs, use the full resolution path (existing logic).
-	resolvedRefSchema, err := g.resolveRef(prop)
-	if err != nil {
-		if _, _, _, hasRefMapping, refMappingErr := g.resolveReferencedXGoRefMappingForRef(prop); refMappingErr != nil {
-			g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, refMappingErr))
+	// For external refs, load the schema directly rather than calling resolveRef.
+	// resolveRef drives AddFile which materialises a full declaration for the
+	// referenced schema; that declaration is unused when the field is semantically
+	// inlined, and the call also has the side-effect of mutating the schema's
+	// numeric bounds (via PrimitiveTypeFromJSONSchemaType), which can suppress
+	// validator generation for the inlined field.  By loading the schema directly
+	// we avoid both problems while still performing all the same transparency
+	// checks.
+	//
+	// Phase 2: this replaces the previous resolveRef-based external-ref path.
 
-			return prop, false
-		} else if hasRefMapping {
+	// Schemas with an x-go-ref mapping are handled by the named-type path.
+	if _, _, _, hasRefMapping, _ := g.resolveReferencedXGoRefMappingForRef(prop); hasRefMapping {
+		return prop, false
+	}
+
+	schema, serr := g.loader.Load(fileName, g.schemaFileName)
+	if serr != nil {
+		g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, serr))
+
+		return prop, false
+	}
+
+	var resolvedRefSchema *schemas.Type
+	if defName != "" {
+		def, ok := schema.Definitions[defName]
+		if !ok {
 			return prop, false
 		}
 
-		g.warner(fmt.Sprintf("Could not resolve ref %q for field validation/type semantics: %v", prop.Ref, err))
+		resolvedRefSchema = def
+	} else {
+		if schema.ObjectAsType == nil {
+			return prop, false
+		}
 
-		return prop, false
+		resolvedRefSchema = (*schemas.Type)(schema.ObjectAsType)
 	}
 
 	if g.shouldKeepReferencedSchemaAsNamedType(resolvedRefSchema) {
@@ -1190,6 +1220,15 @@ func (g *schemaGenerator) isSemanticInlinePrimitiveSchema(schemaType *schemas.Ty
 func (g *schemaGenerator) hasSemanticInlinePrimitiveConstraints(schemaType *schemas.Type, primitiveType string) bool {
 	switch primitiveType {
 	case schemas.TypeNameString:
+		// A non-empty format (e.g. "date-time" → time.Time, "ipv4" → netip.Addr)
+		// signals that the backend Go representation is a named/value type rather
+		// than plain string.  Treat any format as a semantic-transparency trigger
+		// so that the schema remains inline regardless of whether additional
+		// constraints (pattern, minLength, …) are present.
+		if schemaType.Format != "" {
+			return true
+		}
+
 		return schemaType.Pattern != "" ||
 			schemaType.MinLength != 0 ||
 			schemaType.MaxLength != 0 ||
@@ -1254,6 +1293,50 @@ func (g *schemaGenerator) wouldProducePlainGoType(def *schemas.Type) bool {
 	}
 
 	return pt.Type == "int" || pt.Type == "float64" || pt.Type == "string" || pt.Type == "bool"
+}
+
+// wouldProduceNamedGoType reports whether def would produce a named (non-primitive)
+// Go type such as time.Time (for "date-time" format) or netip.Addr (for "ipv4"/"ipv6").
+// Unlike wouldProducePlainGoType, this does not depend on MinSizedInts or numeric
+// bounds — it only applies to string schemas whose format maps to a named Go type.
+//
+// This is used to extend the semantic-inline transparency policy to format-backed
+// string schemas (phase 2): a $ref to {type:string,format:date-time} should be
+// inlined as time.Time regardless of whether the schema was extracted into $defs or
+// an external file, just as a plain-string $ref is inlined as string.
+func (g *schemaGenerator) wouldProduceNamedGoType(def *schemas.Type) bool {
+	typeIndex, _ := g.isTypeNullable(def)
+	if typeIndex == -1 {
+		return false
+	}
+
+	if def.Type[typeIndex] != schemas.TypeNameString {
+		return false
+	}
+
+	// Use deep copies of bounds (unused for string, but required by the signature).
+	minCopy := cloneFloat64Ptr(def.Minimum)
+	maxCopy := cloneFloat64Ptr(def.Maximum)
+	excMinCopy := cloneAnyPtr(def.ExclusiveMinimum)
+	excMaxCopy := cloneAnyPtr(def.ExclusiveMaximum)
+
+	goType, err := codegen.PrimitiveTypeFromJSONSchemaType(
+		schemas.TypeNameString,
+		def.Format,
+		false,
+		g.config.MinSizedInts,
+		&minCopy,
+		&maxCopy,
+		&excMinCopy,
+		&excMaxCopy,
+	)
+	if err != nil {
+		return false
+	}
+
+	_, ok := goType.(codegen.NamedType)
+
+	return ok
 }
 
 // cloneFloat64Ptr returns a pointer to a copy of the float64 value that p points

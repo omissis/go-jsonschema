@@ -15,11 +15,13 @@ import (
 	testOneOfEnvelope "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelope"
 	testOneOfEnvelopeRefEnumDiscriminator "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminator"
 	testOneOfEnvelopeRefEnumDiscriminatorOptionalType "github.com/tuotuoxp/go-jsonschema/tests/data/core/oneOfEnvelopeRefEnumDiscriminatorOptionalType"
+	testRefExternalFormatTransparent "github.com/tuotuoxp/go-jsonschema/tests/data/core/refExternalFormatTransparent"
 	testRefSemanticInline "github.com/tuotuoxp/go-jsonschema/tests/data/core/refSemanticInline"
 	testRefSemanticNamed "github.com/tuotuoxp/go-jsonschema/tests/data/core/refSemanticNamed"
 	testRefToEnum "github.com/tuotuoxp/go-jsonschema/tests/data/core/refToEnum"
 	testRefToPrimitiveString "github.com/tuotuoxp/go-jsonschema/tests/data/core/refToPrimitiveString"
 	test "github.com/tuotuoxp/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testRefExternalConstInteger "github.com/tuotuoxp/go-jsonschema/tests/data/minSizedInts/externalRefConstInteger"
 	testValudationRequiredFields "github.com/tuotuoxp/go-jsonschema/tests/data/validation/requiredFields"
 )
 
@@ -1052,3 +1054,134 @@ func TestRefSemanticNamedUnmarshalJSON(t *testing.T) {
 	})
 
 }
+
+// TestRefExternalFormatTransparentUnmarshalJSON verifies Test A:
+// a $ref to an external schema whose only content is a format (e.g. "date-time")
+// should produce the same Go representation as an inline field — time.Time —
+// and should not require a leftover named declaration for the referenced schema.
+// Both inlineUpdatedAt and refUpdatedAt fields are time.Time; they must accept
+// valid RFC 3339 timestamps and reject invalid strings identically.
+func TestRefExternalFormatTransparentUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefExternalFormatTransparent.RefExternalFormatTransparent
+		require.NoError(
+			t,
+			json.Unmarshal(
+				[]byte(`{"inlineUpdatedAt":"2024-04-20T10:30:00Z","refUpdatedAt":"2024-04-20T10:30:00Z"}`),
+				&value,
+			),
+		)
+	})
+
+	t.Run("failure/inline_bad_format", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefExternalFormatTransparent.RefExternalFormatTransparent
+		err := json.Unmarshal(
+			[]byte(`{"inlineUpdatedAt":"not-a-timestamp","refUpdatedAt":"2024-04-20T10:30:00Z"}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot parse")
+	})
+
+	t.Run("failure/ref_bad_format", func(t *testing.T) {
+		t.Parallel()
+
+		// The $ref field must be transparently equivalent to the inline field:
+		// an invalid date-time string must be rejected with the same parse error.
+		var value testRefExternalFormatTransparent.RefExternalFormatTransparent
+		err := json.Unmarshal(
+			[]byte(`{"inlineUpdatedAt":"2024-04-20T10:30:00Z","refUpdatedAt":"not-a-timestamp"}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot parse")
+	})
+}
+
+// TestRefExternalConstIntegerUnmarshalJSON verifies Test B:
+// a $ref to an external integer schema that carries constraints (minimum, maximum,
+// const) must preserve those constraints in the generated struct's UnmarshalJSON
+// even when MinSizedInts causes the backend Go type to be a specialised integer
+// (e.g. uint8 rather than plain int).  This exercises the phase-2 fix that
+// removes backend-type-shape coupling from the validator-generation decision.
+func TestRefExternalConstIntegerUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefExternalConstInteger.ExternalRefConstInteger
+		require.NoError(
+			t,
+			json.Unmarshal(
+				[]byte(`{"inlinePriority":5,"refPriority":5}`),
+				&value,
+			),
+		)
+	})
+
+	t.Run("failure/inline_const", func(t *testing.T) {
+		t.Parallel()
+
+		var value testRefExternalConstInteger.ExternalRefConstInteger
+		err := json.Unmarshal(
+			[]byte(`{"inlinePriority":3,"refPriority":5}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be equal to")
+		assert.Contains(t, err.Error(), "inlinePriority")
+	})
+
+	t.Run("failure/ref_const", func(t *testing.T) {
+		t.Parallel()
+
+		// The $ref field must generate the same const validation as the inline
+		// field.  This test specifically catches the regression where the previous
+		// resolveRef-based path could suppress or mislabel the validator.
+		var value testRefExternalConstInteger.ExternalRefConstInteger
+		err := json.Unmarshal(
+			[]byte(`{"inlinePriority":5,"refPriority":3}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be equal to")
+		assert.Contains(t, err.Error(), "refPriority")
+	})
+
+	t.Run("failure/ref_minimum", func(t *testing.T) {
+		t.Parallel()
+
+		// Value 0 violates both const=5 and minimum=1. The const check in the
+		// generated UnmarshalJSON fires first. Confirm that the ref field is
+		// validated (error includes the field name) even for out-of-range values.
+		var value testRefExternalConstInteger.ExternalRefConstInteger
+		err := json.Unmarshal(
+			[]byte(`{"inlinePriority":5,"refPriority":0}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "refPriority")
+	})
+
+	t.Run("failure/ref_maximum", func(t *testing.T) {
+		t.Parallel()
+
+		// Value 11 violates both const=5 and maximum=10. The const check fires
+		// first but the field name in the error proves validation occurs.
+		var value testRefExternalConstInteger.ExternalRefConstInteger
+		err := json.Unmarshal(
+			[]byte(`{"inlinePriority":5,"refPriority":11}`),
+			&value,
+		)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "refPriority")
+	})
+}
+

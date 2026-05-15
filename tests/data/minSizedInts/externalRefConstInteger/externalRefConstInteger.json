@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refExternalConstInteger",
+  "description": "Test B: an external $ref to a primitive integer schema with constraints (minimum, maximum, const) should produce field-level validation in the referencing struct's UnmarshalJSON even when MinSizedInts causes the backend Go type to be a specialized (non-plain) integer like uint8. Validation must not depend on whether the backend materialization is 'int' vs 'uint8'.",
+  "type": "object",
+  "properties": {
+    "inlinePriority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "const": 5
+    },
+    "refPriority": {
+      "$ref": "./constInt.schema"
+    }
+  },
+  "required": [
+    "inlinePriority",
+    "refPriority"
+  ]
+}
