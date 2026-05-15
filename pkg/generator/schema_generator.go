@@ -105,6 +105,17 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return nil, err
 	}
 
+	mappedType, importPath, importAlias, hasRefMapping, mappingErr := g.resolveReferencedXGoRefMappingForRef(t)
+	if mappingErr != nil {
+		return nil, mappingErr
+	}
+
+	if hasRefMapping {
+		g.output.file.Package.AddImport(importPath, importAlias)
+
+		return &codegen.CustomNameType{Type: mappedType}, nil
+	}
+
 	if fileName == "" {
 		defLookupName := defName
 		if schemaDef, ok := g.schema.Definitions[defName]; ok && schemaDef.XGoRef != nil {
@@ -147,28 +158,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		schema, serr = g.loader.Load(fileName, g.schemaFileName)
 		if serr != nil {
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", t.Ref, fileName, serr)
-		}
-
-		if defName != "" {
-			definition, ok := schema.Definitions[defName]
-			if !ok {
-				return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
-			}
-
-			mappedType, importPath, importAlias, mappingOK, mappingErr := g.resolveReferencedXGoRefMapping(
-				definition,
-				g.caser.Identifierize(defName),
-				t.Ref,
-			)
-			if mappingErr != nil {
-				return nil, mappingErr
-			}
-
-			if mappingOK {
-				g.output.file.Package.AddImport(importPath, importAlias)
-
-				return &codegen.CustomNameType{Type: mappedType}, nil
-			}
 		}
 
 		qualified, qerr := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
@@ -1037,13 +1026,25 @@ func (g *schemaGenerator) resolveReferencedXGoRefMappingForRef(
 	}
 
 	defName, fileName, err := g.extractRefNames(refType)
-	if err != nil || fileName == "" || defName == "" {
+	if err != nil || fileName == "" {
 		return "", "", "", false, nil
 	}
 
 	schema, err := g.loader.Load(fileName, g.schemaFileName)
 	if err != nil {
 		return "", "", "", false, nil
+	}
+
+	if defName == "" {
+		if schema.ObjectAsType == nil {
+			return "", "", "", false, nil
+		}
+
+		return g.resolveReferencedXGoRefMapping(
+			(*schemas.Type)(schema.ObjectAsType),
+			g.getRootTypeName(schema, fileName),
+			refType.Ref,
+		)
 	}
 
 	definition, ok := schema.Definitions[defName]

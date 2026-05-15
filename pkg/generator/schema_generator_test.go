@@ -273,3 +273,304 @@ func TestResolveReferencedXGoRefMappingRejectsInvalidAlias(t *testing.T) {
 	require.False(t, ok)
 	require.ErrorContains(t, err, "must be a valid Go identifier")
 }
+
+func TestGenerateReferencedRootSchemaUsesXGoRefMapping(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	consumerSchemaPath := filepath.Join(dir, "consumer.schema")
+	statusSchemaPath := filepath.Join(dir, "status.schema")
+
+	writeSchemaFile(t, statusSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/status",
+  "title": "StatusSchema",
+  "type": "string",
+  "x-go-ref": {
+    "path": "github.com/example/shared",
+    "alias": "shared"
+  }
+}`)
+
+	writeSchemaFile(t, consumerSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/consumer/root-ref",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "./status.schema"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/consumer/root-ref",
+			OutputName:  "consumer.go",
+			PackageName: "testpkg",
+		},
+	)
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(consumerSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	consumerSource, ok := sources["consumer.go"]
+	require.True(t, ok)
+
+	generated := string(consumerSource)
+	require.Contains(t, generated, `import shared "github.com/example/shared"`)
+	require.Contains(t, generated, "*shared.StatusSchema")
+	require.NotContains(t, generated, "type StatusSchema string")
+}
+
+func TestGenerateReferencedDefinitionXGoRefStillWorks(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	consumerSchemaPath := filepath.Join(dir, "consumer.schema")
+	sharedSchemaPath := filepath.Join(dir, "shared.schema")
+
+	writeSchemaFile(t, sharedSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/defs",
+  "$defs": {
+    "User": {
+      "type": "object",
+      "x-go-ref": {
+        "path": "github.com/example/shared",
+        "alias": "shared"
+      },
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}`)
+
+	writeSchemaFile(t, consumerSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/consumer/def-ref",
+  "type": "object",
+  "properties": {
+    "user": {
+      "$ref": "./shared.schema#/$defs/User"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/consumer/def-ref",
+			OutputName:  "consumer.go",
+			PackageName: "testpkg",
+		},
+	)
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(consumerSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	consumerSource, ok := sources["consumer.go"]
+	require.True(t, ok)
+
+	generated := string(consumerSource)
+	require.Contains(t, generated, "*shared.User")
+	require.NotContains(t, generated, "type User struct")
+}
+
+func TestGenerateRootSchemaWithXGoRefStillGeneratesLocalDeclaration(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	statusSchemaPath := filepath.Join(dir, "status.schema")
+
+	writeSchemaFile(t, statusSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/status",
+  "title": "StatusSchema",
+  "type": "string",
+  "x-go-ref": {
+    "path": "github.com/example/shared",
+    "alias": "shared"
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/shared/status",
+			OutputName:  "shared.go",
+			PackageName: "testpkg",
+		},
+	)
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(statusSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	sharedSource, ok := sources["shared.go"]
+	require.True(t, ok)
+
+	generated := string(sharedSource)
+	require.Contains(t, generated, "type StatusSchema string")
+	require.NotContains(t, generated, "import shared ")
+}
+
+func TestGenerateReferencedRootSchemaXGoRefValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name       string
+		xGoRefJSON string
+		wantErr    string
+	}{
+		{
+			name:       "missing path",
+			xGoRefJSON: `"x-go-ref": { "alias": "shared" }`,
+			wantErr:    "x-go-ref.path is required",
+		},
+		{
+			name:       "missing alias",
+			xGoRefJSON: `"x-go-ref": { "path": "github.com/example/shared" }`,
+			wantErr:    "x-go-ref.alias is required",
+		},
+		{
+			name:       "invalid alias",
+			xGoRefJSON: `"x-go-ref": { "path": "github.com/example/shared", "alias": "1shared" }`,
+			wantErr:    "must be a valid Go identifier",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			dir := t.TempDir()
+			consumerSchemaPath := filepath.Join(dir, "consumer.schema")
+			statusSchemaPath := filepath.Join(dir, "status.schema")
+
+			writeSchemaFile(t, statusSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/status",
+  "title": "StatusSchema",
+  "type": "string",
+  `+tc.xGoRefJSON+`
+}`)
+
+			writeSchemaFile(t, consumerSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/consumer/root-ref-error",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "./status.schema"
+    }
+  }
+}`)
+
+			cfg := testConfigWithMappings(
+				SchemaMapping{
+					SchemaID:    "https://example.com/consumer/root-ref-error",
+					OutputName:  "consumer.go",
+					PackageName: "testpkg",
+				},
+			)
+			cfg.StructNameFromTitle = true
+
+			gen, err := New(cfg)
+			require.NoError(t, err)
+			require.ErrorContains(t, gen.DoFile(consumerSchemaPath), tc.wantErr)
+		})
+	}
+}
+
+func TestGenerateReferencedRootSchemaWithoutXGoRefKeepsBehavior(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	consumerSchemaPath := filepath.Join(dir, "consumer.schema")
+	statusSchemaPath := filepath.Join(dir, "status.schema")
+
+	writeSchemaFile(t, statusSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/status/no-ref",
+  "title": "StatusSchema",
+  "type": "string"
+}`)
+
+	writeSchemaFile(t, consumerSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/consumer/root-ref-no-x-go-ref",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "./status.schema"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/consumer/root-ref-no-x-go-ref",
+			OutputName:  "consumer.go",
+			PackageName: "testpkg",
+		},
+	)
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(consumerSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	consumerSource, ok := sources["consumer.go"]
+	require.True(t, ok)
+
+	consumerGenerated := string(consumerSource)
+	require.Contains(t, consumerGenerated, "*StatusSchema")
+	require.NotContains(t, consumerGenerated, "shared.StatusSchema")
+
+	hasLocalStatusType := false
+	for _, source := range sources {
+		if strings.Contains(string(source), "type StatusSchema string") {
+			hasLocalStatusType = true
+			break
+		}
+	}
+
+	require.True(t, hasLocalStatusType)
+}
+
+func writeSchemaFile(t *testing.T, path, contents string) {
+	t.Helper()
+	require.NoError(t, os.WriteFile(path, []byte(contents), 0o600))
+}
+
+func testConfigWithMappings(mappings ...SchemaMapping) Config {
+	return Config{
+		SchemaMappings:     mappings,
+		ExtraImports:       true,
+		DefaultPackageName: "testpkg",
+		DefaultOutputName:  "default.go",
+		ResolveExtensions:  []string{".json", ".schema"},
+		YAMLExtensions:     []string{".yaml", ".yml"},
+		Tags:               []string{"json", "yaml", "mapstructure"},
+		Warner:             func(string) {},
+	}
+}
