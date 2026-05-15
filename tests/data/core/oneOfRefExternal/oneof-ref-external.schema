@@ -1,0 +1,23 @@
+{
+  "$defs": {
+    "SubTypeA": {
+      "type": "integer",
+      "minimum": 100
+    },
+    "SubTypeB": {
+      "type": "object",
+      "properties": {
+        "sub_b0": { "type": "string" },
+        "sub_b1": { "type": "integer" }
+      }
+    },
+    "SubTypeC": {
+      "type": "object",
+      "title": "SubTypeC",
+      "properties": {
+        "sub_c0": { "type": "string" },
+        "sub_c1": { "type": "integer" }
+      }
+    }
+  }
+}

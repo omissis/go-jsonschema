@@ -59,12 +59,11 @@ type schemaGenerator struct {
 }
 
 func (g *schemaGenerator) generateRootType() error {
-	if g.schema.ObjectAsType == nil {
-		return errSchemaHasNoRoot
-	}
-
 	rootSchemaTarget := g.isRootSchemaTarget(g.schema, g.schemaFileName)
 
+	// Generate $defs from the outer Schema.Definitions field.  This is safe even
+	// when ObjectAsType is nil (defs-only schemas such as shared-definitions files
+	// that contain only "$defs" with no root type).
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
 		if !rootSchemaTarget {
@@ -85,6 +84,17 @@ func (g *schemaGenerator) generateRootType() error {
 		}
 	}
 
+	// Defs-only schema: ObjectAsType is nil but definitions were present.
+	// This is valid (a shared-definitions file with no root type).
+	if g.schema.ObjectAsType == nil {
+		if len(g.schema.Definitions) == 0 {
+			return errSchemaHasNoRoot
+		}
+
+		return nil
+	}
+
+	// Schema with an empty type list: nothing to generate for the root type.
 	if len(g.schema.Type) == 0 {
 		return nil
 	}

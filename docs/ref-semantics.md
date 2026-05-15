@@ -243,6 +243,64 @@ distinct modeling boundary.
 
 ---
 
+## Unnamed vs explicitly-named object refs
+
+A subtle but important distinction applies to object schemas referenced from `$defs`:
+
+**Unnamed object ref** (no `title`, `goJSONSchema.type`, or `x-go-type`):
+
+```json
+{
+  "$defs": {
+    "SubTypeB": {
+      "type": "object",
+      "properties": { "x": { "type": "string" } }
+    }
+  }
+}
+```
+
+Multiple references to such a schema may materialize contextually. The `$defs` key name alone does not
+constitute explicit modeling intent. The generator may reuse a generated struct by name (as an implementation
+optimization), but it is not required to treat the defs key as a stable user-visible symbol.
+
+**Explicitly named object ref** (with `title` or other explicit extension):
+
+```json
+{
+  "$defs": {
+    "SubTypeC": {
+      "type": "object",
+      "title": "SubTypeC",
+      "properties": { "x": { "type": "string" } }
+    }
+  }
+}
+```
+
+Here the schema author has signaled a distinct modeling concept. The generator should preserve a stable
+shared symbol across all references to this schema.
+
+**In practice**, the distinction matters most when the same unnamed object fragment is referenced from
+multiple fields. For example:
+
+```json
+"b1": { "$ref": "./defs.schema#/$defs/SubTypeB" },
+"b2": { "$ref": "./defs.schema#/$defs/SubTypeB" }
+```
+
+vs.
+
+```json
+"c1": { "$ref": "./defs.schema#/$defs/SubTypeC" },
+"c2": { "$ref": "./defs.schema#/$defs/SubTypeC" }
+```
+
+For `SubTypeB` (unnamed): sharing a generated struct is an acceptable optimization, not a semantic requirement.
+For `SubTypeC` (explicitly titled): all references should resolve to the same generated symbol.
+
+---
+
 ## Separation of concerns for implementation
 
 Future implementation work should try to keep the following concerns separate:
