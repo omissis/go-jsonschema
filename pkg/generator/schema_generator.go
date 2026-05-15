@@ -1040,9 +1040,14 @@ func (g *schemaGenerator) resolveReferencedXGoRefMappingForRef(
 			return "", "", "", false, nil
 		}
 
+		rootTypeName := g.getRootTypeName(schema, fileName)
+		rootType := (*schemas.Type)(schema.ObjectAsType)
+		rootTypeCopy := *rootType
+		rootTypeCopy.Title = rootTypeName
+
 		return g.resolveReferencedXGoRefMapping(
-			(*schemas.Type)(schema.ObjectAsType),
-			g.getRootTypeName(schema, fileName),
+			&rootTypeCopy,
+			rootTypeName,
 			refType.Ref,
 		)
 	}
