@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/nestedReferenceOrdering",
+  "type": "object",
+  "definitions": {
+    "alpha": {
+      "type": "object",
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/zeta"
+        }
+      },
+      "required": ["val"]
+    },
+    "zeta": {
+      "type": "integer",
+      "minimum": -128,
+      "maximum": 127
+    }
+  },
+  "properties": {
+    "alpha": {
+      "$ref": "#/definitions/alpha"
+    }
+  },
+  "required": ["alpha"]
+}
