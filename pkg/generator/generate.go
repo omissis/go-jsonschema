@@ -37,6 +37,8 @@ type Generator struct {
 	config       Config
 	inScope      map[qualifiedDefinition]struct{}
 	outputs      map[string]*output
+	rootSchemaID map[string]struct{}
+	rootSchemaFN map[string]struct{}
 	warner       func(string)
 	formatters   []formatter
 	loader       schemas.Loader
@@ -63,6 +65,8 @@ func New(config Config) (*Generator, error) {
 		config:       config,
 		inScope:      map[qualifiedDefinition]struct{}{},
 		outputs:      map[string]*output{},
+		rootSchemaID: map[string]struct{}{},
+		rootSchemaFN: map[string]struct{}{},
 		warner:       config.Warner,
 		formatters:   formatters,
 		loader:       config.Loader,
@@ -135,6 +139,14 @@ func (g *Generator) DoFile(fileName string) error {
 		if err != nil {
 			return fmt.Errorf("error parsing from file %s: %w", fileName, err)
 		}
+	}
+
+	if schema.ID != "" {
+		g.rootSchemaID[schema.ID] = struct{}{}
+	}
+
+	if fileName != "" {
+		g.rootSchemaFN[fileName] = struct{}{}
 	}
 
 	return g.AddFile(fileName, schema)

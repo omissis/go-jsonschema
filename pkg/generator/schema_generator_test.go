@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/tuotuoxp/go-jsonschema/internal/x/text"
 	"github.com/tuotuoxp/go-jsonschema/pkg/schemas"
 )
 
@@ -67,20 +68,43 @@ func TestResolveStructFieldSchemaTypeKeepsDereferencedCacheState(t *testing.T) {
 	require.True(t, cached.Dereferenced)
 }
 
-func TestResolveReferencedDefinitionTypeNameRejectsQualifiedXGoTypeWithXGoRef(t *testing.T) {
+func TestResolveReferencedDefinitionTypeNameUsesFallbackByDefault(t *testing.T) {
 	t.Parallel()
 
-	sg := &schemaGenerator{}
-	xGoType := "shared.User"
+	sg := &schemaGenerator{
+		Generator: &Generator{
+			caser: text.NewCaser(nil, nil),
+		},
+	}
 	definition := &schemas.Type{
-		XGoType: &xGoType,
 		XGoRef: &schemas.XGoRefExtension{
 			Path:  "github.com/example/shared",
 			Alias: "shared",
 		},
 	}
 
-	_, err := sg.resolveReferencedDefinitionTypeName(definition, "User", "#/$defs/User")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "must be a valid Go identifier")
+	got, err := sg.resolveReferencedDefinitionTypeName(definition, "User")
+	require.NoError(t, err)
+	require.Equal(t, "User", got)
+}
+
+func TestResolveReferencedDefinitionTypeNameUsesTitleWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	sg := &schemaGenerator{
+		Generator: &Generator{
+			config: Config{
+				StructNameFromTitle: true,
+			},
+			caser: text.NewCaser(nil, nil),
+		},
+	}
+
+	definition := &schemas.Type{
+		Title: "shared user title",
+	}
+
+	got, err := sg.resolveReferencedDefinitionTypeName(definition, "SharedUser")
+	require.NoError(t, err)
+	require.Equal(t, "SharedUserTitle", got)
 }

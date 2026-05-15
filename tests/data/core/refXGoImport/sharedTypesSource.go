@@ -4,10 +4,10 @@ package test
 
 type SharedTypesSource struct {
 	// User corresponds to the JSON schema field "user".
-	User *User `json:"user,omitempty,omitzero" yaml:"user,omitempty" mapstructure:"user,omitempty"`
+	User *SharedUser `json:"user,omitempty,omitzero" yaml:"user,omitempty" mapstructure:"user,omitempty"`
 }
 
-type User struct {
+type SharedUser struct {
 	// Id corresponds to the JSON schema field "id".
 	Id *string `json:"id,omitempty,omitzero" yaml:"id,omitempty" mapstructure:"id,omitempty"`
 }
