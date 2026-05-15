@@ -69,28 +69,18 @@ type BPayload struct {
 	B0 string `json:"b0" yaml:"b0" mapstructure:"b0"`
 
 	// B1 corresponds to the JSON schema field "b1".
-	B1 *SubTypeB `json:"b1,omitempty,omitzero" yaml:"b1,omitempty" mapstructure:"b1,omitempty"`
+	B1 SubTypeB `json:"b1" yaml:"b1" mapstructure:"b1"`
 
 	// B2 corresponds to the JSON schema field "b2".
 	B2 *SubTypeB `json:"b2,omitempty,omitzero" yaml:"b2,omitempty" mapstructure:"b2,omitempty"`
+
+	// B3 corresponds to the JSON schema field "b3".
+	B3 *BPayloadB3 `json:"b3,omitempty,omitzero" yaml:"b3,omitempty" mapstructure:"b3,omitempty"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *BPayload) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["b0"]; raw != nil && !ok {
-		return fmt.Errorf("field b0 in BPayload: required")
-	}
-	type Plain BPayload
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	*j = BPayload(plain)
-	return nil
+type BPayloadB3 struct {
+	// SubB3 corresponds to the JSON schema field "sub_b3".
+	SubB3 *SubTypeB `json:"sub_b3,omitempty,omitzero" yaml:"sub_b3,omitempty" mapstructure:"sub_b3,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -102,9 +92,33 @@ func (j *BPayload) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["b0"]; raw != nil && !ok {
 		return fmt.Errorf("field b0 in BPayload: required")
 	}
+	if _, ok := raw["b1"]; raw != nil && !ok {
+		return fmt.Errorf("field b1 in BPayload: required")
+	}
 	type Plain BPayload
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = BPayload(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *BPayload) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["b0"]; raw != nil && !ok {
+		return fmt.Errorf("field b0 in BPayload: required")
+	}
+	if _, ok := raw["b1"]; raw != nil && !ok {
+		return fmt.Errorf("field b1 in BPayload: required")
+	}
+	type Plain BPayload
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = BPayload(plain)
@@ -117,6 +131,14 @@ type CPayload struct {
 
 	// C2 corresponds to the JSON schema field "c2".
 	C2 *SubTypeC `json:"c2,omitempty,omitzero" yaml:"c2,omitempty" mapstructure:"c2,omitempty"`
+
+	// C3 corresponds to the JSON schema field "c3".
+	C3 *CPayloadC3 `json:"c3,omitempty,omitzero" yaml:"c3,omitempty" mapstructure:"c3,omitempty"`
+}
+
+type CPayloadC3 struct {
+	// SubC3 corresponds to the JSON schema field "sub_c3".
+	SubC3 *SubTypeC `json:"sub_c3,omitempty,omitzero" yaml:"sub_c3,omitempty" mapstructure:"sub_c3,omitempty"`
 }
 
 type OneOfRefExternal struct {

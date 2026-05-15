@@ -84,8 +84,18 @@ func (g *schemaGenerator) generateRootType() error {
 		}
 	}
 
-	// No root type: schema is defs-only, or has an empty type list.
-	if g.schema.ObjectAsType == nil || len(g.schema.Type) == 0 {
+	// Defs-only schema: ObjectAsType is nil but definitions were present.
+	// This is valid (a shared-definitions file with no root type).
+	if g.schema.ObjectAsType == nil {
+		if len(g.schema.Definitions) == 0 {
+			return errSchemaHasNoRoot
+		}
+
+		return nil
+	}
+
+	// Schema with an empty type list: nothing to generate for the root type.
+	if len(g.schema.Type) == 0 {
 		return nil
 	}
 

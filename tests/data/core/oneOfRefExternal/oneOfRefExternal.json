@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "title": "OneOfRefExternalMain",
   "required": ["type", "payload"],
   "properties": {
     "type": {
@@ -21,11 +22,19 @@
         {
           "type": "object",
           "title": "BPayload",
-          "required": ["b0"],
+          "required": ["b0", "b1"],
           "properties": {
             "b0": { "type": "string" },
             "b1": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeB" },
-            "b2": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeB" }
+            "b2": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeB" },
+            "b3": {
+              "type": "object",
+              "properties": {
+                "sub_b3": {
+                  "$ref": "./oneof-ref-external.schema#/$defs/SubTypeB"
+                }
+              }
+            }
           }
         },
         {
@@ -33,7 +42,15 @@
           "title": "CPayload",
           "properties": {
             "c1": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeC" },
-            "c2": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeC" }
+            "c2": { "$ref": "./oneof-ref-external.schema#/$defs/SubTypeC" },
+            "c3": {
+              "type": "object",
+              "properties": {
+                "sub_c3": {
+                  "$ref": "./oneof-ref-external.schema#/$defs/SubTypeC"
+                }
+              }
+            }
           }
         }
       ],
