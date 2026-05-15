@@ -1029,10 +1029,9 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 		// underlying Go type is a plain primitive (int, float64, string, bool).
 		if decl, alreadyDeclared := g.output.declsBySchema[def]; alreadyDeclared {
 			if pt, isPrimitive := decl.Type.(codegen.PrimitiveType); isPrimitive {
-				switch pt.Type {
-				case "int", "float64", "string", "bool":
-					// Plain primitive: safe to be transparent.
-				default:
+				isPlainPrimitive := pt.Type == "int" || pt.Type == "float64" ||
+					pt.Type == "string" || pt.Type == "bool"
+				if !isPlainPrimitive {
 					// Sized or specialized type: keep the named type.
 					return prop, false
 				}
