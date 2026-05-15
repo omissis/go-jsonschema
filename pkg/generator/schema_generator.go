@@ -996,11 +996,53 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 		return prop, false
 	}
 
-	_, fileName, err := g.extractRefNames(prop)
-	if err != nil || fileName == "" {
+	defName, fileName, err := g.extractRefNames(prop)
+	if err != nil {
 		return prop, false
 	}
 
+	// For internal refs (#/$defs/...), resolve directly from schema definitions
+	// and apply the same transparency checks as for external refs.  This makes
+	// extracting a primitive schema into $defs behave equivalently to leaving it
+	// inline, which is the intended $ref semantic-transparency policy.
+	if fileName == "" {
+		if defName == "" {
+			return prop, false
+		}
+
+		def, ok := g.schema.Definitions[defName]
+		if !ok {
+			return prop, false
+		}
+
+		if g.shouldKeepReferencedSchemaAsNamedType(def) {
+			return prop, false
+		}
+
+		if !g.isSemanticInlinePrimitiveSchema(def) {
+			return prop, false
+		}
+
+		// If the def was already materialized with a specialized Go type
+		// (e.g., a sized integer from MinSizedInts), preserve the named type to
+		// maintain type-level semantics.  Transparency only applies when the
+		// underlying Go type is a plain primitive (int, float64, string, bool).
+		if decl, alreadyDeclared := g.output.declsBySchema[def]; alreadyDeclared {
+			if pt, isPrimitive := decl.Type.(codegen.PrimitiveType); isPrimitive {
+				switch pt.Type {
+				case "int", "float64", "string", "bool":
+					// Plain primitive: safe to be transparent.
+				default:
+					// Sized or specialized type: keep the named type.
+					return prop, false
+				}
+			}
+		}
+
+		return def, true
+	}
+
+	// For external refs, use the full resolution path (existing logic).
 	resolvedRefSchema, err := g.resolveRef(prop)
 	if err != nil {
 		if _, _, _, hasRefMapping, refMappingErr := g.resolveReferencedXGoRefMappingForRef(prop); refMappingErr != nil {
