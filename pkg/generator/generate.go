@@ -158,15 +158,34 @@ func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
 		return err
 	}
 
+	processed := false
 	if schema.ID != "" {
-		if _, processed := o.processedSchemas[schema.ID]; processed {
-			return nil
+		if _, processed = o.processedSchemas[schema.ID]; !processed {
+			o.processedSchemas[schema.ID] = true
 		}
+	}
 
-		o.processedSchemas[schema.ID] = true
+	if processed && !g.isRootSchemaTarget(schema, fileName) {
+		return nil
 	}
 
 	return newSchemaGenerator(g, schema, fileName, o).generateRootType()
+}
+
+func (g *Generator) isRootSchemaTarget(schema *schemas.Schema, fileName string) bool {
+	if schema != nil && schema.ID != "" {
+		if _, ok := g.rootSchemaID[schema.ID]; ok {
+			return true
+		}
+	}
+
+	if fileName != "" {
+		if _, ok := g.rootSchemaFileName[fileName]; ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {

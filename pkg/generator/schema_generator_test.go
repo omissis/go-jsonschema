@@ -3,6 +3,7 @@ package generator
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -66,6 +67,81 @@ func TestResolveStructFieldSchemaTypeKeepsDereferencedCacheState(t *testing.T) {
 	cached := sg.schemaTypesByRef[prop.Ref]
 	require.NotNil(t, cached)
 	require.True(t, cached.Dereferenced)
+}
+
+func TestDoFileRegeneratesPreviouslyReferencedSchemaAsRootTarget(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	consumerSchemaPath := filepath.Join(dir, "consumer.schema")
+	sharedSchemaPath := filepath.Join(dir, "shared.schema")
+
+	require.NoError(t, os.WriteFile(sharedSchemaPath, []byte(`{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared",
+  "type": "object",
+  "$defs": {
+    "Marker": {
+      "type": "string"
+    },
+    "User": {
+      "type": "object",
+      "x-go-ref": {
+        "path": "github.com/example/shared",
+        "alias": "shared"
+      },
+      "properties": {
+        "id": { "type": "string" }
+      }
+    }
+  }
+}`), 0o600))
+
+	require.NoError(t, os.WriteFile(consumerSchemaPath, []byte(`{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/consumer",
+  "type": "object",
+  "properties": {
+    "shared": {
+      "$ref": "./shared.schema#/$defs/Marker"
+    }
+  }
+}`), 0o600))
+
+	cfg := Config{
+		SchemaMappings: []SchemaMapping{
+			{
+				SchemaID:    "https://example.com/consumer",
+				OutputName:  "consumer.go",
+				PackageName: "testpkg",
+			},
+			{
+				SchemaID:    "https://example.com/shared",
+				OutputName:  "shared.go",
+				PackageName: "testpkg",
+			},
+		},
+		ExtraImports:       true,
+		DefaultPackageName: "testpkg",
+		DefaultOutputName:  "default.go",
+		ResolveExtensions:  []string{".json", ".schema"},
+		YAMLExtensions:     []string{".yaml", ".yml"},
+		Tags:               []string{"json", "yaml", "mapstructure"},
+		Warner:             func(string) {},
+	}
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+
+	require.NoError(t, gen.DoFile(consumerSchemaPath))
+	require.NoError(t, gen.DoFile(sharedSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	sharedSource, ok := sources["shared.go"]
+	require.True(t, ok)
+	require.True(t, strings.Contains(string(sharedSource), "type User struct"))
 }
 
 func TestResolveReferencedDefinitionTypeNameUsesFallbackByDefault(t *testing.T) {

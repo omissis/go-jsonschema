@@ -40,23 +40,12 @@ func newSchemaGenerator(
 	fileName string,
 	output *output,
 ) *schemaGenerator {
-	rootSchemaTarget := false
-	if schema != nil {
-		if schema.ID != "" {
-			_, rootSchemaTarget = g.rootSchemaID[schema.ID]
-		}
-		if !rootSchemaTarget && fileName != "" {
-			_, rootSchemaTarget = g.rootSchemaFileName[fileName]
-		}
-	}
-
 	return &schemaGenerator{
 		Generator:        g,
 		schema:           schema,
 		schemaFileName:   fileName,
 		output:           output,
 		schemaTypesByRef: make(map[string]*schemas.Type),
-		rootSchemaTarget: rootSchemaTarget,
 	}
 }
 
@@ -67,7 +56,6 @@ type schemaGenerator struct {
 	schema           *schemas.Schema
 	schemaFileName   string
 	schemaTypesByRef map[string]*schemas.Type
-	rootSchemaTarget bool
 }
 
 func (g *schemaGenerator) generateRootType() error {
@@ -75,9 +63,11 @@ func (g *schemaGenerator) generateRootType() error {
 		return errSchemaHasNoRoot
 	}
 
+	rootSchemaTarget := g.isRootSchemaTarget(g.schema, g.schemaFileName)
+
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
-		if !g.rootSchemaTarget {
+		if !rootSchemaTarget {
 			ref := fmt.Sprintf("#/$defs/%s", name)
 			_, _, _, hasRefMapping, err := g.resolveReferencedXGoRefMapping(def, g.caser.Identifierize(name), ref)
 			if err != nil {
