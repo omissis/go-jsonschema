@@ -68,33 +68,3 @@ func (j *RefToPrimitiveString) UnmarshalYAML(value *yaml.Node) error {
 	*j = RefToPrimitiveString(plain)
 	return nil
 }
-
-type ThingSchema string
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ThingSchema) UnmarshalJSON(value []byte) error {
-	type Plain ThingSchema
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", "", `^[a-z0-9.-]+$`)
-	}
-	*j = ThingSchema(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ThingSchema) UnmarshalYAML(value *yaml.Node) error {
-	type Plain ThingSchema
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain)); !matched {
-		return fmt.Errorf("field %s pattern match: must match %s", "", `^[a-z0-9.-]+$`)
-	}
-	*j = ThingSchema(plain)
-	return nil
-}
