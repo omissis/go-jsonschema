@@ -987,11 +987,47 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 		return prop, false
 	}
 
-	_, fileName, err := g.extractRefNames(prop)
-	if err != nil || fileName == "" {
+	defName, fileName, err := g.extractRefNames(prop)
+	if err != nil {
 		return prop, false
 	}
 
+	// For internal refs (#/$defs/...), resolve directly from schema definitions
+	// and apply the same transparency checks as for external refs.  This makes
+	// extracting a primitive schema into $defs behave equivalently to leaving it
+	// inline, which is the intended $ref semantic-transparency policy.
+	if fileName == "" {
+		if defName == "" {
+			return prop, false
+		}
+
+		def, ok := g.schema.Definitions[defName]
+		if !ok {
+			return prop, false
+		}
+
+		if g.shouldKeepReferencedSchemaAsNamedType(def) {
+			return prop, false
+		}
+
+		if !g.isSemanticInlinePrimitiveSchema(def) {
+			return prop, false
+		}
+
+		// Determine what Go type the def would produce, using deep copies of the
+		// bounds so we don't mutate the schema (PrimitiveTypeFromJSONSchemaType has
+		// a side-effect of setting bounds to nil when they can be elided).  This
+		// check is order-independent: it does not rely on declsBySchema being
+		// populated, which would fail when the referencing struct definition is
+		// alphabetically earlier than the primitive definition.
+		if !g.wouldProducePlainGoType(def) {
+			return prop, false
+		}
+
+		return def, true
+	}
+
+	// For external refs, use the full resolution path (existing logic).
 	resolvedRefSchema, err := g.resolveRef(prop)
 	if err != nil {
 		if _, _, _, hasRefMapping, refMappingErr := g.resolveReferencedXGoRefMappingForRef(prop); refMappingErr != nil {
@@ -1169,6 +1205,80 @@ func (g *schemaGenerator) hasSemanticInlinePrimitiveConstraints(schemaType *sche
 	default:
 		return false
 	}
+}
+
+// wouldProducePlainGoType reports whether def would produce a plain Go primitive
+// type (int, float64, string, bool) rather than a specialized or named type (e.g.
+// int8 from MinSizedInts, or time.Time from format "date-time").
+//
+// This is computed directly from the schema without relying on declsBySchema, so
+// it is order-independent: it gives the correct answer even before the definition
+// has been materialised by generateRootType.
+//
+// Deep copies of the numeric bounds are used so that the computation does not have
+// the side-effect of setting schema fields to nil (which PrimitiveTypeFromJSONSchemaType
+// does when it determines that bounds can be elided from the generated validator).
+func (g *schemaGenerator) wouldProducePlainGoType(def *schemas.Type) bool {
+	typeIndex, _ := g.isTypeNullable(def)
+	if typeIndex == -1 {
+		return false
+	}
+
+	primitiveType := def.Type[typeIndex]
+
+	// Use deep copies of the bounds so we don't mutate def.Minimum / def.Maximum.
+	minCopy := cloneFloat64Ptr(def.Minimum)
+	maxCopy := cloneFloat64Ptr(def.Maximum)
+	excMinCopy := cloneAnyPtr(def.ExclusiveMinimum)
+	excMaxCopy := cloneAnyPtr(def.ExclusiveMaximum)
+
+	goType, err := codegen.PrimitiveTypeFromJSONSchemaType(
+		primitiveType,
+		def.Format,
+		false, // pointer=false; we only care about the base type
+		g.config.MinSizedInts,
+		&minCopy,
+		&maxCopy,
+		&excMinCopy,
+		&excMaxCopy,
+	)
+	if err != nil {
+		return false
+	}
+
+	pt, ok := goType.(codegen.PrimitiveType)
+	if !ok {
+		// NamedType (e.g. time.Time for date-time, netip.Addr for ipv4) or other
+		// non-plain type: preserve the named declaration.
+		return false
+	}
+
+	return pt.Type == "int" || pt.Type == "float64" || pt.Type == "string" || pt.Type == "bool"
+}
+
+// cloneFloat64Ptr returns a pointer to a copy of the float64 value that p points
+// to, or nil if p is nil.  Used to prevent PrimitiveTypeFromJSONSchemaType from
+// mutating schema fields through the double-pointer it receives.
+func cloneFloat64Ptr(p *float64) *float64 {
+	if p == nil {
+		return nil
+	}
+
+	v := *p
+
+	return &v
+}
+
+// cloneAnyPtr returns a pointer to a copy of the any value that p points to, or
+// nil if p is nil.
+func cloneAnyPtr(p *any) *any {
+	if p == nil {
+		return nil
+	}
+
+	v := *p
+
+	return &v
 }
 
 func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []string, isRequired bool) string {

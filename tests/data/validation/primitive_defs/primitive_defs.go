@@ -234,25 +234,25 @@ type PrimitiveDefs struct {
 
 	// LegacyNullableBoundedString corresponds to the JSON schema field
 	// "legacyNullableBoundedString".
-	LegacyNullableBoundedString *BoundedString `json:"legacyNullableBoundedString,omitempty,omitzero" yaml:"legacyNullableBoundedString,omitempty" mapstructure:"legacyNullableBoundedString,omitempty"`
+	LegacyNullableBoundedString *string `json:"legacyNullableBoundedString,omitempty,omitzero" yaml:"legacyNullableBoundedString,omitempty" mapstructure:"legacyNullableBoundedString,omitempty"`
 
 	// RefBoundedInteger corresponds to the JSON schema field "refBoundedInteger".
-	RefBoundedInteger BoundedInteger `json:"refBoundedInteger" yaml:"refBoundedInteger" mapstructure:"refBoundedInteger"`
+	RefBoundedInteger int `json:"refBoundedInteger" yaml:"refBoundedInteger" mapstructure:"refBoundedInteger"`
 
 	// RefBoundedNumber corresponds to the JSON schema field "refBoundedNumber".
-	RefBoundedNumber BoundedNumber `json:"refBoundedNumber" yaml:"refBoundedNumber" mapstructure:"refBoundedNumber"`
+	RefBoundedNumber float64 `json:"refBoundedNumber" yaml:"refBoundedNumber" mapstructure:"refBoundedNumber"`
 
 	// RefBoundedString corresponds to the JSON schema field "refBoundedString".
-	RefBoundedString BoundedString `json:"refBoundedString" yaml:"refBoundedString" mapstructure:"refBoundedString"`
+	RefBoundedString string `json:"refBoundedString" yaml:"refBoundedString" mapstructure:"refBoundedString"`
 
 	// RefConstBoolean corresponds to the JSON schema field "refConstBoolean".
-	RefConstBoolean ConstBoolean `json:"refConstBoolean" yaml:"refConstBoolean" mapstructure:"refConstBoolean"`
+	RefConstBoolean bool `json:"refConstBoolean" yaml:"refConstBoolean" mapstructure:"refConstBoolean"`
 
 	// RefConstString corresponds to the JSON schema field "refConstString".
-	RefConstString ConstString `json:"refConstString" yaml:"refConstString" mapstructure:"refConstString"`
+	RefConstString string `json:"refConstString" yaml:"refConstString" mapstructure:"refConstString"`
 
 	// RefPatternString corresponds to the JSON schema field "refPatternString".
-	RefPatternString PatternString `json:"refPatternString" yaml:"refPatternString" mapstructure:"refPatternString"`
+	RefPatternString string `json:"refPatternString" yaml:"refPatternString" mapstructure:"refPatternString"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -331,6 +331,42 @@ func (j *PrimitiveDefs) UnmarshalJSON(value []byte) error {
 	}
 	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.InlinePatternString)); !matched {
 		return fmt.Errorf("field %s pattern match: must match %s", "InlinePatternString", `^[a-z0-9.-]+$`)
+	}
+	if plain.LegacyNullableBoundedString != nil && utf8.RuneCountInString(string(*plain.LegacyNullableBoundedString)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "legacyNullableBoundedString", 3)
+	}
+	if plain.LegacyNullableBoundedString != nil && utf8.RuneCountInString(string(*plain.LegacyNullableBoundedString)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "legacyNullableBoundedString", 5)
+	}
+	if 10 <= plain.RefBoundedInteger {
+		return fmt.Errorf("field %s: must be < %v", "refBoundedInteger", 10)
+	}
+	if 1 > plain.RefBoundedInteger {
+		return fmt.Errorf("field %s: must be >= %v", "refBoundedInteger", 1)
+	}
+	if plain.RefBoundedNumber != 3.5 {
+		return fmt.Errorf("field %s: must be equal to %v", "refBoundedNumber", 3.5)
+	}
+	if 10.5 < plain.RefBoundedNumber {
+		return fmt.Errorf("field %s: must be <= %v", "refBoundedNumber", 10.5)
+	}
+	if 0 >= plain.RefBoundedNumber {
+		return fmt.Errorf("field %s: must be > %v", "refBoundedNumber", 0)
+	}
+	if utf8.RuneCountInString(string(plain.RefBoundedString)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "refBoundedString", 3)
+	}
+	if utf8.RuneCountInString(string(plain.RefBoundedString)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "refBoundedString", 5)
+	}
+	if plain.RefConstBoolean != true {
+		return fmt.Errorf("field %s: must be equal to %t", "refConstBoolean", true)
+	}
+	if plain.RefConstString != "stable" {
+		return fmt.Errorf("field %s: must be equal to %s", "refConstString", "stable")
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.RefPatternString)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "RefPatternString", `^[a-z0-9.-]+$`)
 	}
 	*j = PrimitiveDefs(plain)
 	return nil
@@ -412,6 +448,42 @@ func (j *PrimitiveDefs) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.InlinePatternString)); !matched {
 		return fmt.Errorf("field %s pattern match: must match %s", "InlinePatternString", `^[a-z0-9.-]+$`)
+	}
+	if plain.LegacyNullableBoundedString != nil && utf8.RuneCountInString(string(*plain.LegacyNullableBoundedString)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "legacyNullableBoundedString", 3)
+	}
+	if plain.LegacyNullableBoundedString != nil && utf8.RuneCountInString(string(*plain.LegacyNullableBoundedString)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "legacyNullableBoundedString", 5)
+	}
+	if 10 <= plain.RefBoundedInteger {
+		return fmt.Errorf("field %s: must be < %v", "refBoundedInteger", 10)
+	}
+	if 1 > plain.RefBoundedInteger {
+		return fmt.Errorf("field %s: must be >= %v", "refBoundedInteger", 1)
+	}
+	if plain.RefBoundedNumber != 3.5 {
+		return fmt.Errorf("field %s: must be equal to %v", "refBoundedNumber", 3.5)
+	}
+	if 10.5 < plain.RefBoundedNumber {
+		return fmt.Errorf("field %s: must be <= %v", "refBoundedNumber", 10.5)
+	}
+	if 0 >= plain.RefBoundedNumber {
+		return fmt.Errorf("field %s: must be > %v", "refBoundedNumber", 0)
+	}
+	if utf8.RuneCountInString(string(plain.RefBoundedString)) < 3 {
+		return fmt.Errorf("field %s length: must be >= %d", "refBoundedString", 3)
+	}
+	if utf8.RuneCountInString(string(plain.RefBoundedString)) > 5 {
+		return fmt.Errorf("field %s length: must be <= %d", "refBoundedString", 5)
+	}
+	if plain.RefConstBoolean != true {
+		return fmt.Errorf("field %s: must be equal to %t", "refConstBoolean", true)
+	}
+	if plain.RefConstString != "stable" {
+		return fmt.Errorf("field %s: must be equal to %s", "refConstString", "stable")
+	}
+	if matched, _ := regexp.MatchString(`^[a-z0-9.-]+$`, string(plain.RefPatternString)); !matched {
+		return fmt.Errorf("field %s pattern match: must match %s", "RefPatternString", `^[a-z0-9.-]+$`)
 	}
 	*j = PrimitiveDefs(plain)
 	return nil

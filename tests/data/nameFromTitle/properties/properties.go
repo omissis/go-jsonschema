@@ -26,7 +26,7 @@ type Eta struct {
 	Epsilon string `json:"epsilon" yaml:"epsilon" mapstructure:"epsilon"`
 
 	// Theta corresponds to the JSON schema field "theta".
-	Theta Theta `json:"theta" yaml:"theta" mapstructure:"theta"`
+	Theta int `json:"theta" yaml:"theta" mapstructure:"theta"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
@@ -47,6 +47,12 @@ func (j *Eta) UnmarshalJSON(value []byte) error {
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
+	}
+	if 65535 < plain.Theta {
+		return fmt.Errorf("field %s: must be <= %v", "theta", 65535)
+	}
+	if 0 > plain.Theta {
+		return fmt.Errorf("field %s: must be >= %v", "theta", 0)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := range st.NumField() {
@@ -76,6 +82,12 @@ func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
+	}
+	if 65535 < plain.Theta {
+		return fmt.Errorf("field %s: must be <= %v", "theta", 65535)
+	}
+	if 0 > plain.Theta {
+		return fmt.Errorf("field %s: must be >= %v", "theta", 0)
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := range st.NumField() {
