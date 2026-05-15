@@ -40,13 +40,13 @@ func newSchemaGenerator(
 	fileName string,
 	output *output,
 ) *schemaGenerator {
-	rootGeneration := false
+	rootSchemaTarget := false
 	if schema != nil {
 		if schema.ID != "" {
-			_, rootGeneration = g.rootSchemaID[schema.ID]
+			_, rootSchemaTarget = g.rootSchemaID[schema.ID]
 		}
-		if !rootGeneration && fileName != "" {
-			_, rootGeneration = g.rootSchemaFN[fileName]
+		if !rootSchemaTarget && fileName != "" {
+			_, rootSchemaTarget = g.rootSchemaFN[fileName]
 		}
 	}
 
@@ -56,7 +56,7 @@ func newSchemaGenerator(
 		schemaFileName:   fileName,
 		output:           output,
 		schemaTypesByRef: make(map[string]*schemas.Type),
-		rootGeneration:   rootGeneration,
+		rootSchemaTarget: rootSchemaTarget,
 	}
 }
 
@@ -67,7 +67,7 @@ type schemaGenerator struct {
 	schema           *schemas.Schema
 	schemaFileName   string
 	schemaTypesByRef map[string]*schemas.Type
-	rootGeneration   bool
+	rootSchemaTarget bool
 }
 
 func (g *schemaGenerator) generateRootType() error {
@@ -77,7 +77,7 @@ func (g *schemaGenerator) generateRootType() error {
 
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
-		if !g.rootGeneration {
+		if !g.rootSchemaTarget {
 			ref := fmt.Sprintf("#/$defs/%s", name)
 			_, _, _, hasRefMapping, err := g.resolveReferencedXGoRefMapping(def, g.caser.Identifierize(name), ref)
 			if err != nil {

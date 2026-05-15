@@ -108,3 +108,92 @@ func TestResolveReferencedDefinitionTypeNameUsesTitleWhenEnabled(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "SharedUserTitle", got)
 }
+
+func TestResolveReferencedXGoRefMappingUsesFallbackName(t *testing.T) {
+	t.Parallel()
+
+	sg := &schemaGenerator{
+		Generator: &Generator{
+			caser: text.NewCaser(nil, nil),
+		},
+	}
+
+	definition := &schemas.Type{
+		XGoRef: &schemas.XGoRefExtension{
+			Path:  "github.com/example/shared",
+			Alias: "shared",
+		},
+	}
+
+	mappedType, importPath, importAlias, ok, err := sg.resolveReferencedXGoRefMapping(
+		definition,
+		"User",
+		"#/$defs/User",
+	)
+	require.NoError(t, err)
+	require.True(t, ok)
+	require.Equal(t, "shared.User", mappedType)
+	require.Equal(t, "github.com/example/shared", importPath)
+	require.Equal(t, "shared", importAlias)
+}
+
+func TestResolveReferencedXGoRefMappingRequiresPath(t *testing.T) {
+	t.Parallel()
+
+	sg := &schemaGenerator{
+		Generator: &Generator{
+			caser: text.NewCaser(nil, nil),
+		},
+	}
+
+	definition := &schemas.Type{
+		XGoRef: &schemas.XGoRefExtension{
+			Alias: "shared",
+		},
+	}
+
+	_, _, _, ok, err := sg.resolveReferencedXGoRefMapping(definition, "User", "#/$defs/User")
+	require.False(t, ok)
+	require.ErrorContains(t, err, "x-go-ref.path is required")
+}
+
+func TestResolveReferencedXGoRefMappingRequiresAlias(t *testing.T) {
+	t.Parallel()
+
+	sg := &schemaGenerator{
+		Generator: &Generator{
+			caser: text.NewCaser(nil, nil),
+		},
+	}
+
+	definition := &schemas.Type{
+		XGoRef: &schemas.XGoRefExtension{
+			Path: "github.com/example/shared",
+		},
+	}
+
+	_, _, _, ok, err := sg.resolveReferencedXGoRefMapping(definition, "User", "#/$defs/User")
+	require.False(t, ok)
+	require.ErrorContains(t, err, "x-go-ref.alias is required")
+}
+
+func TestResolveReferencedXGoRefMappingRejectsInvalidAlias(t *testing.T) {
+	t.Parallel()
+
+	sg := &schemaGenerator{
+		Generator: &Generator{
+			caser: text.NewCaser(nil, nil),
+		},
+	}
+
+	definition := &schemas.Type{
+		XGoRef: &schemas.XGoRefExtension{
+			Path:  "github.com/example/shared",
+			Alias: "1shared",
+		},
+	}
+
+	_, _, _, ok, err := sg.resolveReferencedXGoRefMapping(definition, "User", "#/$defs/User")
+	require.False(t, ok)
+	require.ErrorContains(t, err, "must be a valid Go identifier")
+}
