@@ -63,24 +63,23 @@ func (g *schemaGenerator) generateRootType() error {
 		return errSchemaHasNoRoot
 	}
 
+	rootSchemaTarget := g.isRootSchemaTarget(g.schema, g.schemaFileName)
+
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
-		ref := fmt.Sprintf("#/$defs/%s", name)
-		scopeName, err := g.resolveReferencedDefinitionTypeName(def, g.caser.Identifierize(name), ref)
-		if err != nil {
-			return err
+		if !rootSchemaTarget {
+			ref := fmt.Sprintf("#/$defs/%s", name)
+			_, _, _, hasRefMapping, err := g.resolveReferencedXGoRefMapping(def, g.caser.Identifierize(name), ref)
+			if err != nil {
+				return err
+			}
+
+			if hasRefMapping {
+				continue
+			}
 		}
 
-		_, _, _, hasRefMapping, err := g.resolveReferencedXGoRefMapping(def, ref)
-		if err != nil {
-			return err
-		}
-
-		if hasRefMapping {
-			continue
-		}
-
-		_, err = g.generateDeclaredType(def, newNameScope(scopeName))
+		_, err := g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
 		if err != nil {
 			return err
 		}
@@ -112,7 +111,6 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			defLookupName, err = g.resolveReferencedDefinitionTypeName(
 				schemaDef,
 				g.caser.Identifierize(defName),
-				t.Ref,
 			)
 			if err != nil {
 				return nil, err
@@ -157,7 +155,11 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 				return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
 			}
 
-			mappedType, importPath, importAlias, mappingOK, mappingErr := g.resolveReferencedXGoRefMapping(definition, t.Ref)
+			mappedType, importPath, importAlias, mappingOK, mappingErr := g.resolveReferencedXGoRefMapping(
+				definition,
+				g.caser.Identifierize(defName),
+				t.Ref,
+			)
 			if mappingErr != nil {
 				return nil, mappingErr
 			}
@@ -197,7 +199,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
 		}
 
-		defName, err = g.resolveReferencedDefinitionTypeName(def, g.caser.Identifierize(defName), t.Ref)
+		defName, err = g.resolveReferencedDefinitionTypeName(def, g.caser.Identifierize(defName))
 		if err != nil {
 			return nil, err
 		}
@@ -1049,39 +1051,34 @@ func (g *schemaGenerator) resolveReferencedXGoRefMappingForRef(
 		return "", "", "", false, nil
 	}
 
-	return g.resolveReferencedXGoRefMapping(definition, refType.Ref)
+	return g.resolveReferencedXGoRefMapping(definition, g.caser.Identifierize(defName), refType.Ref)
 }
 
 func (g *schemaGenerator) resolveReferencedDefinitionTypeName(
 	definition *schemas.Type,
 	fallback string,
-	ref string,
 ) (string, error) {
-	if definition == nil || definition.XGoRef == nil {
+	if definition == nil {
 		return fallback, nil
 	}
 
-	if definition.XGoType == nil || strings.TrimSpace(*definition.XGoType) == "" {
-		return "", fmt.Errorf("x-go-type is required when x-go-ref is present for ref %q", ref)
+	if g.config.StructNameFromTitle && definition.Title != "" {
+		return g.caser.Identifierize(definition.Title), nil
 	}
 
-	goType := strings.TrimSpace(*definition.XGoType)
-	if err := validateGoIdentifier(goType, "x-go-type", ref); err != nil {
-		return "", err
-	}
-
-	return goType, nil
+	return fallback, nil
 }
 
 func (g *schemaGenerator) resolveReferencedXGoRefMapping(
 	definition *schemas.Type,
+	fallbackName string,
 	ref string,
 ) (string, string, string, bool, error) {
 	if definition == nil || definition.XGoRef == nil {
 		return "", "", "", false, nil
 	}
 
-	goType, err := g.resolveReferencedDefinitionTypeName(definition, "", ref)
+	goType, err := g.resolveReferencedDefinitionTypeName(definition, fallbackName)
 	if err != nil {
 		return "", "", "", false, err
 	}

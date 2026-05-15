@@ -37,6 +37,8 @@ type Generator struct {
 	config       Config
 	inScope      map[qualifiedDefinition]struct{}
 	outputs      map[string]*output
+	rootSchemaID map[string]struct{}
+	rootSchemaFileName map[string]struct{}
 	warner       func(string)
 	formatters   []formatter
 	loader       schemas.Loader
@@ -63,6 +65,8 @@ func New(config Config) (*Generator, error) {
 		config:       config,
 		inScope:      map[qualifiedDefinition]struct{}{},
 		outputs:      map[string]*output{},
+		rootSchemaID: map[string]struct{}{},
+		rootSchemaFileName: map[string]struct{}{},
 		warner:       config.Warner,
 		formatters:   formatters,
 		loader:       config.Loader,
@@ -137,6 +141,14 @@ func (g *Generator) DoFile(fileName string) error {
 		}
 	}
 
+	if schema.ID != "" {
+		g.rootSchemaID[schema.ID] = struct{}{}
+	}
+
+	if fileName != "" {
+		g.rootSchemaFileName[fileName] = struct{}{}
+	}
+
 	return g.AddFile(fileName, schema)
 }
 
@@ -146,15 +158,34 @@ func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
 		return err
 	}
 
+	processed := false
 	if schema.ID != "" {
-		if _, processed := o.processedSchemas[schema.ID]; processed {
-			return nil
+		if _, processed = o.processedSchemas[schema.ID]; !processed {
+			o.processedSchemas[schema.ID] = true
 		}
+	}
 
-		o.processedSchemas[schema.ID] = true
+	if processed && !g.isRootSchemaTarget(schema, fileName) {
+		return nil
 	}
 
 	return newSchemaGenerator(g, schema, fileName, o).generateRootType()
+}
+
+func (g *Generator) isRootSchemaTarget(schema *schemas.Schema, fileName string) bool {
+	if schema != nil && schema.ID != "" {
+		if _, ok := g.rootSchemaID[schema.ID]; ok {
+			return true
+		}
+	}
+
+	if fileName != "" {
+		if _, ok := g.rootSchemaFileName[fileName]; ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (g *Generator) getRootTypeName(schema *schemas.Schema, fileName string) string {

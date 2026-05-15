@@ -5,7 +5,6 @@
     "SharedUser": {
       "type": "object",
       "x-go-ref": {
-        "path": "github.com/tuotuoxp/go-jsonschema/tests/helpers/shared",
         "alias": "shared"
       },
       "properties": {

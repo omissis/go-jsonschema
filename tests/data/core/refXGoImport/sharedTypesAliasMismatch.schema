@@ -4,7 +4,6 @@
   "$defs": {
     "SharedUser": {
       "type": "object",
-      "x-go-type": "User",
       "x-go-ref": {
         "path": "github.com/tuotuoxp/go-jsonschema/tests/helpers/shared",
         "alias": ""
