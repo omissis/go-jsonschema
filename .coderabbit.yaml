@@ -1,4 +1,4 @@
-# CodeRabbit configuration for plheide/go-jsonschema fork.
+# CodeRabbit configuration for omissis/go-jsonschema.
 # Only non-default settings are listed here; everything else uses CR defaults.
 
 reviews:
@@ -14,3 +14,4 @@ reviews:
       - "^feat/.*"
       - "^fix/.*"
       - "^docs/.*"
+      - "^chore/.*"
