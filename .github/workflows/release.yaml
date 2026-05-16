@@ -34,7 +34,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Create dedicated docker buildx builder instance
-        run: docker buildx create --driver=docker-container --name container
+        run: docker buildx create --driver=docker-container --name container --use
       - name: Run GoReleaser for release
         uses: goreleaser/goreleaser-action@1a80836c5c9d9e5755a25cb59ec6f45a3b5f41a8 # v7
         with:
