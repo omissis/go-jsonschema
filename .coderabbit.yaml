@@ -9,7 +9,7 @@ reviews:
     #   "Review skipped — auto reviews are disabled on base/target
     #    branches other than the default branch."
     # Scoped to our actual branch-name conventions; if a new prefix is
-    # added (chore/, refactor/, etc.) it will need to be appended here.
+    # added (refactor/, etc.) it will need to be appended here.
     base_branches:
       - "^feat/.*"
       - "^fix/.*"
