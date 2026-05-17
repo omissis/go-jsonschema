@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/refLocalValidationOverrides",
+  "title": "RefLocalValidationOverrides",
+  "type": "object",
+  "$defs": {
+    "BaseCode": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 10,
+      "pattern": "^[a-z]+$"
+    },
+    "BaseFlag": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "properties": {
+    "extInteger": {
+      "$ref": "./primitiveRefs.schema#/$defs/PositiveInt",
+      "minimum": 10,
+      "maximum": 20
+    },
+    "extNumber": {
+      "$ref": "./primitiveRefs.schema#/$defs/Amount",
+      "exclusiveMinimum": 2,
+      "multipleOf": 0.5
+    },
+    "internalCode": {
+      "$ref": "#/$defs/BaseCode",
+      "pattern": "^[A-Z]+$",
+      "maxLength": 5
+    },
+    "internalFlag": {
+      "$ref": "#/$defs/BaseFlag",
+      "const": false
+    },
+    "unsupportedFormat": {
+      "$ref": "./primitiveRefs.schema#/$defs/DateTimeValue",
+      "format": "email"
+    },
+    "unsupportedType": {
+      "$ref": "./primitiveRefs.schema#/$defs/PositiveInt",
+      "type": "string"
+    }
+  },
+  "required": [
+    "extInteger",
+    "extNumber",
+    "internalCode",
+    "internalFlag",
+    "unsupportedFormat",
+    "unsupportedType"
+  ]
+}

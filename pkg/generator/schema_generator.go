@@ -1028,7 +1028,8 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 			return prop, false
 		}
 
-		if !g.isSemanticInlinePrimitiveSchema(def) {
+		shouldSemanticInline := g.isSemanticInlinePrimitiveSchema(def)
+		if !shouldSemanticInline && !g.hasLocalRefValidationOverride(prop, def) {
 			return prop, false
 		}
 
@@ -1041,7 +1042,7 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 			return prop, false
 		}
 
-		return def, true
+		return g.applyLocalRefValidationOverride(def, prop), true
 	}
 
 	// For external refs, load the schema directly rather than calling resolveRef.
@@ -1090,11 +1091,96 @@ func (g *schemaGenerator) resolveStructFieldSchemaType(prop *schemas.Type) (*sch
 		return prop, false
 	}
 
-	if !g.isSemanticInlinePrimitiveSchema(resolvedRefSchema) {
+	shouldSemanticInline := g.isSemanticInlinePrimitiveSchema(resolvedRefSchema)
+	if !shouldSemanticInline && !g.hasLocalRefValidationOverride(prop, resolvedRefSchema) {
 		return prop, false
 	}
 
-	return resolvedRefSchema, true
+	return g.applyLocalRefValidationOverride(resolvedRefSchema, prop), true
+}
+
+func (g *schemaGenerator) hasLocalRefValidationOverride(prop, resolvedRefSchema *schemas.Type) bool {
+	if prop == nil || resolvedRefSchema == nil {
+		return false
+	}
+
+	typeIndex, _ := g.isTypeNullable(resolvedRefSchema)
+	if typeIndex == -1 {
+		return false
+	}
+
+	switch resolvedRefSchema.Type[typeIndex] {
+	case schemas.TypeNameString:
+		return prop.MinLength != 0 ||
+			prop.MaxLength != 0 ||
+			prop.Pattern != "" ||
+			prop.Const != nil
+	case schemas.TypeNameInteger, schemas.TypeNameNumber:
+		return prop.Minimum != nil ||
+			prop.Maximum != nil ||
+			prop.ExclusiveMinimum != nil ||
+			prop.ExclusiveMaximum != nil ||
+			prop.MultipleOf != nil ||
+			prop.Const != nil
+	case schemas.TypeNameBoolean:
+		return prop.Const != nil
+	default:
+		return false
+	}
+}
+
+func (g *schemaGenerator) applyLocalRefValidationOverride(resolvedRefSchema, prop *schemas.Type) *schemas.Type {
+	if prop == nil || resolvedRefSchema == nil {
+		return resolvedRefSchema
+	}
+
+	effectiveSchema := *resolvedRefSchema
+
+	typeIndex, _ := g.isTypeNullable(resolvedRefSchema)
+	if typeIndex == -1 {
+		return &effectiveSchema
+	}
+
+	switch resolvedRefSchema.Type[typeIndex] {
+	case schemas.TypeNameString:
+		if prop.MinLength != 0 {
+			effectiveSchema.MinLength = prop.MinLength
+		}
+		if prop.MaxLength != 0 {
+			effectiveSchema.MaxLength = prop.MaxLength
+		}
+		if prop.Pattern != "" {
+			effectiveSchema.Pattern = prop.Pattern
+		}
+		if prop.Const != nil {
+			effectiveSchema.Const = prop.Const
+		}
+	case schemas.TypeNameInteger, schemas.TypeNameNumber:
+		if prop.Minimum != nil {
+			effectiveSchema.Minimum = cloneFloat64Ptr(prop.Minimum)
+		}
+		if prop.Maximum != nil {
+			effectiveSchema.Maximum = cloneFloat64Ptr(prop.Maximum)
+		}
+		if prop.ExclusiveMinimum != nil {
+			effectiveSchema.ExclusiveMinimum = cloneAnyPtr(prop.ExclusiveMinimum)
+		}
+		if prop.ExclusiveMaximum != nil {
+			effectiveSchema.ExclusiveMaximum = cloneAnyPtr(prop.ExclusiveMaximum)
+		}
+		if prop.MultipleOf != nil {
+			effectiveSchema.MultipleOf = cloneFloat64Ptr(prop.MultipleOf)
+		}
+		if prop.Const != nil {
+			effectiveSchema.Const = prop.Const
+		}
+	case schemas.TypeNameBoolean:
+		if prop.Const != nil {
+			effectiveSchema.Const = prop.Const
+		}
+	}
+
+	return &effectiveSchema
 }
 
 func (g *schemaGenerator) resolveReferencedXGoRefMappingForRef(
@@ -1251,6 +1337,7 @@ func (g *schemaGenerator) hasSemanticInlinePrimitiveConstraints(schemaType *sche
 			schemaType.Maximum != nil ||
 			schemaType.ExclusiveMinimum != nil ||
 			schemaType.ExclusiveMaximum != nil ||
+			schemaType.MultipleOf != nil ||
 			schemaType.Const != nil
 	case schemas.TypeNameBoolean:
 		return schemaType.Const != nil
