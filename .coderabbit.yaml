@@ -1,0 +1,17 @@
+# CodeRabbit configuration for omissis/go-jsonschema.
+# Only non-default settings are listed here; everything else uses CR defaults.
+
+reviews:
+  auto_review:
+    # Auto-review PRs that target non-default base branches too — needed
+    # for stacked PRs where intermediate branches target each other
+    # (e.g., feat/p3 → feat/p2). Without this, CR posts:
+    #   "Review skipped — auto reviews are disabled on base/target
+    #    branches other than the default branch."
+    # Scoped to our actual branch-name conventions; if a new prefix is
+    # added (refactor/, etc.) it will need to be appended here.
+    base_branches:
+      - "^feat/.*"
+      - "^fix/.*"
+      - "^docs/.*"
+      - "^chore/.*"
