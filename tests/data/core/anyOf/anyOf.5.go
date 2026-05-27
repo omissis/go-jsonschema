@@ -17,7 +17,7 @@ type TextContent struct {
 func (j *TextContent) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TextContent: %w", err)
 	}
 	if _, ok := raw["text"]; raw != nil && !ok {
 		return fmt.Errorf("field text in TextContent: required")
@@ -25,7 +25,7 @@ func (j *TextContent) UnmarshalJSON(value []byte) error {
 	type Plain TextContent
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TextContent: %w", err)
 	}
 	*j = TextContent(plain)
 	return nil
@@ -35,7 +35,7 @@ func (j *TextContent) UnmarshalJSON(value []byte) error {
 func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TextContent: %w", err)
 	}
 	if _, ok := raw["text"]; raw != nil && !ok {
 		return fmt.Errorf("field text in TextContent: required")
@@ -43,7 +43,7 @@ func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TextContent
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal TextContent: %w", err)
 	}
 	*j = TextContent(plain)
 	return nil
@@ -67,7 +67,7 @@ type CallToolResultContentElem struct {
 func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
 	var callToolResultContentElem_0 CallToolResultContentElem_0
 	var errs []error
@@ -80,7 +80,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	type Plain CallToolResultContentElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal CallToolResultContentElem: %w", err)
 	}
 	*j = CallToolResultContentElem(plain)
 	return nil
@@ -90,7 +90,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
 	var callToolResultContentElem_0 CallToolResultContentElem_0
 	var errs []error
@@ -103,7 +103,7 @@ func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain CallToolResultContentElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal CallToolResultContentElem: %w", err)
 	}
 	*j = CallToolResultContentElem(plain)
 	return nil
