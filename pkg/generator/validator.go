@@ -37,6 +37,11 @@ type validatorDesc struct {
 	beforeJSONUnmarshal bool
 	requiresRawAfter    bool
 	imports             []packageImport
+	// decls lists package-level declarations the validator needs (e.g.
+	// precompiled regex vars). The orchestrator adds them via
+	// Package.AddDecl, which dedupes by name — so multiple validators sharing
+	// the same regex emit the var only once per output file.
+	decls []codegen.Decl
 }
 
 var (
@@ -48,6 +53,7 @@ var (
 	_ validator = new(stringValidator)
 	_ validator = new(numericValidator)
 	_ validator = new(anyOfValidator)
+	_ validator = new(formatValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -737,4 +743,222 @@ func lowerFirst(s string) string {
 
 func upperFirst(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// JSON Schema format keywords supported by the built-in formatValidator.
+const (
+	formatKeywordUUID         = "uuid"
+	formatKeywordEmail        = "email"
+	formatKeywordURI          = "uri"
+	formatKeywordURIReference = "uri-reference"
+	formatKeywordHostname     = "hostname"
+	formatKeywordRegex        = "regex"
+)
+
+// Embedded validation patterns expressed in RE2 (Go's regexp syntax).
+const (
+	formatRegexUUID     = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`
+	formatRegexHostname = `^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`
+	// formatRegexURIRef enforces the RFC 3986 character set for URI references:
+	// unreserved + reserved characters and properly formed percent-encoded
+	// triplets. Used in addition to net/url.Parse, which accepts almost any
+	// string and so cannot reject e.g. whitespace or malformed pct-encoding.
+	formatRegexURIRef = `^([A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=]|%[0-9A-Fa-f]{2})*$`
+)
+
+// Names of the precompiled regex vars emitted at package scope when a
+// generated file uses a regex-backed format validator. Reused across all
+// validation call sites so we pay regexp.MustCompile once per pattern per
+// generated package, not per call.
+const (
+	regexpVarNameUUID     = "regexpFormatUUID"
+	regexpVarNameHostname = "regexpFormatHostname"
+	regexpVarNameURIRef   = "regexpFormatURIRef"
+)
+
+// formatRegexpDecl returns the precompiled-regex package-level decl, if any,
+// that the named format keyword needs at runtime. Formats with no regex
+// dependency (e.g. "email", "regex") return nil.
+func formatRegexpDecl(format string) *codegen.RegexpVar {
+	switch format {
+	case formatKeywordUUID:
+		return &codegen.RegexpVar{Name: regexpVarNameUUID, Pattern: formatRegexUUID}
+	case formatKeywordHostname:
+		return &codegen.RegexpVar{Name: regexpVarNameHostname, Pattern: formatRegexHostname}
+	case formatKeywordURI, formatKeywordURIReference:
+		return &codegen.RegexpVar{Name: regexpVarNameURIRef, Pattern: formatRegexURIRef}
+	}
+
+	return nil
+}
+
+// isKnownFormatKeyword reports whether the named format has a built-in
+// runtime validator implemented by formatValidator.
+func isKnownFormatKeyword(format string) bool {
+	switch format {
+	case formatKeywordUUID,
+		formatKeywordEmail,
+		formatKeywordURI,
+		formatKeywordURIReference,
+		formatKeywordHostname,
+		formatKeywordRegex:
+		return true
+	}
+
+	return false
+}
+
+// formatValidatorImports returns the package imports the generated validator
+// for the named format requires.
+// Stdlib import paths used by the generated format validators. Centralised so
+// the per-format dispatch below names them consistently.
+const (
+	importPathRegexp  = "regexp"
+	importPathStrings = "strings"
+	importPathNetMail = "net/mail"
+	importPathNetURL  = "net/url"
+)
+
+func formatValidatorImports(format string) []packageImport {
+	switch format {
+	case formatKeywordUUID, formatKeywordRegex:
+		return []packageImport{{qualifiedName: importPathRegexp}}
+	case formatKeywordHostname:
+		// strings.TrimSuffix lets the length cap exclude the optional trailing
+		// root dot per RFC 1034 §3.1, matching the doc comment on the emit.
+		return []packageImport{
+			{qualifiedName: importPathRegexp},
+			{qualifiedName: importPathStrings},
+		}
+	case formatKeywordEmail:
+		return []packageImport{{qualifiedName: importPathNetMail}}
+	case formatKeywordURI, formatKeywordURIReference:
+		return []packageImport{
+			{qualifiedName: importPathNetURL},
+			{qualifiedName: importPathRegexp},
+		}
+	}
+
+	return nil
+}
+
+// formatValidator emits runtime validation for JSON Schema `format` keywords
+// on string-typed fields. It mirrors stringValidator's nillable-pointer
+// handling and runs after the typed struct has been decoded.
+type formatValidator struct {
+	jsonName   string
+	fieldName  string
+	format     string
+	isNillable bool
+}
+
+func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
+	value := getPlainName(v.fieldName)
+
+	pointerPrefix := ""
+	if v.isNillable {
+		pointerPrefix = "*"
+	}
+
+	target := pointerPrefix + value
+
+	if v.isNillable {
+		out.Printlnf("if %s != nil {", value)
+		out.Indent(1)
+	}
+
+	switch v.format {
+	case formatKeywordUUID:
+		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameUUID, target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uuid", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordHostname:
+		// RFC 1123: each label is enforced by the regex (1 + {0,61} + 1 chars);
+		// the overall hostname length cap (253 octets, exclusive of any trailing
+		// root dot per RFC 1034 §3.1) is checked separately because regex
+		// backtracking on the per-label structure would not bound the total
+		// length on its own. TrimSuffix excludes the optional trailing dot
+		// from the cap so a 253-char hostname plus root dot is still accepted.
+		out.Printlnf(
+			`if !%s.MatchString(string(%s)) || len(strings.TrimSuffix(string(%s), ".")) > 253 {`,
+			regexpVarNameHostname, target, target,
+		)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid hostname", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordEmail:
+		// RFC 5321 addr-spec only: reject display-name forms ("Alice <a@b>")
+		// and require the parsed address to round-trip exactly. net/mail
+		// accepts the broader RFC 5322 syntax by default.
+		out.Printlnf(
+			`if addr, err := mail.ParseAddress(string(%s));`+
+				` err != nil || addr.Name != "" || addr.Address != string(%s) {`,
+			target, target,
+		)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid email (RFC 5321 addr-spec)", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordURI:
+		out.Printlnf("if u, err := url.Parse(string(%s)); err != nil || !u.IsAbs() {", target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameURIRef, target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordURIReference:
+		out.Printlnf("if _, err := url.Parse(string(%s)); err != nil {", target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference: %%w", "%s", err)`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameURIRef, target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordRegex:
+		// JSON Schema specifies the `regex` format as ECMA-262 (JavaScript)
+		// regular expressions, but Go's stdlib only supports RE2 syntax.
+		// Patterns valid in ECMA-262 but not RE2 (backreferences, lookaround)
+		// will be rejected here. The error message reflects what we actually
+		// validate against.
+		out.Printlnf("if _, err := regexp.Compile(string(%s)); err != nil {", target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid RE2 regular expression: %%w", "%s", err)`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.isNillable {
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	return nil
+}
+
+func (v *formatValidator) desc() *validatorDesc {
+	d := &validatorDesc{
+		hasError: true,
+		imports:  formatValidatorImports(v.format),
+	}
+
+	if regexpDecl := formatRegexpDecl(v.format); regexpDecl != nil {
+		d.decls = append(d.decls, regexpDecl)
+	}
+
+	return d
 }
