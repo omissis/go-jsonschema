@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/withPatternProperties",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  },
+  "patternProperties": {
+    "^x-": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
