@@ -178,6 +178,10 @@ type Type struct {
 	Enum                 []any            `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
 	Const                any              `json:"const,omitempty"`
+	// ConstIsSet distinguishes an explicit `"const": null` (which decodes to
+	// Const == nil) from an absent `const` field (which also decodes to nil).
+	// Set by Type's custom UnmarshalJSON via a separate raw-key probe.
+	ConstIsSet bool `json:"-"`
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
 	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
@@ -292,6 +296,16 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	}
 
 	*value = Type(obj)
+
+	// Probe the raw bytes for an explicit "const" key so callers can
+	// distinguish absent (Const == nil, ConstIsSet == false) from explicit
+	// null (Const == nil, ConstIsSet == true). Failure to parse here is
+	// non-fatal — the standard unmarshal above already succeeded, so a
+	// probe error just means we leave ConstIsSet at its zero value.
+	var probe map[string]json.RawMessage
+	if json.Unmarshal(raw, &probe) == nil {
+		_, value.ConstIsSet = probe["const"]
+	}
 
 	return nil
 }
