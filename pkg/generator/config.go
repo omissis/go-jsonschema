@@ -47,6 +47,8 @@ type Config struct {
 	DisableCustomTypesForMaps bool
 	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
 	AliasSingleAllOfAnyOfRefs bool
+	// UseNumber configures the generator to use json.Number for numbers instead of float64.
+	UseNumber bool
 }
 
 type SchemaMapping struct {

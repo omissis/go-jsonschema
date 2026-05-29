@@ -37,6 +37,7 @@ var (
 	disableCustomTypesForMaps bool
 	disableOmitEmpty          bool
 	disableOmitZero           bool
+	useNumber                 bool
 
 	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
 
@@ -87,6 +88,7 @@ var (
 				DisableCustomTypesForMaps: disableCustomTypesForMaps,
 				DisableOmitEmpty:          disableOmitEmpty,
 				DisableOmitZero:           disableOmitZero,
+				UseNumber:                 useNumber,
 			}
 
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
@@ -207,6 +209,8 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"disable the addition of omitempty tag values")
 	rootCmd.PersistentFlags().BoolVar(&disableOmitZero, "disable-omitzero", false,
 		"disable the addition of omitzero tag values")
+	rootCmd.PersistentFlags().BoolVar(&useNumber, "use-number", false,
+		"Use json.Number for numbers for more accurate number handling")
 
 	abortWithErr(rootCmd.Execute())
 }
