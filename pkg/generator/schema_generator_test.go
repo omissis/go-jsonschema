@@ -751,13 +751,69 @@ func TestGenerateXGoRefSamePackageRootRefObjectTypeNoSelfImport(t *testing.T) {
 	src, ok := sources["openapi.go"]
 	require.True(t, ok)
 
-generated := string(src)
-// Must NOT self-import the package.
-require.NotContains(t, generated, `import oapi "myproject/openapi"`)
-// Must NOT use a qualified same-package type reference.
-require.NotContains(t, generated, "oapi.ObjectB")
-// Must use the unqualified local type name in the field type.
-require.Contains(t, generated, "B *ObjectB")
+	generated := string(src)
+	// Must NOT self-import the package.
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	// Must NOT use a qualified same-package type reference.
+	require.NotContains(t, generated, "oapi.ObjectB")
+	// Must use the unqualified local type name in the field type.
+	require.Contains(t, generated, "B *ObjectB")
+}
+
+// TestGenerateXGoRefSamePackageRootRefObjectTypeNoIDNoSelfImport verifies the
+// same-package x-go-ref behavior for the user repro where schemas omit id/$id.
+func TestGenerateXGoRefSamePackageRootRefObjectTypeNoIDNoSelfImport(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	aSchemaPath := filepath.Join(dir, "A.schema.json")
+	bSchemaPath := filepath.Join(dir, "B.schema.json")
+
+	writeSchemaFile(t, bSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectB",
+  "x-go-ref": {
+    "path": "myproject/openapi",
+    "alias": "oapi"
+  },
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" }
+  }
+}`)
+
+	writeSchemaFile(t, aSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectA",
+  "x-go-ref": {
+    "path": "myproject/openapi",
+    "alias": "oapi"
+  },
+  "type": "object",
+  "properties": {
+    "B": {
+      "$ref": "./B.schema.json"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings()
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(aSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	src, ok := sources["default.go"]
+	require.True(t, ok)
+
+	generated := string(src)
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	require.NotContains(t, generated, "oapi.ObjectB")
+	require.Contains(t, generated, "B *ObjectB")
 }
 
 // TestGenerateXGoRefSamePackageExternalDefsRefObjectTypeNoSelfImport verifies the
@@ -818,13 +874,72 @@ func TestGenerateXGoRefSamePackageExternalDefsRefObjectTypeNoSelfImport(t *testi
 	src, ok := sources["openapi.go"]
 	require.True(t, ok)
 
-generated := string(src)
-// Must NOT self-import the package.
-require.NotContains(t, generated, `import oapi "myproject/openapi"`)
-// Must NOT use a qualified same-package type reference.
-require.NotContains(t, generated, "oapi.Order")
-// Must use the unqualified local type name in the field type.
-require.Contains(t, generated, "Order *Order")
+	generated := string(src)
+	// Must NOT self-import the package.
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	// Must NOT use a qualified same-package type reference.
+	require.NotContains(t, generated, "oapi.Order")
+	// Must use the unqualified local type name in the field type.
+	require.Contains(t, generated, "Order *Order")
+}
+
+// TestGenerateXGoRefSamePackageExternalDefsRefObjectTypeNoIDNoSelfImport verifies
+// same-package detection for an external $defs ref when schemas have no id/$id.
+func TestGenerateXGoRefSamePackageExternalDefsRefObjectTypeNoIDNoSelfImport(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	aSchemaPath := filepath.Join(dir, "a.schema")
+	sharedSchemaPath := filepath.Join(dir, "shared.schema")
+
+	writeSchemaFile(t, sharedSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Order": {
+      "type": "object",
+      "x-go-ref": {
+        "path": "myproject/openapi",
+        "alias": "oapi"
+      },
+      "properties": {
+        "id": { "type": "string" }
+      }
+    }
+  }
+}`)
+
+	writeSchemaFile(t, aSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectA",
+  "x-go-ref": {
+    "path": "myproject/openapi",
+    "alias": "oapi"
+  },
+  "type": "object",
+  "properties": {
+    "order": {
+      "$ref": "./shared.schema#/$defs/Order"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings()
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(aSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	src, ok := sources["default.go"]
+	require.True(t, ok)
+
+	generated := string(src)
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	require.NotContains(t, generated, "oapi.Order")
+	require.Contains(t, generated, "Order *Order")
 }
 
 // TestGenerateXGoRefSameFileSamePackageDefsRefProducesLocalType verifies that a
@@ -880,13 +995,126 @@ func TestGenerateXGoRefSameFileSamePackageDefsRefProducesLocalType(t *testing.T)
 	src, ok := sources["openapi.go"]
 	require.True(t, ok)
 
-generated := string(src)
-// Must NOT self-import the package.
-require.NotContains(t, generated, `import oapi "myproject/openapi"`)
-// Must NOT use a qualified reference.
-require.NotContains(t, generated, "oapi.User")
-// Must use User as a local (unqualified) type in the field.
-require.Contains(t, generated, "User *User")
+	generated := string(src)
+	// Must NOT self-import the package.
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	// Must NOT use a qualified reference.
+	require.NotContains(t, generated, "oapi.User")
+	// Must use User as a local (unqualified) type in the field.
+	require.Contains(t, generated, "User *User")
+}
+
+// TestGenerateXGoRefSameFileSamePackageDefsRefNoIDProducesLocalType verifies
+// same-file $defs behavior without id/$id on the root schema.
+func TestGenerateXGoRefSameFileSamePackageDefsRefNoIDProducesLocalType(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	aSchemaPath := filepath.Join(dir, "a.schema")
+
+	writeSchemaFile(t, aSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectA",
+  "x-go-ref": {
+    "path": "myproject/openapi",
+    "alias": "oapi"
+  },
+  "type": "object",
+  "$defs": {
+    "User": {
+      "type": "object",
+      "x-go-ref": {
+        "path": "myproject/openapi",
+        "alias": "oapi"
+      },
+      "properties": {
+        "id": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "user": {
+      "$ref": "#/$defs/User"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings()
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(aSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	src, ok := sources["default.go"]
+	require.True(t, ok)
+
+	generated := string(src)
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	require.NotContains(t, generated, "oapi.User")
+	require.Contains(t, generated, "User *User")
+}
+
+// TestGenerateXGoRefSamePackageInlineRefNoIDNoSelfImport verifies same-package
+// detection for the inline path (array items -> $ref) without id/$id.
+func TestGenerateXGoRefSamePackageInlineRefNoIDNoSelfImport(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	aSchemaPath := filepath.Join(dir, "a.schema")
+	bSchemaPath := filepath.Join(dir, "b.schema")
+
+	writeSchemaFile(t, bSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectB",
+  "x-go-ref": {
+    "path": "myproject/openapi",
+    "alias": "oapi"
+  },
+  "type": "object",
+  "properties": {
+    "job_id": { "type": "string" }
+  }
+}`)
+
+	writeSchemaFile(t, aSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObjectA",
+  "x-go-ref": {
+    "path": "myproject/openapi",
+    "alias": "oapi"
+  },
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "./b.schema"
+      }
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings()
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(aSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	src, ok := sources["default.go"]
+	require.True(t, ok)
+
+	generated := string(src)
+	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+	require.NotContains(t, generated, "[]oapi.ObjectB")
+	require.Contains(t, generated, "Items []ObjectB")
 }
 
 // TestGenerateXGoRefExternalPackageRootRefObjectTypeStillImports confirms that
