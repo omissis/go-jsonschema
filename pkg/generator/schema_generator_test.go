@@ -929,8 +929,8 @@ func TestGenerateXGoRefSamePackageExternalDefsRefObjectTypeNoIDNoSelfImport(t *t
 
 	gen, err := New(cfg)
 	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(sharedSchemaPath))
 	require.NoError(t, gen.DoFile(aSchemaPath))
-
 	sources, err := gen.Sources()
 	require.NoError(t, err)
 
