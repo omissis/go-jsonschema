@@ -585,6 +585,10 @@ func TestGenerateXGoRefSamePackageRootRefNoSelfImport(t *testing.T) {
   "id": "https://example.com/shared/a",
   "title": "AType",
   "type": "object",
+  "x-go-ref": {
+    "path": "github.com/example/shared",
+    "alias": "shared"
+  },
   "properties": {
     "b": {
       "$ref": "./b.schema"
