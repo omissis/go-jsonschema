@@ -3,6 +3,7 @@
 package test
 
 import "encoding/json"
+import "fmt"
 import "github.com/go-viper/mapstructure/v2"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
@@ -19,7 +20,7 @@ type ArrayAdditionalProperties struct {
 func (j *ArrayAdditionalProperties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ArrayAdditionalProperties: %w", err)
 	}
 	type Plain ArrayAdditionalProperties
 	var plain Plain
@@ -30,9 +31,23 @@ func (j *ArrayAdditionalProperties) UnmarshalJSON(value []byte) error {
 		plain.AdditionalProperties = map[string][]interface{}{}
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
@@ -45,7 +60,7 @@ func (j *ArrayAdditionalProperties) UnmarshalJSON(value []byte) error {
 func (j *ArrayAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ArrayAdditionalProperties: %w", err)
 	}
 	type Plain ArrayAdditionalProperties
 	var plain Plain
@@ -56,9 +71,23 @@ func (j *ArrayAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 		plain.AdditionalProperties = map[string][]interface{}{}
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err

@@ -39,7 +39,7 @@ type Larger struct {
 func (j *Larger) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Larger: %w", err)
 	}
 	if _, ok := raw["u16"]; raw != nil && !ok {
 		return fmt.Errorf("field u16 in Larger: required")
@@ -108,7 +108,7 @@ func (j *Larger) UnmarshalJSON(value []byte) error {
 func (j *Larger) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Larger: %w", err)
 	}
 	if _, ok := raw["u16"]; raw != nil && !ok {
 		return fmt.Errorf("field u16 in Larger: required")
