@@ -121,6 +121,16 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	}
 
 	if hasRefMapping {
+		if importPath == g.output.file.Package.QualifiedName {
+			// The referenced x-go-ref type lives in the same package as the
+			// current output file.  Do not add a self-import and use the
+			// unqualified type name directly.
+			// resolveReferencedXGoRefMapping always returns mappedType as
+			// importAlias+"."+goType, so TrimPrefix is safe here.
+			localType := strings.TrimPrefix(mappedType, importAlias+".")
+			return &codegen.CustomNameType{Type: localType}, nil
+		}
+
 		g.output.file.Package.AddImport(importPath, importAlias)
 
 		return &codegen.CustomNameType{Type: mappedType}, nil
@@ -1802,6 +1812,15 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if hasXGoTypeMapping {
 			if importPath != "" {
+				if importPath == g.output.file.Package.QualifiedName {
+					// The referenced x-go-ref type lives in the same package as the
+					// current output file.  Do not add a self-import and use the
+					// unqualified type name directly.
+					// resolveReferencedXGoRefMapping always returns mappedType as
+					// importAlias+"."+goType, so TrimPrefix is safe here.
+					return &codegen.CustomNameType{Type: strings.TrimPrefix(mappedType, importAlias+".")}, nil
+				}
+
 				g.output.file.Package.AddImport(importPath, importAlias)
 			}
 
