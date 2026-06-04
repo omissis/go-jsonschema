@@ -620,7 +620,7 @@ func TestGenerateXGoRefSamePackageRootRefNoSelfImport(t *testing.T) {
 	require.Contains(t, generated, "BType")
 }
 
-// TestGenerateXGoRefSamePackageDefinitionRefNoSelfImport verifies the same
+// TestGenerateXGoRefSamePackageDefinitionRefNoSelfImport verifies the
 // same-package guard for a definition-level $ref (shared.schema#/$defs/User).
 func TestGenerateXGoRefSamePackageDefinitionRefNoSelfImport(t *testing.T) {
 	t.Parallel()
