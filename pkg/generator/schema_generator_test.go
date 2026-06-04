@@ -1104,8 +1104,8 @@ func TestGenerateXGoRefSamePackageInlineRefNoIDNoSelfImport(t *testing.T) {
 
 	gen, err := New(cfg)
 	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(bSchemaPath))
 	require.NoError(t, gen.DoFile(aSchemaPath))
-
 	sources, err := gen.Sources()
 	require.NoError(t, err)
 
