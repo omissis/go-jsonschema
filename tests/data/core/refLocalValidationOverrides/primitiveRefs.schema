@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/primitiveRefs",
+  "$defs": {
+    "PositiveInt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99
+    },
+    "Amount": {
+      "type": "number",
+      "maximum": 10
+    },
+    "DateTimeValue": {
+      "type": "string",
+      "format": "date-time",
+      "minLength": 20,
+      "maxLength": 30
+    }
+  }
+}

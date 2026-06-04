@@ -187,6 +187,32 @@ Without such signals, `$ref` should be treated as transparent by default.
 
 ---
 
+## Phase-1 local validation overrides for `$ref` siblings
+
+When a schema object contains `$ref`, this project now supports a narrow first phase of local validation
+overrides for selected primitive/value-like validation keywords.
+
+Mental model:
+
+1. resolve `$ref`
+2. overwrite supported local validation fields from the use-site schema object
+
+This is a direct post-dereference overwrite model. It is intentionally **not** an inferred merge/intersection
+model (no "choose stricter value" logic).
+
+### Supported use-site sibling keywords (phase 1)
+
+- String-like: `minLength`, `maxLength`, `pattern`, `const`
+- Numeric: `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`, `const`
+- Boolean: `const`
+
+### Explicitly out of scope in this phase
+
+Use-site siblings such as `type`, `format`, `title`, object `properties` merging, and implicit object inheritance
+are not part of this mechanism.
+
+---
+
 ## What should *not* define `$ref` semantics
 
 The following should not, by themselves, decide whether a referenced schema is treated as inline-like or as a
@@ -240,6 +266,23 @@ The generator may optimize object handling by:
 But these are still implementation optimizations. They should not change the semantic expectation that
 extracting an object schema behind a `$ref` should preserve behavior unless the author explicitly requested a
 distinct modeling boundary.
+
+The local override mechanism above applies only to a narrow whitelist of primitive/value-like validation fields.
+It should not be interpreted as general-purpose object extension or inheritance.
+
+---
+
+## Validation override vs object extension/composition
+
+Local `$ref` validation override and object composition are separate concerns:
+
+- **Local validation override**: overwrite selected primitive/value-like validation fields at the use-site after
+  dereference.
+- **Object extension/composition**: explicitly combine object schemas (for example, with `allOf`) when structural
+  extension is intended.
+
+If you want to extend an object schema structurally, treat that as an explicit composition problem rather than
+implicit sibling-property merging on a `$ref` object.
 
 ---
 
