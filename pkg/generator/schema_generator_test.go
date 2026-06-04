@@ -557,6 +557,135 @@ func TestGenerateReferencedRootSchemaWithoutXGoRefKeepsBehavior(t *testing.T) {
 	require.True(t, hasLocalStatusType)
 }
 
+// TestGenerateXGoRefSamePackageRootRefNoSelfImport verifies that when schema A
+// references schema B and both have x-go-ref pointing at the same Go package,
+// and A is being generated into that same package, the generator does NOT
+// produce a self-import and does NOT emit a qualified "alias.TypeName" reference.
+// Instead it should use the local (unqualified) type name directly.
+func TestGenerateXGoRefSamePackageRootRefNoSelfImport(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	aSchemaPath := filepath.Join(dir, "a.schema")
+	bSchemaPath := filepath.Join(dir, "b.schema")
+
+	writeSchemaFile(t, bSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/b",
+  "title": "BType",
+  "type": "string",
+  "x-go-ref": {
+    "path": "github.com/example/shared",
+    "alias": "shared"
+  }
+}`)
+
+	writeSchemaFile(t, aSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/a",
+  "title": "AType",
+  "type": "object",
+  "properties": {
+    "b": {
+      "$ref": "./b.schema"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/shared/a",
+			OutputName:  "shared.go",
+			PackageName: "github.com/example/shared",
+		},
+	)
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(aSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	sharedSource, ok := sources["shared.go"]
+	require.True(t, ok)
+
+	generated := string(sharedSource)
+	// Must NOT self-import the package.
+	require.NotContains(t, generated, `import shared "github.com/example/shared"`)
+	// Must NOT use a qualified same-package type reference.
+	require.NotContains(t, generated, "shared.BType")
+	// Must use the unqualified local type name.
+	require.Contains(t, generated, "BType")
+}
+
+// TestGenerateXGoRefSamePackageDefinitionRefNoSelfImport verifies the same
+// same-package guard for a definition-level $ref (shared.schema#/$defs/User).
+func TestGenerateXGoRefSamePackageDefinitionRefNoSelfImport(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	aSchemaPath := filepath.Join(dir, "a.schema")
+	sharedSchemaPath := filepath.Join(dir, "shared.schema")
+
+	writeSchemaFile(t, sharedSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/defs",
+  "$defs": {
+    "User": {
+      "type": "object",
+      "x-go-ref": {
+        "path": "github.com/example/shared",
+        "alias": "shared"
+      },
+      "properties": {
+        "id": { "type": "string" }
+      }
+    }
+  }
+}`)
+
+	writeSchemaFile(t, aSchemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/shared/a",
+  "title": "AType",
+  "type": "object",
+  "properties": {
+    "user": {
+      "$ref": "./shared.schema#/$defs/User"
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/shared/a",
+			OutputName:  "shared.go",
+			PackageName: "github.com/example/shared",
+		},
+	)
+	cfg.StructNameFromTitle = true
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(aSchemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	sharedSource, ok := sources["shared.go"]
+	require.True(t, ok)
+
+	generated := string(sharedSource)
+	// Must NOT self-import the package.
+	require.NotContains(t, generated, `import shared "github.com/example/shared"`)
+	// Must NOT use a qualified same-package type reference.
+	require.NotContains(t, generated, "shared.User")
+	// Must use the unqualified local type name.
+	require.Contains(t, generated, "User")
+}
+
 func writeSchemaFile(t *testing.T, path, contents string) {
 	t.Helper()
 	require.NoError(t, os.WriteFile(path, []byte(contents), 0o600))
