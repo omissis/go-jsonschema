@@ -818,13 +818,13 @@ func TestGenerateXGoRefSamePackageExternalDefsRefObjectTypeNoSelfImport(t *testi
 	src, ok := sources["openapi.go"]
 	require.True(t, ok)
 
-	generated := string(src)
-	// Must NOT self-import the package.
-	require.NotContains(t, generated, `import oapi "myproject/openapi"`)
-	// Must NOT use a qualified same-package type reference.
-	require.NotContains(t, generated, "oapi.Order")
-	// Must use the unqualified local type name.
-	require.Contains(t, generated, "Order")
+generated := string(src)
+// Must NOT self-import the package.
+require.NotContains(t, generated, `import oapi "myproject/openapi"`)
+// Must NOT use a qualified same-package type reference.
+require.NotContains(t, generated, "oapi.Order")
+// Must use the unqualified local type name in the field type.
+require.Contains(t, generated, "Order *Order")
 }
 
 // TestGenerateXGoRefSameFileSamePackageDefsRefProducesLocalType verifies that a
