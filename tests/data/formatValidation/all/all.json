@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/all",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contact": {
+      "type": "string",
+      "format": "email"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "icon": {
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "host": {
+      "type": "string",
+      "format": "hostname"
+    },
+    "rule": {
+      "type": "string",
+      "format": "regex"
+    }
+  },
+  "required": [
+    "userId",
+    "contact"
+  ]
+}
