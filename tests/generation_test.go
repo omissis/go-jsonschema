@@ -247,6 +247,30 @@ func TestRegressions(t *testing.T) {
 	testExamples(t, basicConfig, "./data/regressions")
 }
 
+func TestFormatValidation(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{Enabled: true}
+
+	testExamples(t, cfg, "./data/formatValidation")
+}
+
+func TestFormatValidationAllowList(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{
+		Enabled: true,
+		// Mixed-case and surrounding whitespace verify the AllowList
+		// normalization: shouldValidate trims and lowercases entries so
+		// these match the canonical "uuid" / "email" keywords.
+		AllowList: []string{"UUID", " email "},
+	}
+
+	testExamples(t, cfg, "./data/formatValidationAllowList")
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 
