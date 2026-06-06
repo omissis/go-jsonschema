@@ -178,11 +178,24 @@ type Type struct {
 	Enum                 []any            `json:"enum,omitempty"`                 // Section 5.20.
 	Type                 TypeList         `json:"type,omitempty"`                 // Section 5.21.
 	Const                any              `json:"const,omitempty"`
+	// ConstIsSet distinguishes an explicit `"const": null` (which decodes to
+	// Const == nil) from an absent `const` field (which also decodes to nil).
+	// Set by Type's custom UnmarshalJSON via a separate raw-key probe.
+	ConstIsSet bool `json:"-"`
 	// RFC draft-bhutton-json-schema-01, section 10.
 	AllOf []*Type `json:"allOf,omitempty"` // Section 10.2.1.1.
 	AnyOf []*Type `json:"anyOf,omitempty"` // Section 10.2.1.2.
 	OneOf []*Type `json:"oneOf,omitempty"` // Section 10.2.1.3.
 	Not   *Type   `json:"not,omitempty"`   // Section 10.2.1.4.
+	// Conditional subschemas (RFC draft-bhutton-json-schema-01, section 10.2.2).
+	// Preserved here so generators can detect their presence and warn or
+	// compile them rather than silently dropping the keywords during JSON
+	// parsing. The legacy generator does not interpret these by default;
+	// downstream code that wants to honor conditional subschemas should
+	// detect (If != nil) and route accordingly.
+	If   *Type `json:"if,omitempty"`   // Section 10.2.2.1.
+	Then *Type `json:"then,omitempty"` // Section 10.2.2.2.
+	Else *Type `json:"else,omitempty"` // Section 10.2.2.3.
 	// RFC draft-wright-json-schema-validation-00, section 6, 7.
 	Title       string `json:"title,omitempty"`       // Section 6.1.
 	Description string `json:"description,omitempty"` // Section 6.1.
@@ -292,6 +305,16 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	}
 
 	*value = Type(obj)
+
+	// Probe the raw bytes for an explicit "const" key so callers can
+	// distinguish absent (Const == nil, ConstIsSet == false) from explicit
+	// null (Const == nil, ConstIsSet == true). Failure to parse here is
+	// non-fatal — the standard unmarshal above already succeeded, so a
+	// probe error just means we leave ConstIsSet at its zero value.
+	var probe map[string]json.RawMessage
+	if json.Unmarshal(raw, &probe) == nil {
+		_, value.ConstIsSet = probe["const"]
+	}
 
 	return nil
 }
