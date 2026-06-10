@@ -24,12 +24,12 @@ type DurationMyObject struct {
 func (j *DurationMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DurationMyObject: %w", err)
 	}
 	type Plain DurationMyObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal DurationMyObject: %w", err)
 	}
 	if v, ok := raw["withDefault"]; !ok || v == nil {
 		defaultDuration, err := time.ParseDuration("20s")
@@ -47,12 +47,12 @@ func (j *DurationMyObject) UnmarshalJSON(value []byte) error {
 func (j *DurationMyObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DurationMyObject: %w", err)
 	}
 	type Plain DurationMyObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal DurationMyObject: %w", err)
 	}
 	if v, ok := raw["withDefault"]; !ok || v == nil {
 		defaultDuration, err := time.ParseDuration("20s")
