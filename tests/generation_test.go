@@ -304,6 +304,15 @@ func TestStructWithConstraints(t *testing.T) {
 	testExamples(t, basicConfig, "./data/structWithConstraints")
 }
 
+func TestUseNumber(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.UseNumber = true
+
+	testExampleFile(t, cfg, "./data/useNumber/useNumber.json")
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
