@@ -36,7 +36,7 @@ type AnyOf1ConfigurationsElem_0 struct {
 func (j *AnyOf1ConfigurationsElem_0) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem_0: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AnyOf1ConfigurationsElem_0: required")
@@ -54,7 +54,7 @@ func (j *AnyOf1ConfigurationsElem_0) UnmarshalJSON(value []byte) error {
 func (j *AnyOf1ConfigurationsElem_0) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem_0: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AnyOf1ConfigurationsElem_0: required")
@@ -77,7 +77,7 @@ type AnyOf1ConfigurationsElem_1 struct {
 func (j *AnyOf1ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem_1: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AnyOf1ConfigurationsElem_1: required")
@@ -95,7 +95,7 @@ func (j *AnyOf1ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
 func (j *AnyOf1ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem_1: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AnyOf1ConfigurationsElem_1: required")
@@ -140,7 +140,7 @@ func (j *AnyOf1ConfigurationsElem_2) UnmarshalYAML(value *yaml.Node) error {
 func (j *AnyOf1ConfigurationsElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem: %w", err)
 	}
 	var anyOf1ConfigurationsElem_0 AnyOf1ConfigurationsElem_0
 	var anyOf1ConfigurationsElem_1 AnyOf1ConfigurationsElem_1
@@ -171,7 +171,7 @@ func (j *AnyOf1ConfigurationsElem) UnmarshalJSON(value []byte) error {
 func (j *AnyOf1ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem: %w", err)
 	}
 	var anyOf1ConfigurationsElem_0 AnyOf1ConfigurationsElem_0
 	var anyOf1ConfigurationsElem_1 AnyOf1ConfigurationsElem_1

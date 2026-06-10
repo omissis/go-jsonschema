@@ -18,7 +18,7 @@ type AllOfNestedRefs struct {
 func (j *AllOfNestedRefs) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOfNestedRefs: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AllOfNestedRefs: required")
@@ -36,7 +36,7 @@ func (j *AllOfNestedRefs) UnmarshalJSON(value []byte) error {
 func (j *AllOfNestedRefs) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOfNestedRefs: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in AllOfNestedRefs: required")
@@ -67,7 +67,7 @@ type RootObject struct {
 func (j *RootObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RootObject: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in RootObject: required")
@@ -85,7 +85,7 @@ func (j *RootObject) UnmarshalJSON(value []byte) error {
 func (j *RootObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RootObject: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in RootObject: required")
