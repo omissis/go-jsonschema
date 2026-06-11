@@ -164,6 +164,91 @@ func TestResolveReferencedDefinitionTypeNameUsesFallbackByDefault(t *testing.T) 
 	require.Equal(t, "User", got)
 }
 
+func TestGenerateOneOfEnvelopeOptionalFieldUsesPointerAssignment(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	schemaPath := filepath.Join(dir, "oneof-envelope-optional-value.json")
+
+	writeSchemaFile(t, schemaPath, `{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/oneof-envelope-optional-value",
+  "title": "OneOfEnvelopeOptionalValue",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["a", "b"]
+    },
+    "value": {
+      "title": "Payload",
+      "oneOf": [
+        { "$ref": "#/$defs/AValue" },
+        { "$ref": "#/$defs/BValue" }
+      ],
+      "x-go-oneof-envelope": {
+        "discriminator": "type",
+        "mapping": {
+          "a": "AValue",
+          "b": "BValue"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "AValue": {
+      "title": "AValue",
+      "type": "object",
+      "required": ["sub_a"],
+      "properties": {
+        "sub_a": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BValue": {
+      "title": "BValue",
+      "type": "object",
+      "required": ["sub_b"],
+      "properties": {
+        "sub_b": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}`)
+
+	cfg := testConfigWithMappings(
+		SchemaMapping{
+			SchemaID:    "https://example.com/oneof-envelope-optional-value",
+			OutputName:  "consumer.go",
+			PackageName: "testpkg",
+		},
+	)
+
+	gen, err := New(cfg)
+	require.NoError(t, err)
+	require.NoError(t, gen.DoFile(schemaPath))
+
+	sources, err := gen.Sources()
+	require.NoError(t, err)
+
+	src, ok := sources["consumer.go"]
+	require.True(t, ok)
+
+	generated := string(src)
+	require.Contains(t, generated, "Value *Payload")
+	require.Contains(t, generated, "result.Value = &Payload{A: &v}")
+	require.Contains(t, generated, "result.Value = &Payload{B: &v}")
+	require.NotContains(t, generated, "result.Value = Payload{A: &v}")
+	require.NotContains(t, generated, "result.Value = Payload{B: &v}")
+}
+
 func TestResolveReferencedDefinitionTypeNameUsesTitleWhenEnabled(t *testing.T) {
 	t.Parallel()
 
