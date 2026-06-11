@@ -255,6 +255,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		envJSONName      string
 		envGoName        string
 		envRequired      bool
+		envTypeIsPointer bool
 		payloadTypeName  string
 		discJSONName     string
 		discRequired     bool
@@ -332,13 +333,24 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 		}
 
 		payloadTypeName := ""
-		if payloadDecl != nil {
-			payloadTypeName = payloadDecl.Name
-		}
-
 		envGoName := g.caser.Identifierize(envField.jsonName)
+		envTypeIsPointer := false
 		if sf, ok := structFieldByJSONName[envField.jsonName]; ok {
 			envGoName = sf.Name
+
+			switch ft := sf.Type.(type) {
+			case *codegen.NamedType:
+				payloadTypeName = ft.Decl.Name
+			case *codegen.PointerType:
+				if nt, ok := ft.Type.(*codegen.NamedType); ok {
+					payloadTypeName = nt.Decl.Name
+					envTypeIsPointer = true
+				}
+			}
+		}
+
+		if payloadTypeName == "" && payloadDecl != nil {
+			payloadTypeName = payloadDecl.Name
 		}
 
 		_, envRequired := requiredFields[envField.jsonName]
@@ -387,6 +399,7 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 			envJSONName:      envField.jsonName,
 			envGoName:        envGoName,
 			envRequired:      envRequired,
+			envTypeIsPointer: envTypeIsPointer,
 			payloadTypeName:  payloadTypeName,
 			discJSONName:     discJSONName,
 			discRequired:     discRequired,
@@ -483,7 +496,11 @@ func (g *schemaGenerator) generateEnvelopeOuterUnmarshal(
 					)
 					out.Indent(-1)
 					out.Printlnf("}")
-					out.Printlnf("result.%s = %s{%s: &v}", routing.envGoName, routing.payloadTypeName, b.goField)
+					if routing.envTypeIsPointer {
+						out.Printlnf("result.%s = &%s{%s: &v}", routing.envGoName, routing.payloadTypeName, b.goField)
+					} else {
+						out.Printlnf("result.%s = %s{%s: &v}", routing.envGoName, routing.payloadTypeName, b.goField)
+					}
 					out.Indent(-1)
 				}
 
