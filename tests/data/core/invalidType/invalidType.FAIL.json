@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://example.com/invalidType",
+  "type": "object",
+  "title": "object",
+  "properties": {
+    "myField": {
+      "type": "foo"
+    }
+  }
+}
