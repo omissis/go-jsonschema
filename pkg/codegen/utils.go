@@ -151,7 +151,7 @@ func PrimitiveTypeFromJSONSchemaType(
 
 				if removeMax {
 					*maximum = nil
-					*exclusiveMinimum = nil
+					*exclusiveMaximum = nil
 				}
 			}
 		}
