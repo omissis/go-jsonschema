@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integerFormats",
+  "type": "object",
+  "properties": {
+    "myInt": {
+      "type": "integer"
+    },
+    "myInt32": {
+      "type": "integer",
+      "format": "int32"
+    },
+    "myInt64": {
+      "type": "integer",
+      "format": "int64"
+    }
+  }
+}
