@@ -146,7 +146,7 @@ func PrimitiveTypeFromJSONSchemaType(
 
 				if removeMin {
 					*minimum = nil
-					*exclusiveMaximum = nil
+					*exclusiveMinimum = nil
 				}
 
 				if removeMax {
