@@ -134,18 +134,25 @@ func PrimitiveTypeFromJSONSchemaType(
 	case schemas.TypeNameInteger:
 		t := PrimitiveType{"int"}
 
-		if minIntSize {
-			newType, removeMin, removeMax := getMinIntType(*minimum, *maximum, *exclusiveMinimum, *exclusiveMaximum)
-			t.Type = newType
+		switch format {
+		case "int64":
+			t.Type = "int64"
+		case "int32":
+			t.Type = "int32"
+		default:
+			if minIntSize {
+				newType, removeMin, removeMax := getMinIntType(*minimum, *maximum, *exclusiveMinimum, *exclusiveMaximum)
+				t.Type = newType
 
-			if removeMin {
-				*minimum = nil
-				*exclusiveMaximum = nil
-			}
+				if removeMin {
+					*minimum = nil
+					*exclusiveMaximum = nil
+				}
 
-			if removeMax {
-				*maximum = nil
-				*exclusiveMinimum = nil
+				if removeMax {
+					*maximum = nil
+					*exclusiveMinimum = nil
+				}
 			}
 		}
 
