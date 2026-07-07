@@ -90,17 +90,27 @@ func (t *TypeList) UnmarshalJSON(value []byte) error {
 	if len(value) > 0 && value[0] == '[' {
 		var s []string
 		if err := json.Unmarshal(value, &s); err != nil {
-			return fmt.Errorf("failed to unmarshal type list: %w", err)
+			return fmt.Errorf("failed to unmarshal type list %s: %w", string(value), err)
 		}
 
 		*t = s
 
 		return nil
+	} else if len(value) > 0 && value[0] == '{' {
+		var s struct {
+			Enum []string `json:"enum"`
+		}
+		if err := json.Unmarshal(value, &s); err != nil {
+			return fmt.Errorf("failed to unmarshal type list %s: %w", string(value), err)
+		}
+		// TODO[tgulacsi]: put these enums somewhere...
+		*t = []string{"string"}
+		return nil
 	}
 
 	var s string
 	if err := json.Unmarshal(value, &s); err != nil {
-		return fmt.Errorf("failed to unmarshal type list: %w", err)
+		return fmt.Errorf("failed to unmarshal type list %s: %w", string(value), err)
 	}
 
 	if s != "" {
@@ -266,7 +276,7 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 
 	var obj ObjectAsType
 	if err := json.Unmarshal(raw, &obj); err != nil {
-		return fmt.Errorf("failed to unmarshal type: %w", err)
+		return fmt.Errorf("failed to unmarshal type %s: %w", string(raw), err)
 	}
 
 	// Take care of legacy fields from older RFC versions.
@@ -276,7 +286,7 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		Definitions  Definitions      `json:"definitions,omitempty"` // Section 5.26.
 	}{}
 	if err := json.Unmarshal(raw, &legacyObj); err != nil {
-		return fmt.Errorf("failed to unmarshal type: %w", err)
+		return fmt.Errorf("failed to unmarshal type %s: %w", string(raw), err)
 	}
 
 	if legacyObj.Definitions != nil && obj.Definitions == nil {
