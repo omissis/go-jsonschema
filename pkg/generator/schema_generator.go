@@ -454,6 +454,17 @@ func (g *schemaGenerator) structFieldValidators(
 				g.output.file.Package.AddImport("regexp", "")
 			}
 
+			if format := f.SchemaType.Format; format != "" &&
+				isKnownFormatKeyword(format) &&
+				g.config.FormatValidation.shouldValidate(format) {
+				validators = append(validators, &formatValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					format:     format,
+					isNillable: isNillable,
+				})
+			}
+
 		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
@@ -555,9 +566,48 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
 		}
 
+		for _, decl := range v.desc().decls {
+			g.output.file.Package.AddDecl(decl)
+		}
+
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 		}
+	}
+
+	// generateUnmarshalBody wraps the raw-map decode error with type
+	// context via `fmt.Errorf`, so fmt must be imported whenever the body
+	// emits the raw-decode branch — even when no hasError validator is
+	// present. The branch fires when (a) the struct has an
+	// additionalProperties field, or (b) any validator declares
+	// beforeJSONUnmarshal/requiresRawAfter (the latter covers
+	// `defaultValidator`, which has hasError=false but still triggers
+	// raw decoding).
+	needsRawDecode := false
+
+	for _, v := range validators {
+		d := v.desc()
+		if d.beforeJSONUnmarshal || d.requiresRawAfter {
+			needsRawDecode = true
+
+			break
+		}
+	}
+
+	if !needsRawDecode {
+		if structType, ok := decl.Type.(*codegen.StructType); ok {
+			for _, f := range structType.Fields {
+				if f.Name == additionalProperties {
+					needsRawDecode = true
+
+					break
+				}
+			}
+		}
+	}
+
+	if needsRawDecode {
+		g.output.file.Package.AddImport("fmt", "")
 	}
 
 	for _, formatter := range g.formatters {

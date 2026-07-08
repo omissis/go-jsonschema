@@ -25,7 +25,7 @@ type Applications struct {
 func (j *Applications) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Applications: %w", err)
 	}
 	if _, ok := raw["actions"]; raw != nil && !ok {
 		return fmt.Errorf("field actions in Applications: required")
@@ -49,7 +49,7 @@ func (j *Applications) UnmarshalJSON(value []byte) error {
 func (j *Applications) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Applications: %w", err)
 	}
 	if _, ok := raw["actions"]; raw != nil && !ok {
 		return fmt.Errorf("field actions in Applications: required")
@@ -86,7 +86,7 @@ type ApplyAcrossServiceResources struct {
 func (j *ApplyAcrossServiceResources) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ApplyAcrossServiceResources: %w", err)
 	}
 	if _, ok := raw["definitionName"]; raw != nil && !ok {
 		return fmt.Errorf("field definitionName in ApplyAcrossServiceResources: required")
@@ -107,7 +107,7 @@ func (j *ApplyAcrossServiceResources) UnmarshalJSON(value []byte) error {
 func (j *ApplyAcrossServiceResources) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ApplyAcrossServiceResources: %w", err)
 	}
 	if _, ok := raw["definitionName"]; raw != nil && !ok {
 		return fmt.Errorf("field definitionName in ApplyAcrossServiceResources: required")
@@ -135,7 +135,7 @@ type BuildSource struct {
 func (j *BuildSource) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw BuildSource: %w", err)
 	}
 	if _, ok := raw["parameters"]; raw != nil && !ok {
 		return fmt.Errorf("field parameters in BuildSource: required")
@@ -153,7 +153,7 @@ func (j *BuildSource) UnmarshalJSON(value []byte) error {
 func (j *BuildSource) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw BuildSource: %w", err)
 	}
 	if _, ok := raw["parameters"]; raw != nil && !ok {
 		return fmt.Errorf("field parameters in BuildSource: required")
@@ -190,7 +190,7 @@ type Email struct {
 func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Email: %w", err)
 	}
 	if _, ok := raw["to"]; raw != nil && !ok {
 		return fmt.Errorf("field to in Email: required")
@@ -208,7 +208,7 @@ func (j *Email) UnmarshalYAML(value *yaml.Node) error {
 func (j *Email) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Email: %w", err)
 	}
 	if _, ok := raw["to"]; raw != nil && !ok {
 		return fmt.Errorf("field to in Email: required")
@@ -244,7 +244,7 @@ type IncidentOptions struct {
 func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Incident: %w", err)
 	}
 	if _, ok := raw["properties"]; raw != nil && !ok {
 		return fmt.Errorf("field properties in Incident: required")
@@ -265,7 +265,7 @@ func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
 func (j *Incident) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Incident: %w", err)
 	}
 	if _, ok := raw["properties"]; raw != nil && !ok {
 		return fmt.Errorf("field properties in Incident: required")
@@ -364,7 +364,7 @@ type OrchestratedStep struct {
 func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw OrchestratedStep: %w", err)
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in OrchestratedStep: required")
@@ -394,7 +394,7 @@ func (j *OrchestratedStep) UnmarshalJSON(value []byte) error {
 func (j *OrchestratedStep) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw OrchestratedStep: %w", err)
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in OrchestratedStep: required")
@@ -432,7 +432,7 @@ type Parameters struct {
 func (j *Parameters) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Parameters: %w", err)
 	}
 	if _, ok := raw["versionFile"]; raw != nil && !ok {
 		return fmt.Errorf("field versionFile in Parameters: required")
@@ -450,7 +450,7 @@ func (j *Parameters) UnmarshalJSON(value []byte) error {
 func (j *Parameters) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Parameters: %w", err)
 	}
 	if _, ok := raw["versionFile"]; raw != nil && !ok {
 		return fmt.Errorf("field versionFile in Parameters: required")
@@ -483,7 +483,7 @@ type Properties struct {
 func (j *Properties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Properties: %w", err)
 	}
 	if _, ok := raw["connectorId"]; raw != nil && !ok {
 		return fmt.Errorf("field connectorId in Properties: required")
@@ -514,7 +514,7 @@ func (j *Properties) UnmarshalJSON(value []byte) error {
 func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Properties: %w", err)
 	}
 	if _, ok := raw["connectorId"]; raw != nil && !ok {
 		return fmt.Errorf("field connectorId in Properties: required")
@@ -574,7 +574,7 @@ type RolloutMetadata struct {
 func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RolloutMetadata: %w", err)
 	}
 	if _, ok := raw["buildSource"]; raw != nil && !ok {
 		return fmt.Errorf("field buildSource in RolloutMetadata: required")
@@ -607,7 +607,7 @@ func (j *RolloutMetadata) UnmarshalJSON(value []byte) error {
 func (j *RolloutMetadata) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RolloutMetadata: %w", err)
 	}
 	if _, ok := raw["buildSource"]; raw != nil && !ok {
 		return fmt.Errorf("field buildSource in RolloutMetadata: required")
@@ -650,7 +650,7 @@ type RolloutPolicyReference struct {
 func (j *RolloutPolicyReference) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RolloutPolicyReference: %w", err)
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in RolloutPolicyReference: required")
@@ -671,7 +671,7 @@ func (j *RolloutPolicyReference) UnmarshalJSON(value []byte) error {
 func (j *RolloutPolicyReference) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RolloutPolicyReference: %w", err)
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in RolloutPolicyReference: required")
@@ -705,7 +705,7 @@ type RolloutSpecification struct {
 func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RolloutSpecification: %w", err)
 	}
 	if _, ok := raw["contentVersion"]; raw != nil && !ok {
 		return fmt.Errorf("field contentVersion in RolloutSpecification: required")
@@ -732,7 +732,7 @@ func (j *RolloutSpecification) UnmarshalJSON(value []byte) error {
 func (j *RolloutSpecification) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RolloutSpecification: %w", err)
 	}
 	if _, ok := raw["contentVersion"]; raw != nil && !ok {
 		return fmt.Errorf("field contentVersion in RolloutSpecification: required")
