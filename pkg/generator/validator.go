@@ -47,6 +47,7 @@ var (
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
 	_ validator = new(numericValidator)
+	_ validator = new(jsonNumberValidator)
 	_ validator = new(anyOfValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
@@ -644,6 +645,77 @@ func (v *numericValidator) valueOf(val float64) any {
 	}
 
 	return val
+}
+
+type jsonNumberValidator struct {
+	*numericValidator
+
+	ToNumeric string
+}
+
+func (v *jsonNumberValidator) generate(out *codegen.Emitter, format string) error {
+	fieldAccess := getPlainName(v.fieldName)
+	localVar := lowerFirst(v.fieldName) + "Val"
+
+	// For nillable fields, wrap everything in a nil guard so we skip validation
+	// when the pointer is nil. The local var is then always a concrete numeric value.
+	if v.isNillable {
+		out.Printlnf("if %s != nil {", fieldAccess)
+		out.Indent(1)
+	}
+
+	// Convert json.Number to the concrete numeric type and handle errors.
+	out.Printlnf("%s, err := %s.%s", localVar, fieldAccess, v.ToNumeric)
+	out.Printlnf(`if err != nil { return fmt.Errorf("field %s: invalid number: %%w", err) }`, v.jsonName)
+
+	// All validations below use the local concrete numeric variable.
+	value := localVar
+	checkPointer := ""
+	pointerPrefix := ""
+
+	if v.constVal != nil {
+		out.Printlnf(`if %s%s%s != %v {`, checkPointer, pointerPrefix, value, v.constVal)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be equal to %%v", "%s", %v)`, v.jsonName, v.constVal)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.multipleOf != nil {
+		if v.roundToInt {
+			out.Printlnf(`if %s %s%s %% %v != 0 {`, checkPointer, pointerPrefix, value, v.valueOf(*v.multipleOf))
+			out.Indent(1)
+			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+			out.Indent(-1)
+			out.Printlnf("}")
+		} else {
+			out.Printlnf("{")
+			out.Indent(1)
+			out.Printlnf("remainder := math.Mod(%s%s, %v)", pointerPrefix, value, v.valueOf(*v.multipleOf))
+			out.Printlnf(
+				`if !(math.Abs(remainder) < 1e-10 || math.Abs(remainder - %v) < 1e-10) {`, v.valueOf(*v.multipleOf))
+			out.Indent(1)
+			out.Printlnf(`return fmt.Errorf("field %%s: must be a multiple of %%v", "%s", %f)`, v.jsonName, *v.multipleOf)
+			out.Indent(-1)
+			out.Printlnf("}")
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+	}
+
+	nMin, nMax, nMinExclusive, nMaxExclusive := mathutils.NormalizeBounds(
+		v.minimum, v.maximum, v.exclusiveMinimum, v.exclusiveMaximum,
+	)
+
+	v.genBoundary(out, checkPointer, pointerPrefix, value, nMax, nMaxExclusive, "<")
+	v.genBoundary(out, checkPointer, pointerPrefix, value, nMin, nMinExclusive, ">")
+
+	if v.isNillable {
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	return nil
 }
 
 type booleanValidator struct {

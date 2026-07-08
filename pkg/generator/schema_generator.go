@@ -500,6 +500,33 @@ func (g *schemaGenerator) structFieldValidators(
 			}
 		}
 
+	case codegen.JsonNumberType:
+		if f.SchemaType.MultipleOf != nil ||
+			f.SchemaType.Maximum != nil ||
+			f.SchemaType.ExclusiveMaximum != nil ||
+			f.SchemaType.Minimum != nil ||
+			f.SchemaType.ExclusiveMinimum != nil ||
+			f.SchemaType.Const != nil {
+			validators = append(validators, &jsonNumberValidator{
+				numericValidator: &numericValidator{
+					jsonName:         f.JSONName,
+					fieldName:        f.Name,
+					isNillable:       isNillable,
+					multipleOf:       f.SchemaType.MultipleOf,
+					maximum:          f.SchemaType.Maximum,
+					exclusiveMaximum: f.SchemaType.ExclusiveMaximum,
+					minimum:          f.SchemaType.Minimum,
+					exclusiveMinimum: f.SchemaType.ExclusiveMinimum,
+					constVal:         f.SchemaType.Const,
+					roundToInt:       strings.Contains(v.ToNumeric, "Int"),
+				}, ToNumeric: v.ToNumeric,
+			})
+		}
+
+		if f.SchemaType.MultipleOf != nil && strings.Contains(v.ToNumeric, "Float") {
+			g.output.file.Package.AddImport("math", "")
+		}
+
 	case *codegen.ArrayType:
 		arrayDepth := 0
 		for v, ok := t.(*codegen.ArrayType); ok; v, ok = t.(*codegen.ArrayType) {
@@ -620,6 +647,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 			&t.Maximum,
 			&t.ExclusiveMinimum,
 			&t.ExclusiveMaximum,
+			g.config.UseNumber,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", typeName, err)
@@ -1177,6 +1205,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 				&t.Maximum,
 				&t.ExclusiveMinimum,
 				&t.ExclusiveMaximum,
+				g.config.UseNumber,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type %q: %w", t.Type[typeIndex], err)
@@ -1275,6 +1304,7 @@ func (g *schemaGenerator) generateEnumType(
 			&t.Maximum,
 			&t.ExclusiveMinimum,
 			&t.ExclusiveMaximum,
+			g.config.UseNumber,
 		); err != nil {
 			return nil, fmt.Errorf("invalid type %q: %w", t.Type[0], err)
 		}

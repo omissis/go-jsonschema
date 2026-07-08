@@ -9,6 +9,17 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
+const (
+	i64 = "int64"
+	i32 = "int32"
+	i16 = "int16"
+	i8  = "int8"
+	u64 = "uint64"
+	u32 = "uint32"
+	u16 = "uint16"
+	u8  = "uint8"
+)
+
 var (
 	errUnexpectedType        = errors.New("unexpected type")
 	errUnknownJSONSchemaType = errors.New("unknown JSON Schema type")
@@ -44,6 +55,7 @@ func PrimitiveTypeFromJSONSchemaType(
 	maximum **float64,
 	exclusiveMinimum **any,
 	exclusiveMaximum **any,
+	useNumber bool,
 ) (Type, error) {
 	var t Type
 
@@ -124,7 +136,20 @@ func PrimitiveTypeFromJSONSchemaType(
 		return t, nil
 
 	case schemas.TypeNameNumber:
+		if useNumber {
+			t := JsonNumberType{
+				Type:      "json.Number",
+				ToNumeric: "Float64()",
+			}
+			if pointer {
+				return WrapTypeInPointer(t), nil
+			}
+
+			return t, nil
+		}
+
 		t := PrimitiveType{"float64"}
+
 		if pointer {
 			return WrapTypeInPointer(t), nil
 		}
@@ -132,6 +157,18 @@ func PrimitiveTypeFromJSONSchemaType(
 		return t, nil
 
 	case schemas.TypeNameInteger:
+		if useNumber {
+			t := JsonNumberType{
+				Type:      "json.Number",
+				ToNumeric: "Int64()",
+			}
+			if pointer {
+				return WrapTypeInPointer(t), nil
+			}
+
+			return t, nil
+		}
+
 		t := PrimitiveType{"int"}
 
 		if minIntSize {
@@ -196,8 +233,6 @@ func getMinIntType(
 	return adjustForSignedBounds(nMin, nMax)
 }
 
-const i64 = "int64"
-
 func adjustForSignedBounds(nMin, nMax *float64) (string, bool, bool) {
 	var minRounded, maxRounded float64
 
@@ -223,13 +258,13 @@ func adjustForSignedBounds(nMin, nMax *float64) (string, bool, bool) {
 		return i64, minRounded == float64(math.MinInt64), maxRounded == float64(math.MaxInt64)
 
 	case minRounded < float64(math.MinInt16) || maxRounded > float64(math.MaxInt16):
-		return "int32", minRounded == float64(math.MinInt32), maxRounded == float64(math.MaxInt32)
+		return i32, minRounded == float64(math.MinInt32), maxRounded == float64(math.MaxInt32)
 
 	case minRounded < float64(math.MinInt8) || maxRounded > float64(math.MaxInt8):
-		return "int16", minRounded == float64(math.MinInt16), maxRounded == float64(math.MaxInt16)
+		return i16, minRounded == float64(math.MinInt16), maxRounded == float64(math.MaxInt16)
 
 	default:
-		return "int8", minRounded == float64(math.MinInt8), maxRounded == float64(math.MaxInt8)
+		return i8, minRounded == float64(math.MinInt8), maxRounded == float64(math.MaxInt8)
 	}
 }
 
@@ -244,18 +279,18 @@ func adjustForUnsignedBounds(nMin, nMax *float64) (string, bool, bool) {
 
 	switch {
 	case nMax == nil:
-		return "uint64", removeMin, false
+		return u64, removeMin, false
 
 	case maxRounded > float64(math.MaxUint32):
-		return "uint64", removeMin, maxRounded == float64(math.MaxUint64)
+		return u64, removeMin, maxRounded == float64(math.MaxUint64)
 
 	case maxRounded > float64(math.MaxUint16):
-		return "uint32", removeMin, maxRounded == float64(math.MaxUint32)
+		return u32, removeMin, maxRounded == float64(math.MaxUint32)
 
 	case maxRounded > float64(math.MaxUint8):
-		return "uint16", removeMin, maxRounded == float64(math.MaxUint16)
+		return u16, removeMin, maxRounded == float64(math.MaxUint16)
 
 	default:
-		return "uint8", removeMin, maxRounded == float64(math.MaxUint8)
+		return u8, removeMin, maxRounded == float64(math.MaxUint8)
 	}
 }
