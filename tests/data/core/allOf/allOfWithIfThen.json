@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "result": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    }
+  },
+  "required": ["result"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "valid"
+          }
+        }
+      },
+      "then": {
+        "required": ["value"]
+      }
+    }
+  ]
+}
