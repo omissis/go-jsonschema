@@ -195,6 +195,21 @@ func TestOnlyModels(t *testing.T) {
 	testExampleFile(t, cfg, "./data/misc/onlyModels/onlyModels.json")
 }
 
+// TestOnlyModelsOneOfPrimitive exercises the OnlyModels fallback for primitive
+// `oneOf` schemas: without the gate added in generateDeclaredType, the
+// wrapper-emission path would emit a struct whose only field is the
+// unexported `value any`, with no methods — unusable to consumers outside
+// the generated package. With the gate the schema falls back to the regular
+// `interface{}` representation that other consumers can construct directly.
+func TestOnlyModelsOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.OnlyModels = true
+
+	testExampleFile(t, cfg, "./data/onlyModels/oneOfPrimitive/oneOfPrimitive.json")
+}
+
 func TestSpecialCharacters(t *testing.T) {
 	t.Parallel()
 
@@ -245,6 +260,104 @@ func TestRegressions(t *testing.T) {
 	t.Parallel()
 
 	testExamples(t, basicConfig, "./data/regressions")
+}
+
+func TestFormatValidation(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{Enabled: true}
+
+	testExamples(t, cfg, "./data/formatValidation")
+}
+
+func TestFormatValidationAllowList(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{
+		Enabled: true,
+		// Mixed-case and surrounding whitespace verify the AllowList
+		// normalization: shouldValidate trims and lowercases entries so
+		// these match the canonical "uuid" / "email" keywords.
+		AllowList: []string{"UUID", " email "},
+	}
+
+	testExamples(t, cfg, "./data/formatValidationAllowList")
+}
+
+func TestStrictAdditionalPropertiesRespectSchema(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+
+	testExamples(t, cfg, "./data/strictAdditionalProperties")
+}
+
+func TestStrictAdditionalPropertiesAlways(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesStrict
+
+	testExamples(t, cfg, "./data/strictAdditionalPropertiesAlways")
+}
+
+func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesMode("rstrict") // typo
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject unknown StrictAdditionalProperties mode, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrInvalidStrictAdditionalPropertiesMode) {
+		t.Errorf("expected ErrInvalidStrictAdditionalPropertiesMode, got %v", err)
+	}
+}
+
+func TestOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/oneOfPrimitive")
+}
+
+func TestOneOfDiscriminated(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/oneOfDiscriminated")
+}
+
+func TestRecursiveAllOf(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/recursiveAllOf")
+}
+
+func TestRootComposition(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/rootComposition")
+}
+
+func TestFidelityWarnings(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/fidelityWarnings")
+}
+
+// TestConditionalDiscriminator drives generation for the
+// allOf+if[const]/then[/else] tagged-union pattern. Walks every fixture
+// under tests/data/conditionalDiscriminator and diffs against the sibling
+// golden Go file.
+func TestConditionalDiscriminator(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/conditionalDiscriminator")
 }
 
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {

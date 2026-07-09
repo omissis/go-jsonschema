@@ -18,7 +18,7 @@ type BaseObject struct {
 func (j *BaseObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw BaseObject: %w", err)
 	}
 	if _, ok := raw["BaseField"]; raw != nil && !ok {
 		return fmt.Errorf("field BaseField in BaseObject: required")
@@ -26,7 +26,7 @@ func (j *BaseObject) UnmarshalJSON(value []byte) error {
 	type Plain BaseObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BaseObject: %w", err)
 	}
 	*j = BaseObject(plain)
 	return nil
@@ -36,7 +36,7 @@ func (j *BaseObject) UnmarshalJSON(value []byte) error {
 func (j *BaseObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw BaseObject: %w", err)
 	}
 	if _, ok := raw["BaseField"]; raw != nil && !ok {
 		return fmt.Errorf("field BaseField in BaseObject: required")
@@ -44,7 +44,7 @@ func (j *BaseObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain BaseObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal BaseObject: %w", err)
 	}
 	*j = BaseObject(plain)
 	return nil
@@ -64,7 +64,7 @@ type ComposedWithAllOfAndProperties struct {
 func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ComposedWithAllOfAndProperties: %w", err)
 	}
 	if _, ok := raw["BaseField"]; raw != nil && !ok {
 		return fmt.Errorf("field BaseField in ComposedWithAllOfAndProperties: required")
@@ -72,15 +72,29 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 	type Plain ComposedWithAllOfAndProperties
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ComposedWithAllOfAndProperties: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ComposedWithAllOfAndProperties: %w", err)
 	}
 	*j = ComposedWithAllOfAndProperties(plain)
 	return nil
@@ -90,7 +104,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ComposedWithAllOfAndProperties: %w", err)
 	}
 	if _, ok := raw["BaseField"]; raw != nil && !ok {
 		return fmt.Errorf("field BaseField in ComposedWithAllOfAndProperties: required")
@@ -98,15 +112,29 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ComposedWithAllOfAndProperties
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ComposedWithAllOfAndProperties: %w", err)
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
+		return fmt.Errorf("decode additional properties for ComposedWithAllOfAndProperties: %w", err)
 	}
 	*j = ComposedWithAllOfAndProperties(plain)
 	return nil
