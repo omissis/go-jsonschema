@@ -22,7 +22,7 @@ type CallToolResultContentElem struct {
 func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
 	if _, ok := raw["text"]; raw != nil && !ok {
 		return fmt.Errorf("field text in CallToolResultContentElem: required")
@@ -40,7 +40,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
 	if _, ok := raw["text"]; raw != nil && !ok {
 		return fmt.Errorf("field text in CallToolResultContentElem: required")
@@ -64,7 +64,7 @@ type TextContent struct {
 func (j *TextContent) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TextContent: %w", err)
 	}
 	if _, ok := raw["text"]; raw != nil && !ok {
 		return fmt.Errorf("field text in TextContent: required")
@@ -82,7 +82,7 @@ func (j *TextContent) UnmarshalJSON(value []byte) error {
 func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TextContent: %w", err)
 	}
 	if _, ok := raw["text"]; raw != nil && !ok {
 		return fmt.Errorf("field text in TextContent: required")

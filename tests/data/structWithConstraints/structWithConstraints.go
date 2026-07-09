@@ -20,7 +20,7 @@ type StructWithConstraints struct {
 func (j *StructWithConstraints) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw StructWithConstraints: %w", err)
 	}
 	type Plain StructWithConstraints
 	var plain Plain
@@ -31,9 +31,23 @@ func (j *StructWithConstraints) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s: must be >= %v", "prop", 0)
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
@@ -46,7 +60,7 @@ func (j *StructWithConstraints) UnmarshalJSON(value []byte) error {
 func (j *StructWithConstraints) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw StructWithConstraints: %w", err)
 	}
 	type Plain StructWithConstraints
 	var plain Plain
@@ -57,9 +71,23 @@ func (j *StructWithConstraints) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field %s: must be >= %v", "prop", 0)
 	}
 	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
 	}
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
