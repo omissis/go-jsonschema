@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/ifThenSilentDrop",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "marker":  { "type": "boolean" },
+    "details": { "type": "string" },
+    "fallback": { "type": "string" }
+  },
+  "required": ["marker"],
+  "allOf": [
+    { "if":   { "required": ["details"] },
+      "then": { "required": ["fallback"] } }
+  ]
+}
