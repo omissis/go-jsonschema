@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/inField",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "value": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "boolean" }
+      ]
+    }
+  },
+  "required": ["name", "value"]
+}
