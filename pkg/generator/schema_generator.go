@@ -1355,6 +1355,7 @@ func (g *schemaGenerator) generateEnumType(
 		Name:       g.output.uniqueTypeName(scope),
 		Type:       enumType,
 		SchemaType: t,
+		Comment:    t.Description,
 	}
 	g.output.file.Package.AddDecl(&enumDecl)
 
