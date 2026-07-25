@@ -39,6 +39,15 @@ func isPrimitiveTypeList(types []*Type, baseType TypeList) bool {
 		return false
 	}
 
+	// Track whether any schema actually contributes a primitive type. A
+	// subschema with no "type" (for example one that only carries keywords
+	// go-jsonschema does not model, such as if/then/else) provides no type
+	// information and must not, on its own, classify the list as primitive.
+	// Otherwise an object schema whose allOf holds only such subschemas would
+	// be merged as a primitive, discarding the properties of the base schema
+	// and collapsing the whole type to interface{}.
+	sawPrimitive := len(baseType) > 0
+
 	for _, typ := range types {
 		if len(typ.Type) == 0 {
 			continue
@@ -47,7 +56,9 @@ func isPrimitiveTypeList(types []*Type, baseType TypeList) bool {
 		if !IsPrimitiveType(typ.Type[0]) {
 			return false
 		}
+
+		sawPrimitive = true
 	}
 
-	return true
+	return sawPrimitive
 }
