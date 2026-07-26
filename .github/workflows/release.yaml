@@ -39,7 +39,7 @@ jobs:
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           distribution: goreleaser
-          version: 2.15.4
+          version: 2.17.0
           args: release --verbose --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
