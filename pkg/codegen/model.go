@@ -271,6 +271,37 @@ func (td *TypeDecl) Generate(out *Emitter) error {
 	return nil
 }
 
+func (td *TypeDecl) TypeContainsNumberOrInterface() bool {
+	return typeContainsNumberOrInterface(td.Type)
+}
+
+func typeContainsNumberOrInterface(t Type) bool {
+	switch t := t.(type) {
+	case JsonNumberType:
+		return true
+	case EmptyInterfaceType:
+		return true
+	case *StructType:
+		for _, f := range t.Fields {
+			if typeContainsNumberOrInterface(f.Type) {
+				return true
+			}
+		}
+
+		return false
+	case NamedType:
+		return typeContainsNumberOrInterface(t.Decl.Type)
+	case PointerType:
+		return typeContainsNumberOrInterface(t.Type)
+	case ArrayType:
+		return typeContainsNumberOrInterface(t.Type)
+	case MapType:
+		return typeContainsNumberOrInterface(t.ValueType)
+	default:
+		return false
+	}
+}
+
 type Type interface {
 	Decl
 	IsNillable() bool
@@ -372,6 +403,19 @@ func (PrimitiveType) IsNillable() bool { return false }
 
 func (p PrimitiveType) Generate(out *Emitter) error {
 	out.Printf("%s", p.Type)
+
+	return nil
+}
+
+type JsonNumberType struct {
+	Type      string
+	ToNumeric string
+}
+
+func (JsonNumberType) IsNillable() bool { return false }
+
+func (j JsonNumberType) Generate(out *Emitter) error {
+	out.Printf("%s", j.Type)
 
 	return nil
 }

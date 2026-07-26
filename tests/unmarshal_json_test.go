@@ -11,6 +11,7 @@ import (
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testUseNumber "github.com/atombender/go-jsonschema/tests/data/useNumber"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
 
@@ -406,6 +407,49 @@ func TestJSONUnmarshalAdditionalProperties(t *testing.T) {
 				addProps := target.(*testAdditionalProperties.StringAdditionalProperties).AdditionalProperties
 
 				assert.Equal(t, map[string]string{"property1": "hello", "property2": "world"}, addProps)
+			},
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			if err := tC.target.UnmarshalJSON([]byte(tC.json)); err != nil {
+				t.Fatalf("unmarshal error: %s", err)
+			}
+
+			tC.assertFn(tC.target)
+		})
+	}
+}
+
+func TestJsonUnmarshalUseNumber(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc     string
+		json     string
+		target   json.Unmarshaler
+		assertFn func(target json.Unmarshaler)
+	}{
+		{
+			desc:   "interface field preserves precision with UseNumber",
+			json:   `{"myInterface": 1234}`,
+			target: &testUseNumber.UseNumberMyObjectWithInterface{},
+			assertFn: func(target json.Unmarshaler) {
+				result := target.(*testUseNumber.UseNumberMyObjectWithInterface)
+				assert.IsType(t, json.Number(""), result.MyInterface,
+					"interface{} field should be json.Number, not float64")
+				assert.Equal(t, "1234", result.MyInterface.(json.Number).String())
+			},
+		},
+		{
+			desc:   "number field preserves precision with UseNumber and json.Number type",
+			json:   `{"myNumber": 1234}`,
+			target: &testUseNumber.UseNumberMyObjectWithNumber{},
+			assertFn: func(target json.Unmarshaler) {
+				result := target.(*testUseNumber.UseNumberMyObjectWithNumber)
+				assert.Equal(t, json.Number("1234"), result.MyNumber)
 			},
 		},
 	}

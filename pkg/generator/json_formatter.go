@@ -14,7 +14,9 @@ const (
 
 var ErrCannotUnmarshalEnum = fmt.Errorf("cannot unmarshal enum")
 
-type jsonFormatter struct{}
+type jsonFormatter struct {
+	useNumber bool
+}
 
 func (jf *jsonFormatter) generate(
 	output *output,
@@ -74,8 +76,15 @@ func (jf *jsonFormatter) generate(
 
 		out.Printlnf("type %s %s", tp, declType.Name)
 		out.Printlnf("var %s %s", varNamePlainStruct, tp)
-		out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }",
-			formatJSON, varNamePlainStruct)
+
+		if jf.useNumber && declType.TypeContainsNumberOrInterface() {
+			out.Printlnf("decoder := json.NewDecoder(bytes.NewReader(value))")
+			out.Printlnf("decoder.UseNumber()")
+			out.Printlnf("if err := decoder.Decode(&%s); err != nil { return err }", varNamePlainStruct)
+		} else {
+			out.Printlnf("if err := %s.Unmarshal(value, &%s); err != nil { return err }",
+				formatJSON, varNamePlainStruct)
+		}
 
 		for _, v := range afterValidators {
 			if err := v.generate(out, "json"); err != nil {
@@ -169,6 +178,10 @@ func (jf *jsonFormatter) enumUnmarshal(
 
 func (jf *jsonFormatter) addImport(out *codegen.File, declType *codegen.TypeDecl) {
 	out.Package.AddImport("encoding/json", "")
+
+	if jf.useNumber && declType.TypeContainsNumberOrInterface() {
+		out.Package.AddImport("bytes", "")
+	}
 
 	if structType, ok := declType.Type.(*codegen.StructType); ok {
 		for _, f := range structType.Fields {

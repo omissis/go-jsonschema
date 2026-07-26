@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/object",
+  "type": "object",
+  "properties": {
+    "myObjectWithoutNumbers": {
+      "type": "object",
+      "required": [
+        "myString"
+      ],
+      "properties": {
+        "myString": {
+          "type": "string"
+        }
+      }
+    },
+    "myObjectWithNumber": {
+      "type": "object",
+      "required": [
+        "myNumber"
+      ],
+      "properties": {
+        "myNumber": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 123456789
+        },
+        "myInteger": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 123456789
+        },
+        "myConstNumber": {
+          "type": "number",
+          "const": 42.5
+        },
+        "myConstInteger": {
+          "type": "integer",
+          "const": 7
+        },
+        "myMultipleOfNumber": {
+          "type": "number",
+          "multipleOf": 0.5
+        }
+      }
+    },
+    "myObjectWithInterface": {
+      "type": "object",
+      "required": [
+        "myInterface"
+      ],
+      "properties": {
+        "myInterface": {
+          "type": ["string", "number", "boolean", "object", "array", "null"]
+        }
+      }
+    }
+  }
+}
