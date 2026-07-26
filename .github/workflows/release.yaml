@@ -24,7 +24,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
-          go-version: 1.25.10
+          go-version: 1.25.12
       - name: Setup workspace
         run: cp go.work.dist go.work
       - name: Log in to Docker Hub
@@ -43,4 +43,4 @@ jobs:
           args: release --verbose --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GO_VERSION: 1.25.10
+          GO_VERSION: 1.25.12
