@@ -1020,6 +1020,15 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	isCycle := false
 	rAnyOf, hasNull := g.resolveRefs(t.AnyOf, false)
 
+	// A union of a single temporal type with null, such as
+	// {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]},
+	// is equivalent to {"type": ["string", "null"], "format": "date-time"} and
+	// maps directly to a nillable temporal type.
+	if hasNull && len(rAnyOf) == 1 && len(rAnyOf[0].Type) == 1 &&
+		isTypeTemporal(rAnyOf[0].Type[0], rAnyOf[0].Format) {
+		return g.primitiveType(rAnyOf[0], rAnyOf[0].Type[0], true)
+	}
+
 	for i, typ := range rAnyOf {
 		// infer type from base if not set
 		if len(typ.Type) == 0 {
