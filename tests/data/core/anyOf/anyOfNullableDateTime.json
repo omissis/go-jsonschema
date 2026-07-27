@@ -12,6 +12,21 @@
                     "type": "null"
                 }
             ]
+        },
+        "eventTime": {
+            "description": "Event time as an RFC 3339 timestamp or Unix epoch seconds",
+            "anyOf": [
+                {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                }
+            ]
         }
     }
 }

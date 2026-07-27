@@ -1162,6 +1162,7 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if typeIndex != -1 &&
 			typeIsNullable &&
+			!t.IsSubSchemaTypeElem() &&
 			schemas.IsPrimitiveType(t.Type[typeIndex]) &&
 			isTypeTemporal(t.Type[typeIndex], t.Format) {
 			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
