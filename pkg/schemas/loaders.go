@@ -24,6 +24,54 @@ type Loader interface {
 	Load(uri, parentURI string) (*Schema, error)
 }
 
+// RefResolver allows a Loader to control how a schema ref is resolved to a
+// canonical name.
+//
+// When the generator follows a $ref from one schema file to another, it
+// resolves the referenced file name to a canonical name. The canonical name
+// identifies the loaded schema, and is used as the parent name when resolving
+// references made by the referenced schema in turn.
+//
+// By default, references are resolved against the native filesystem with
+// QualifiedFileName. Loaders that read schemas from somewhere other than the
+// native filesystem should implement RefResolver to resolve references in
+// their own namespace instead.
+type RefResolver interface {
+	// ResolveRef returns the canonical name of the fileName schema.
+	//
+	// parentFileName, if not empty, is the canonical name of the schema
+	// containing the reference.
+	ResolveRef(fileName, parentFileName string) (string, error)
+}
+
+// ResolveRef resolves fileName, referenced from the parentFileName schema,
+// to a canonical schema name.
+//
+// If loader (or a Loader it wraps, following any Unwrap methods) implements
+// RefResolver, resolution is delegated to it. Otherwise, fileName is resolved
+// against the native filesystem with QualifiedFileName using resolveExtensions.
+func ResolveRef(loader Loader, fileName, parentFileName string, resolveExtensions []string) (string, error) {
+	for l := loader; l != nil; {
+		if resolver, ok := l.(RefResolver); ok {
+			qualified, err := resolver.ResolveRef(fileName, parentFileName)
+			if err != nil {
+				return "", fmt.Errorf("failed to resolve schema reference %q: %w", fileName, err)
+			}
+
+			return qualified, nil
+		}
+
+		unwrapper, ok := l.(interface{ Unwrap() Loader })
+		if !ok {
+			break
+		}
+
+		l = unwrapper.Unwrap()
+	}
+
+	return QualifiedFileName(fileName, parentFileName, resolveExtensions)
+}
+
 func NewCachedLoader(loader Loader, cache map[string]*Schema) *CachedLoader {
 	return &CachedLoader{
 		loader: loader,
@@ -49,6 +97,11 @@ func (l *CachedLoader) Load(uri, parentURI string) (*Schema, error) {
 	l.cache[uri] = schema
 
 	return schema, nil
+}
+
+// Unwrap returns the Loader wrapped by l.
+func (l *CachedLoader) Unwrap() Loader {
+	return l.loader
 }
 
 func NewFileLoader(resolveExtensions, yamlExtensions []string) *FileLoader {

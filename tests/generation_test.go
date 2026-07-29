@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -304,6 +306,101 @@ func TestStructWithConstraints(t *testing.T) {
 	testExamples(t, basicConfig, "./data/structWithConstraints")
 }
 
+func TestCustomLoaderRefResolution(t *testing.T) {
+	t.Parallel()
+
+	loader := memoryLoader{
+		"schema.json": `{
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"id": "https://example.com/parent",
+			"type": "object",
+			"properties": {
+				"child": {"$ref": "sub/child.json#/$defs/Child"}
+			}
+		}`,
+		"sub/child.json": `{
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"id": "https://example.com/child",
+			"$defs": {
+				"Child": {
+					"type": "object",
+					"properties": {
+						"grandchild": {"$ref": "grandchild.json#/$defs/Grandchild"}
+					}
+				}
+			}
+		}`,
+		"sub/grandchild.json": `{
+			"$schema": "http://json-schema.org/draft-04/schema#",
+			"id": "https://example.com/grandchild",
+			"$defs": {
+				"Grandchild": {
+					"type": "object",
+					"properties": {
+						"leaf": {"type": "boolean"}
+					}
+				}
+			}
+		}`,
+	}
+
+	// Build a CachedLoader wrapping a memoryLoader that implements
+	// RefResolver.
+	cfg := basicConfig
+	cfg.Loader = schemas.NewCachedLoader(loader, map[string]*schemas.Schema{})
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/parent",
+			PackageName: "github.com/example/parent",
+			OutputName:  "parent.go",
+			RootType:    "Parent",
+		},
+		{
+			SchemaID:    "https://example.com/child",
+			PackageName: "github.com/example/child",
+			OutputName:  "child.go",
+		},
+		{
+			SchemaID:    "https://example.com/grandchild",
+			PackageName: "github.com/example/grandchild",
+			OutputName:  "grandchild.go",
+		},
+	}
+
+	g, err := generator.New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should be able to generate code from the schema without error
+	// despite the fact that there is no filesystem representation of the
+	// data to consult for a naive ref resolution. The memoryLoader
+	// RefResolver must be used.
+	if err := g.DoFile("schema.json"); err != nil {
+		t.Fatal(err)
+	}
+
+	sources, err := g.Sources()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for outputName, decl := range map[string]string{
+		"parent.go":     "type Parent struct",
+		"child.go":      "type Child struct",
+		"grandchild.go": "type Grandchild struct",
+	} {
+		source, ok := sources[outputName]
+		if !ok {
+			t.Fatalf("Expected sources to contain %q", outputName)
+		}
+
+		if !strings.Contains(string(source), decl) {
+			t.Errorf("Expected %q to contain %q:\n%s", outputName, decl, source)
+		}
+	}
+}
+
 func testExamples(t *testing.T, cfg generator.Config, dataDir string) {
 	t.Helper()
 
@@ -468,4 +565,34 @@ func mustAbs(s string) string {
 	}
 
 	return result
+}
+
+// memoryLoader implements Loader and RefResolver, backed by a map.
+//
+// It loads schemas from an in-memory map of slash-separated schema
+// names to schema JSON, resolving references without touching the native
+// filesystem.
+type memoryLoader map[string]string
+
+func (l memoryLoader) Load(fileName, parentFileName string) (*schemas.Schema, error) {
+	qualified, err := l.ResolveRef(fileName, parentFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	schema, err := schemas.FromJSONReader(strings.NewReader(l[qualified]))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing %s: %w", qualified, err)
+	}
+
+	return schema, nil
+}
+
+func (l memoryLoader) ResolveRef(fileName, parentFileName string) (string, error) {
+	qualified := path.Join(path.Dir(parentFileName), fileName)
+	if _, ok := l[qualified]; !ok {
+		return "", fmt.Errorf("%w %q", schemas.ErrCannotResolveSchema, qualified)
+	}
+
+	return qualified, nil
 }
