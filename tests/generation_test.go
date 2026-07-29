@@ -2,6 +2,7 @@ package tests_test
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -121,6 +122,34 @@ func TestCrossPackage(t *testing.T) {
 	t.Parallel()
 
 	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schema",
+			PackageName: "github.com/atombender/go-jsonschema/tests/helpers/schema",
+			OutputName:  "schema.go",
+		},
+		{
+			SchemaID:    "https://example.com/other",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/crossPackage/other",
+			OutputName:  "../other/other.go",
+		},
+	}
+	testExampleFile(t, cfg, "./data/crossPackage/schema/schema.json")
+}
+
+//go:embed data/crossPackage
+var crossPackageFS embed.FS
+
+// TestCrossPackageFSLoader mirrors TestCrossPackage, but loads the schemas
+// from an embed.FS instead of the native filesystem.
+func TestCrossPackageFSLoader(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.Loader = schemas.NewCachedLoader(
+		schemas.NewFSLoader(crossPackageFS, cfg.ResolveExtensions, cfg.YAMLExtensions),
+		map[string]*schemas.Schema{},
+	)
 	cfg.SchemaMappings = []generator.SchemaMapping{
 		{
 			SchemaID:    "https://example.com/schema",

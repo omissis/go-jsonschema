@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -146,6 +147,87 @@ func (l *FileLoader) parseFile(fileName string) (*Schema, error) {
 	}
 
 	return sc, nil
+}
+
+// NewFSLoader is like NewFileLoader, but backed by a specified fs.FS.
+func NewFSLoader(fsys fs.FS, resolveExtensions, yamlExtensions []string) *FSLoader {
+	return &FSLoader{
+		fsys:              fsys,
+		resolveExtensions: resolveExtensions,
+		yamlExtensions:    toExtensionSet(yamlExtensions),
+	}
+}
+
+// FSLoader is like FileLoader, but loads schemas from a fs.FS, such as an
+// embed.FS.
+//
+// Schemas are identified by slash-separated, unrooted path names as defined by
+// fs.ValidPath, and references between schemas are resolved relative to the
+// directory of the referencing schema by implementing RefResolver.
+type FSLoader struct {
+	fsys              fs.FS
+	resolveExtensions []string
+	yamlExtensions    map[string]bool
+}
+
+func (l *FSLoader) Load(fileName, parentFileName string) (*Schema, error) {
+	qualified, err := l.ResolveRef(fileName, parentFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := l.fsys.Open(qualified)
+	if err != nil {
+		return nil, fmt.Errorf("error opening %s: %w", qualified, err)
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	if l.yamlExtensions[path.Ext(qualified)] {
+		sc, err := FromYAMLReader(f)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing YAML file %s: %w", qualified, err)
+		}
+
+		return sc, nil
+	}
+
+	sc, err := FromJSONReader(f)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing JSON file %s: %w", qualified, err)
+	}
+
+	return sc, nil
+}
+
+func (l *FSLoader) ResolveRef(fileName, parentFileName string) (string, error) {
+	r, err := GetRefType(fileName)
+	if err != nil {
+		return "", err
+	}
+
+	if r != RefTypeFile {
+		return "", fmt.Errorf("%w: %q", ErrUnsupportedRefFormat, fileName)
+	}
+
+	fileName = strings.TrimPrefix(fileName, "file://")
+	qualified := path.Join(path.Dir(parentFileName), fileName)
+
+	exts := append([]string{""}, l.resolveExtensions...)
+	for _, ext := range exts {
+		candidate := qualified + ext
+		if !fs.ValidPath(candidate) {
+			continue
+		}
+
+		if _, err := fs.Stat(l.fsys, candidate); err == nil {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("%w %q", ErrCannotResolveSchema, fileName)
 }
 
 func NewDefaultCacheLoader(resolveExtensions, yamlExtensions []string) *CachedLoader {
