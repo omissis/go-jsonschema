@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,6 +23,54 @@ var (
 
 type Loader interface {
 	Load(uri, parentURI string) (*Schema, error)
+}
+
+// RefResolver allows a Loader to control how a schema ref is resolved to a
+// canonical name.
+//
+// When the generator follows a $ref from one schema file to another, it
+// resolves the referenced file name to a canonical name. The canonical name
+// identifies the loaded schema, and is used as the parent name when resolving
+// references made by the referenced schema in turn.
+//
+// By default, references are resolved against the native filesystem with
+// QualifiedFileName. Loaders that read schemas from somewhere other than the
+// native filesystem should implement RefResolver to resolve references in
+// their own namespace instead.
+type RefResolver interface {
+	// ResolveRef returns the canonical name of the fileName schema.
+	//
+	// parentFileName, if not empty, is the canonical name of the schema
+	// containing the reference.
+	ResolveRef(fileName, parentFileName string) (string, error)
+}
+
+// ResolveRef resolves fileName, referenced from the parentFileName schema,
+// to a canonical schema name.
+//
+// If loader (or a Loader it wraps, following any Unwrap methods) implements
+// RefResolver, resolution is delegated to it. Otherwise, fileName is resolved
+// against the native filesystem with QualifiedFileName using resolveExtensions.
+func ResolveRef(loader Loader, fileName, parentFileName string, resolveExtensions []string) (string, error) {
+	for l := loader; l != nil; {
+		if resolver, ok := l.(RefResolver); ok {
+			qualified, err := resolver.ResolveRef(fileName, parentFileName)
+			if err != nil {
+				return "", fmt.Errorf("failed to resolve schema reference %q: %w", fileName, err)
+			}
+
+			return qualified, nil
+		}
+
+		unwrapper, ok := l.(interface{ Unwrap() Loader })
+		if !ok {
+			break
+		}
+
+		l = unwrapper.Unwrap()
+	}
+
+	return QualifiedFileName(fileName, parentFileName, resolveExtensions)
 }
 
 func NewCachedLoader(loader Loader, cache map[string]*Schema) *CachedLoader {
@@ -49,6 +98,11 @@ func (l *CachedLoader) Load(uri, parentURI string) (*Schema, error) {
 	l.cache[uri] = schema
 
 	return schema, nil
+}
+
+// Unwrap returns the Loader wrapped by l.
+func (l *CachedLoader) Unwrap() Loader {
+	return l.loader
 }
 
 func NewFileLoader(resolveExtensions, yamlExtensions []string) *FileLoader {
@@ -93,6 +147,87 @@ func (l *FileLoader) parseFile(fileName string) (*Schema, error) {
 	}
 
 	return sc, nil
+}
+
+// NewFSLoader is like NewFileLoader, but backed by a specified fs.FS.
+func NewFSLoader(fsys fs.FS, resolveExtensions, yamlExtensions []string) *FSLoader {
+	return &FSLoader{
+		fsys:              fsys,
+		resolveExtensions: resolveExtensions,
+		yamlExtensions:    toExtensionSet(yamlExtensions),
+	}
+}
+
+// FSLoader is like FileLoader, but loads schemas from a fs.FS, such as an
+// embed.FS.
+//
+// Schemas are identified by slash-separated, unrooted path names as defined by
+// fs.ValidPath, and references between schemas are resolved relative to the
+// directory of the referencing schema by implementing RefResolver.
+type FSLoader struct {
+	fsys              fs.FS
+	resolveExtensions []string
+	yamlExtensions    map[string]bool
+}
+
+func (l *FSLoader) Load(fileName, parentFileName string) (*Schema, error) {
+	qualified, err := l.ResolveRef(fileName, parentFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := l.fsys.Open(qualified)
+	if err != nil {
+		return nil, fmt.Errorf("error opening %s: %w", qualified, err)
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	if l.yamlExtensions[path.Ext(qualified)] {
+		sc, err := FromYAMLReader(f)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing YAML file %s: %w", qualified, err)
+		}
+
+		return sc, nil
+	}
+
+	sc, err := FromJSONReader(f)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing JSON file %s: %w", qualified, err)
+	}
+
+	return sc, nil
+}
+
+func (l *FSLoader) ResolveRef(fileName, parentFileName string) (string, error) {
+	r, err := GetRefType(fileName)
+	if err != nil {
+		return "", err
+	}
+
+	if r != RefTypeFile {
+		return "", fmt.Errorf("%w: %q", ErrUnsupportedRefFormat, fileName)
+	}
+
+	fileName = strings.TrimPrefix(fileName, "file://")
+	qualified := path.Join(path.Dir(parentFileName), fileName)
+
+	exts := append([]string{""}, l.resolveExtensions...)
+	for _, ext := range exts {
+		candidate := qualified + ext
+		if !fs.ValidPath(candidate) {
+			continue
+		}
+
+		if _, err := fs.Stat(l.fsys, candidate); err == nil {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("%w %q", ErrCannotResolveSchema, fileName)
 }
 
 func NewDefaultCacheLoader(resolveExtensions, yamlExtensions []string) *CachedLoader {
