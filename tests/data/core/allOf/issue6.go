@@ -72,6 +72,7 @@ type Issue6Name struct {
 	Use_2 *Issue6NameUse_2 `json:"use,omitempty,omitzero" yaml:"use,omitempty" mapstructure:"use,omitempty"`
 }
 
+// Identifies the purpose for this name.
 type Issue6NameUse_2 string
 
 const Issue6NameUse_2_Anonymous Issue6NameUse_2 = "anonymous"
