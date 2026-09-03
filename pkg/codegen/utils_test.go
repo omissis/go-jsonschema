@@ -1,8 +1,9 @@
-package codegen
+package codegen_test
 
 import (
 	"testing"
 
+	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
@@ -13,19 +14,19 @@ func TestPrimitiveTypeFromJSONSchemaTypeStringFormats(t *testing.T) {
 		name         string
 		format       string
 		extraImports bool
-		expected     Type
+		expected     codegen.Type
 	}{
 		{
 			name:         "date without extra imports",
 			format:       "date",
 			extraImports: false,
-			expected:     PrimitiveType{"string"},
+			expected:     codegen.PrimitiveType{Type: "string"},
 		},
 		{
 			name:         "time without extra imports",
 			format:       "time",
 			extraImports: false,
-			expected:     PrimitiveType{"string"},
+			expected:     codegen.PrimitiveType{Type: "string"},
 		},
 		{
 			name:         "date with extra imports",
@@ -42,12 +43,10 @@ func TestPrimitiveTypeFromJSONSchemaTypeStringFormats(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := PrimitiveTypeFromJSONSchemaType(
+			got, err := codegen.PrimitiveTypeFromJSONSchemaType(
 				schemas.TypeNameString,
 				tc.format,
 				false,
@@ -67,11 +66,11 @@ func TestPrimitiveTypeFromJSONSchemaTypeStringFormats(t *testing.T) {
 	}
 }
 
-func assertType(t *testing.T, expected, got Type) {
+func assertType(t *testing.T, expected, got codegen.Type) {
 	t.Helper()
 
-	expNamed, expIsNamed := expected.(NamedType)
-	gotNamed, gotIsNamed := got.(NamedType)
+	expNamed, expIsNamed := expected.(codegen.NamedType)
+	gotNamed, gotIsNamed := got.(codegen.NamedType)
 
 	if expIsNamed || gotIsNamed {
 		if !expIsNamed || !gotIsNamed {
@@ -90,12 +89,12 @@ func assertType(t *testing.T, expected, got Type) {
 	}
 }
 
-func namedType(pkgName, typeName string) NamedType {
-	return NamedType{
-		Package: &Package{
+func namedType(pkgName, typeName string) codegen.NamedType {
+	return codegen.NamedType{
+		Package: &codegen.Package{
 			QualifiedName: pkgName,
 		},
-		Decl: &TypeDecl{
+		Decl: &codegen.TypeDecl{
 			Name: typeName,
 		},
 	}
