@@ -3,6 +3,9 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"reflect"
+	"slices"
 	"sort"
 
 	"github.com/atombender/go-jsonschema/internal/x/text"
@@ -200,6 +203,116 @@ func (g *schemaGenerator) flattenForDiscriminator(v *schemas.Type) (*schemas.Typ
 	merged.AllOf = nil
 
 	return merged, true
+}
+
+// oneOfVariantSchema returns the schema a oneOf variant is generated from: a
+// copy, so the caller can mark it without touching a schema shared through a
+// $ref.
+//
+// An instance must satisfy the schema holding the oneOf as well as one of its
+// variants, so properties the parent declares beside its oneOf belong in every
+// variant. Without them the parent's fields vanish from the generated types and
+// their types and required-ness go unchecked. They are folded in by hand rather
+// than through schemas.AllOf, whose merge writes into property schemas both
+// sides declare, and those can be shared. A property the variant declares
+// itself keeps the variant's definition.
+func (g *schemaGenerator) oneOfVariantSchema(parent, variant *schemas.Type) (*schemas.Type, error) {
+	if hasParentObjectKeywords(parent) && variant.Ref != "" {
+		resolved, err := g.resolveRef(variant)
+		if err != nil {
+			return nil, err
+		}
+
+		variant = resolved
+	}
+
+	return withParentObjectKeywords(parent, variant), nil
+}
+
+// hasParentObjectKeywords reports whether parent declares object keywords that
+// withParentObjectKeywords folds into its oneOf variants.
+func hasParentObjectKeywords(parent *schemas.Type) bool {
+	return len(parent.Properties) > 0 || len(parent.PatternProperties) > 0 || len(parent.Required) > 0
+}
+
+// withParentObjectKeywords returns a copy of variant carrying the properties,
+// patternProperties, required list and additionalProperties of parent; see
+// oneOfVariantSchema. variant must already be resolved when parent declares
+// any of them.
+func withParentObjectKeywords(parent, variant *schemas.Type) *schemas.Type {
+	merged := *variant
+
+	if !hasParentObjectKeywords(parent) {
+		return &merged
+	}
+
+	if len(parent.Properties) > 0 {
+		merged.Properties = maps.Clone(parent.Properties)
+		maps.Copy(merged.Properties, variant.Properties)
+	}
+
+	if len(parent.PatternProperties) > 0 {
+		merged.PatternProperties = maps.Clone(parent.PatternProperties)
+		maps.Copy(merged.PatternProperties, variant.PatternProperties)
+	}
+
+	merged.Required = slices.Clone(variant.Required)
+
+	for _, name := range parent.Required {
+		if !slices.Contains(merged.Required, name) {
+			merged.Required = append(merged.Required, name)
+		}
+	}
+
+	if merged.AdditionalProperties == nil {
+		merged.AdditionalProperties = parent.AdditionalProperties
+	}
+
+	return &merged
+}
+
+// variantRedefinesParent reports whether a variant of t's oneOf declares a
+// property, a pattern or additionalProperties that t declares too, with a
+// different schema. An instance must satisfy both, but the variant type can
+// carry only one of them, so the parent's constraint would be lost; such a
+// oneOf keeps the parent's own type instead. A variant's
+// `additionalProperties: false` only narrows the parent's and is kept.
+//
+// exempt names the discriminator property: each variant's const narrows the
+// parent's schema for it rather than replacing it.
+func (g *schemaGenerator) variantRedefinesParent(t *schemas.Type, exempt string) bool {
+	for _, variant := range t.OneOf {
+		if variant.Ref != "" {
+			if variant = g.lookupRef(variant); variant == nil {
+				continue
+			}
+		}
+
+		for name, prop := range variant.Properties {
+			if parentProp, ok := t.Properties[name]; ok && name != exempt && !sameSchema(parentProp, prop) {
+				return true
+			}
+		}
+
+		for pattern, prop := range variant.PatternProperties {
+			if parentProp, ok := t.PatternProperties[pattern]; ok && !sameSchema(parentProp, prop) {
+				return true
+			}
+		}
+
+		if t.AdditionalProperties != nil && variant.AdditionalProperties != nil &&
+			!isFalseSchema(variant.AdditionalProperties) &&
+			!sameSchema(t.AdditionalProperties, variant.AdditionalProperties) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// sameSchema reports whether a and b are the same schema, or equal ones.
+func sameSchema(a, b *schemas.Type) bool {
+	return a == b || reflect.DeepEqual(a, b)
 }
 
 // discriminatorValue ties a variant index to the const value of its
@@ -408,15 +521,18 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 		fieldName := g.uniqueVariantFieldName(fieldNames, dv.constValue, holderName)
 		variantScope := scope.add(fieldName)
 
-		// Force generation of the variant as its own struct (not inlined).
-		// Clone the schema first so the mutation doesn't contaminate any
-		// shared cache entry: t.OneOf entries can come from a resolved $ref,
-		// in which case the same *Type may be referenced from elsewhere in
-		// the schema graph.
-		variantClone := *variant
-		variantClone.SetSubSchemaTypeElem()
+		// Force generation of the variant as its own struct (not inlined),
+		// on a copy: t.OneOf entries can come from a resolved $ref, in which
+		// case the same *Type may be referenced from elsewhere in the schema
+		// graph.
+		variantSchema, err := g.oneOfVariantSchema(t, variant)
+		if err != nil {
+			return nil, fmt.Errorf("oneOf variant %d (%v): %w", i, dv.constValue, err)
+		}
 
-		genType, err := g.generateDeclaredType(&variantClone, variantScope)
+		variantSchema.SetSubSchemaTypeElem()
+
+		genType, err := g.generateDeclaredType(variantSchema, variantScope)
 		if err != nil {
 			return nil, fmt.Errorf("oneOf variant %d (%v): %w", i, dv.constValue, err)
 		}

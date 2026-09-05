@@ -212,35 +212,3 @@ func (g *schemaGenerator) branchAdmits(
 
 	return false, false
 }
-
-// lookupRef returns the schema a $ref points at without generating it, or nil
-// when it cannot be found.
-func (g *schemaGenerator) lookupRef(t *schemas.Type) *schemas.Type {
-	if t.Ref == "#" {
-		return (*schemas.Type)(g.schema.ObjectAsType)
-	}
-
-	defName, fileName, err := g.extractRefNames(t)
-	if err != nil {
-		return nil
-	}
-
-	schema := g.schema
-
-	if fileName != "" {
-		if schema, err = g.loader.Load(fileName, g.schemaFileName); err != nil {
-			return nil
-		}
-	}
-
-	if defName == "" {
-		return (*schemas.Type)(schema.ObjectAsType)
-	}
-
-	def, err := resolveRefPath(schema.Definitions, defName)
-	if err != nil {
-		return nil
-	}
-
-	return def
-}
