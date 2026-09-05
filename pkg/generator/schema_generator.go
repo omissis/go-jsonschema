@@ -454,6 +454,17 @@ func (g *schemaGenerator) structFieldValidators(
 				g.output.file.Package.AddImport("regexp", "")
 			}
 
+			if format := f.SchemaType.Format; format != "" &&
+				isKnownFormatKeyword(format) &&
+				g.config.FormatValidation.shouldValidate(format) {
+				validators = append(validators, &formatValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					format:     format,
+					isNillable: isNillable,
+				})
+			}
+
 		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
@@ -555,9 +566,48 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
 		}
 
+		for _, decl := range v.desc().decls {
+			g.output.file.Package.AddDecl(decl)
+		}
+
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 		}
+	}
+
+	// generateUnmarshalBody wraps the raw-map decode error with type
+	// context via `fmt.Errorf`, so fmt must be imported whenever the body
+	// emits the raw-decode branch — even when no hasError validator is
+	// present. The branch fires when (a) the struct has an
+	// additionalProperties field, or (b) any validator declares
+	// beforeJSONUnmarshal/requiresRawAfter (the latter covers
+	// `defaultValidator`, which has hasError=false but still triggers
+	// raw decoding).
+	needsRawDecode := false
+
+	for _, v := range validators {
+		d := v.desc()
+		if d.beforeJSONUnmarshal || d.requiresRawAfter {
+			needsRawDecode = true
+
+			break
+		}
+	}
+
+	if !needsRawDecode {
+		if structType, ok := decl.Type.(*codegen.StructType); ok {
+			for _, f := range structType.Fields {
+				if f.Name == additionalProperties {
+					needsRawDecode = true
+
+					break
+				}
+			}
+		}
+	}
+
+	if needsRawDecode {
+		g.output.file.Package.AddImport("fmt", "")
 	}
 
 	for _, formatter := range g.formatters {
@@ -568,6 +618,32 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
+}
+
+// itemsSchema resolves the element schema for an array, covering both draft-07
+// forms of `items`. The single-schema form is returned as-is.
+//
+// For the tuple form, a one-element tuple — the common "a tuple of exactly one"
+// idiom, usually paired with minItems/maxItems 1 — maps cleanly onto that
+// element's type, so the array is generated as a properly typed slice. A
+// heterogeneous tuple has no faithful Go slice representation, so it warns and
+// returns nil, leaving the caller to fall back to an untyped array. Positional
+// types and `additionalItems` are not otherwise enforced.
+func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if len(t.TupleItems) == 0 {
+		return t.Items
+	}
+
+	if len(t.TupleItems) == 1 {
+		return t.TupleItems[0]
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a %d-element tuple for items; positional types are not modelled and it will be represented as an untyped array",
+		scope, len(t.TupleItems),
+	))
+
+	return nil
 }
 
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -593,11 +669,12 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 	switch typeName {
 	case schemas.TypeNameArray:
-		if t.Items == nil {
+		items := g.itemsSchema(t, scope)
+		if items == nil {
 			return arrayTypeVal, nil
 		}
 
-		elemType, err := g.generateType(t.Items, g.singularScope(scope))
+		elemType, err := g.generateType(items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -1194,10 +1271,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type = emptyInterfaceTypeVal
 
-			if t.Items != nil {
+			if items := g.itemsSchema(t, scope); items != nil {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
+				theType, err = g.generateTypeInline(items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}

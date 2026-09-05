@@ -21,7 +21,7 @@ type DateTimeMyObject struct {
 func (j *DateTimeMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DateTimeMyObject: %w", err)
 	}
 	if _, ok := raw["myDateTime"]; raw != nil && !ok {
 		return fmt.Errorf("field myDateTime in DateTimeMyObject: required")
@@ -39,7 +39,7 @@ func (j *DateTimeMyObject) UnmarshalJSON(value []byte) error {
 func (j *DateTimeMyObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DateTimeMyObject: %w", err)
 	}
 	if _, ok := raw["myDateTime"]; raw != nil && !ok {
 		return fmt.Errorf("field myDateTime in DateTimeMyObject: required")

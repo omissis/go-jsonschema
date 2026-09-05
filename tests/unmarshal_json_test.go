@@ -3,6 +3,7 @@ package tests_test
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,13 @@ import (
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testFormatAll "github.com/atombender/go-jsonschema/tests/data/formatValidation/all"
+	testFormatEmail "github.com/atombender/go-jsonschema/tests/data/formatValidation/email"
+	testFormatHostname "github.com/atombender/go-jsonschema/tests/data/formatValidation/hostname"
+	testFormatRegex "github.com/atombender/go-jsonschema/tests/data/formatValidation/regex"
+	testFormatURI "github.com/atombender/go-jsonschema/tests/data/formatValidation/uri"
+	testFormatURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
+	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
 
@@ -418,6 +426,131 @@ func TestJSONUnmarshalAdditionalProperties(t *testing.T) {
 			}
 
 			tC.assertFn(tC.target)
+		})
+	}
+}
+
+func TestJsonUnmarshalFormatValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc      string
+		json      string
+		target    json.Unmarshaler
+		expectErr bool
+	}{
+		// uuid
+		{desc: "uuid valid", json: `{"id":"550e8400-e29b-41d4-a716-446655440000"}`, target: &testFormatUUID.Uuid{}},
+		{desc: "uuid valid uppercase", json: `{"id":"550E8400-E29B-41D4-A716-446655440000"}`, target: &testFormatUUID.Uuid{}},
+		{desc: "uuid invalid", json: `{"id":"not-a-uuid"}`, target: &testFormatUUID.Uuid{}, expectErr: true},
+		{desc: "uuid invalid length", json: `{"id":"550e8400-e29b-41d4-a716-44665544000"}`, target: &testFormatUUID.Uuid{}, expectErr: true},
+		{desc: "uuid empty rejected", json: `{"id":""}`, target: &testFormatUUID.Uuid{}, expectErr: true},
+		{
+			desc:   "uuid optional absent ok",
+			json:   `{"id":"550e8400-e29b-41d4-a716-446655440000"}`,
+			target: &testFormatUUID.Uuid{},
+		},
+		{
+			desc:   "uuid optional present and valid",
+			json:   `{"id":"550e8400-e29b-41d4-a716-446655440000","parentId":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}`,
+			target: &testFormatUUID.Uuid{},
+		},
+		{
+			desc:      "uuid optional invalid rejected",
+			json:      `{"id":"550e8400-e29b-41d4-a716-446655440000","parentId":"oops"}`,
+			target:    &testFormatUUID.Uuid{},
+			expectErr: true,
+		},
+
+		// email (RFC 5321 addr-spec only)
+		{desc: "email valid", json: `{"primary":"user@example.com"}`, target: &testFormatEmail.Email{}},
+		{desc: "email invalid", json: `{"primary":"not-an-email"}`, target: &testFormatEmail.Email{}, expectErr: true},
+		{desc: "email rejects display-name form", json: `{"primary":"Alice <alice@example.com>"}`, target: &testFormatEmail.Email{}, expectErr: true},
+		{desc: "email rejects bracketed addr-spec", json: `{"primary":"<bob@example.com>"}`, target: &testFormatEmail.Email{}, expectErr: true},
+		{desc: "email empty rejected", json: `{"primary":""}`, target: &testFormatEmail.Email{}, expectErr: true},
+		{
+			desc:   "email optional nil ok",
+			json:   `{"primary":"user@example.com"}`,
+			target: &testFormatEmail.Email{},
+		},
+		{
+			desc:   "email optional present and valid",
+			json:   `{"primary":"user@example.com","secondary":"alt@example.com"}`,
+			target: &testFormatEmail.Email{},
+		},
+		{
+			desc:      "email optional invalid rejected",
+			json:      `{"primary":"user@example.com","secondary":"oops"}`,
+			target:    &testFormatEmail.Email{},
+			expectErr: true,
+		},
+		{
+			desc:      "email optional rejects display-name",
+			json:      `{"primary":"user@example.com","secondary":"Alice <alice@example.com>"}`,
+			target:    &testFormatEmail.Email{},
+			expectErr: true,
+		},
+
+		// uri (absolute required)
+		{desc: "uri valid absolute", json: `{"endpoint":"https://example.com/path"}`, target: &testFormatURI.Uri{}},
+		{desc: "uri rejected when not absolute", json: `{"endpoint":"/just/a/path"}`, target: &testFormatURI.Uri{}, expectErr: true},
+		{desc: "uri rejected with whitespace", json: `{"endpoint":"https://example.com/path with space"}`, target: &testFormatURI.Uri{}, expectErr: true},
+		{desc: "uri rejected with control char", json: `{"endpoint":"https://example.com/\u0007"}`, target: &testFormatURI.Uri{}, expectErr: true},
+		{desc: "uri rejected when empty", json: `{"endpoint":""}`, target: &testFormatURI.Uri{}, expectErr: true},
+		{desc: "uri valid with pct-encoded path", json: `{"endpoint":"https://example.com/a%20b"}`, target: &testFormatURI.Uri{}},
+
+		// uri-reference (empty is valid per RFC 3986; rejects whitespace and bad pct-encoding)
+		{desc: "uri-reference valid relative", json: `{"ref":"/relative/path"}`, target: &testFormatURIRef.UriReference{}},
+		{desc: "uri-reference valid absolute", json: `{"ref":"https://example.com"}`, target: &testFormatURIRef.UriReference{}},
+		{desc: "uri-reference valid empty (same-document ref)", json: `{"ref":""}`, target: &testFormatURIRef.UriReference{}},
+		{desc: "uri-reference valid fragment only", json: `{"ref":"#section"}`, target: &testFormatURIRef.UriReference{}},
+		{desc: "uri-reference rejects whitespace", json: `{"ref":"hello world"}`, target: &testFormatURIRef.UriReference{}, expectErr: true},
+		{desc: "uri-reference rejects malformed pct-encoding", json: `{"ref":"/path%ZZ"}`, target: &testFormatURIRef.UriReference{}, expectErr: true},
+		{desc: "uri-reference rejects lone percent", json: `{"ref":"/path%"}`, target: &testFormatURIRef.UriReference{}, expectErr: true},
+
+		// hostname (RFC 1123)
+		{desc: "hostname valid", json: `{"host":"example.com"}`, target: &testFormatHostname.Hostname{}},
+		{desc: "hostname valid single label", json: `{"host":"localhost"}`, target: &testFormatHostname.Hostname{}},
+		{desc: "hostname rejected leading dot", json: `{"host":".example.com"}`, target: &testFormatHostname.Hostname{}, expectErr: true},
+		{desc: "hostname rejected underscore", json: `{"host":"bad_host.com"}`, target: &testFormatHostname.Hostname{}, expectErr: true},
+		{desc: "hostname rejected empty", json: `{"host":""}`, target: &testFormatHostname.Hostname{}, expectErr: true},
+		{
+			// 64 valid labels of "abcd" joined by dots = 64*4 + 63 = 319 chars total; each label is fine but total > 253.
+			desc:      "hostname rejected when exceeds 253 octets",
+			json:      `{"host":"` + strings.Repeat("abcd.", 63) + `abcd"}`,
+			target:    &testFormatHostname.Hostname{},
+			expectErr: true,
+		},
+
+		// regex (Go's RE2 syntax — empty regex compiles to match-anything)
+		{desc: "regex valid", json: `{"pattern":"^[a-z]+$"}`, target: &testFormatRegex.Regex{}},
+		{desc: "regex invalid", json: `{"pattern":"["}`, target: &testFormatRegex.Regex{}, expectErr: true},
+		{desc: "regex empty accepted", json: `{"pattern":""}`, target: &testFormatRegex.Regex{}},
+
+		// combined schema
+		{
+			desc:   "all formats valid",
+			json:   `{"userId":"550e8400-e29b-41d4-a716-446655440000","contact":"a@b.com","homepage":"https://x","icon":"icon.png","host":"a.b","rule":"^x$"}`,
+			target: &testFormatAll.All{},
+		},
+		{
+			desc:      "all schema rejects bad email",
+			json:      `{"userId":"550e8400-e29b-41d4-a716-446655440000","contact":"oops"}`,
+			target:    &testFormatAll.All{},
+			expectErr: true,
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			err := tC.target.UnmarshalJSON([]byte(tC.json))
+			if tC.expectErr {
+				assert.Error(t, err, "expected validation error but got nil")
+			} else {
+				assert.NoError(t, err, "did not expect error")
+			}
 		})
 	}
 }

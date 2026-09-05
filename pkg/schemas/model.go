@@ -156,16 +156,21 @@ type Type struct {
 	Version string `json:"$schema,omitempty"` // Section 6.1.
 	Ref     string `json:"$ref,omitempty"`    // Section 7.
 	// RFC draft-wright-json-schema-validation-00, section 5.
-	MultipleOf           *float64         `json:"multipleOf,omitempty"`           // Section 5.1.
-	Maximum              *float64         `json:"maximum,omitempty"`              // Section 5.2.
-	ExclusiveMaximum     *any             `json:"exclusiveMaximum,omitempty"`     // Section 5.3. Changed in draft 4.
-	Minimum              *float64         `json:"minimum,omitempty"`              // Section 5.4.
-	ExclusiveMinimum     *any             `json:"exclusiveMinimum,omitempty"`     // Section 5.5. Changed in draft 4.
-	MaxLength            int              `json:"maxLength,omitempty"`            // Section 5.6.
-	MinLength            int              `json:"minLength,omitempty"`            // Section 5.7.
-	Pattern              string           `json:"pattern,omitempty"`              // Section 5.8.
-	AdditionalItems      *Type            `json:"additionalItems,omitempty"`      // Section 5.9.
-	Items                *Type            `json:"items,omitempty"`                // Section 5.9.
+	MultipleOf       *float64 `json:"multipleOf,omitempty"`       // Section 5.1.
+	Maximum          *float64 `json:"maximum,omitempty"`          // Section 5.2.
+	ExclusiveMaximum *any     `json:"exclusiveMaximum,omitempty"` // Section 5.3. Changed in draft 4.
+	Minimum          *float64 `json:"minimum,omitempty"`          // Section 5.4.
+	ExclusiveMinimum *any     `json:"exclusiveMinimum,omitempty"` // Section 5.5. Changed in draft 4.
+	MaxLength        int      `json:"maxLength,omitempty"`        // Section 5.6.
+	MinLength        int      `json:"minLength,omitempty"`        // Section 5.7.
+	Pattern          string   `json:"pattern,omitempty"`          // Section 5.8.
+	AdditionalItems  *Type    `json:"additionalItems,omitempty"`  // Section 5.9.
+	Items            *Type    `json:"items,omitempty"`            // Section 5.9.
+	// TupleItems holds the draft-07 tuple form of `items` (an array of
+	// schemas, one per position). The single-schema form stays in Items;
+	// exactly one of the two is ever populated. Not a wire field — it is
+	// filled in by Type.UnmarshalJSON.
+	TupleItems           []*Type          `json:"-"`
 	MaxItems             int              `json:"maxItems,omitempty"`             // Section 5.10.
 	MinItems             int              `json:"minItems,omitempty"`             // Section 5.11.
 	UniqueItems          bool             `json:"uniqueItems,omitempty"`          // Section 5.12.
@@ -252,6 +257,72 @@ func (value *Type) ConvertAllRefs(absolutePath string) error {
 
 // UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
 // and `false` is equivalent to `{"not": {}}`.
+// isJSONArray reports whether raw is a JSON array, ignoring leading
+// whitespace. Used to tell draft-07 `dependencies` property dependencies
+// (arrays of property names) from schema dependencies without relying on a
+// speculative decode.
+func isJSONArray(raw []byte) bool {
+	for _, b := range raw {
+		switch b {
+		case ' ', '\t', '\r', '\n':
+			continue
+		case '[':
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
+// splitTupleItems detects the draft-07 tuple form of `items` (an array of
+// schemas). When present it returns raw with the `items` key removed, plus the
+// raw array; otherwise it returns raw unchanged and a nil tuple. The map
+// round-trip is only paid when a tuple is actually present.
+func splitTupleItems(raw []byte) (effective, tuple []byte, err error) {
+	if !isJSONObject(raw) {
+		return raw, nil, nil
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		// Let the regular decode below report the error in context.
+		return raw, nil, nil //nolint:nilerr // deliberate: defer to the main decode
+	}
+
+	items, ok := fields["items"]
+	if !ok || !isJSONArray(items) {
+		return raw, nil, nil
+	}
+
+	delete(fields, "items")
+
+	rest, err := json.Marshal(fields)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to re-encode type without tuple items: %w", err)
+	}
+
+	return rest, items, nil
+}
+
+// isJSONObject reports whether raw is a JSON object, ignoring leading
+// whitespace.
+func isJSONObject(raw []byte) bool {
+	for _, b := range raw {
+		switch b {
+		case ' ', '\t', '\r', '\n':
+			continue
+		case '{':
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
 func (value *Type) UnmarshalJSON(raw []byte) error {
 	var b bool
 	if err := json.Unmarshal(raw, &b); err == nil {
@@ -264,27 +335,102 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		return nil
 	}
 
+	// `items` is dual-form in draft-07: a single schema, or a tuple (array)
+	// of schemas positionally matched against the array. ObjectAsType models
+	// only the single-schema form, so lift a tuple out before decoding and
+	// stash it on TupleItems, otherwise the array fails the whole parse.
+	effectiveRaw, tupleRaw, err := splitTupleItems(raw)
+	if err != nil {
+		return err
+	}
+
 	var obj ObjectAsType
-	if err := json.Unmarshal(raw, &obj); err != nil {
+	if err := json.Unmarshal(effectiveRaw, &obj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
+	}
+
+	if tupleRaw != nil {
+		var tuple []*Type
+		if err := json.Unmarshal(tupleRaw, &tuple); err != nil {
+			return fmt.Errorf("failed to unmarshal tuple items: %w", err)
+		}
+
+		obj.TupleItems = tuple
 	}
 
 	// Take care of legacy fields from older RFC versions.
 	legacyObj := struct {
 		// RFC draft-wright-json-schema-validation-00, section 5.
-		Dependencies map[string]*Type `json:"dependencies,omitempty"`
-		Definitions  Definitions      `json:"definitions,omitempty"` // Section 5.26.
+		// draft-07 `dependencies` is dual-form: each value is either a
+		// schema (a schema dependency) or an array of property names (a
+		// property dependency, split out as `dependentRequired` in
+		// 2019-09). Decode lazily so the array form does not fail the
+		// whole parse.
+		Dependencies map[string]json.RawMessage `json:"dependencies,omitempty"`
+		Definitions  Definitions                `json:"definitions,omitempty"` // Section 5.26.
 	}{}
 	if err := json.Unmarshal(raw, &legacyObj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
+	}
+
+	var (
+		legacyDependentSchemas  map[string]*Type
+		legacyDependentRequired map[string][]string
+	)
+
+	for name, rawDep := range legacyObj.Dependencies {
+		// Dispatch on the JSON shape rather than on whether a []string
+		// decode happens to succeed: `null` unmarshals into []string
+		// without error (yielding nil), and `[null]` yields [""], so a
+		// try-and-fall-back approach would misclassify both instead of
+		// leaving them to the schema branch / rejecting them.
+		if isJSONArray(rawDep) {
+			var members []*string
+			if err := json.Unmarshal(rawDep, &members); err != nil {
+				return fmt.Errorf("failed to unmarshal dependencies[%q]: %w", name, err)
+			}
+
+			required := make([]string, 0, len(members))
+
+			for i, member := range members {
+				if member == nil {
+					return fmt.Errorf("dependencies[%q][%d]: null is not a valid property name", name, i)
+				}
+
+				required = append(required, *member)
+			}
+
+			if legacyDependentRequired == nil {
+				legacyDependentRequired = map[string][]string{}
+			}
+
+			legacyDependentRequired[name] = required
+
+			continue
+		}
+
+		var dep Type
+		if err := json.Unmarshal(rawDep, &dep); err != nil {
+			return fmt.Errorf("failed to unmarshal dependencies[%q]: %w", name, err)
+		}
+
+		if legacyDependentSchemas == nil {
+			legacyDependentSchemas = map[string]*Type{}
+		}
+
+		legacyDependentSchemas[name] = &dep
 	}
 
 	if legacyObj.Definitions != nil && obj.Definitions == nil {
 		obj.Definitions = legacyObj.Definitions
 	}
 
-	if legacyObj.Dependencies != nil && obj.DependentSchemas == nil {
-		obj.DependentSchemas = legacyObj.Dependencies
+	if legacyDependentSchemas != nil && obj.DependentSchemas == nil {
+		obj.DependentSchemas = legacyDependentSchemas
+	}
+
+	if legacyDependentRequired != nil && obj.DependentRequired == nil {
+		obj.DependentRequired = legacyDependentRequired
 	}
 
 	if len(obj.Type) == 0 && (len(obj.Properties) > 0 || obj.AdditionalProperties != nil) {
