@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
 var (
@@ -195,6 +196,21 @@ func TestOnlyModels(t *testing.T) {
 	testExampleFile(t, cfg, "./data/misc/onlyModels/onlyModels.json")
 }
 
+// TestOnlyModelsOneOfPrimitive exercises the OnlyModels fallback for primitive
+// `oneOf` schemas: without the gate added in generateDeclaredType, the
+// wrapper-emission path would emit a struct whose only field is the
+// unexported `value any`, with no methods — unusable to consumers outside
+// the generated package. With the gate the schema falls back to the regular
+// `interface{}` representation that other consumers can construct directly.
+func TestOnlyModelsOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.OnlyModels = true
+
+	testExampleFile(t, cfg, "./data/onlyModels/oneOfPrimitive/oneOfPrimitive.json")
+}
+
 func TestSpecialCharacters(t *testing.T) {
 	t.Parallel()
 
@@ -245,6 +261,256 @@ func TestRegressions(t *testing.T) {
 	t.Parallel()
 
 	testExamples(t, basicConfig, "./data/regressions")
+}
+
+func TestFormatValidation(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{Enabled: true}
+
+	testExamples(t, cfg, "./data/formatValidation")
+}
+
+func TestFormatValidationAllowList(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{
+		Enabled: true,
+		// Mixed-case and surrounding whitespace verify the AllowList
+		// normalization: shouldValidate trims and lowercases entries so
+		// these match the canonical "uuid" / "email" keywords.
+		AllowList: []string{"UUID", " email "},
+	}
+
+	testExamples(t, cfg, "./data/formatValidationAllowList")
+}
+
+func TestStrictAdditionalPropertiesRespectSchema(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+
+	testExamples(t, cfg, "./data/strictAdditionalProperties")
+}
+
+func TestStrictAdditionalPropertiesAlways(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesStrict
+
+	testExamples(t, cfg, "./data/strictAdditionalPropertiesAlways")
+}
+
+func TestKnownSchema(t *testing.T) {
+	t.Parallel()
+
+	// Pre-load the canonical schema and seed the loader cache keyed by the
+	// $id URL the consumer references. The URL is unreachable on principle
+	// (no DNS / no listener); a successful generation proves the cache short-
+	// circuits before any HTTP fetch is attempted.
+	canonical, err := schemas.FromJSONFile("./data/knownSchema/canonical/canonical.json")
+	if err != nil {
+		t.Fatalf("preload canonical: %v", err)
+	}
+
+	cfg := basicConfig
+	cfg.Cache = map[string]*schemas.Schema{
+		"https://example.com/canonical/v1/canonical.json": canonical,
+	}
+
+	testExampleFile(t, cfg, "./data/knownSchema/consumer/consumer.json")
+}
+
+// TestKnownSchemaFragmentRef proves the cache short-circuits even when the
+// consumer's $ref carries a fragment (#/$defs/...). The cache key is the
+// URL without fragment; the loader hands back the pre-loaded *Schema and
+// the generator's existing fragment-resolution logic walks into $defs.
+func TestKnownSchemaFragmentRef(t *testing.T) {
+	t.Parallel()
+
+	canonical, err := schemas.FromJSONFile("./data/knownSchemaFragment/canonical/canonical.json")
+	if err != nil {
+		t.Fatalf("preload canonical: %v", err)
+	}
+
+	cfg := basicConfig
+	cfg.Cache = map[string]*schemas.Schema{
+		"https://example.com/canonical/v1/canonical-fragment.json": canonical,
+	}
+
+	testExampleFile(t, cfg, "./data/knownSchemaFragment/consumer/consumer.json")
+}
+
+func TestSchemaPackageWithAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/header",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+			OutputName:  "../header/v1/header.go",
+			ImportAlias: "headerv1",
+		},
+		{
+			SchemaID:    "https://example.com/jobs",
+			PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+			OutputName:  "../jobs/v1/jobs.go",
+			ImportAlias: "jobsv1",
+		},
+	}
+	testExampleFile(t, cfg, "./data/schemaPackageAlias/consumer/consumer.json")
+}
+
+func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schema",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "1bad", // starts with digit, not a valid Go identifier
+		},
+	}
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject invalid ImportAlias, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrInvalidImportAlias) {
+		t.Errorf("expected ErrInvalidImportAlias, got %v", err)
+	}
+}
+
+// TestSchemaPackageRejectsConflictingImportAlias asserts New() rejects two
+// SchemaMappings that bind the same PackageName to different aliases —
+// resolveImportAlias would silently pick whichever it iterates over first
+// and ignore the other. CR finding from fork PR #15.
+func TestSchemaPackageRejectsConflictingImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schemaA",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1",
+		},
+		{
+			SchemaID:    "https://example.com/schemaB",
+			PackageName: "example.com/foo/v1", // same package
+			ImportAlias: "different",          // conflicting alias
+		},
+	}
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject conflicting aliases, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrConflictingImportAlias) {
+		t.Errorf("expected ErrConflictingImportAlias, got %v", err)
+	}
+}
+
+// TestSchemaPackageAcceptsRedundantImportAlias confirms the conflict guard
+// only fires on DIFFERENT aliases for the same package — two mappings with
+// the SAME alias are redundant but legal (both happen to want the same
+// override, so resolveImportAlias picks consistently).
+func TestSchemaPackageAcceptsRedundantImportAlias(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.SchemaMappings = []generator.SchemaMapping{
+		{
+			SchemaID:    "https://example.com/schemaA",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1",
+		},
+		{
+			SchemaID:    "https://example.com/schemaB",
+			PackageName: "example.com/foo/v1",
+			ImportAlias: "foov1", // same alias — no conflict
+		},
+	}
+
+	if _, err := generator.New(cfg); err != nil {
+		t.Fatalf("expected redundant-but-matching aliases to be accepted, got %v", err)
+	}
+}
+
+func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesMode("rstrict") // typo
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject unknown StrictAdditionalProperties mode, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrInvalidStrictAdditionalPropertiesMode) {
+		t.Errorf("expected ErrInvalidStrictAdditionalPropertiesMode, got %v", err)
+	}
+}
+
+func TestOneOfPrimitive(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/oneOfPrimitive")
+}
+
+// TestMultiTypePrimitive walks fixtures for the multi-type-union form
+// (`{"type": ["string", "number", ...]}`). Activate cases (stringOrNumber,
+// stringNumberBoolNull, embeddedInStruct) emit the primitive wrapper;
+// decline cases (nullableString, integerRejected, constraintRejected,
+// duplicateInTypeList, nonPrimitiveType) pin the existing fallback
+// behavior so a future relaxation surfaces as a deliberate diff.
+func TestMultiTypePrimitive(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/multiTypePrimitive")
+}
+
+func TestOneOfDiscriminated(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/oneOfDiscriminated")
+}
+
+func TestRecursiveAllOf(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/recursiveAllOf")
+}
+
+func TestRootComposition(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/rootComposition")
+}
+
+func TestFidelityWarnings(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/fidelityWarnings")
+}
+
+// TestConditionalDiscriminator drives generation for the
+// allOf+if[const]/then[/else] tagged-union pattern. Walks every fixture
+// under tests/data/conditionalDiscriminator and diffs against the sibling
+// golden Go file.
+func TestConditionalDiscriminator(t *testing.T) {
+	t.Parallel()
+
+	testExamples(t, basicConfig, "./data/conditionalDiscriminator")
 }
 
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {

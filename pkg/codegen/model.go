@@ -149,6 +149,29 @@ func (p *Package) Generate(out *Emitter) error {
 	return nil
 }
 
+// RegexpVar is a "var <name> = regexp.MustCompile(`<pattern>`)" declaration.
+// Used so generated validators can reuse one compiled regex per pattern instead
+// of paying compilation cost on every call to regexp.MatchString.
+type RegexpVar struct {
+	Name    string
+	Pattern string
+}
+
+func (r *RegexpVar) GetName() string { return r.Name }
+
+func (r *RegexpVar) Generate(out *Emitter) error {
+	// Prefer the raw-string form so regex specials don't need backslash
+	// escaping. Backtick-containing patterns can't live inside a raw string
+	// at all, so fall back to %q in that case.
+	if strings.ContainsRune(r.Pattern, '`') {
+		out.Printlnf("var %s = regexp.MustCompile(%q)", r.Name, r.Pattern)
+	} else {
+		out.Printlnf("var %s = regexp.MustCompile(`%s`)", r.Name, r.Pattern)
+	}
+
+	return nil
+}
+
 // Var is a "var <name> = <value>".
 type Var struct {
 	Type  Type
@@ -324,6 +347,13 @@ func (a ArrayType) Generate(out *Emitter) error {
 type NamedType struct {
 	Package *Package
 	Decl    *TypeDecl
+	// Alias overrides the import alias used to qualify the type reference
+	// (e.g. emit `headerv1.Foo` instead of `v1.Foo`). When empty, the alias
+	// is derived from Package.QualifiedName via Package.Name(). Set this in
+	// pkg/generator when a SchemaMapping carries an explicit ImportAlias —
+	// keep pkg/codegen ignorant of the schema-side decision by treating the
+	// field as opaque IR data.
+	Alias string
 }
 
 func (t NamedType) GetName() string {
@@ -336,7 +366,12 @@ func (t NamedType) IsNillable() bool {
 
 func (t NamedType) Generate(out *Emitter) error {
 	if t.Package != nil {
-		out.Printf("%s", t.Package.Name())
+		prefix := t.Alias
+		if prefix == "" {
+			prefix = t.Package.Name()
+		}
+
+		out.Printf("%s", prefix)
 		out.Printf(".")
 	}
 
