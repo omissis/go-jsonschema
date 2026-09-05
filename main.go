@@ -15,30 +15,45 @@ import (
 const (
 	perm644 = 0o644
 	perm755 = 0o755
+
+	// flagValueOff is the explicit-off literal accepted by the opt-in flags
+	// (--strict-additional-properties, --validate-formats). Centralized so the
+	// linter (goconst) sees a single canonical reference.
+	flagValueOff = "off"
 )
 
 var (
-	verbose                   bool
-	extraImports              bool
-	onlyModels                bool
-	defaultPackage            string
-	defaultOutput             string
-	schemaPackages            []string
-	schemaOutputs             []string
-	schemaRootTypes           []string
-	capitalizations           []string
-	resolveExtensions         []string
-	yamlExtensions            []string
-	tags                      []string
-	structNameFromTitle       bool
-	minSizedInts              bool
-	minimalNames              bool
-	disableReadOnlyValidation bool
-	disableCustomTypesForMaps bool
-	disableOmitEmpty          bool
-	disableOmitZero           bool
+	verbose                       bool
+	extraImports                  bool
+	onlyModels                    bool
+	defaultPackage                string
+	defaultOutput                 string
+	schemaPackages                []string
+	schemaOutputs                 []string
+	schemaRootTypes               []string
+	capitalizations               []string
+	resolveExtensions             []string
+	yamlExtensions                []string
+	tags                          []string
+	structNameFromTitle           bool
+	minSizedInts                  bool
+	minimalNames                  bool
+	disableReadOnlyValidation     bool
+	disableCustomTypesForMaps     bool
+	disableOmitEmpty              bool
+	disableOmitZero               bool
+	validateFormatsRaw            string
+	strictAdditionalPropertiesRaw string
 
-	errFlagFormat = errors.New("flag must be in the format URI=PACKAGE")
+	errFlagFormat            = errors.New("flag must be in the format URI=PACKAGE")
+	errUnknownFormatKeyword  = errors.New("unknown format keyword")
+	errEmptyFormatListEntry  = errors.New("empty format name in --validate-formats list")
+	errFormatListWithKeyword = errors.New(
+		`--validate-formats: "all" and "off" cannot be combined with format names`,
+	)
+	errInvalidStrictAddlPropMode = errors.New(
+		"--strict-additional-properties: invalid mode (expected one of: off, respect-schema, strict)",
+	)
 
 	rootCmd = &cobra.Command{
 		Use:   "go-jsonschema FILE ...",
@@ -67,26 +82,38 @@ var (
 				abortWithErr(err)
 			}
 
+			formatValidation, err := parseValidateFormats(validateFormatsRaw)
+			if err != nil {
+				abortWithErr(err)
+			}
+
+			strictAddlProps, err := parseStrictAdditionalProperties(strictAdditionalPropertiesRaw)
+			if err != nil {
+				abortWithErr(err)
+			}
+
 			cfg := generator.Config{
 				Warner: func(message string) {
 					logf("Warning: %s", message)
 				},
-				ExtraImports:              extraImports,
-				Capitalizations:           capitalizations,
-				DefaultOutputName:         defaultOutput,
-				DefaultPackageName:        defaultPackage,
-				SchemaMappings:            []generator.SchemaMapping{},
-				ResolveExtensions:         resolveExtensions,
-				YAMLExtensions:            yamlExtensions,
-				StructNameFromTitle:       structNameFromTitle,
-				Tags:                      tags,
-				OnlyModels:                onlyModels,
-				MinSizedInts:              minSizedInts,
-				MinimalNames:              minimalNames,
-				DisableReadOnlyValidation: disableReadOnlyValidation,
-				DisableCustomTypesForMaps: disableCustomTypesForMaps,
-				DisableOmitEmpty:          disableOmitEmpty,
-				DisableOmitZero:           disableOmitZero,
+				ExtraImports:               extraImports,
+				Capitalizations:            capitalizations,
+				DefaultOutputName:          defaultOutput,
+				DefaultPackageName:         defaultPackage,
+				SchemaMappings:             []generator.SchemaMapping{},
+				ResolveExtensions:          resolveExtensions,
+				YAMLExtensions:             yamlExtensions,
+				StructNameFromTitle:        structNameFromTitle,
+				Tags:                       tags,
+				OnlyModels:                 onlyModels,
+				MinSizedInts:               minSizedInts,
+				MinimalNames:               minimalNames,
+				DisableReadOnlyValidation:  disableReadOnlyValidation,
+				DisableCustomTypesForMaps:  disableCustomTypesForMaps,
+				DisableOmitEmpty:           disableOmitEmpty,
+				DisableOmitZero:            disableOmitZero,
+				FormatValidation:           formatValidation,
+				StrictAdditionalProperties: strictAddlProps,
 			}
 
 			for _, id := range allKeys(schemaPackageMap, schemaOutputMap, schemaRootTypeMap) {
@@ -207,8 +234,83 @@ also look for foo.json if --resolve-extension json is provided.`)
 		"disable the addition of omitempty tag values")
 	rootCmd.PersistentFlags().BoolVar(&disableOmitZero, "disable-omitzero", false,
 		"disable the addition of omitzero tag values")
+	rootCmd.PersistentFlags().StringVar(&validateFormatsRaw, "validate-formats", "",
+		`Opt in to runtime validation of JSON Schema "format" keywords. Accepts
+"off" (default; same as omitting the flag), "all" (validate every supported
+format), or a comma-separated subset (e.g. "uuid,email"). Supported formats:
+`+strings.Join(generator.SupportedFormats(), ", ")+`.`)
+	rootCmd.PersistentFlags().StringVar(&strictAdditionalPropertiesRaw, "strict-additional-properties", "",
+		`Opt in to runtime rejection of unknown fields. Accepts "off" (default;
+same as omitting the flag), "respect-schema" (reject unknown fields only for
+objects whose schema declares additionalProperties: false), or "strict"
+(reject unknown fields for every generated object type — except when the
+schema declares a typed additionalProperties, which generates a catch-all
+map field instead, or when patternProperties is present, which suppresses
+enforcement with a warning).`)
 
 	abortWithErr(rootCmd.Execute())
+}
+
+// parseStrictAdditionalProperties interprets the --strict-additional-properties
+// flag value. Accepted values map directly to the generator package's three
+// modes; an empty string means the flag was not set and behaves like "off".
+func parseStrictAdditionalProperties(raw string) (generator.StrictAdditionalPropertiesMode, error) {
+	trimmed := strings.ToLower(strings.TrimSpace(raw))
+	if trimmed == "" || trimmed == flagValueOff {
+		return generator.StrictAdditionalPropertiesOff, nil
+	}
+
+	mode := generator.StrictAdditionalPropertiesMode(trimmed)
+	if !mode.IsValid() {
+		return "", fmt.Errorf("%w: %q", errInvalidStrictAddlPropMode, raw)
+	}
+
+	return mode, nil
+}
+
+// parseValidateFormats interprets the --validate-formats flag value.
+//
+// Accepted values:
+//
+//	""         — flag omitted; validation off.
+//	"off"      — explicit off (useful for scripts that always set the flag).
+//	"all"      — validate every format returned by generator.SupportedFormats.
+//	"a,b,c"    — validate only the listed formats (case-insensitive).
+//
+// Any unknown format name is rejected up front rather than silently dropped,
+// so a typo like "uuid,emial" fails immediately instead of disabling email
+// validation. "all" and "off" cannot be mixed with format names.
+func parseValidateFormats(raw string) (generator.FormatValidationConfig, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || strings.EqualFold(trimmed, flagValueOff) {
+		return generator.FormatValidationConfig{}, nil
+	}
+
+	if strings.EqualFold(trimmed, "all") {
+		return generator.FormatValidationConfig{Enabled: true}, nil
+	}
+
+	parts := strings.Split(trimmed, ",")
+	allowList := make([]string, 0, len(parts))
+
+	for _, p := range parts {
+		name := strings.ToLower(strings.TrimSpace(p))
+		switch {
+		case name == "":
+			return generator.FormatValidationConfig{}, errEmptyFormatListEntry
+		case name == "all" || name == flagValueOff:
+			return generator.FormatValidationConfig{}, errFormatListWithKeyword
+		case !generator.IsSupportedFormat(name):
+			return generator.FormatValidationConfig{}, fmt.Errorf(
+				"%w %q; supported: %s",
+				errUnknownFormatKeyword, name, strings.Join(generator.SupportedFormats(), ", "),
+			)
+		}
+
+		allowList = append(allowList, name)
+	}
+
+	return generator.FormatValidationConfig{Enabled: true, AllowList: allowList}, nil
 }
 
 func abortWithErr(err error) {
