@@ -154,7 +154,7 @@ func primitiveOneOfKinds(t *schemas.Type) oneOfKind {
 // this wrapper isn't. Callers in `generateDeclaredType` already gate on
 // `!g.config.OnlyModels`; this function panics rather than silently
 // emitting a broken type if that guard is ever bypassed.
-func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) (codegen.Type, error) {
+func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScope) codegen.Type {
 	if g.config.OnlyModels {
 		// Defensive: should be unreachable per the contract above.
 		// Panicking here turns a future routing bug (silent broken
@@ -237,7 +237,7 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 		addMethod("IsNull", emitOneOfPrimitiveIsNull(name))
 	}
 
-	return &codegen.NamedType{Decl: decl}, nil
+	return &codegen.NamedType{Decl: decl}
 }
 
 func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {

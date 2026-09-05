@@ -2,11 +2,232 @@
 
 package test
 
-type Choice interface{}
+import "encoding/json"
+import "fmt"
+import yaml "gopkg.in/yaml.v3"
+
+type Choice struct {
+	Variant0 *ChoiceVariant0 `json:"-" yaml:"-"`
+
+	Variant1 *ChoiceVariant1 `json:"-" yaml:"-"`
+}
 
 type Choice1 struct {
 	// B corresponds to the JSON schema field "b".
 	B *int `json:"b,omitempty,omitzero" yaml:"b,omitempty" mapstructure:"b,omitempty"`
+}
+
+type ChoiceVariant0 struct {
+	// A corresponds to the JSON schema field "a".
+	A *string `json:"a,omitempty,omitzero" yaml:"a,omitempty" mapstructure:"a,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChoiceVariant0) UnmarshalJSON(value []byte) error {
+	type Plain ChoiceVariant0
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal ChoiceVariant0: %w", err)
+	}
+	*j = ChoiceVariant0(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ChoiceVariant0) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ChoiceVariant0
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal ChoiceVariant0: %w", err)
+	}
+	*j = ChoiceVariant0(plain)
+	return nil
+}
+
+type ChoiceVariant1 struct {
+	// B corresponds to the JSON schema field "b".
+	B *int `json:"b,omitempty,omitzero" yaml:"b,omitempty" mapstructure:"b,omitempty"`
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ChoiceVariant1) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ChoiceVariant1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal ChoiceVariant1: %w", err)
+	}
+	*j = ChoiceVariant1(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChoiceVariant1) UnmarshalJSON(value []byte) error {
+	type Plain ChoiceVariant1
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal ChoiceVariant1: %w", err)
+	}
+	*j = ChoiceVariant1(plain)
+	return nil
+}
+
+// MarshalJSON implements json.Marshaler. Exactly one variant
+// pointer must be non-nil; otherwise marshaling errors.
+func (j Choice) MarshalJSON() ([]byte, error) {
+	set := 0
+	if j.Variant0 != nil {
+		set++
+	}
+	if j.Variant1 != nil {
+		set++
+	}
+	if set != 1 {
+		return nil, fmt.Errorf("Choice: exactly one variant must be set, got %d", set)
+	}
+	if j.Variant0 != nil {
+		return json.Marshal(j.Variant0)
+	}
+	if j.Variant1 != nil {
+		return json.Marshal(j.Variant1)
+	}
+	return nil, nil // unreachable
+}
+
+// MarshalYAML mirrors MarshalJSON.
+func (j Choice) MarshalYAML() (interface{}, error) {
+	set := 0
+	if j.Variant0 != nil {
+		set++
+	}
+	if j.Variant1 != nil {
+		set++
+	}
+	if set != 1 {
+		return nil, fmt.Errorf("Choice: exactly one variant must be set, got %d", set)
+	}
+	if j.Variant0 != nil {
+		return j.Variant0, nil
+	}
+	if j.Variant1 != nil {
+		return j.Variant1, nil
+	}
+	return nil, nil // unreachable
+}
+
+// UnmarshalJSON implements json.Unmarshaler. With no natural
+// discriminator we try each variant in turn after a per-variant shape check;
+// success requires exactly one variant to unmarshal without error.
+func (j *Choice) UnmarshalJSON(value []byte) error {
+	// Reset to zero value so reusing the same holder across multiple
+	// Unmarshal calls doesn't leave a previous winner set alongside the
+	// new one (which would violate the one-variant-set invariant and
+	// break the corresponding Marshal).
+	*j = Choice{}
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal Choice: %w", err)
+	}
+	matched := 0
+	var lastErr error
+
+	// Variant 0: ChoiceVariant0
+	{
+		shapeOK := true
+		if shapeOK {
+			var v ChoiceVariant0
+			if err := json.Unmarshal(value, &v); err == nil {
+				j.Variant0 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	// Variant 1: ChoiceVariant1
+	{
+		shapeOK := true
+		if shapeOK {
+			var v ChoiceVariant1
+			if err := json.Unmarshal(value, &v); err == nil {
+				j.Variant1 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	if matched == 0 {
+		if lastErr != nil {
+			return fmt.Errorf("Choice: no oneOf variant matched: %w", lastErr)
+		}
+		return fmt.Errorf("Choice: no oneOf variant matched")
+	}
+	if matched > 1 {
+		j.Variant0 = nil
+		j.Variant1 = nil
+		return fmt.Errorf("Choice: ambiguous input — %d oneOf variants matched", matched)
+	}
+	return nil
+}
+
+// UnmarshalYAML mirrors UnmarshalJSON: try each variant after a
+// shape check; exactly one must unmarshal without error.
+// success requires exactly one variant to unmarshal without error.
+func (j *Choice) UnmarshalYAML(value *yaml.Node) error {
+	// Reset to zero value so reusing the same holder across multiple
+	// Unmarshal calls doesn't leave a previous winner set alongside the
+	// new one (which would violate the one-variant-set invariant and
+	// break the corresponding Marshal).
+	*j = Choice{}
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal Choice: %w", err)
+	}
+	matched := 0
+	var lastErr error
+
+	// Variant 0: ChoiceVariant0
+	{
+		shapeOK := true
+		if shapeOK {
+			var v ChoiceVariant0
+			if err := value.Decode(&v); err == nil {
+				j.Variant0 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	// Variant 1: ChoiceVariant1
+	{
+		shapeOK := true
+		if shapeOK {
+			var v ChoiceVariant1
+			if err := value.Decode(&v); err == nil {
+				j.Variant1 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	if matched == 0 {
+		if lastErr != nil {
+			return fmt.Errorf("Choice: no oneOf variant matched: %w", lastErr)
+		}
+		return fmt.Errorf("Choice: no oneOf variant matched")
+	}
+	if matched > 1 {
+		j.Variant0 = nil
+		j.Variant1 = nil
+		return fmt.Errorf("Choice: ambiguous input — %d oneOf variants matched", matched)
+	}
+	return nil
 }
 
 type NestedRefsArray struct {

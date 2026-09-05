@@ -249,6 +249,48 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 	return defName, fileName, nil
 }
 
+// generateOneOfComposition routes a `oneOf` to whichever specialised generator
+// covers its shape, reporting whether it handled the schema at all. Collecting
+// the strategies here keeps generateDeclaredType to a single branch for the
+// family, and gives each new strategy one place to slot into.
+//
+// OnlyModels declines every strategy: each emits a type whose entire API is its
+// generated Unmarshal/Marshal methods — the primitive wrapper has only an
+// unexported `value` field, and the holders only variant pointers — so without
+// those methods the result is unusable. The regular generation path produces
+// something consumers can at least construct.
+func (g *schemaGenerator) generateOneOfComposition(
+	t *schemas.Type,
+	scope nameScope,
+) (codegen.Type, bool, error) {
+	if g.config.OnlyModels {
+		return nil, false, nil
+	}
+
+	if isPrimitiveOneOf(t) {
+		return g.generateOneOfPrimitive(t, scope), true, nil
+	}
+
+	if len(t.OneOf) > 1 {
+		// A natural discriminator gives a direct dispatch; otherwise fall
+		// back to try-each, which checks each variant and accepts only when
+		// exactly one succeeds.
+		if d := g.detectDiscriminator(t.OneOf); d.ok {
+			dt, err := g.generateOneOfDiscriminator(t, scope, d.prop, d.values)
+
+			return dt, true, err
+		}
+
+		if isTryEachCandidate(t.OneOf) {
+			dt, err := g.generateOneOfTryEach(t, scope)
+
+			return dt, true, err
+		}
+	}
+
+	return nil, false, nil
+}
+
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
@@ -288,23 +330,8 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateEnumType(t, scope)
 	}
 
-	// OnlyModels skips emitting Unmarshal/Marshal helpers, but the primitive
-	// `oneOf` wrapper has no other API surface (only an unexported `value`
-	// field), so without those methods consumers can't construct, inspect,
-	// or unmarshal the type. Fall back to the regular generation path in
-	// that mode so the resulting type stays usable.
-	if isPrimitiveOneOf(t) && !g.config.OnlyModels {
-		return g.generateOneOfPrimitive(t, scope)
-	}
-
-	// Object oneOf with a natural discriminator: emit the holder + variant
-	// types and a dispatch UnmarshalJSON/MarshalJSON pair. OnlyModels falls
-	// back to the regular path for the same reason as primitive oneOf —
-	// without the methods the holder is unusable.
-	if len(t.OneOf) > 1 && !g.config.OnlyModels {
-		if d := g.detectDiscriminator(t.OneOf); d.ok {
-			return g.generateOneOfDiscriminator(t, scope, d.prop, d.values)
-		}
+	if dt, handled, err := g.generateOneOfComposition(t, scope); handled {
+		return dt, err
 	}
 
 	name := g.output.uniqueTypeName(scope)
@@ -1424,10 +1451,11 @@ func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
 		return true
 	}
 
-	// A discriminated object `oneOf` emits a holder plus per-variant types;
-	// it likewise carries no top-level `type`.
+	// A discriminated object `oneOf`, or one handled by the try-each
+	// fallback, emits a holder plus per-variant types; both likewise carry
+	// no top-level `type`.
 	if len(t.OneOf) > 1 {
-		return g.detectDiscriminator(t.OneOf).ok
+		return g.detectDiscriminator(t.OneOf).ok || isTryEachCandidate(t.OneOf)
 	}
 
 	return false
