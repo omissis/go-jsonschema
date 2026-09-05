@@ -19,7 +19,7 @@ type MinLength struct {
 func (j *MinLength) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MinLength: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in MinLength: required")
@@ -27,7 +27,7 @@ func (j *MinLength) UnmarshalJSON(value []byte) error {
 	type Plain MinLength
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MinLength: %w", err)
 	}
 	if plain.MyNullableString != nil && utf8.RuneCountInString(string(*plain.MyNullableString)) < 10 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNullableString", 10)
@@ -43,7 +43,7 @@ func (j *MinLength) UnmarshalJSON(value []byte) error {
 func (j *MinLength) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MinLength: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in MinLength: required")
@@ -51,7 +51,7 @@ func (j *MinLength) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MinLength
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MinLength: %w", err)
 	}
 	if plain.MyNullableString != nil && utf8.RuneCountInString(string(*plain.MyNullableString)) < 10 {
 		return fmt.Errorf("field %s length: must be >= %d", "myNullableString", 10)
