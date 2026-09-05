@@ -252,6 +252,25 @@ func (value *Type) ConvertAllRefs(absolutePath string) error {
 
 // UnmarshalJSON accepts booleans as schemas where `true` is equivalent to `{}`
 // and `false` is equivalent to `{"not": {}}`.
+// isJSONArray reports whether raw is a JSON array, ignoring leading
+// whitespace. Used to tell draft-07 `dependencies` property dependencies
+// (arrays of property names) from schema dependencies without relying on a
+// speculative decode.
+func isJSONArray(raw []byte) bool {
+	for _, b := range raw {
+		switch b {
+		case ' ', '\t', '\r', '\n':
+			continue
+		case '[':
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
 func (value *Type) UnmarshalJSON(raw []byte) error {
 	var b bool
 	if err := json.Unmarshal(raw, &b); err == nil {
@@ -272,19 +291,76 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 	// Take care of legacy fields from older RFC versions.
 	legacyObj := struct {
 		// RFC draft-wright-json-schema-validation-00, section 5.
-		Dependencies map[string]*Type `json:"dependencies,omitempty"`
-		Definitions  Definitions      `json:"definitions,omitempty"` // Section 5.26.
+		// draft-07 `dependencies` is dual-form: each value is either a
+		// schema (a schema dependency) or an array of property names (a
+		// property dependency, split out as `dependentRequired` in
+		// 2019-09). Decode lazily so the array form does not fail the
+		// whole parse.
+		Dependencies map[string]json.RawMessage `json:"dependencies,omitempty"`
+		Definitions  Definitions                `json:"definitions,omitempty"` // Section 5.26.
 	}{}
 	if err := json.Unmarshal(raw, &legacyObj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
+	}
+
+	var (
+		legacyDependentSchemas  map[string]*Type
+		legacyDependentRequired map[string][]string
+	)
+
+	for name, rawDep := range legacyObj.Dependencies {
+		// Dispatch on the JSON shape rather than on whether a []string
+		// decode happens to succeed: `null` unmarshals into []string
+		// without error (yielding nil), and `[null]` yields [""], so a
+		// try-and-fall-back approach would misclassify both instead of
+		// leaving them to the schema branch / rejecting them.
+		if isJSONArray(rawDep) {
+			var members []*string
+			if err := json.Unmarshal(rawDep, &members); err != nil {
+				return fmt.Errorf("failed to unmarshal dependencies[%q]: %w", name, err)
+			}
+
+			required := make([]string, 0, len(members))
+
+			for i, member := range members {
+				if member == nil {
+					return fmt.Errorf("dependencies[%q][%d]: null is not a valid property name", name, i)
+				}
+
+				required = append(required, *member)
+			}
+
+			if legacyDependentRequired == nil {
+				legacyDependentRequired = map[string][]string{}
+			}
+
+			legacyDependentRequired[name] = required
+
+			continue
+		}
+
+		var dep Type
+		if err := json.Unmarshal(rawDep, &dep); err != nil {
+			return fmt.Errorf("failed to unmarshal dependencies[%q]: %w", name, err)
+		}
+
+		if legacyDependentSchemas == nil {
+			legacyDependentSchemas = map[string]*Type{}
+		}
+
+		legacyDependentSchemas[name] = &dep
 	}
 
 	if legacyObj.Definitions != nil && obj.Definitions == nil {
 		obj.Definitions = legacyObj.Definitions
 	}
 
-	if legacyObj.Dependencies != nil && obj.DependentSchemas == nil {
-		obj.DependentSchemas = legacyObj.Dependencies
+	if legacyDependentSchemas != nil && obj.DependentSchemas == nil {
+		obj.DependentSchemas = legacyDependentSchemas
+	}
+
+	if legacyDependentRequired != nil && obj.DependentRequired == nil {
+		obj.DependentRequired = legacyDependentRequired
 	}
 
 	if len(obj.Type) == 0 && (len(obj.Properties) > 0 || obj.AdditionalProperties != nil) {
