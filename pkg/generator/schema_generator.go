@@ -570,6 +570,32 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 	}
 }
 
+// itemsSchema resolves the element schema for an array, covering both draft-07
+// forms of `items`. The single-schema form is returned as-is.
+//
+// For the tuple form, a one-element tuple — the common "a tuple of exactly one"
+// idiom, usually paired with minItems/maxItems 1 — maps cleanly onto that
+// element's type, so the array is generated as a properly typed slice. A
+// heterogeneous tuple has no faithful Go slice representation, so it warns and
+// returns nil, leaving the caller to fall back to an untyped array. Positional
+// types and `additionalItems` are not otherwise enforced.
+func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if len(t.TupleItems) == 0 {
+		return t.Items
+	}
+
+	if len(t.TupleItems) == 1 {
+		return t.TupleItems[0]
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a %d-element tuple for items; positional types are not modelled and it will be represented as an untyped array",
+		scope, len(t.TupleItems),
+	))
+
+	return nil
+}
+
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if ext := t.GoJSONSchemaExtension; ext != nil {
 		for _, pkg := range ext.Imports {
@@ -593,11 +619,12 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 	switch typeName {
 	case schemas.TypeNameArray:
-		if t.Items == nil {
+		items := g.itemsSchema(t, scope)
+		if items == nil {
 			return arrayTypeVal, nil
 		}
 
-		elemType, err := g.generateType(t.Items, g.singularScope(scope))
+		elemType, err := g.generateType(items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -1194,10 +1221,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type = emptyInterfaceTypeVal
 
-			if t.Items != nil {
+			if items := g.itemsSchema(t, scope); items != nil {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
+				theType, err = g.generateTypeInline(items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
