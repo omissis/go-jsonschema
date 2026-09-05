@@ -36,7 +36,7 @@ type Restricted struct {
 func (j *Restricted) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Restricted: %w", err)
 	}
 	if _, ok := raw["i16"]; raw != nil && !ok {
 		return fmt.Errorf("field i16 in Restricted: required")
@@ -65,7 +65,7 @@ func (j *Restricted) UnmarshalJSON(value []byte) error {
 	type Plain Restricted
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Restricted: %w", err)
 	}
 	if 32766 < plain.I16 {
 		return fmt.Errorf("field %s: must be <= %v", "i16", 32766)
@@ -114,7 +114,7 @@ func (j *Restricted) UnmarshalJSON(value []byte) error {
 func (j *Restricted) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Restricted: %w", err)
 	}
 	if _, ok := raw["i16"]; raw != nil && !ok {
 		return fmt.Errorf("field i16 in Restricted: required")
@@ -143,7 +143,7 @@ func (j *Restricted) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Restricted
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Restricted: %w", err)
 	}
 	if 32766 < plain.I16 {
 		return fmt.Errorf("field %s: must be <= %v", "i16", 32766)
