@@ -27,7 +27,7 @@ type RequiredNullableMyNullableObject struct {
 func (j *RequiredNullableMyNullableObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredNullableMyNullableObject: %w", err)
 	}
 	if _, ok := raw["myNestedProp"]; raw != nil && !ok {
 		return fmt.Errorf("field myNestedProp in RequiredNullableMyNullableObject: required")
@@ -45,7 +45,7 @@ func (j *RequiredNullableMyNullableObject) UnmarshalJSON(value []byte) error {
 func (j *RequiredNullableMyNullableObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredNullableMyNullableObject: %w", err)
 	}
 	if _, ok := raw["myNestedProp"]; raw != nil && !ok {
 		return fmt.Errorf("field myNestedProp in RequiredNullableMyNullableObject: required")
@@ -67,7 +67,7 @@ type RequiredNullableMyNullableStringArray []string
 func (j *RequiredNullable) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredNullable: %w", err)
 	}
 	if _, ok := raw["myNullableObject"]; raw != nil && !ok {
 		return fmt.Errorf("field myNullableObject in RequiredNullable: required")
@@ -91,7 +91,7 @@ func (j *RequiredNullable) UnmarshalJSON(value []byte) error {
 func (j *RequiredNullable) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredNullable: %w", err)
 	}
 	if _, ok := raw["myNullableObject"]; raw != nil && !ok {
 		return fmt.Errorf("field myNullableObject in RequiredNullable: required")

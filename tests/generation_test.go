@@ -247,6 +247,64 @@ func TestRegressions(t *testing.T) {
 	testExamples(t, basicConfig, "./data/regressions")
 }
 
+func TestFormatValidation(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{Enabled: true}
+
+	testExamples(t, cfg, "./data/formatValidation")
+}
+
+func TestFormatValidationAllowList(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.FormatValidation = generator.FormatValidationConfig{
+		Enabled: true,
+		// Mixed-case and surrounding whitespace verify the AllowList
+		// normalization: shouldValidate trims and lowercases entries so
+		// these match the canonical "uuid" / "email" keywords.
+		AllowList: []string{"UUID", " email "},
+	}
+
+	testExamples(t, cfg, "./data/formatValidationAllowList")
+}
+
+func TestStrictAdditionalPropertiesRespectSchema(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+
+	testExamples(t, cfg, "./data/strictAdditionalProperties")
+}
+
+func TestStrictAdditionalPropertiesAlways(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesStrict
+
+	testExamples(t, cfg, "./data/strictAdditionalPropertiesAlways")
+}
+
+func TestStrictAdditionalPropertiesRejectsUnknownMode(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesMode("rstrict") // typo
+
+	_, err := generator.New(cfg)
+	if err == nil {
+		t.Fatal("expected New to reject unknown StrictAdditionalProperties mode, got nil")
+	}
+
+	if !errors.Is(err, generator.ErrInvalidStrictAdditionalPropertiesMode) {
+		t.Errorf("expected ErrInvalidStrictAdditionalPropertiesMode, got %v", err)
+	}
+}
+
 func TestExtraImportsYAMLAdditionalProperties(t *testing.T) {
 	t.Parallel()
 
