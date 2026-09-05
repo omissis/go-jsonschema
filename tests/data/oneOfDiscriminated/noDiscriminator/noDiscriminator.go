@@ -8,7 +8,266 @@ import yaml "gopkg.in/yaml.v3"
 
 type NoDiscriminator struct {
 	// Value corresponds to the JSON schema field "value".
-	Value interface{} `json:"value" yaml:"value" mapstructure:"value"`
+	Value NoDiscriminatorValue `json:"value" yaml:"value" mapstructure:"value"`
+}
+
+type NoDiscriminatorValue struct {
+	Variant0 *NoDiscriminatorValueVariant0 `json:"-" yaml:"-"`
+
+	Variant1 *NoDiscriminatorValueVariant1 `json:"-" yaml:"-"`
+}
+
+type NoDiscriminatorValueVariant0 struct {
+	// A corresponds to the JSON schema field "a".
+	A string `json:"a" yaml:"a" mapstructure:"a"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *NoDiscriminatorValueVariant0) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw NoDiscriminatorValueVariant0: %w", err)
+	}
+	if _, ok := raw["a"]; raw != nil && !ok {
+		return fmt.Errorf("field a in NoDiscriminatorValueVariant0: required")
+	}
+	type Plain NoDiscriminatorValueVariant0
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant0: %w", err)
+	}
+	*j = NoDiscriminatorValueVariant0(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NoDiscriminatorValueVariant0) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NoDiscriminatorValueVariant0: %w", err)
+	}
+	if _, ok := raw["a"]; raw != nil && !ok {
+		return fmt.Errorf("field a in NoDiscriminatorValueVariant0: required")
+	}
+	type Plain NoDiscriminatorValueVariant0
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant0: %w", err)
+	}
+	*j = NoDiscriminatorValueVariant0(plain)
+	return nil
+}
+
+type NoDiscriminatorValueVariant1 struct {
+	// B corresponds to the JSON schema field "b".
+	B string `json:"b" yaml:"b" mapstructure:"b"`
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NoDiscriminatorValueVariant1) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NoDiscriminatorValueVariant1: %w", err)
+	}
+	if _, ok := raw["b"]; raw != nil && !ok {
+		return fmt.Errorf("field b in NoDiscriminatorValueVariant1: required")
+	}
+	type Plain NoDiscriminatorValueVariant1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant1: %w", err)
+	}
+	*j = NoDiscriminatorValueVariant1(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *NoDiscriminatorValueVariant1) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw NoDiscriminatorValueVariant1: %w", err)
+	}
+	if _, ok := raw["b"]; raw != nil && !ok {
+		return fmt.Errorf("field b in NoDiscriminatorValueVariant1: required")
+	}
+	type Plain NoDiscriminatorValueVariant1
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant1: %w", err)
+	}
+	*j = NoDiscriminatorValueVariant1(plain)
+	return nil
+}
+
+// MarshalJSON implements json.Marshaler. Exactly one variant
+// pointer must be non-nil; otherwise marshaling errors.
+func (j NoDiscriminatorValue) MarshalJSON() ([]byte, error) {
+	set := 0
+	if j.Variant0 != nil {
+		set++
+	}
+	if j.Variant1 != nil {
+		set++
+	}
+	if set != 1 {
+		return nil, fmt.Errorf("NoDiscriminatorValue: exactly one variant must be set, got %d", set)
+	}
+	if j.Variant0 != nil {
+		return json.Marshal(j.Variant0)
+	}
+	if j.Variant1 != nil {
+		return json.Marshal(j.Variant1)
+	}
+	return nil, nil // unreachable
+}
+
+// MarshalYAML mirrors MarshalJSON.
+func (j NoDiscriminatorValue) MarshalYAML() (interface{}, error) {
+	set := 0
+	if j.Variant0 != nil {
+		set++
+	}
+	if j.Variant1 != nil {
+		set++
+	}
+	if set != 1 {
+		return nil, fmt.Errorf("NoDiscriminatorValue: exactly one variant must be set, got %d", set)
+	}
+	if j.Variant0 != nil {
+		return j.Variant0, nil
+	}
+	if j.Variant1 != nil {
+		return j.Variant1, nil
+	}
+	return nil, nil // unreachable
+}
+
+// UnmarshalJSON implements json.Unmarshaler. With no natural
+// discriminator we try each variant in turn after a per-variant shape check;
+// success requires exactly one variant to unmarshal without error.
+func (j *NoDiscriminatorValue) UnmarshalJSON(value []byte) error {
+	// Reset to zero value so reusing the same holder across multiple
+	// Unmarshal calls doesn't leave a previous winner set alongside the
+	// new one (which would violate the one-variant-set invariant and
+	// break the corresponding Marshal).
+	*j = NoDiscriminatorValue{}
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValue: %w", err)
+	}
+	matched := 0
+	var lastErr error
+
+	// Variant 0: NoDiscriminatorValueVariant0
+	{
+		shapeOK := true
+		if _, ok := raw["a"]; !ok {
+			shapeOK = false
+		}
+		if shapeOK {
+			var v NoDiscriminatorValueVariant0
+			if err := json.Unmarshal(value, &v); err == nil {
+				j.Variant0 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	// Variant 1: NoDiscriminatorValueVariant1
+	{
+		shapeOK := true
+		if _, ok := raw["b"]; !ok {
+			shapeOK = false
+		}
+		if shapeOK {
+			var v NoDiscriminatorValueVariant1
+			if err := json.Unmarshal(value, &v); err == nil {
+				j.Variant1 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	if matched == 0 {
+		if lastErr != nil {
+			return fmt.Errorf("NoDiscriminatorValue: no oneOf variant matched: %w", lastErr)
+		}
+		return fmt.Errorf("NoDiscriminatorValue: no oneOf variant matched")
+	}
+	if matched > 1 {
+		j.Variant0 = nil
+		j.Variant1 = nil
+		return fmt.Errorf("NoDiscriminatorValue: ambiguous input — %d oneOf variants matched", matched)
+	}
+	return nil
+}
+
+// UnmarshalYAML mirrors UnmarshalJSON: try each variant after a
+// shape check; exactly one must unmarshal without error.
+// success requires exactly one variant to unmarshal without error.
+func (j *NoDiscriminatorValue) UnmarshalYAML(value *yaml.Node) error {
+	// Reset to zero value so reusing the same holder across multiple
+	// Unmarshal calls doesn't leave a previous winner set alongside the
+	// new one (which would violate the one-variant-set invariant and
+	// break the corresponding Marshal).
+	*j = NoDiscriminatorValue{}
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValue: %w", err)
+	}
+	matched := 0
+	var lastErr error
+
+	// Variant 0: NoDiscriminatorValueVariant0
+	{
+		shapeOK := true
+		if _, ok := raw["a"]; !ok {
+			shapeOK = false
+		}
+		if shapeOK {
+			var v NoDiscriminatorValueVariant0
+			if err := value.Decode(&v); err == nil {
+				j.Variant0 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	// Variant 1: NoDiscriminatorValueVariant1
+	{
+		shapeOK := true
+		if _, ok := raw["b"]; !ok {
+			shapeOK = false
+		}
+		if shapeOK {
+			var v NoDiscriminatorValueVariant1
+			if err := value.Decode(&v); err == nil {
+				j.Variant1 = &v
+				matched++
+			} else {
+				lastErr = err
+			}
+		}
+	}
+
+	if matched == 0 {
+		if lastErr != nil {
+			return fmt.Errorf("NoDiscriminatorValue: no oneOf variant matched: %w", lastErr)
+		}
+		return fmt.Errorf("NoDiscriminatorValue: no oneOf variant matched")
+	}
+	if matched > 1 {
+		j.Variant0 = nil
+		j.Variant1 = nil
+		return fmt.Errorf("NoDiscriminatorValue: ambiguous input — %d oneOf variants matched", matched)
+	}
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
