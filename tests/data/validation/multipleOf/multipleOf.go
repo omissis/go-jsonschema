@@ -25,7 +25,7 @@ type MultipleOf struct {
 func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleOf: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in MultipleOf: required")
@@ -36,7 +36,7 @@ func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 	type Plain MultipleOf
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleOf: %w", err)
 	}
 	if plain.MyInteger%2 != 0 {
 		return fmt.Errorf("field %s: must be a multiple of %v", "myInteger", 2.000000)
@@ -64,7 +64,7 @@ func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 func (j *MultipleOf) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleOf: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in MultipleOf: required")
@@ -75,7 +75,7 @@ func (j *MultipleOf) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MultipleOf
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleOf: %w", err)
 	}
 	if plain.MyInteger%2 != 0 {
 		return fmt.Errorf("field %s: must be a multiple of %v", "myInteger", 2.000000)

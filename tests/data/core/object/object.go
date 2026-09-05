@@ -20,7 +20,7 @@ type ObjectMyObject struct {
 func (j *ObjectMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ObjectMyObject: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in ObjectMyObject: required")
@@ -28,7 +28,7 @@ func (j *ObjectMyObject) UnmarshalJSON(value []byte) error {
 	type Plain ObjectMyObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectMyObject: %w", err)
 	}
 	*j = ObjectMyObject(plain)
 	return nil
@@ -38,7 +38,7 @@ func (j *ObjectMyObject) UnmarshalJSON(value []byte) error {
 func (j *ObjectMyObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ObjectMyObject: %w", err)
 	}
 	if _, ok := raw["myString"]; raw != nil && !ok {
 		return fmt.Errorf("field myString in ObjectMyObject: required")
@@ -46,7 +46,7 @@ func (j *ObjectMyObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ObjectMyObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectMyObject: %w", err)
 	}
 	*j = ObjectMyObject(plain)
 	return nil

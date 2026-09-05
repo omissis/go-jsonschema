@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/withConstraint",
+  "type": "object",
+  "properties": {
+    "value": {
+      "oneOf": [
+        { "type": "string", "format": "uuid" },
+        { "type": "boolean" }
+      ]
+    }
+  },
+  "required": ["value"]
+}
