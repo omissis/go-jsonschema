@@ -23,7 +23,7 @@ type IntegerDefaultNullableCount *int
 func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerDefault: %w", err)
 	}
 	if _, ok := raw["count"]; raw != nil && !ok {
 		return fmt.Errorf("field count in IntegerDefault: required")
@@ -58,7 +58,7 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerDefault: %w", err)
 	}
 	if _, ok := raw["count"]; raw != nil && !ok {
 		return fmt.Errorf("field count in IntegerDefault: required")

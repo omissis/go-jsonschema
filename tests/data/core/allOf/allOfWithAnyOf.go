@@ -70,7 +70,7 @@ func (j *Agreement_1) UnmarshalYAML(value *yaml.Node) error {
 func (j *Agreement) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Agreement: %w", err)
 	}
 	var agreement_0 Agreement_0
 	var agreement_1 Agreement_1
@@ -97,7 +97,7 @@ func (j *Agreement) UnmarshalJSON(value []byte) error {
 func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Agreement: %w", err)
 	}
 	var agreement_0 Agreement_0
 	var agreement_1 Agreement_1

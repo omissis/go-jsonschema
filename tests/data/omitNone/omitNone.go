@@ -46,7 +46,7 @@ type OmitNoneMyObjectArrayElem map[string]interface{}
 func (j *OmitNone) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw OmitNone: %w", err)
 	}
 	type Plain OmitNone
 	var plain Plain
@@ -69,7 +69,7 @@ func (j *OmitNone) UnmarshalJSON(value []byte) error {
 func (j *OmitNone) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw OmitNone: %w", err)
 	}
 	type Plain OmitNone
 	var plain Plain

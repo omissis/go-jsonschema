@@ -24,7 +24,7 @@ type ExclusiveMinimum struct {
 func (j *ExclusiveMinimum) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ExclusiveMinimum: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in ExclusiveMinimum: required")
@@ -57,7 +57,7 @@ func (j *ExclusiveMinimum) UnmarshalJSON(value []byte) error {
 func (j *ExclusiveMinimum) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ExclusiveMinimum: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in ExclusiveMinimum: required")

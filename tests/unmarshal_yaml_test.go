@@ -8,8 +8,44 @@ import (
 
 	yamlv3 "gopkg.in/yaml.v3"
 
+	testStringAddl "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
 )
+
+// TestYamlAdditionalPropertiesIsCaseSensitive pins the pruning rule used when
+// filling AdditionalProperties for YAML.
+//
+// yaml.v3 binds keys to fields case-SENSITIVELY, unlike encoding/json. So given
+// a declared `name`, the key `Name` is left unbound by the decoder and is a
+// genuine additional property. The generated UnmarshalYAML must therefore prune
+// `raw` by exact match; pruning case-insensitively (as the JSON path correctly
+// does) would silently swallow `Name` instead of surfacing it.
+func TestYamlAdditionalPropertiesIsCaseSensitive(t *testing.T) {
+	t.Parallel()
+
+	var v testStringAddl.StringAdditionalProperties
+
+	if err := yamlv3.Unmarshal([]byte("name: bound\nName: extra\n"), &v); err != nil {
+		t.Fatal(err)
+	}
+
+	if v.Name == nil || *v.Name != "bound" {
+		t.Fatalf("declared field `name` should bind exactly; got %v", v.Name)
+	}
+
+	got, ok := v.AdditionalProperties["Name"]
+	if !ok {
+		t.Fatalf("case-variant key `Name` should survive as an additional property, got %#v", v.AdditionalProperties)
+	}
+
+	if got != "extra" {
+		t.Fatalf("AdditionalProperties[\"Name\"] = %q, want %q", got, "extra")
+	}
+
+	if _, leaked := v.AdditionalProperties["name"]; leaked {
+		t.Fatalf("declared key `name` should have been pruned, got %#v", v.AdditionalProperties)
+	}
+}
 
 func TestYamlV3Unmarshal(t *testing.T) {
 	t.Parallel()
