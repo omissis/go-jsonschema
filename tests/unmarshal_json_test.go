@@ -21,8 +21,11 @@ import (
 	testFormatURIRef "github.com/atombender/go-jsonschema/tests/data/formatValidation/uriReference"
 	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
 	testOneOfDiscAnimal "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/animal"
+	testOneOfArrayVariants "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/arrayVariants"
+	testOneOfNoDisc "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/noDiscriminator"
 	testOneOfDiscNumeric "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/numericKind"
 	testOneOfRefDisc "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/refDiscriminator"
+	testOneOfStrictShape "github.com/atombender/go-jsonschema/tests/data/oneOfDiscriminated/strictShape"
 	testOneOfInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
 	testOneOfNumStringBool "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
 	testOneOfWithNull "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withNull"
@@ -1079,6 +1082,116 @@ func TestJsonUnmarshalOneOfDiscriminated(t *testing.T) {
 	})
 }
 
+// TestJsonUnmarshalOneOfTryEach covers Phase 6: oneOf without a natural
+// discriminator falls back to per-variant try-each with optional
+// shape-compatibility filtering. Goldens cover code shape; these cases
+// cover runtime dispatch correctness.
+func TestJsonUnmarshalOneOfTryEach(t *testing.T) {
+	t.Parallel()
+
+	t.Run("noDiscriminator: variant A selected by required field 'a'", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfNoDisc.NoDiscriminator
+
+		require.NoError(t, json.Unmarshal([]byte(`{"value":{"a":"hello"}}`), &v))
+		require.NotNil(t, v.Value.Variant0)
+		assert.Nil(t, v.Value.Variant1)
+		assert.Equal(t, "hello", v.Value.Variant0.A)
+	})
+
+	t.Run("noDiscriminator: variant B selected by required field 'b'", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfNoDisc.NoDiscriminator
+
+		require.NoError(t, json.Unmarshal([]byte(`{"value":{"b":"world"}}`), &v))
+		require.NotNil(t, v.Value.Variant1)
+		assert.Nil(t, v.Value.Variant0)
+		assert.Equal(t, "world", v.Value.Variant1.B)
+	})
+
+	t.Run("noDiscriminator: input matching no variant rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfNoDisc.NoDiscriminator
+
+		err := json.Unmarshal([]byte(`{"value":{"c":"orphan"}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no oneOf variant matched")
+	})
+
+	t.Run("noDiscriminator: ambiguous input matching both variants rejected", func(t *testing.T) {
+		t.Parallel()
+
+		// Both `a` and `b` present → both variants unmarshal successfully
+		// (each variant requires only one field, the other is treated as
+		// extra and allowed since AdditionalProperties default is true).
+		var v testOneOfNoDisc.NoDiscriminator
+
+		err := json.Unmarshal([]byte(`{"value":{"a":"x","b":"y"}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ambiguous")
+	})
+
+	t.Run("noDiscriminator: round-trip preserves variant", func(t *testing.T) {
+		t.Parallel()
+
+		input := []byte(`{"value":{"a":"persisted"}}`)
+
+		var v testOneOfNoDisc.NoDiscriminator
+
+		require.NoError(t, json.Unmarshal(input, &v))
+
+		out, err := json.Marshal(&v)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(input), string(out))
+	})
+
+	t.Run("strictShape: shape check eliminates variant B when 'age' present", func(t *testing.T) {
+		t.Parallel()
+
+		// `age` is in variant A's properties only; with additionalProperties:false
+		// on both variants, variant B's shape check fails.
+		var v testOneOfStrictShape.StrictShape
+
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"value":{"name":"Alice","age":30}}`),
+			&v,
+		))
+		require.NotNil(t, v.Value.Variant0)
+		assert.Nil(t, v.Value.Variant1)
+		assert.Equal(t, "Alice", v.Value.Variant0.Name)
+	})
+
+	t.Run("strictShape: shape check eliminates variant A when 'label' present", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfStrictShape.StrictShape
+
+		require.NoError(t, json.Unmarshal(
+			[]byte(`{"value":{"name":"Bob","label":"admin"}}`),
+			&v,
+		))
+		require.NotNil(t, v.Value.Variant1)
+		assert.Nil(t, v.Value.Variant0)
+		require.NotNil(t, v.Value.Variant1.Label)
+		assert.Equal(t, "admin", *v.Value.Variant1.Label)
+	})
+
+	t.Run("strictShape: input matching only common 'name' is ambiguous", func(t *testing.T) {
+		t.Parallel()
+
+		// Without a discriminator and without distinguishing keys, both
+		// strict variants accept {"name":"x"} → ambiguous.
+		var v testOneOfStrictShape.StrictShape
+
+		err := json.Unmarshal([]byte(`{"value":{"name":"x"}}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ambiguous")
+	})
+}
+
 func formatGopkgYAMLv3(v test.GopkgYAMLv3) string {
 	return fmt.Sprintf(
 		"GopkgYAMLv3{MyString: %s, MyNumber: %f, MyInteger: %d, MyBoolean: %t, MyNull: %v, MyEnum: %v}",
@@ -1088,4 +1201,83 @@ func formatGopkgYAMLv3(v test.GopkgYAMLv3) string {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+// TestJsonUnmarshalOneOfTryEachArrayVariants covers the try-each fallback in its
+// array form: a `oneOf` whose variants are all arrays, dispatched on the key-set
+// of their ELEMENTS rather than of the value itself.
+//
+// This is the shape CycloneDX uses for `licenseChoice` — "Multiple licenses"
+// (elements requiring `license`) versus "SPDX License Expression" (a tuple of
+// exactly one element requiring `expression`). Before array support, the whole
+// holder degraded to []interface{} because the candidate gate accepted only
+// object variants.
+func TestJsonUnmarshalOneOfTryEachArrayVariants(t *testing.T) {
+	t.Parallel()
+
+	t.Run("dispatches on element key-set", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfArrayVariants.LicenseChoice
+
+		require.NoError(t, json.Unmarshal([]byte(`[{"license":"MIT"}]`), &v))
+		require.NotNil(t, v.Variant0, "elements keyed `license` should select the multiple-licenses variant")
+		assert.Nil(t, v.Variant1)
+		require.Len(t, *v.Variant0, 1)
+		assert.Equal(t, "MIT", (*v.Variant0)[0].License)
+
+		require.NoError(t, json.Unmarshal([]byte(`[{"expression":"MIT OR Apache-2.0"}]`), &v))
+		require.NotNil(t, v.Variant1, "elements keyed `expression` should select the SPDX variant")
+		assert.Nil(t, v.Variant0, "the losing variant must be reset between calls")
+		require.Len(t, *v.Variant1, 1)
+		assert.Equal(t, "MIT OR Apache-2.0", (*v.Variant1)[0].Expression)
+	})
+
+	t.Run("every element must satisfy the variant shape", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfArrayVariants.LicenseChoice
+
+		require.NoError(t, json.Unmarshal([]byte(`[{"license":"MIT"},{"license":"BSD-3-Clause"}]`), &v))
+		require.NotNil(t, v.Variant0)
+		assert.Len(t, *v.Variant0, 2)
+
+		// A mixed array satisfies neither variant: the shape check requires
+		// every element to match, so both are eliminated.
+		err := json.Unmarshal([]byte(`[{"license":"MIT"},{"expression":"MIT"}]`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no oneOf variant matched")
+	})
+
+	t.Run("unknown element keys match nothing", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfArrayVariants.LicenseChoice
+
+		err := json.Unmarshal([]byte(`[{"unknown":1}]`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no oneOf variant matched")
+	})
+
+	t.Run("empty array vacuously matches both and is reported ambiguous", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfArrayVariants.LicenseChoice
+
+		// Nothing constrains an empty array away from either variant, which is
+		// what `oneOf` semantics imply for it. Pinned so the behaviour is a
+		// deliberate choice rather than an accident of the shape check.
+		err := json.Unmarshal([]byte(`[]`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ambiguous input")
+	})
+
+	t.Run("non-array input is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfArrayVariants.LicenseChoice
+
+		err := json.Unmarshal([]byte(`{"license":"MIT"}`), &v)
+		require.Error(t, err)
+	})
 }
