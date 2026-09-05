@@ -24,6 +24,7 @@
 package schemas
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -39,6 +40,9 @@ var (
 	// ErrNullPropertyDependency is returned for a draft-07 property
 	// dependency whose array contains null, which cannot name a property.
 	ErrNullPropertyDependency = fmt.Errorf("null is not a valid property name")
+	// ErrNullNotASchema is returned where JSON Schema requires a schema
+	// (an object or a boolean) but the document supplies null.
+	ErrNullNotASchema = fmt.Errorf("null is not a valid schema")
 )
 
 // Schema is the root schema.
@@ -159,16 +163,21 @@ type Type struct {
 	Version string `json:"$schema,omitempty"` // Section 6.1.
 	Ref     string `json:"$ref,omitempty"`    // Section 7.
 	// RFC draft-wright-json-schema-validation-00, section 5.
-	MultipleOf           *float64         `json:"multipleOf,omitempty"`           // Section 5.1.
-	Maximum              *float64         `json:"maximum,omitempty"`              // Section 5.2.
-	ExclusiveMaximum     *any             `json:"exclusiveMaximum,omitempty"`     // Section 5.3. Changed in draft 4.
-	Minimum              *float64         `json:"minimum,omitempty"`              // Section 5.4.
-	ExclusiveMinimum     *any             `json:"exclusiveMinimum,omitempty"`     // Section 5.5. Changed in draft 4.
-	MaxLength            int              `json:"maxLength,omitempty"`            // Section 5.6.
-	MinLength            int              `json:"minLength,omitempty"`            // Section 5.7.
-	Pattern              string           `json:"pattern,omitempty"`              // Section 5.8.
-	AdditionalItems      *Type            `json:"additionalItems,omitempty"`      // Section 5.9.
-	Items                *Type            `json:"items,omitempty"`                // Section 5.9.
+	MultipleOf       *float64 `json:"multipleOf,omitempty"`       // Section 5.1.
+	Maximum          *float64 `json:"maximum,omitempty"`          // Section 5.2.
+	ExclusiveMaximum *any     `json:"exclusiveMaximum,omitempty"` // Section 5.3. Changed in draft 4.
+	Minimum          *float64 `json:"minimum,omitempty"`          // Section 5.4.
+	ExclusiveMinimum *any     `json:"exclusiveMinimum,omitempty"` // Section 5.5. Changed in draft 4.
+	MaxLength        int      `json:"maxLength,omitempty"`        // Section 5.6.
+	MinLength        int      `json:"minLength,omitempty"`        // Section 5.7.
+	Pattern          string   `json:"pattern,omitempty"`          // Section 5.8.
+	AdditionalItems  *Type    `json:"additionalItems,omitempty"`  // Section 5.9.
+	Items            *Type    `json:"items,omitempty"`            // Section 5.9.
+	// TupleItems holds the draft-07 tuple form of `items` (an array of
+	// schemas, one per position). The single-schema form stays in Items;
+	// exactly one of the two is ever populated. Not a wire field — it is
+	// filled in by Type.UnmarshalJSON.
+	TupleItems           []*Type          `json:"-"`
 	MaxItems             int              `json:"maxItems,omitempty"`             // Section 5.10.
 	MinItems             int              `json:"minItems,omitempty"`             // Section 5.11.
 	UniqueItems          bool             `json:"uniqueItems,omitempty"`          // Section 5.12.
@@ -274,6 +283,62 @@ func isJSONArray(raw []byte) bool {
 	return false
 }
 
+// splitTupleItems detects the draft-07 tuple form of `items` (an array of
+// schemas). When present it returns raw with the `items` key removed plus the
+// raw array; otherwise it returns raw unchanged and a nil tuple. The map
+// round-trip is only paid when a tuple is actually present.
+//
+// Returns (effective, tuple, error): `effective` is what should be decoded into
+// ObjectAsType, `tuple` is the raw `items` array or nil.
+func splitTupleItems(raw []byte) ([]byte, []byte, error) {
+	if !isJSONObject(raw) {
+		return raw, nil, nil
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		// Let the regular decode below report the error in context.
+		return raw, nil, nil //nolint:nilerr // deliberate: defer to the main decode
+	}
+
+	items, ok := fields["items"]
+	if !ok || !isJSONArray(items) {
+		return raw, nil, nil
+	}
+
+	delete(fields, "items")
+
+	rest, err := json.Marshal(fields)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to re-encode type without tuple items: %w", err)
+	}
+
+	return rest, items, nil
+}
+
+// isJSONNull reports whether raw is the JSON literal null, ignoring
+// surrounding whitespace.
+func isJSONNull(raw []byte) bool {
+	return string(bytes.TrimSpace(raw)) == "null"
+}
+
+// isJSONObject reports whether raw is a JSON object, ignoring leading
+// whitespace.
+func isJSONObject(raw []byte) bool {
+	for _, b := range raw {
+		switch b {
+		case ' ', '\t', '\r', '\n':
+			continue
+		case '{':
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
 func (value *Type) UnmarshalJSON(raw []byte) error {
 	var b bool
 	if err := json.Unmarshal(raw, &b); err == nil {
@@ -286,9 +351,33 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		return nil
 	}
 
+	// `items` is dual-form in draft-07: a single schema, or a tuple (array)
+	// of schemas positionally matched against the array. ObjectAsType models
+	// only the single-schema form, so lift a tuple out before decoding and
+	// stash it on TupleItems, otherwise the array fails the whole parse.
+	effectiveRaw, tupleRaw, err := splitTupleItems(raw)
+	if err != nil {
+		return err
+	}
+
 	var obj ObjectAsType
-	if err := json.Unmarshal(raw, &obj); err != nil {
+	if err := json.Unmarshal(effectiveRaw, &obj); err != nil {
 		return fmt.Errorf("failed to unmarshal type: %w", err)
+	}
+
+	if tupleRaw != nil {
+		var tuple []*Type
+		if err := json.Unmarshal(tupleRaw, &tuple); err != nil {
+			return fmt.Errorf("failed to unmarshal tuple items: %w", err)
+		}
+
+		for i, member := range tuple {
+			if member == nil {
+				return fmt.Errorf("items[%d]: %w", i, ErrNullNotASchema)
+			}
+		}
+
+		obj.TupleItems = tuple
 	}
 
 	// Take care of legacy fields from older RFC versions.
@@ -340,6 +429,14 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 			legacyDependentRequired[name] = required
 
 			continue
+		}
+
+		// Reject an explicit null before decoding: Type.UnmarshalJSON
+		// probes for a bool first, and `null` unmarshals into a bool
+		// without error (leaving false), so a null would silently become
+		// the "false schema" that rejects every instance.
+		if isJSONNull(rawDep) {
+			return fmt.Errorf("dependencies[%q]: %w", name, ErrNullNotASchema)
 		}
 
 		var dep Type
