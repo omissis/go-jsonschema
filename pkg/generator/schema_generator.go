@@ -152,15 +152,14 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	var def *schemas.Type
 
 	if defName != "" {
-		// TODO: Support nested definitions.
-		var ok bool
+		var rerr error
 
-		def, ok = schema.Definitions[defName]
-		if !ok {
-			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+		def, rerr = resolveRefPath(schema.Definitions, defName)
+		if rerr != nil {
+			return nil, fmt.Errorf("%w: %q (from ref %q)", rerr, defName, t.Ref)
 		}
 
-		defName = g.caser.Identifierize(defName)
+		defName = g.caser.Identifierize(refPathTypeName(defName))
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
