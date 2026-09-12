@@ -47,6 +47,14 @@ type Config struct {
 	DisableCustomTypesForMaps bool
 	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
 	AliasSingleAllOfAnyOfRefs bool
+	// ValidateNullTypes configures the generator to reject a property that is
+	// present with an explicit null where the schema's `type` excludes null.
+	//
+	// Off by default: telling null apart from an omitted field requires
+	// decoding the payload into a raw map first, so enabling this adds an
+	// Unmarshal method (and a second decode) to types that would otherwise
+	// carry none.
+	ValidateNullTypes bool
 }
 
 type SchemaMapping struct {
