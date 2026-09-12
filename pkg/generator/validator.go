@@ -43,6 +43,8 @@ var (
 	_ validator = new(requiredValidator)
 	_ validator = new(readOnlyValidator)
 	_ validator = new(nullTypeValidator)
+	_ validator = new(nonNullValidator)
+	_ validator = new(nonNullContainerValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
@@ -71,6 +73,70 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) error 
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+}
+
+// nonNullValidator rejects a property that is present with an explicit null
+// where the schema constrains its type to something other than null.
+//
+// This is a `type` assertion, not a `required` one. Per draft-07 §6.5.3,
+// `required` tests presence by name — `{"x": null}` satisfies it — and keywords
+// are vacuously true for instances of a type they do not target. So the null is
+// invalid only because `type` says so, and only when `type` is actually
+// declared and excludes null.
+//
+// Go cannot tell omitted from present-but-null after decoding (both leave the
+// zero value), hence the check against the raw map before unmarshalling.
+type nonNullValidator struct {
+	jsonName string
+	declName string
+}
+
+func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
+	// Deliberately not named `value`: that is the UnmarshalJSON parameter, and
+	// shadowing it here reads as a bug even though the scope is the if-statement.
+	out.Printlnf(`if fieldValue, ok := %s["%s"]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: must not be null")`, v.jsonName, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+}
+
+// nonNullContainerValidator rejects a null instance where the schema's own
+// `type` excludes null. The raw map decodes to nil for a `null` payload, which
+// is indistinguishable from an empty object after unmarshalling.
+//
+// This is the container counterpart to nonNullValidator, and likewise a `type`
+// assertion: for a null instance the object keywords (`required`,
+// `minProperties`) are vacuously true, so `type` is the only thing that can
+// reject it.
+type nonNullContainerValidator struct {
+	declName string
+}
+
+func (v *nonNullContainerValidator) generate(out *codegen.Emitter, format string) error {
+	out.Printlnf(`if %s == nil {`, varNameRawMap)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("%s: must not be null")`, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullContainerValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
