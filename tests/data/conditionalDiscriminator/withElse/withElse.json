@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/withElse",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "secondary"
+      ]
+    },
+    "weight": {
+      "type": "integer"
+    },
+    "label": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "category"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "category": {
+            "const": "primary"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "weight"
+        ]
+      },
+      "else": {
+        "required": [
+          "label"
+        ]
+      }
+    }
+  ]
+}
