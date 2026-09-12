@@ -23,7 +23,7 @@ type AllOf1ConfigurationsElem struct {
 func (j *AllOf1ConfigurationsElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOf1ConfigurationsElem: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AllOf1ConfigurationsElem: required")
@@ -44,7 +44,7 @@ func (j *AllOf1ConfigurationsElem) UnmarshalJSON(value []byte) error {
 func (j *AllOf1ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOf1ConfigurationsElem: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AllOf1ConfigurationsElem: required")
