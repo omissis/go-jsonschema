@@ -150,29 +150,115 @@ only specific validations remain to be fully implemented.
   * [ ] Object validation (§6.5)
     * [x] `required`
     * [x] `properties`
+    * [x] `additionalProperties: false` (opt-in via `Config.StrictAdditionalProperties`)
     * [ ] `patternProperties`
     * [ ] `dependencies`
     * [ ] `propertyNames`
     * [ ] `maxProperties`
     * [ ] `minProperties`
-  * [ ] Conditional subschemas (§6.6)
-    * [ ] `if`
-    * [ ] `then`
-    * [ ] `else`
+  * [x] Conditional subschemas (§6.6) — supported as `allOf` of `if[const|enum]/then[/else]` tagged-union dispatch on a single string discriminator property; the generated `Unmarshal{JSON,YAML}` peeks the discriminator and runs each branch's required-field check. Both `{const: "<V>"}` and `{enum: ["<V1>", "<V2>", …]}` forms are recognized; the if clause must contain only the single-property check (extra `required`/composition/validation keywords decline detection)
+    * [x] `if`
+    * [x] `then`
+    * [x] `else`
   * [ ] Boolean subschemas (§6.7)
     * [ ] `allOf`
     * [ ] `anyOf`
-    * [ ] `oneOf`
+    * [x] `oneOf` (primitive variants only — `string`, `number`, `boolean`, `null`; **note**: `integer`-typed variants are not currently routed through the wrapper, and object discriminated unions are pending)
     * [ ] `not`
   * [ ] Semantic formats (§7.3)
     * [x] Dates and times
-    * [ ] Email addresses
-    * [ ] Hostnames
+    * [x] Email addresses (opt-in via `Config.FormatValidation`)
+    * [x] Hostnames (opt-in via `Config.FormatValidation`)
     * [ ] IP addresses
-    * [ ] Resource identifiers
+    * [x] Resource identifiers — `uri`, `uri-reference` (opt-in via `Config.FormatValidation`)
     * [ ] URI-template
     * [ ] JSON pointers
-    * [ ] Regex
+    * [x] Regex (opt-in via `Config.FormatValidation`)
+    * [x] `uuid` (extension; opt-in via `Config.FormatValidation`)
+
+### Opt-in `format` validation
+
+Setting `Config.FormatValidation.Enabled = true` emits a runtime check on
+every `format` keyword listed below. The validator runs after the typed
+struct decode, so the field's Go type is already its target form. Optional
+pointer fields are skipped when nil, so absent values do not trigger
+validation.
+
+| `format` | Strategy | Notes |
+| --- | --- | --- |
+| `uuid` | RE2 regex against the canonical 8-4-4-4-12 hex form (case-insensitive) | Not in the JSON Schema core spec; supported as a common extension. |
+| `email` | `net/mail.ParseAddress` + reject if a display-name is present + require the parsed address to round-trip the input verbatim | Stricter than the Go stdlib default: only RFC 5321 `addr-spec` (`local@domain`) is accepted. Forms like `Alice <alice@example.com>` or `<bob@example.com>` are rejected. |
+| `uri` | `net/url.Parse` + `IsAbs()` + RFC 3986 character-class regex | Rejects whitespace, control characters, and malformed percent-encoding (`%` not followed by two hex digits). Empty strings are rejected (not absolute). |
+| `uri-reference` | `net/url.Parse` + RFC 3986 character-class regex | Same character-class check as `uri`. Empty strings, fragment-only refs (`#x`), and relative paths (`/a/b`) are accepted per RFC 3986. |
+| `hostname` | RE2 regex (RFC 1123 labels) | |
+| `regex` | `regexp.Compile` (Go's RE2 syntax) | |
+
+The validation is opt-in to preserve existing behavior. To restrict
+validation to a subset of keywords, set `Config.FormatValidation.AllowList`:
+
+```go
+cfg.FormatValidation = generator.FormatValidationConfig{
+    Enabled:   true,
+    AllowList: []string{"uuid", "email"}, // nil = all known formats
+}
+```
+
+From the CLI, use `--validate-formats`:
+
+```shell
+# Validate every supported format keyword.
+go-jsonschema --validate-formats=all -p main schema.json
+
+# Validate only specific formats.
+go-jsonschema --validate-formats=uuid,email -p main schema.json
+
+# Explicit off (same as omitting the flag).
+go-jsonschema --validate-formats=off -p main schema.json
+```
+
+Unknown format names are rejected at flag-parse time so a typo like
+`uuid,emial` fails immediately rather than silently disabling email
+validation.
+
+The `uri` / `uri-reference` validation is **best-effort, not RFC-3986-perfect** —
+no Go validator (stdlib or third-party) is — but it catches the common
+cases that bare `url.Parse` accepts (whitespace, control chars, malformed
+pct-encoding).
+
+### Opt-in `additionalProperties: false` enforcement
+
+`Config.StrictAdditionalProperties` controls whether unknown fields in JSON
+or YAML input are rejected at unmarshal time. The three modes are:
+
+| Mode | Behavior |
+| --- | --- |
+| `""` (off, default) | Silently drop unknown fields. Preserves historical behavior. |
+| `"respect-schema"` | Reject unknown fields only for objects whose schema declares `additionalProperties: false`. Other objects continue to drop unknown fields silently. |
+| `"strict"` | Reject unknown fields for every generated object type, regardless of what the schema declared. Skipped when the schema specifies a typed `additionalProperties` (a catch-all map field is generated instead). |
+
+Enforcement runs against the raw decoded map, so JSON and YAML inputs are
+checked uniformly. `patternProperties` schemas suppress enforcement with a
+warning, since the generator has no first-class support for them yet.
+
+```go
+cfg.StrictAdditionalProperties = generator.StrictAdditionalPropertiesRespectSchema
+```
+
+From the CLI, use `--strict-additional-properties`:
+
+```shell
+# Respect the schema's additionalProperties: false declarations.
+go-jsonschema --strict-additional-properties=respect-schema -p main schema.json
+
+# Reject unknown fields for every object type.
+go-jsonschema --strict-additional-properties=strict -p main schema.json
+
+# Explicit off (same as omitting the flag).
+go-jsonschema --strict-additional-properties=off -p main schema.json
+```
+
+Unknown mode names (e.g. `--strict-additional-properties=rstrict`) are
+rejected at flag-parse time so a typo cannot silently fall back to "off".
 
 ## License
 

@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumIfOverlapping",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "species": {
+      "type": "string",
+      "enum": [
+        "dog",
+        "cat",
+        "bird"
+      ]
+    },
+    "bark": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "species"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "species": {
+            "const": "dog"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "bark"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "species": {
+            "enum": [
+              "dog",
+              "cat"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "age"
+        ]
+      }
+    }
+  ]
+}

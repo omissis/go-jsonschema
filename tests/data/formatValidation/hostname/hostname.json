@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/hostname",
+  "type": "object",
+  "properties": {
+    "host": {
+      "type": "string",
+      "format": "hostname"
+    }
+  },
+  "required": [
+    "host"
+  ]
+}
