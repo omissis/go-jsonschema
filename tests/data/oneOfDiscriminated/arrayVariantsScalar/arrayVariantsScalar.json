@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/arrayVariantsScalar",
+  "type": "object",
+  "properties": {
+    "values": {
+      "$ref": "#/definitions/scalarChoice"
+    }
+  },
+  "definitions": {
+    "scalarChoice": {
+      "type": "array",
+      "description": "Arrays of scalars carry no element key-set to tell the variants apart, so try-each declines and the generic interface{} representation is used.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      ]
+    }
+  }
+}

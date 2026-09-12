@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumIfMixedWithConst",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "create",
+        "delete",
+        "update",
+        "patch"
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "create"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "payload"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "update",
+              "patch"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "id",
+          "payload"
+        ]
+      }
+    }
+  ]
+}
