@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "item": { "$ref": "#/definitions/Wrapper/items" },
+    "variant": { "$ref": "#/definitions/Choice/oneOf/1" }
+  },
+  "definitions": {
+    "Wrapper": {
+      "type": "array",
+      "items": { "type": "object", "properties": { "name": { "type": "string" } } }
+    },
+    "Choice": {
+      "oneOf": [
+        { "type": "object", "properties": { "a": { "type": "string" } } },
+        { "type": "object", "properties": { "b": { "type": "integer" } } }
+      ]
+    }
+  }
+}
