@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/numericKind",
+  "type": "object",
+  "properties": {
+    "payload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "version": { "type": "number", "const": 1 },
+            "alpha":   { "type": "string" }
+          },
+          "required": ["version", "alpha"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "version": { "type": "number", "const": 2 },
+            "beta":    { "type": "string" }
+          },
+          "required": ["version", "beta"]
+        }
+      ]
+    }
+  },
+  "required": ["payload"]
+}
