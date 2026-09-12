@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -141,15 +142,14 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	var def *schemas.Type
 
 	if defName != "" {
-		// TODO: Support nested definitions.
-		var ok bool
+		var rerr error
 
-		def, ok = schema.Definitions[defName]
-		if !ok {
-			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+		def, rerr = resolveRefPath(schema.Definitions, defName)
+		if rerr != nil {
+			return nil, fmt.Errorf("%w: %q (from ref %q)", rerr, defName, t.Ref)
 		}
 
-		defName = g.caser.Identifierize(defName)
+		defName = g.caser.Identifierize(refPathTypeName(defName))
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -288,6 +288,25 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		return g.generateEnumType(t, scope)
 	}
 
+	// OnlyModels skips emitting Unmarshal/Marshal helpers, but the primitive
+	// `oneOf` wrapper has no other API surface (only an unexported `value`
+	// field), so without those methods consumers can't construct, inspect,
+	// or unmarshal the type. Fall back to the regular generation path in
+	// that mode so the resulting type stays usable.
+	if isPrimitiveOneOf(t) && !g.config.OnlyModels {
+		return g.generateOneOfPrimitive(t, scope)
+	}
+
+	// Object oneOf with a natural discriminator: emit the holder + variant
+	// types and a dispatch UnmarshalJSON/MarshalJSON pair. OnlyModels falls
+	// back to the regular path for the same reason as primitive oneOf —
+	// without the methods the holder is unusable.
+	if len(t.OneOf) > 1 && !g.config.OnlyModels {
+		if d := g.detectDiscriminator(t.OneOf); d.ok {
+			return g.generateOneOfDiscriminator(t, scope, d.prop, d.values)
+		}
+	}
+
 	name := g.output.uniqueTypeName(scope)
 
 	if g.config.StructNameFromTitle && t.Title != "" {
@@ -334,8 +353,19 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
+		// Null checks precede the required ones: those deliberately pass for a
+		// null instance (the keyword is vacuous off-type), so the container
+		// check is what turns a null into the type error it actually is.
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, true)...)
+
 		for _, f := range tt.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
+		}
+
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, false)...)
+
+		if v := g.strictFieldsValidatorFor(t, tt, decl.Name); v != nil {
+			validators = append(validators, v)
 		}
 
 		for _, f := range tt.Fields {
@@ -396,6 +426,113 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	return &codegen.NamedType{Decl: &decl}, nil
 }
 
+// nullTypeValidators builds the opt-in `type` checks for explicit nulls. The
+// container check and the per-property checks are requested separately because
+// they bracket the required checks: the container one must run before them, the
+// property ones after.
+//
+// Returns nothing unless ValidateNullTypes is set.
+func (g *schemaGenerator) nullTypeValidators(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+	container bool,
+) []validator {
+	if !g.config.ValidateNullTypes {
+		return nil
+	}
+
+	if container {
+		if !schemaExcludesNull(t) {
+			return nil
+		}
+
+		return []validator{&nonNullContainerValidator{declName}}
+	}
+
+	var out []validator
+
+	for _, f := range tt.Fields {
+		if schemaExcludesNull(f.SchemaType) {
+			out = append(out, &nonNullValidator{f.JSONName, declName})
+		}
+	}
+
+	return out
+}
+
+// schemaExcludesNull reports whether a schema declares a `type` that does not
+// admit null, which is the only situation where an explicit null is invalid.
+//
+// A schema with no `type` constrains nothing, and a nullable union such as
+// `{"type": ["string", "null"]}` admits null deliberately; both must keep
+// accepting it.
+func schemaExcludesNull(t *schemas.Type) bool {
+	if t == nil || len(t.Type) == 0 {
+		return false
+	}
+
+	return !slices.Contains(t.Type, schemas.TypeNameNull)
+}
+
+// strictFieldsValidatorFor returns a strictFieldsValidator when the active
+// configuration calls for `additionalProperties: false` enforcement on this
+// type, or nil when no such validator should be emitted.
+//
+// Enforcement is suppressed for objects that have a typed `additionalProperties`
+// (a catch-all field is generated instead), and for objects that declare
+// `patternProperties` (which would erroneously be rejected; this is a known
+// limitation since patternProperties has no first-class generator support).
+func (g *schemaGenerator) strictFieldsValidatorFor(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+) *strictFieldsValidator {
+	schemaSaysFalse := t.AdditionalProperties != nil && t.AdditionalProperties.Not != nil
+	schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
+
+	switch g.config.StrictAdditionalProperties {
+	case StrictAdditionalPropertiesOff:
+		return nil
+
+	case StrictAdditionalPropertiesRespectSchema:
+		if !schemaSaysFalse {
+			return nil
+		}
+
+	case StrictAdditionalPropertiesStrict:
+		if schemaTypedAddl {
+			return nil
+		}
+	}
+
+	if len(t.PatternProperties) > 0 {
+		g.warner(fmt.Sprintf(
+			"strictAdditionalProperties: skipping %s because patternProperties is not supported",
+			declName,
+		))
+
+		return nil
+	}
+
+	known := make([]string, 0, len(tt.Fields))
+
+	for _, f := range tt.Fields {
+		if f.Name == additionalProperties {
+			continue
+		}
+
+		known = append(known, f.JSONName)
+	}
+
+	slices.Sort(known)
+
+	return &strictFieldsValidator{
+		declName:    declName,
+		knownFields: known,
+	}
+}
+
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) structFieldValidators(
 	validators []validator,
@@ -452,6 +589,17 @@ func (g *schemaGenerator) structFieldValidators(
 
 			if hasPattern {
 				g.output.file.Package.AddImport("regexp", "")
+			}
+
+			if format := f.SchemaType.Format; format != "" &&
+				isKnownFormatKeyword(format) &&
+				g.config.FormatValidation.shouldValidate(format) {
+				validators = append(validators, &formatValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					format:     format,
+					isNillable: isNillable,
+				})
 			}
 
 		case strings.Contains(v.Type, "int") || v.Type == float64Type:
@@ -555,6 +703,10 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
 		}
 
+		for _, decl := range v.desc().decls {
+			g.output.file.Package.AddDecl(decl)
+		}
+
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 		}
@@ -568,6 +720,59 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
+}
+
+// itemsSchema resolves the element schema for an array, covering both draft-07
+// forms of `items`. The single-schema form is returned as-is.
+//
+// For the tuple form, a one-element tuple — the common "a tuple of exactly one"
+// idiom, usually paired with minItems/maxItems 1 — maps cleanly onto that
+// element's type, so the array is generated as a properly typed slice. A
+// heterogeneous tuple has no faithful Go slice representation, so it warns and
+// returns nil, leaving the caller to fall back to an untyped array. Positional
+// types and `additionalItems` are not otherwise enforced.
+func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if len(t.TupleItems) == 0 {
+		return t.Items
+	}
+
+	// Only a CLOSED one-element tuple describes every element. Left open,
+	// `items: [A]` constrains position 0 and leaves positions 1+ to any
+	// type, so collapsing it to []A would reject data the schema allows.
+	if len(t.TupleItems) == 1 && tupleIsClosed(t) {
+		return t.TupleItems[0]
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a tuple for items that does not describe a single "+
+			"element type; positional types are not modelled and it will be "+
+			"represented as an untyped array",
+		scope,
+	))
+
+	return nil
+}
+
+// tupleIsClosed reports whether a tuple forbids elements beyond the ones it
+// lists, either by capping the length with maxItems or by disallowing extras
+// with `additionalItems: false`.
+func tupleIsClosed(t *schemas.Type) bool {
+	if t.MaxItems == len(t.TupleItems) {
+		return true
+	}
+
+	return isFalseSchema(t.AdditionalItems)
+}
+
+// isFalseSchema reports whether t is the JSON Schema `false`.
+//
+// Type.UnmarshalJSON decodes `false` as a `not` of the empty (always-true)
+// schema, i.e. Type{Not: &Type{}}. Testing merely for a non-nil Not would also
+// match a real constraint such as {"not": {"type": "integer"}}, which still
+// permits values — treating that as closed would wrongly collapse a tuple to a
+// single element type and reject data the schema allows.
+func isFalseSchema(t *schemas.Type) bool {
+	return t != nil && t.Not != nil && reflect.DeepEqual(*t.Not, schemas.Type{})
 }
 
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -589,15 +794,52 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		return g.generateReferencedType(t)
 	}
 
+	// AnyOf / AllOf must be delegated to their dedicated generators before
+	// falling through to determineTypeName + the type switch — otherwise a
+	// schema like `{allOf:[{$ref:Base},{type:"object",...}]}` ends up with
+	// determineTypeName returning "null" (the variants have mismatched
+	// Type slices: an empty one for the $ref and `[object]` for the inline
+	// branch) and the schema is silently emitted as `interface{}`. This
+	// mirrors the same delegation already done by generateTypeInline and
+	// is required for the discriminator-detection path (Phase 5) to emit
+	// real variant structs instead of interface{}.
+	//
+	// On merge failure (e.g. unsupported nested definitions whose refs
+	// can't resolve), warn and fall back to interface{} rather than
+	// surfacing a hard error — preserves the previous silent-fallback
+	// behaviour for schemas that hit unsupported features.
+	if len(t.AnyOf) > 0 {
+		dt, err := g.generateAnyOfType(t, scope)
+		if err != nil {
+			g.warner(fmt.Sprintf("anyOf generation failed for %v; falling back to interface{}: %v", scope, err))
+
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		return dt, nil
+	}
+
+	if len(t.AllOf) > 0 {
+		dt, err := g.generateAllOfType(t, scope)
+		if err != nil {
+			g.warner(fmt.Sprintf("allOf generation failed for %v; falling back to interface{}: %v", scope, err))
+
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		return dt, nil
+	}
+
 	typeName, typePtr := g.determineTypeName(t)
 
 	switch typeName {
 	case schemas.TypeNameArray:
-		if t.Items == nil {
+		items := g.itemsSchema(t, scope)
+		if items == nil {
 			return arrayTypeVal, nil
 		}
 
-		elemType, err := g.generateType(t.Items, g.singularScope(scope))
+		elemType, err := g.generateType(items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -729,6 +971,39 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		if len(t.Required) > 0 {
 			g.warner("Object type with no properties has required fields; " +
 				"skipping validation code for them since we don't know their types")
+		}
+
+		// Property-less object schemas that should reject unknown keys cannot
+		// be represented as a map (no validator hook). Synthesize an empty
+		// struct so the standard strictFieldsValidatorFor path attaches a
+		// rejector. Without this, schemas like `{"type":"object",
+		// "additionalProperties":false}` silently accept any map under the
+		// `RespectSchema` mode, and `Strict` mode misses property-less
+		// schemas entirely.
+		//
+		// Skip the conversion when patternProperties is present: strict
+		// enforcement is suppressed in that case (see strictFieldsValidatorFor),
+		// so an empty struct would silently drop pattern-matched keys instead
+		// of preserving the map behavior.
+		schemaSaysFalse := t.AdditionalProperties != nil && t.AdditionalProperties.Not != nil
+		schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
+		hasPatternProps := len(t.PatternProperties) > 0
+
+		if !hasPatternProps {
+			switch g.config.StrictAdditionalProperties {
+			case StrictAdditionalPropertiesOff:
+				// No enforcement — falls through to the map representation below.
+
+			case StrictAdditionalPropertiesRespectSchema:
+				if schemaSaysFalse {
+					return &codegen.StructType{}, nil
+				}
+
+			case StrictAdditionalPropertiesStrict:
+				if !schemaTypedAddl {
+					return &codegen.StructType{}, nil
+				}
+			}
 		}
 
 		valueType := codegen.Type(emptyInterfaceTypeVal)
@@ -1134,6 +1409,30 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
+// needsDeclaredType reports whether a schema must be routed through
+// generateDeclaredType rather than inlined.
+//
+// Every composition form that emits a named wrapper or holder needs a full
+// declaration: inlining one would collapse it to interface{} and drop the
+// generated methods along with it. Keeping the whole decision here means
+// generateTypeInline spends a single branch on the family rather than one per
+// form, and later forms extend this predicate instead of adding another branch
+// to an already-large function.
+func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
+	// A primitive `oneOf` carries no top-level `type`.
+	if len(t.OneOf) > 0 && isPrimitiveOneOf(t) {
+		return true
+	}
+
+	// A discriminated object `oneOf` emits a holder plus per-variant types;
+	// it likewise carries no top-level `type`.
+	if len(t.OneOf) > 1 {
+		return g.detectDiscriminator(t.OneOf).ok
+	}
+
+	return false
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -1154,6 +1453,15 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 
 		if len(t.AllOf) > 0 {
 			return g.generateAllOfType(t, scope)
+		}
+
+		// Composition forms that emit a named wrapper or holder must be
+		// routed to generateDeclaredType before the `len(t.Type) == 0`
+		// bail-out below, since they carry no top-level `type` and would
+		// otherwise be emitted as interface{}. Collected in one predicate so
+		// this function keeps a single branch for the whole family.
+		if g.needsDeclaredType(t) {
+			return g.generateDeclaredType(t, scope)
 		}
 
 		if len(t.Type) == 0 {
@@ -1194,10 +1502,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type = emptyInterfaceTypeVal
 
-			if t.Items != nil {
+			if items := g.itemsSchema(t, scope); items != nil {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
+				theType, err = g.generateTypeInline(items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
