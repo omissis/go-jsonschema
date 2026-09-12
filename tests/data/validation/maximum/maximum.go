@@ -24,7 +24,7 @@ type Maximum struct {
 func (j *Maximum) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Maximum: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in Maximum: required")
@@ -57,7 +57,7 @@ func (j *Maximum) UnmarshalJSON(value []byte) error {
 func (j *Maximum) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Maximum: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in Maximum: required")
