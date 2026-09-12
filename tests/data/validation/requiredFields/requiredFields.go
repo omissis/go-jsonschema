@@ -60,7 +60,7 @@ type RequiredFieldsMyObjectArrayElem struct {
 func (j *RequiredFieldsMyObjectArrayElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredFieldsMyObjectArrayElem: %w", err)
 	}
 	if _, ok := raw["myNestedObjectString"]; raw != nil && !ok {
 		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObjectArrayElem: required")
@@ -78,7 +78,7 @@ func (j *RequiredFieldsMyObjectArrayElem) UnmarshalJSON(value []byte) error {
 func (j *RequiredFieldsMyObjectArrayElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredFieldsMyObjectArrayElem: %w", err)
 	}
 	if _, ok := raw["myNestedObjectString"]; raw != nil && !ok {
 		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObjectArrayElem: required")
@@ -96,7 +96,7 @@ func (j *RequiredFieldsMyObjectArrayElem) UnmarshalYAML(value *yaml.Node) error 
 func (j *RequiredFieldsMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredFieldsMyObject: %w", err)
 	}
 	if _, ok := raw["myNestedObjectString"]; raw != nil && !ok {
 		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObject: required")
@@ -114,7 +114,7 @@ func (j *RequiredFieldsMyObject) UnmarshalJSON(value []byte) error {
 func (j *RequiredFieldsMyObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredFieldsMyObject: %w", err)
 	}
 	if _, ok := raw["myNestedObjectString"]; raw != nil && !ok {
 		return fmt.Errorf("field myNestedObjectString in RequiredFieldsMyObject: required")
@@ -132,7 +132,7 @@ func (j *RequiredFieldsMyObject) UnmarshalYAML(value *yaml.Node) error {
 func (j *RequiredFields) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredFields: %w", err)
 	}
 	if _, ok := raw["myBoolean"]; raw != nil && !ok {
 		return fmt.Errorf("field myBoolean in RequiredFields: required")
@@ -185,7 +185,7 @@ func (j *RequiredFields) UnmarshalJSON(value []byte) error {
 func (j *RequiredFields) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw RequiredFields: %w", err)
 	}
 	if _, ok := raw["myBoolean"]; raw != nil && !ok {
 		return fmt.Errorf("field myBoolean in RequiredFields: required")

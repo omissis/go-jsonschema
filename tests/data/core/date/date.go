@@ -21,7 +21,7 @@ type DateMyObject struct {
 func (j *DateMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DateMyObject: %w", err)
 	}
 	if _, ok := raw["myDate"]; raw != nil && !ok {
 		return fmt.Errorf("field myDate in DateMyObject: required")
@@ -39,7 +39,7 @@ func (j *DateMyObject) UnmarshalJSON(value []byte) error {
 func (j *DateMyObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DateMyObject: %w", err)
 	}
 	if _, ok := raw["myDate"]; raw != nil && !ok {
 		return fmt.Errorf("field myDate in DateMyObject: required")
