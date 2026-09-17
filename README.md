@@ -93,7 +93,10 @@ types:
 * `SerializableTime`
 
 These types are needed because there is no native type provided by Go which
-properly handles them.
+properly handles them. They are only used when extra imports are enabled
+(`--extra-imports`); without it, `date` and `time` formats are generated as
+plain `string` fields so the generated code only depends on the standard
+library.
 
 ## Status
 
