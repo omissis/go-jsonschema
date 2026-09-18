@@ -17,7 +17,7 @@ func (j *Agreement) UnmarshalJSON(value []byte) error {
 	type Plain Agreement
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement: %w", err)
 	}
 	*j = Agreement(plain)
 	return nil
@@ -28,7 +28,7 @@ func (j *Agreement) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Agreement
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Agreement: %w", err)
 	}
 	*j = Agreement(plain)
 	return nil
@@ -51,7 +51,7 @@ func (j *Offer) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Offer
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Offer: %w", err)
 	}
 	*j = Offer(plain)
 	return nil
@@ -62,7 +62,7 @@ func (j *Offer) UnmarshalJSON(value []byte) error {
 	type Plain Offer
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Offer: %w", err)
 	}
 	*j = Offer(plain)
 	return nil
@@ -74,7 +74,7 @@ type AnyOfRef_0_1 = Agreement
 func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOfRef_0: %w", err)
 	}
 	var anyOfRef_0_0 AnyOfRef_0_0
 	var anyOfRef_0_1 AnyOfRef_0_1
@@ -91,7 +91,7 @@ func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
 	type Plain AnyOfRef_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOfRef_0: %w", err)
 	}
 	*j = AnyOfRef_0(plain)
 	return nil
@@ -101,7 +101,7 @@ func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
 func (j *AnyOfRef_0) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOfRef_0: %w", err)
 	}
 	var anyOfRef_0_0 AnyOfRef_0_0
 	var anyOfRef_0_1 AnyOfRef_0_1
@@ -118,7 +118,7 @@ func (j *AnyOfRef_0) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AnyOfRef_0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AnyOfRef_0: %w", err)
 	}
 	*j = AnyOfRef_0(plain)
 	return nil
