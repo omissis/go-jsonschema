@@ -121,7 +121,7 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 			return nil, fmt.Errorf("could not follow $ref %q to file %q: %w", t.Ref, fileName, serr)
 		}
 
-		qualified, qerr := schemas.QualifiedFileName(fileName, g.schemaFileName, g.config.ResolveExtensions)
+		qualified, qerr := schemas.ResolveRef(g.loader, fileName, g.schemaFileName, g.config.ResolveExtensions)
 		if qerr != nil {
 			return nil, fmt.Errorf("could not resolve qualified file name for %s: %w", fileName, qerr)
 		}
