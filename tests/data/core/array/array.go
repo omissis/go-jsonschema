@@ -44,7 +44,7 @@ type ArrayMyObjectArrayElem map[string]interface{}
 func (j *Array) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Array: %w", err)
 	}
 	type Plain Array
 	var plain Plain
@@ -71,7 +71,7 @@ func (j *Array) UnmarshalJSON(value []byte) error {
 func (j *Array) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Array: %w", err)
 	}
 	type Plain Array
 	var plain Plain
