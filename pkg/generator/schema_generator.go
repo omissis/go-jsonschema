@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -141,15 +142,14 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	var def *schemas.Type
 
 	if defName != "" {
-		// TODO: Support nested definitions.
-		var ok bool
+		var rerr error
 
-		def, ok = schema.Definitions[defName]
-		if !ok {
-			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+		def, rerr = resolveRefPath(schema.Definitions, defName)
+		if rerr != nil {
+			return nil, fmt.Errorf("%w: %q (from ref %q)", rerr, defName, t.Ref)
 		}
 
-		defName = g.caser.Identifierize(defName)
+		defName = g.caser.Identifierize(refPathTypeName(defName))
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -334,9 +334,16 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
+		// Null checks precede the required ones: those deliberately pass for a
+		// null instance (the keyword is vacuous off-type), so the container
+		// check is what turns a null into the type error it actually is.
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, true)...)
+
 		for _, f := range tt.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
 		}
+
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, false)...)
 
 		for _, f := range tt.Fields {
 			if f.DefaultValue != nil {
@@ -394,6 +401,55 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+// nullTypeValidators builds the opt-in `type` checks for explicit nulls. The
+// container check and the per-property checks are requested separately because
+// they bracket the required checks: the container one must run before them, the
+// property ones after.
+//
+// Returns nothing unless ValidateNullTypes is set.
+func (g *schemaGenerator) nullTypeValidators(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+	container bool,
+) []validator {
+	if !g.config.ValidateNullTypes {
+		return nil
+	}
+
+	if container {
+		if !schemaExcludesNull(t) {
+			return nil
+		}
+
+		return []validator{&nonNullContainerValidator{declName}}
+	}
+
+	var out []validator
+
+	for _, f := range tt.Fields {
+		if schemaExcludesNull(f.SchemaType) {
+			out = append(out, &nonNullValidator{f.JSONName, declName})
+		}
+	}
+
+	return out
+}
+
+// schemaExcludesNull reports whether a schema declares a `type` that does not
+// admit null, which is the only situation where an explicit null is invalid.
+//
+// A schema with no `type` constrains nothing, and a nullable union such as
+// `{"type": ["string", "null"]}` admits null deliberately; both must keep
+// accepting it.
+func schemaExcludesNull(t *schemas.Type) bool {
+	if t == nil || len(t.Type) == 0 {
+		return false
+	}
+
+	return !slices.Contains(t.Type, schemas.TypeNameNull)
 }
 
 //nolint:gocyclo // todo: reduce cyclomatic complexity
@@ -560,6 +616,41 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 		}
 	}
 
+	// generateUnmarshalBody wraps the raw-map decode error with type
+	// context via `fmt.Errorf`, so fmt must be imported whenever the body
+	// emits the raw-decode branch — even when no hasError validator is
+	// present. The branch fires when (a) the struct has an
+	// additionalProperties field, or (b) any validator declares
+	// beforeJSONUnmarshal/requiresRawAfter (the latter covers
+	// `defaultValidator`, which has hasError=false but still triggers
+	// raw decoding).
+	needsRawDecode := false
+
+	for _, v := range validators {
+		d := v.desc()
+		if d.beforeJSONUnmarshal || d.requiresRawAfter {
+			needsRawDecode = true
+
+			break
+		}
+	}
+
+	if !needsRawDecode {
+		if structType, ok := decl.Type.(*codegen.StructType); ok {
+			for _, f := range structType.Fields {
+				if f.Name == additionalProperties {
+					needsRawDecode = true
+
+					break
+				}
+			}
+		}
+	}
+
+	if needsRawDecode {
+		g.output.file.Package.AddImport("fmt", "")
+	}
+
 	for _, formatter := range g.formatters {
 		formatter.addImport(g.output.file, decl)
 
@@ -568,6 +659,59 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
+}
+
+// itemsSchema resolves the element schema for an array, covering both draft-07
+// forms of `items`. The single-schema form is returned as-is.
+//
+// For the tuple form, a one-element tuple — the common "a tuple of exactly one"
+// idiom, usually paired with minItems/maxItems 1 — maps cleanly onto that
+// element's type, so the array is generated as a properly typed slice. A
+// heterogeneous tuple has no faithful Go slice representation, so it warns and
+// returns nil, leaving the caller to fall back to an untyped array. Positional
+// types and `additionalItems` are not otherwise enforced.
+func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if len(t.TupleItems) == 0 {
+		return t.Items
+	}
+
+	// Only a CLOSED one-element tuple describes every element. Left open,
+	// `items: [A]` constrains position 0 and leaves positions 1+ to any
+	// type, so collapsing it to []A would reject data the schema allows.
+	if len(t.TupleItems) == 1 && tupleIsClosed(t) {
+		return t.TupleItems[0]
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a tuple for items that does not describe a single "+
+			"element type; positional types are not modelled and it will be "+
+			"represented as an untyped array",
+		scope,
+	))
+
+	return nil
+}
+
+// tupleIsClosed reports whether a tuple forbids elements beyond the ones it
+// lists, either by capping the length with maxItems or by disallowing extras
+// with `additionalItems: false`.
+func tupleIsClosed(t *schemas.Type) bool {
+	if t.MaxItems == len(t.TupleItems) {
+		return true
+	}
+
+	return isFalseSchema(t.AdditionalItems)
+}
+
+// isFalseSchema reports whether t is the JSON Schema `false`.
+//
+// Type.UnmarshalJSON decodes `false` as a `not` of the empty (always-true)
+// schema, i.e. Type{Not: &Type{}}. Testing merely for a non-nil Not would also
+// match a real constraint such as {"not": {"type": "integer"}}, which still
+// permits values — treating that as closed would wrongly collapse a tuple to a
+// single element type and reject data the schema allows.
+func isFalseSchema(t *schemas.Type) bool {
+	return t != nil && t.Not != nil && reflect.DeepEqual(*t.Not, schemas.Type{})
 }
 
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -593,11 +737,12 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 
 	switch typeName {
 	case schemas.TypeNameArray:
-		if t.Items == nil {
+		items := g.itemsSchema(t, scope)
+		if items == nil {
 			return arrayTypeVal, nil
 		}
 
-		elemType, err := g.generateType(t.Items, g.singularScope(scope))
+		elemType, err := g.generateType(items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -1194,10 +1339,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type = emptyInterfaceTypeVal
 
-			if t.Items != nil {
+			if items := g.itemsSchema(t, scope); items != nil {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
+				theType, err = g.generateTypeInline(items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
