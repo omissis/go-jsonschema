@@ -19,10 +19,10 @@ import (
 // trigger is a short human-readable reason ("if/then/else not compiled",
 // "allOf merge produced empty result", etc.) used to anchor the warning so
 // users can find the responsible keyword.
-func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger string) bool {
+func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger string) {
 	dropped := collectDroppedKeywords(t)
 	if len(dropped) == 0 {
-		return false
+		return
 	}
 
 	msg := fmt.Sprintf(
@@ -35,8 +35,6 @@ func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger
 	}
 
 	g.warner(msg)
-
-	return true
 }
 
 // collectDroppedKeywords lists schema keywords whose presence indicates the
@@ -242,4 +240,50 @@ func dedupAffected(in []string) []string {
 	}
 
 	return out
+}
+
+// compositionFallbackTrigger explains why a composition could not be compiled,
+// for use as the trigger text of a fidelity warning. Returns "" when t is not a
+// composition, so callers can use it as the gate.
+//
+// The oneOf case is the one that bites in practice: the primitive wrapper
+// dispatches on JSON token kind and has nowhere to enforce per-variant
+// keywords, so a single variant carrying `format` or `minimum` disqualifies the
+// whole schema and it degrades to interface{}. Naming the offending variant is
+// what makes that actionable — the alternative is a silent `interface{}` that
+// looks deliberate.
+func compositionFallbackTrigger(t *schemas.Type) string {
+	if t == nil {
+		return ""
+	}
+
+	switch {
+	case len(t.OneOf) > 1:
+		for i, v := range t.OneOf {
+			if v != nil && variantHasValidationConstraints(v) {
+				return fmt.Sprintf(
+					"oneOf variant %d declares constraints the primitive wrapper cannot enforce", i,
+				)
+			}
+		}
+
+		return "oneOf not compiled"
+
+	case len(t.AnyOf) > 0:
+		return "anyOf not compiled"
+
+	case len(t.AllOf) > 0:
+		return "allOf not compiled"
+	}
+
+	return ""
+}
+
+// warnCompositionFallback emits a fidelity warning when a composition degrades
+// to interface{}. No-op for non-compositions, and — via warnFallback — for
+// schemas that declare nothing worth losing.
+func (g *schemaGenerator) warnCompositionFallback(t *schemas.Type, scope nameScope) {
+	if trigger := compositionFallbackTrigger(t); trigger != "" {
+		g.warnFallback(t, scope, trigger)
+	}
 }
