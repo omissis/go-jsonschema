@@ -996,6 +996,11 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		return g.generateStructType(t, scope)
 
 	case schemas.TypeNameNull:
+		// A composition with no top-level `type` lands here — determineTypeName
+		// reports "null" for it. This is the additionalProperties-positioned
+		// fallback; warn before degrading so the loss is visible.
+		g.warnCompositionFallback(t, scope)
+
 		return emptyInterfaceTypeVal, nil
 
 	default:
@@ -1716,6 +1721,8 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.Type) == 0 {
+			g.warnCompositionFallback(t, scope)
+
 			return codegen.EmptyInterfaceType{}, nil
 		}
 

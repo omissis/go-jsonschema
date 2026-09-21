@@ -44,6 +44,55 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Contains(t, joined, "declared property(ies)")
 	})
 
+	t.Run("constrained oneOf variant warns and names the keyword", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/oneOfConstrainedVariant/oneOfConstrainedVariant.json")
+		joined := strings.Join(warnings, "\n")
+
+		// The primitive wrapper dispatches on JSON token kind, so a variant
+		// carrying a constraint the wrapper cannot enforce disqualifies the
+		// whole schema and it degrades to interface{}. Before this warning
+		// existed that was entirely silent, which is how it went unnoticed in
+		// production schemas.
+		require.NotEmpty(t, warnings)
+		assert.Contains(t, joined, "schema fidelity:")
+		assert.Contains(t, joined, "StillRejected")
+		assert.Contains(t, joined, "primitive wrapper cannot enforce")
+		assert.Contains(t, joined, "string length constraint")
+	})
+
+	t.Run("a temporal format is a type mapping, not a constraint, and stays silent", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/oneOfConstrainedVariant/oneOfConstrainedVariant.json")
+
+		// `format: date-time` on a string variant maps the branch to time.Time
+		// rather than declaring a constraint the wrapper must enforce, so the
+		// schema still compiles to a real wrapper. Guards the boundary against
+		// the disqualifying case above: only one of the two degrades.
+		for _, w := range filterFidelityWarnings(warnings) {
+			assert.NotContains(t, w, "TimeOrNumber",
+				"a temporal format compiles to a time.Time branch and must not warn")
+		}
+	})
+
+	t.Run("an unconstrained oneOf compiles and stays silent", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/oneOfConstrainedVariant/oneOfConstrainedVariant.json")
+
+		// Same file: the sibling property has no constraints, gets a real
+		// wrapper, and must not be reported. One field degrades, not two.
+		for _, w := range filterFidelityWarnings(warnings) {
+			assert.NotContains(t, w, "Unconstrained",
+				"the unconstrained variant compiles to a wrapper and must not warn")
+		}
+	})
+
 	t.Run("schema with no enforcement-implying keywords stays silent", func(t *testing.T) {
 		t.Parallel()
 
