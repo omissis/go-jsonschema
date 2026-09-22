@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integerFormat",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "`format: int64` must carry 64 bits. A bare `int` is 32 bits on 32-bit platforms, where encoding/json and yaml.v3 both refuse a value this schema declares valid — so the generated code cannot parse its own documents there.",
+      "type": "integer",
+      "format": "int64"
+    },
+    "count": {
+      "description": "`format: int32` pins the width at 32 bits on every platform.",
+      "type": "integer",
+      "format": "int32"
+    },
+    "unknownFormat": {
+      "description": "An unrecognised integer format must not silently change the type; it falls through to the default.",
+      "type": "integer",
+      "format": "int128"
+    },
+    "noFormat": {
+      "description": "No format declared, so the default `int` is unchanged.",
+      "type": "integer"
+    },
+    "boundedWithFormat": {
+      "description": "Without --min-sized-ints the declared format wins outright; bounds only narrow the type when that flag is set.",
+      "type": "integer",
+      "format": "int64",
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}
