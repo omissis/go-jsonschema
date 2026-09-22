@@ -9,7 +9,7 @@ import "strings"
 
 type NullAllowed struct {
 	// Nullable corresponds to the JSON schema field "nullable".
-	Nullable NullAllowedNullable `json:"nullable,omitempty,omitzero" yaml:"nullable,omitempty" mapstructure:"nullable,omitempty"`
+	Nullable *string `json:"nullable,omitempty,omitzero" yaml:"nullable,omitempty" mapstructure:"nullable,omitempty"`
 
 	// NullableViaRef corresponds to the JSON schema field "nullableViaRef".
 	NullableViaRef NullableName `json:"nullableViaRef,omitempty,omitzero" yaml:"nullableViaRef,omitempty" mapstructure:"nullableViaRef,omitempty"`
@@ -23,8 +23,6 @@ type NullAllowed struct {
 	// UntypedViaRef corresponds to the JSON schema field "untypedViaRef".
 	UntypedViaRef UntypedThing `json:"untypedViaRef,omitempty,omitzero" yaml:"untypedViaRef,omitempty" mapstructure:"untypedViaRef,omitempty"`
 }
-
-type NullAllowedNullable *string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NullAllowed) UnmarshalJSON(value []byte) error {

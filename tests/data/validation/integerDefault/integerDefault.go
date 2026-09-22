@@ -11,13 +11,11 @@ type IntegerDefault struct {
 	Count int `json:"count" yaml:"count" mapstructure:"count"`
 
 	// NullableCount corresponds to the JSON schema field "nullableCount".
-	NullableCount IntegerDefaultNullableCount `json:"nullableCount" yaml:"nullableCount" mapstructure:"nullableCount"`
+	NullableCount *int `json:"nullableCount" yaml:"nullableCount" mapstructure:"nullableCount"`
 
 	// ProgramId corresponds to the JSON schema field "programId".
 	ProgramId int `json:"programId" yaml:"programId" mapstructure:"programId"`
 }
-
-type IntegerDefaultNullableCount *int
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
@@ -45,7 +43,6 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 	if v, ok := raw["nullableCount"]; !ok || v == nil {
 		var defaultNullableCount int = 0
 		plain.NullableCount = &defaultNullableCount
-
 	}
 	if v, ok := raw["programId"]; !ok || v == nil {
 		plain.ProgramId = 0
@@ -80,7 +77,6 @@ func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 	if v, ok := raw["nullableCount"]; !ok || v == nil {
 		var defaultNullableCount int = 0
 		plain.NullableCount = &defaultNullableCount
-
 	}
 	if v, ok := raw["programId"]; !ok || v == nil {
 		plain.ProgramId = 0
