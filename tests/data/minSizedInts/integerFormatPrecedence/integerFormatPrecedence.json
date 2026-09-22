@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/integerFormatPrecedence",
+  "type": "object",
+  "properties": {
+    "bounded": {
+      "description": "--min-sized-ints derives the width from the declared bounds, which is strictly more information than the format hint, so it wins over `format: int64` here.",
+      "type": "integer",
+      "format": "int64",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "unbounded": {
+      "description": "With no bounds to derive from, --min-sized-ints already widens to int64, so the format changes nothing.",
+      "type": "integer",
+      "format": "int32"
+    }
+  }
+}
