@@ -39,7 +39,8 @@ func PrimitiveTypeFromJSONSchemaType(
 	jsType,
 	format string,
 	pointer,
-	minIntSize bool,
+	minIntSize,
+	extraImports bool,
 	minimum **float64,
 	maximum **float64,
 	exclusiveMinimum **any,
@@ -81,33 +82,41 @@ func PrimitiveTypeFromJSONSchemaType(
 			}
 
 		case "date":
-			t = NamedType{
-				Package: &Package{
-					QualifiedName: "types",
-					Imports: []Import{
-						{
-							QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
+			if extraImports {
+				t = NamedType{
+					Package: &Package{
+						QualifiedName: "types",
+						Imports: []Import{
+							{
+								QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
+							},
 						},
 					},
-				},
-				Decl: &TypeDecl{
-					Name: "SerializableDate",
-				},
+					Decl: &TypeDecl{
+						Name: "SerializableDate",
+					},
+				}
+			} else {
+				t = PrimitiveType{"string"}
 			}
 
 		case "time":
-			t = NamedType{
-				Package: &Package{
-					QualifiedName: "types",
-					Imports: []Import{
-						{
-							QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
+			if extraImports {
+				t = NamedType{
+					Package: &Package{
+						QualifiedName: "types",
+						Imports: []Import{
+							{
+								QualifiedName: "github.com/atombender/go-jsonschema/pkg/types",
+							},
 						},
 					},
-				},
-				Decl: &TypeDecl{
-					Name: "SerializableTime",
-				},
+					Decl: &TypeDecl{
+						Name: "SerializableTime",
+					},
+				}
+			} else {
+				t = PrimitiveType{"string"}
 			}
 
 		case "duration":

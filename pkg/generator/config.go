@@ -5,6 +5,8 @@ import "github.com/atombender/go-jsonschema/pkg/schemas"
 type Config struct {
 	SchemaMappings []SchemaMapping
 	// ExtraImports allows the generator to pull imports from outside the standard library.
+	// When disabled, date and time formats are generated as plain strings instead of
+	// the SerializableDate and SerializableTime types.
 	ExtraImports bool
 	// Capitalizations configures capitalized forms for identifiers which take precedence over the default algorithm.
 	Capitalizations []string
