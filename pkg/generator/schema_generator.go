@@ -1408,11 +1408,22 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
+		// A nullable primitive becomes a plain pointer to that primitive
+		// rather than a named alias of one.
+		//
+		// The alias form (`type FooBar *float64`, used as `FooBar`) is a named
+		// POINTER type, and Go forbids those as method receivers entirely —
+		// `invalid receiver type FooBar (pointer or interface type)`. So the
+		// name can never carry UnmarshalJSON, a String(), or validation: it is
+		// pure indirection, and taking its address yields a **float64.
+		//
+		// Upstream already made exactly this change for the temporal formats
+		// in #570 and #607; the reasoning was never specific to time.Time, so
+		// this generalises it to the rest of the primitives.
 		if typeIndex != -1 &&
 			typeIsNullable &&
 			!t.IsSubSchemaTypeElem() &&
-			schemas.IsPrimitiveType(t.Type[typeIndex]) &&
-			isTypeTemporal(t.Type[typeIndex], t.Format) {
+			schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
 		}
 
