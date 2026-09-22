@@ -87,8 +87,96 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 // honor. The wrapper only dispatches on the JSON token kind, so a variant
 // that needs e.g. `format`, `minimum`, or `pattern` checked would silently
 // pass invalid values if routed through this path.
+
+// stringVariantFormat describes how the string branch of a primitive wrapper
+// should honour a `format` declared on its variant.
+//
+// Temporal formats are a TYPE mapping: `date-time` decodes into time.Time,
+// exactly as the non-oneOf path does, so the wrapper exposes AsDateTime rather
+// than AsString. The remaining formats leave the Go type as string and are
+// enforced by a check, reusing the validators already in-tree.
+type stringVariantFormat struct {
+	format   string // canonical keyword; "" when the variant declares none
+	goType   string // what the string branch decodes into
+	accessor string // As<accessor>() name for the branch
+	imports  []string
+}
+
+// stringVariantFormatFor finds the string variant of a primitive oneOf and
+// describes how its format should be handled. Returns the plain-string shape
+// when there is no format, or none that needs special treatment.
+func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
+	plain := stringVariantFormat{goType: "string", accessor: "String"}
+
+	for _, v := range t.OneOf {
+		if v == nil || len(v.Type) != 1 || v.Type[0] != schemas.TypeNameString {
+			continue
+		}
+
+		if v.Format == "" {
+			return plain
+		}
+
+		if isTypeTemporal(v.Type[0], v.Format) {
+			return stringVariantFormat{
+				format:   v.Format,
+				goType:   "time.Time",
+				accessor: temporalAccessorName(v.Format),
+				imports:  []string{"time"},
+			}
+		}
+
+		// Unreachable today: variantFormatIsSupported only admits temporal
+		// formats, so anything else disqualified the variant upstream.
+		return plain
+	}
+
+	return plain
+}
+
+// temporalAccessorName maps a temporal format to its accessor suffix, so the
+// generated API says what it holds — AsDateTime, not AsString.
+func temporalAccessorName(format string) string {
+	switch format {
+	case "date-time":
+		return "DateTime"
+	case "date":
+		return "Date"
+	case "time":
+		return "Time"
+	}
+
+	return "String"
+}
+
+// variantFormatIsSupported reports whether a `format` on a primitive variant
+// can be honoured by the wrapper, and so need not disqualify it.
+//
+// Two distinct mechanisms, which is easy to miss: temporal formats are a TYPE
+// mapping — `date-time` becomes `time.Time` on the normal path — while the
+// others are validators that leave the Go type as `string`. The wrapper can
+// carry either, but it must do the right one; silently accepting a format it
+// cannot honour would drop the constraint, which is what the fidelity warning
+// exists to prevent.
+func variantFormatIsSupported(v *schemas.Type) bool {
+	if v.Type == nil || len(v.Type) != 1 {
+		return false
+	}
+
+	// Scoped to temporal formats for now. The validator-backed formats
+	// (uuid, email, ...) would additionally need their precompiled regex var
+	// registered at package scope from here, which the wrapper has no hook
+	// for yet; until then they keep disqualifying the variant and the
+	// fidelity warning keeps reporting them, which is the honest outcome.
+	return isTypeTemporal(v.Type[0], v.Format)
+}
+
 func variantHasValidationConstraints(v *schemas.Type) bool {
-	if v.Format != "" || v.Pattern != "" {
+	if v.Format != "" && !variantFormatIsSupported(v) {
+		return true
+	}
+
+	if v.Pattern != "" {
 		return true
 	}
 
@@ -163,6 +251,11 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	}
 
 	kinds := primitiveOneOfKinds(t)
+	strFormat := stringVariantFormatFor(t)
+
+	for _, imp := range strFormat.imports {
+		g.output.file.Package.AddImport(imp, "")
+	}
 
 	name := g.output.uniqueTypeName(scope)
 	if g.config.StructNameFromTitle && t.Title != "" {
@@ -210,11 +303,11 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 		})
 	}
 
-	addMethod("UnmarshalJSON", emitOneOfPrimitiveUnmarshalJSON(name, kinds))
+	addMethod("UnmarshalJSON", emitOneOfPrimitiveUnmarshalJSON(name, kinds, strFormat))
 	addMethod("MarshalJSON", emitOneOfPrimitiveMarshalJSON(name, kinds))
 
 	if hasYAMLFormatter {
-		addMethod("UnmarshalYAML", emitOneOfPrimitiveUnmarshalYAML(name, kinds))
+		addMethod("UnmarshalYAML", emitOneOfPrimitiveUnmarshalYAML(name, kinds, strFormat))
 		addMethod("MarshalYAML", emitOneOfPrimitiveMarshalYAML(name, kinds))
 	}
 
@@ -222,7 +315,7 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	addMethod("IsZero", emitOneOfPrimitiveIsZero(name))
 
 	if kinds.has(oneOfKindString) {
-		addMethod("AsString", emitOneOfPrimitiveAsString(name))
+		addMethod("As"+strFormat.accessor, emitOneOfPrimitiveAsString(name, strFormat))
 	}
 
 	if kinds.has(oneOfKindNumber) {
@@ -240,7 +333,11 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	return &codegen.NamedType{Decl: decl}, nil
 }
 
-func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveUnmarshalJSON(
+	typeName string,
+	kinds oneOfKind,
+	sf stringVariantFormat,
+) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalJSON implements json.Unmarshaler.")
 		out.Printlnf("func (j *%s) UnmarshalJSON(value []byte) error {", typeName)
@@ -257,9 +354,11 @@ func emitOneOfPrimitiveUnmarshalJSON(typeName string, kinds oneOfKind) func(*cod
 		out.Printlnf("switch tok.(type) {")
 
 		if kinds.has(oneOfKindString) {
+			// Decoding into the mapped type IS the format check for temporal
+			// variants: a malformed timestamp fails to unmarshal.
 			out.Printlnf("case string:")
 			out.Indent(1)
-			out.Printlnf("var v string")
+			out.Printlnf("var v %s", sf.goType)
 			out.Printlnf("if err := json.Unmarshal(value, &v); err != nil { return err }")
 			out.Printlnf("j.value = v")
 			out.Indent(-1)
@@ -348,7 +447,11 @@ func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codeg
 	}
 }
 
-func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveUnmarshalYAML(
+	typeName string,
+	kinds oneOfKind,
+	sf stringVariantFormat,
+) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalYAML implements yaml.Unmarshaler.")
 		out.Printlnf("func (j *%s) UnmarshalYAML(value *yaml.Node) error {", typeName)
@@ -363,7 +466,9 @@ func emitOneOfPrimitiveUnmarshalYAML(typeName string, kinds oneOfKind) func(*cod
 		if kinds.has(oneOfKindString) {
 			out.Printlnf(`case "!!str":`)
 			out.Indent(1)
-			out.Printlnf("var v string")
+			// Same mapped type as the JSON path, so YAML and JSON agree on
+			// what the string branch holds.
+			out.Printlnf("var v %s", sf.goType)
 			out.Printlnf("if err := value.Decode(&v); err != nil { return err }")
 			out.Printlnf("j.value = v")
 			out.Indent(-1)
@@ -470,13 +575,28 @@ func emitOneOfPrimitiveIsZero(typeName string) func(*codegen.Emitter) error {
 	}
 }
 
-func emitOneOfPrimitiveAsString(typeName string) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveAsString(typeName string, sf stringVariantFormat) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
-		out.Commentf("AsString returns the value as a string and reports whether it was a string.")
-		out.Printlnf("func (j *%s) AsString() (string, bool) {", typeName)
+		zero := `""`
+		if sf.goType != "string" {
+			// A temporal variant holds its mapped type, so the zero value is
+			// that type's, not the empty string.
+			zero = sf.goType + "{}"
+		}
+
+		// Keep the original wording for the plain-string case so adding
+		// temporal support does not churn every existing wrapper fixture.
+		if sf.goType == "string" {
+			out.Commentf("AsString returns the value as a string and reports whether it was a string.")
+		} else {
+			out.Commentf("As%s returns the value as a %s and reports whether it was a %s.",
+				sf.accessor, sf.goType, sf.format)
+		}
+
+		out.Printlnf("func (j *%s) As%s() (%s, bool) {", typeName, sf.accessor, sf.goType)
 		out.Indent(1)
-		out.Printlnf("if j == nil || !j.present { return \"\", false }")
-		out.Printlnf("v, ok := j.value.(string)")
+		out.Printlnf("if j == nil || !j.present { return %s, false }", zero)
+		out.Printlnf("v, ok := j.value.(%s)", sf.goType)
 		out.Printlnf("return v, ok")
 		out.Indent(-1)
 		out.Printlnf("}")

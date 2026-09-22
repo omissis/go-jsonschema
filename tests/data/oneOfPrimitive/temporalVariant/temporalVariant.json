@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/temporalVariant",
+  "type": "object",
+  "properties": {
+    "timeOrNumber": {
+      "description": "The shape CycloneDX-style trend axes use: a value that is either an RFC3339 timestamp or a number. Before temporal support the format disqualified the variant and the whole field degraded to interface{}.",
+      "oneOf": [
+        { "type": "string", "format": "date-time" },
+        { "type": "number" }
+      ]
+    },
+    "stillRejected": {
+      "description": "A non-temporal constraint still disqualifies the wrapper, and the fidelity warning still reports it.",
+      "oneOf": [
+        { "type": "string", "minLength": 3 },
+        { "type": "number" }
+      ]
+    }
+  }
+}
