@@ -22,6 +22,7 @@ import (
 	testFormatUUID "github.com/atombender/go-jsonschema/tests/data/formatValidation/uuid"
 	testOneOfInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
 	testOneOfNumStringBool "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numStringBool"
+	testOneOfTemporal "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/temporalVariant"
 	testOneOfWithNull "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withNull"
 	testStrictAddlFalse "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalse"
 	testStrictAddlFalseEmpty "github.com/atombender/go-jsonschema/tests/data/strictAdditionalProperties/addlFalseEmpty"
@@ -992,5 +993,59 @@ func TestJsonUnmarshalValidateNullTypes(t *testing.T) {
 
 		// But a plain `type: string` still rejects it.
 		require.Error(t, json.Unmarshal([]byte(`{"strict":null}`), &v))
+	})
+}
+
+// TestJsonUnmarshalOneOfPrimitiveTemporal covers a primitive `oneOf` whose
+// string variant carries `format: date-time`.
+//
+// Such a variant used to disqualify the wrapper outright — the wrapper
+// dispatches on JSON token kind and had nowhere to honour per-variant
+// keywords — so the whole field degraded to interface{}. Temporal formats are
+// a *type* mapping rather than a validator, so the string branch can simply
+// decode into time.Time, exactly as the non-oneOf path does. Decoding is then
+// itself the check: a malformed timestamp fails to unmarshal.
+func TestJsonUnmarshalOneOfPrimitiveTemporal(t *testing.T) {
+	t.Parallel()
+
+	t.Run("string branch decodes as time.Time", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfTemporal.TemporalVariant
+
+		require.NoError(t, json.Unmarshal([]byte(`{"timeOrNumber":"2026-09-22T10:00:00Z"}`), &v))
+		require.NotNil(t, v.TimeOrNumber)
+
+		got, ok := v.TimeOrNumber.AsDateTime()
+		require.True(t, ok, "the string branch should report as a date-time")
+		assert.Equal(t, 2026, got.Year())
+
+		// The number branch is unaffected.
+		require.NoError(t, json.Unmarshal([]byte(`{"timeOrNumber":42}`), &v))
+		n, ok := v.TimeOrNumber.AsNumber()
+		require.True(t, ok)
+		assert.InDelta(t, 42.0, n, 0.0001)
+	})
+
+	t.Run("a malformed timestamp is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfTemporal.TemporalVariant
+
+		// This is the part that makes accepting the variant safe: the format is
+		// genuinely enforced, not silently dropped.
+		require.Error(t, json.Unmarshal([]byte(`{"timeOrNumber":"not-a-timestamp"}`), &v))
+	})
+
+	t.Run("round-trips back to RFC3339", func(t *testing.T) {
+		t.Parallel()
+
+		var v testOneOfTemporal.TemporalVariant
+
+		require.NoError(t, json.Unmarshal([]byte(`{"timeOrNumber":"2026-09-22T10:00:00Z"}`), &v))
+
+		out, err := json.Marshal(v)
+		require.NoError(t, err)
+		assert.Contains(t, string(out), "2026-09-22T10:00:00Z")
 	})
 }
