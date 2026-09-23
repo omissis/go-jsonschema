@@ -68,6 +68,9 @@ type EnumVarnamesInvalid struct {
 
 	// SelfNamed corresponds to the JSON schema field "selfNamed".
 	SelfNamed *SelfNamed `json:"selfNamed,omitempty,omitzero" yaml:"selfNamed,omitempty" mapstructure:"selfNamed,omitempty"`
+
+	// Shadowing corresponds to the JSON schema field "shadowing".
+	Shadowing *Shadowing `json:"shadowing,omitempty,omitzero" yaml:"shadowing,omitempty" mapstructure:"shadowing,omitempty"`
 }
 
 const Fine SelfNamed = "y"
@@ -83,10 +86,10 @@ var enumValues_Mismatch = []interface{}{
 	"beta",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Mismatch) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Mismatch) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -103,10 +106,10 @@ func (j *Mismatch) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Mismatch) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Mismatch) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -132,10 +135,10 @@ var enumValues_NotAnIdentifier = []interface{}{
 	"y",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NotAnIdentifier) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *NotAnIdentifier) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -152,10 +155,10 @@ func (j *NotAnIdentifier) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *NotAnIdentifier) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NotAnIdentifier) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -220,5 +223,55 @@ func (j *SelfNamed) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_SelfNamed, v)
 	}
 	*j = SelfNamed(v)
+	return nil
+}
+
+type Shadowing string
+
+const ShadowingAlpha Shadowing = "alpha"
+const ShadowingBeta Shadowing = "beta"
+
+var enumValues_Shadowing = []interface{}{
+	"alpha",
+	"beta",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Shadowing) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_Shadowing {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Shadowing, v)
+	}
+	*j = Shadowing(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Shadowing) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_Shadowing {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Shadowing, v)
+	}
+	*j = Shadowing(v)
 	return nil
 }
