@@ -23,7 +23,12 @@ type EnumVarnames struct {
 
 	// Status corresponds to the JSON schema field "status".
 	Status *JobStatus `json:"status,omitempty,omitzero" yaml:"status,omitempty" mapstructure:"status,omitempty"`
+
+	// Underscored corresponds to the JSON schema field "underscored".
+	Underscored *Underscored `json:"underscored,omitempty,omitzero" yaml:"underscored,omitempty" mapstructure:"underscored,omitempty"`
 }
+
+const HTTP_Status Underscored = "a"
 
 type JobStatus string
 
@@ -124,6 +129,8 @@ func (j *NoExtension) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+const OK_Response Underscored = "b"
+
 type Partial string
 
 const PartialBeta Partial = "beta"
@@ -133,10 +140,10 @@ var enumValues_Partial = []interface{}{
 	"beta",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Partial) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Partial) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -153,10 +160,10 @@ func (j *Partial) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Partial) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Partial) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -223,5 +230,52 @@ func (j *RunningStatus) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_RunningStatus, v)
 	}
 	*j = RunningStatus(v)
+	return nil
+}
+
+type Underscored string
+
+var enumValues_Underscored = []interface{}{
+	"a",
+	"b",
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Underscored) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_Underscored {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Underscored, v)
+	}
+	*j = Underscored(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Underscored) UnmarshalJSON(value []byte) error {
+	var v string
+	if err := json.Unmarshal(value, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_Underscored {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_Underscored, v)
+	}
+	*j = Underscored(v)
 	return nil
 }
