@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "single": {
+      "description": "A tuple closed by additionalItems alone. It permits at most one element, but says so without maxItems — so the generated slice needs the cap derived from the tuple length, or `[\"a\", \"b\"]` would decode cleanly against a schema that rejects it.",
+      "type": "array",
+      "additionalItems": false,
+      "items": [{ "type": "string" }]
+    },
+    "pair": {
+      "description": "Same for a heterogeneous tuple. It cannot be modelled positionally so it stays an untyped array, but the length cap is still knowable and still enforced.",
+      "type": "array",
+      "additionalItems": false,
+      "items": [{ "type": "string" }, { "type": "number" }]
+    },
+    "open": {
+      "description": "Left open, the tuple constrains position 0 only and any number of further elements is allowed, so no cap is emitted.",
+      "type": "array",
+      "items": [{ "type": "string" }]
+    }
+  }
+}
