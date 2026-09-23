@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 var (
 	errRefPathEmpty        = errors.New("reference path is empty")
 	errRefPathUnsupported  = errors.New("unsupported keyword in reference path")
+	errRefPathBadPercent   = errors.New("malformed percent-escape in reference path")
 	errRefPathBadEscape    = errors.New("invalid JSON Pointer escape: ~ must be followed by 0 or 1")
 	errRefPathNeedsSegment = errors.New("reference path ends on a keyword expecting a name or index")
 )
@@ -98,6 +100,12 @@ func stepRefPath(cur *schemas.Type, rest []string) (*schemas.Type, int, error) {
 		return derefRefPath(cur.PatternProperties[key], 2)
 	case "definitions", "$defs":
 		return derefRefPath(cur.Definitions[key], 2)
+	case "dependencies", "dependentSchemas":
+		// Draft-07 `dependencies` is dual-form. The schema form is parsed
+		// into DependentSchemas, so both spellings resolve there; a
+		// property-name dependency lands in DependentRequired instead and
+		// is not a schema, so it correctly finds nothing here.
+		return derefRefPath(cur.DependentSchemas[key], 2)
 	case "allOf":
 		return derefRefPathList(cur.AllOf, key)
 	case "anyOf":
@@ -140,6 +148,14 @@ func derefRefPathList(list []*schemas.Type, key string) (*schemas.Type, int, err
 func splitRefPath(path string) ([]string, error) {
 	if path == "" {
 		return nil, nil
+	}
+
+	// A JSON Pointer carried in a URI fragment is percent-encoded (RFC 6901
+	// §6), so undo that first, at the URI layer. Splitting first would look
+	// up the literal `first%20name` rather than the member `first name`.
+	path, err := url.PathUnescape(path)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errRefPathBadPercent, err)
 	}
 
 	raw := strings.Split(path, "/")

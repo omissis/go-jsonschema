@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "Holder": {
+      "type": "object",
+      "properties": { "first name": { "type": "string" } }
+    }
+  },
+  "properties": {
+    "encoded": {
+      "description": "A JSON Pointer carried in a URI fragment is percent-encoded (RFC 6901 section 6), so the escape is undone at the URI layer before the pointer is split. Splitting first would look up the literal `first%20name`.",
+      "$ref": "#/definitions/Holder/properties/first%20name"
+    }
+  }
+}
