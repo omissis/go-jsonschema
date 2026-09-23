@@ -217,8 +217,13 @@ func refPathTypeName(path string) string {
 
 	kept := make([]string, 0, len(segments))
 
-	for _, seg := range segments {
-		if structural[seg] {
+	for i, seg := range segments {
+		// A structural keyword is noise only when a name or index follows
+		// it: `Wrapper/properties/foo` is identified by `foo`. When the
+		// keyword is the last segment it is carrying the information
+		// itself, and dropping it leaves `Wrapper/items` named after the
+		// definition it lives in — colliding with that definition.
+		if structural[seg] && i < len(segments)-1 {
 			continue
 		}
 
