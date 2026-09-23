@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumVarnames",
+  "type": "object",
+  "$defs": {
+    "JobStatus": {
+      "description": "x-enum-varnames supplies the COMPLETE constant name, matching what oapi-codegen emits for the same file. Without it these would be JobStatusCreated, JobStatusQueued, and so on.",
+      "type": "string",
+      "enum": ["created", "queued", "running", "completed"],
+      "x-enum-varnames": ["Created", "Queued", "Running", "Completed"]
+    },
+    "RunningStatus": {
+      "description": "Entries are often hand-prefixed to disambiguate members that would collide across sibling enums; Running here would otherwise clash with JobStatus's. They are honoured verbatim.",
+      "type": "string",
+      "enum": ["running", "cancelling"],
+      "x-enum-varnames": ["RunningStatusRunning", "RunningStatusCancelling"]
+    },
+    "Partial": {
+      "description": "An empty entry means derive that one, so a schema can name only the members that need it.",
+      "type": "string",
+      "enum": ["alpha", "beta"],
+      "x-enum-varnames": ["CustomAlpha", ""]
+    },
+    "NoExtension": {
+      "description": "No extension, so the derived names are unchanged.",
+      "type": "string",
+      "enum": ["OnDemand", "Batch"]
+    }
+  },
+  "properties": {
+    "status":     { "$ref": "#/$defs/JobStatus" },
+    "running":    { "$ref": "#/$defs/RunningStatus" },
+    "partial":    { "$ref": "#/$defs/Partial" },
+    "priority":   { "$ref": "#/$defs/NoExtension" }
+  }
+}
