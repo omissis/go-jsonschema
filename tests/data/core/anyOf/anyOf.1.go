@@ -73,24 +73,6 @@ type AnyOf1ConfigurationsElem_1 struct {
 	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnyOf1ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem_1: %w", err)
-	}
-	if _, ok := raw["bar"]; raw != nil && !ok {
-		return fmt.Errorf("field bar in AnyOf1ConfigurationsElem_1: required")
-	}
-	type Plain AnyOf1ConfigurationsElem_1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_1: %w", err)
-	}
-	*j = AnyOf1ConfigurationsElem_1(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf1ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -103,6 +85,24 @@ func (j *AnyOf1ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf1ConfigurationsElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_1: %w", err)
+	}
+	*j = AnyOf1ConfigurationsElem_1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AnyOf1ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AnyOf1ConfigurationsElem_1: %w", err)
+	}
+	if _, ok := raw["bar"]; raw != nil && !ok {
+		return fmt.Errorf("field bar in AnyOf1ConfigurationsElem_1: required")
+	}
+	type Plain AnyOf1ConfigurationsElem_1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AnyOf1ConfigurationsElem_1: %w", err)
 	}
 	*j = AnyOf1ConfigurationsElem_1(plain)

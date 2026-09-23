@@ -92,30 +92,6 @@ type RefDiscriminatorEventScroll struct {
 	Timestamp *string `json:"timestamp,omitempty,omitzero" yaml:"timestamp,omitempty" mapstructure:"timestamp,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *RefDiscriminatorEventScroll) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw RefDiscriminatorEventScroll: %w", err)
-	}
-	if _, ok := raw["distance"]; raw != nil && !ok {
-		return fmt.Errorf("field distance in RefDiscriminatorEventScroll: required")
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in RefDiscriminatorEventScroll: required")
-	}
-	type Plain RefDiscriminatorEventScroll
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal RefDiscriminatorEventScroll: %w", err)
-	}
-	if plain.Kind != "scroll" {
-		return fmt.Errorf("field %s: must be equal to %s", "kind", "scroll")
-	}
-	*j = RefDiscriminatorEventScroll(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *RefDiscriminatorEventScroll) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -131,6 +107,30 @@ func (j *RefDiscriminatorEventScroll) UnmarshalJSON(value []byte) error {
 	type Plain RefDiscriminatorEventScroll
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal RefDiscriminatorEventScroll: %w", err)
+	}
+	if plain.Kind != "scroll" {
+		return fmt.Errorf("field %s: must be equal to %s", "kind", "scroll")
+	}
+	*j = RefDiscriminatorEventScroll(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *RefDiscriminatorEventScroll) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw RefDiscriminatorEventScroll: %w", err)
+	}
+	if _, ok := raw["distance"]; raw != nil && !ok {
+		return fmt.Errorf("field distance in RefDiscriminatorEventScroll: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in RefDiscriminatorEventScroll: required")
+	}
+	type Plain RefDiscriminatorEventScroll
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal RefDiscriminatorEventScroll: %w", err)
 	}
 	if plain.Kind != "scroll" {

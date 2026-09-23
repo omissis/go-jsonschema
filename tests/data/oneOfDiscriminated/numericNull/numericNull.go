@@ -124,14 +124,14 @@ type NumericNullWithNullNullVersion struct {
 	Value interface{}
 }
 
-// MarshalYAML implements yaml.Marshal.
-func (j *NumericNullWithNullNullVersion) MarshalYAML() (interface{}, error) {
-	return j.Value, nil
-}
-
 // MarshalJSON implements json.Marshaler.
 func (j *NumericNullWithNullNullVersion) MarshalJSON() ([]byte, error) {
 	return json.Marshal(j.Value)
+}
+
+// MarshalYAML implements yaml.Marshal.
+func (j *NumericNullWithNullNullVersion) MarshalYAML() (interface{}, error) {
+	return j.Value, nil
 }
 
 var enumValues_NumericNullWithNullNullVersion = []interface{}{
