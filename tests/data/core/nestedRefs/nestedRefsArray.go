@@ -49,22 +49,22 @@ type ChoiceVariant1 struct {
 	B *int `json:"b,omitempty,omitzero" yaml:"b,omitempty" mapstructure:"b,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ChoiceVariant1) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ChoiceVariant1) UnmarshalJSON(value []byte) error {
 	type Plain ChoiceVariant1
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal ChoiceVariant1: %w", err)
 	}
 	*j = ChoiceVariant1(plain)
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ChoiceVariant1) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ChoiceVariant1) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ChoiceVariant1
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal ChoiceVariant1: %w", err)
 	}
 	*j = ChoiceVariant1(plain)

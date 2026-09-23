@@ -163,10 +163,10 @@ var enumValues_AutoinstallSchemaAptDisableComponentsElem = []interface{}{
 	"non-free",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaAptDisableComponentsElem) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaAptDisableComponentsElem) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -183,10 +183,10 @@ func (j *AutoinstallSchemaAptDisableComponentsElem) UnmarshalYAML(value *yaml.No
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaAptDisableComponentsElem) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaAptDisableComponentsElem) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -215,10 +215,10 @@ var enumValues_AutoinstallSchemaAptFallback = []interface{}{
 	"offline-install",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaAptFallback) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaAptFallback) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -235,10 +235,10 @@ func (j *AutoinstallSchemaAptFallback) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaAptFallback) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaAptFallback) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -268,24 +268,6 @@ type AutoinstallSchemaAptMirrorSelectionPrimaryElem_1 struct {
 	Uri string `json:"uri" yaml:"uri" mapstructure:"uri"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
-	}
-	if _, ok := raw["uri"]; raw != nil && !ok {
-		return fmt.Errorf("field uri in AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: required")
-	}
-	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
-	}
-	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -298,6 +280,24 @@ func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalJSON(value [
 	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
+	}
+	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaAptMirrorSelectionPrimaryElem_1) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
+	}
+	if _, ok := raw["uri"]; raw != nil && !ok {
+		return fmt.Errorf("field uri in AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: required")
+	}
+	type Plain AutoinstallSchemaAptMirrorSelectionPrimaryElem_1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaAptMirrorSelectionPrimaryElem_1: %w", err)
 	}
 	*j = AutoinstallSchemaAptMirrorSelectionPrimaryElem_1(plain)
@@ -448,24 +448,6 @@ type AutoinstallSchemaKernelCrashDumps struct {
 	Enabled *bool `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AutoinstallSchemaKernelCrashDumps: %w", err)
-	}
-	if _, ok := raw["enabled"]; raw != nil && !ok {
-		return fmt.Errorf("field enabled in AutoinstallSchemaKernelCrashDumps: required")
-	}
-	type Plain AutoinstallSchemaKernelCrashDumps
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AutoinstallSchemaKernelCrashDumps: %w", err)
-	}
-	*j = AutoinstallSchemaKernelCrashDumps(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -478,6 +460,24 @@ func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaKernelCrashDumps
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal AutoinstallSchemaKernelCrashDumps: %w", err)
+	}
+	*j = AutoinstallSchemaKernelCrashDumps(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaKernelCrashDumps) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AutoinstallSchemaKernelCrashDumps: %w", err)
+	}
+	if _, ok := raw["enabled"]; raw != nil && !ok {
+		return fmt.Errorf("field enabled in AutoinstallSchemaKernelCrashDumps: required")
+	}
+	type Plain AutoinstallSchemaKernelCrashDumps
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaKernelCrashDumps: %w", err)
 	}
 	*j = AutoinstallSchemaKernelCrashDumps(plain)
@@ -510,22 +510,22 @@ func (j *AutoinstallSchemaKernelVariant0) UnmarshalYAML(value *yaml.Node) error 
 
 type AutoinstallSchemaKernelVariant1 map[string]interface{}
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaKernelVariant1) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaKernelVariant1) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaKernelVariant1
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaKernelVariant1: %w", err)
 	}
 	*j = AutoinstallSchemaKernelVariant1(plain)
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaKernelVariant1) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaKernelVariant1) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaKernelVariant1
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaKernelVariant1: %w", err)
 	}
 	*j = AutoinstallSchemaKernelVariant1(plain)
@@ -1195,24 +1195,6 @@ type AutoinstallSchemaOem struct {
 	Install interface{} `json:"install" yaml:"install" mapstructure:"install"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaOem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AutoinstallSchemaOem: %w", err)
-	}
-	if _, ok := raw["install"]; raw != nil && !ok {
-		return fmt.Errorf("field install in AutoinstallSchemaOem: required")
-	}
-	type Plain AutoinstallSchemaOem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AutoinstallSchemaOem: %w", err)
-	}
-	*j = AutoinstallSchemaOem(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AutoinstallSchemaOem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -1225,6 +1207,24 @@ func (j *AutoinstallSchemaOem) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaOem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal AutoinstallSchemaOem: %w", err)
+	}
+	*j = AutoinstallSchemaOem(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaOem) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AutoinstallSchemaOem: %w", err)
+	}
+	if _, ok := raw["install"]; raw != nil && !ok {
+		return fmt.Errorf("field install in AutoinstallSchemaOem: required")
+	}
+	type Plain AutoinstallSchemaOem
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaOem: %w", err)
 	}
 	*j = AutoinstallSchemaOem(plain)
@@ -1256,10 +1256,10 @@ var enumValues_AutoinstallSchemaShutdown = []interface{}{
 	"poweroff",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaShutdown) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaShutdown) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -1276,10 +1276,10 @@ func (j *AutoinstallSchemaShutdown) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaShutdown) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaShutdown) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(value, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -1421,11 +1421,11 @@ type AutoinstallSchemaUbuntuPro struct {
 	Token *string `json:"token,omitempty,omitzero" yaml:"token,omitempty" mapstructure:"token,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AutoinstallSchemaUbuntuPro) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *AutoinstallSchemaUbuntuPro) UnmarshalJSON(value []byte) error {
 	type Plain AutoinstallSchemaUbuntuPro
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaUbuntuPro: %w", err)
 	}
 	if plain.Token != nil {
@@ -1443,11 +1443,11 @@ func (j *AutoinstallSchemaUbuntuPro) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AutoinstallSchemaUbuntuPro) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AutoinstallSchemaUbuntuPro) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AutoinstallSchemaUbuntuPro
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AutoinstallSchemaUbuntuPro: %w", err)
 	}
 	if plain.Token != nil {

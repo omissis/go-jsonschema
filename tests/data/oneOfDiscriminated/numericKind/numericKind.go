@@ -82,30 +82,6 @@ type NumericKindPayloadConst2 struct {
 	Version float64 `json:"version" yaml:"version" mapstructure:"version"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NumericKindPayloadConst2) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NumericKindPayloadConst2: %w", err)
-	}
-	if _, ok := raw["beta"]; raw != nil && !ok {
-		return fmt.Errorf("field beta in NumericKindPayloadConst2: required")
-	}
-	if _, ok := raw["version"]; raw != nil && !ok {
-		return fmt.Errorf("field version in NumericKindPayloadConst2: required")
-	}
-	type Plain NumericKindPayloadConst2
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NumericKindPayloadConst2: %w", err)
-	}
-	if plain.Version != 2 {
-		return fmt.Errorf("field %s: must be equal to %v", "version", 2)
-	}
-	*j = NumericKindPayloadConst2(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NumericKindPayloadConst2) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -121,6 +97,30 @@ func (j *NumericKindPayloadConst2) UnmarshalJSON(value []byte) error {
 	type Plain NumericKindPayloadConst2
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NumericKindPayloadConst2: %w", err)
+	}
+	if plain.Version != 2 {
+		return fmt.Errorf("field %s: must be equal to %v", "version", 2)
+	}
+	*j = NumericKindPayloadConst2(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NumericKindPayloadConst2) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NumericKindPayloadConst2: %w", err)
+	}
+	if _, ok := raw["beta"]; raw != nil && !ok {
+		return fmt.Errorf("field beta in NumericKindPayloadConst2: required")
+	}
+	if _, ok := raw["version"]; raw != nil && !ok {
+		return fmt.Errorf("field version in NumericKindPayloadConst2: required")
+	}
+	type Plain NumericKindPayloadConst2
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal NumericKindPayloadConst2: %w", err)
 	}
 	if plain.Version != 2 {

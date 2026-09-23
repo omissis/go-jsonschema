@@ -63,24 +63,6 @@ type NoDiscriminatorValueVariant1 struct {
 	B string `json:"b" yaml:"b" mapstructure:"b"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NoDiscriminatorValueVariant1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NoDiscriminatorValueVariant1: %w", err)
-	}
-	if _, ok := raw["b"]; raw != nil && !ok {
-		return fmt.Errorf("field b in NoDiscriminatorValueVariant1: required")
-	}
-	type Plain NoDiscriminatorValueVariant1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant1: %w", err)
-	}
-	*j = NoDiscriminatorValueVariant1(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NoDiscriminatorValueVariant1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -93,6 +75,24 @@ func (j *NoDiscriminatorValueVariant1) UnmarshalJSON(value []byte) error {
 	type Plain NoDiscriminatorValueVariant1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant1: %w", err)
+	}
+	*j = NoDiscriminatorValueVariant1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NoDiscriminatorValueVariant1) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NoDiscriminatorValueVariant1: %w", err)
+	}
+	if _, ok := raw["b"]; raw != nil && !ok {
+		return fmt.Errorf("field b in NoDiscriminatorValueVariant1: required")
+	}
+	type Plain NoDiscriminatorValueVariant1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal NoDiscriminatorValueVariant1: %w", err)
 	}
 	*j = NoDiscriminatorValueVariant1(plain)

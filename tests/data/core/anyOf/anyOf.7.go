@@ -7,43 +7,38 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-type AnyOf7 struct {
-	// Bar corresponds to the JSON schema field "bar".
-	Bar []*AnyOf7BarElem `json:"bar" yaml:"bar" mapstructure:"bar"`
-
-	// Baz corresponds to the JSON schema field "baz".
-	Baz []*AnyOf7BazElem `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
-
-	// Foo corresponds to the JSON schema field "foo".
-	Foo *AnyOf7Foo `json:"foo" yaml:"foo" mapstructure:"foo"`
-}
-
-type AnyOf7BarElem struct {
+type Item struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Item) UnmarshalJSON(value []byte) error {
+	type Plain Item
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Item: %w", err)
+	}
+	*j = Item(plain)
+	return nil
+}
+
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnyOf7BarElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AnyOf7BarElem: %w", err)
-	}
-	var anyOf7BarElem_0 AnyOf7BarElem_0
-	var errs []error
-	if err := anyOf7BarElem_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 1 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain AnyOf7BarElem
+func (j *Item) UnmarshalYAML(value *yaml.Node) error {
+	type Plain Item
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AnyOf7BarElem: %w", err)
+		return fmt.Errorf("unmarshal Item: %w", err)
 	}
-	*j = AnyOf7BarElem(plain)
+	*j = Item(plain)
 	return nil
+}
+
+type AnyOf7BarElem_0 = Item
+
+type AnyOf7BarElem struct {
+	// Name corresponds to the JSON schema field "name".
+	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -69,27 +64,32 @@ func (j *AnyOf7BarElem) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type AnyOf7BazElem struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
-}
-
-type AnyOf7Foo_0 = Item
-
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Item) UnmarshalYAML(value *yaml.Node) error {
-	type Plain Item
+func (j *AnyOf7BarElem) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AnyOf7BarElem: %w", err)
+	}
+	var anyOf7BarElem_0 AnyOf7BarElem_0
+	var errs []error
+	if err := anyOf7BarElem_0.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 1 {
+		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	}
+	type Plain AnyOf7BarElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Item: %w", err)
+		return fmt.Errorf("unmarshal AnyOf7BarElem: %w", err)
 	}
-	*j = Item(plain)
+	*j = AnyOf7BarElem(plain)
 	return nil
 }
 
 type AnyOf7BazElem_0 = Item
 
-type Item struct {
+type AnyOf7BazElem struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
@@ -140,7 +140,18 @@ func (j *AnyOf7BazElem) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type AnyOf7BarElem_0 = Item
+type AnyOf7Foo_0 = Item
+
+type AnyOf7 struct {
+	// Bar corresponds to the JSON schema field "bar".
+	Bar []*AnyOf7BarElem `json:"bar" yaml:"bar" mapstructure:"bar"`
+
+	// Baz corresponds to the JSON schema field "baz".
+	Baz []*AnyOf7BazElem `json:"baz,omitempty,omitzero" yaml:"baz,omitempty" mapstructure:"baz,omitempty"`
+
+	// Foo corresponds to the JSON schema field "foo".
+	Foo *AnyOf7Foo `json:"foo" yaml:"foo" mapstructure:"foo"`
+}
 
 type AnyOf7Foo struct {
 	// Name corresponds to the JSON schema field "name".
@@ -190,17 +201,6 @@ func (j *AnyOf7Foo) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal AnyOf7Foo: %w", err)
 	}
 	*j = AnyOf7Foo(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Item) UnmarshalJSON(value []byte) error {
-	type Plain Item
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Item: %w", err)
-	}
-	*j = Item(plain)
 	return nil
 }
 

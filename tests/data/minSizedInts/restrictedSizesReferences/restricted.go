@@ -152,11 +152,11 @@ func (j *I32U) UnmarshalYAML(value *yaml.Node) error {
 
 type I64L int64
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *I64L) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *I64L) UnmarshalJSON(value []byte) error {
 	type Plain I64L
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal I64L: %w", err)
 	}
 	if 2147483647 < plain {
@@ -169,11 +169,11 @@ func (j *I64L) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *I64L) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *I64L) UnmarshalYAML(value *yaml.Node) error {
 	type Plain I64L
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal I64L: %w", err)
 	}
 	if 2147483647 < plain {
@@ -251,48 +251,6 @@ type Restricted struct {
 	U64 U64 `json:"u64" yaml:"u64" mapstructure:"u64"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Restricted) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw Restricted: %w", err)
-	}
-	if _, ok := raw["i16l"]; raw != nil && !ok {
-		return fmt.Errorf("field i16l in Restricted: required")
-	}
-	if _, ok := raw["i16u"]; raw != nil && !ok {
-		return fmt.Errorf("field i16u in Restricted: required")
-	}
-	if _, ok := raw["i32l"]; raw != nil && !ok {
-		return fmt.Errorf("field i32l in Restricted: required")
-	}
-	if _, ok := raw["i32u"]; raw != nil && !ok {
-		return fmt.Errorf("field i32u in Restricted: required")
-	}
-	if _, ok := raw["i64l"]; raw != nil && !ok {
-		return fmt.Errorf("field i64l in Restricted: required")
-	}
-	if _, ok := raw["i64u"]; raw != nil && !ok {
-		return fmt.Errorf("field i64u in Restricted: required")
-	}
-	if _, ok := raw["u16"]; raw != nil && !ok {
-		return fmt.Errorf("field u16 in Restricted: required")
-	}
-	if _, ok := raw["u32"]; raw != nil && !ok {
-		return fmt.Errorf("field u32 in Restricted: required")
-	}
-	if _, ok := raw["u64"]; raw != nil && !ok {
-		return fmt.Errorf("field u64 in Restricted: required")
-	}
-	type Plain Restricted
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Restricted: %w", err)
-	}
-	*j = Restricted(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Restricted) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -329,6 +287,48 @@ func (j *Restricted) UnmarshalJSON(value []byte) error {
 	type Plain Restricted
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Restricted: %w", err)
+	}
+	*j = Restricted(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Restricted) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Restricted: %w", err)
+	}
+	if _, ok := raw["i16l"]; raw != nil && !ok {
+		return fmt.Errorf("field i16l in Restricted: required")
+	}
+	if _, ok := raw["i16u"]; raw != nil && !ok {
+		return fmt.Errorf("field i16u in Restricted: required")
+	}
+	if _, ok := raw["i32l"]; raw != nil && !ok {
+		return fmt.Errorf("field i32l in Restricted: required")
+	}
+	if _, ok := raw["i32u"]; raw != nil && !ok {
+		return fmt.Errorf("field i32u in Restricted: required")
+	}
+	if _, ok := raw["i64l"]; raw != nil && !ok {
+		return fmt.Errorf("field i64l in Restricted: required")
+	}
+	if _, ok := raw["i64u"]; raw != nil && !ok {
+		return fmt.Errorf("field i64u in Restricted: required")
+	}
+	if _, ok := raw["u16"]; raw != nil && !ok {
+		return fmt.Errorf("field u16 in Restricted: required")
+	}
+	if _, ok := raw["u32"]; raw != nil && !ok {
+		return fmt.Errorf("field u32 in Restricted: required")
+	}
+	if _, ok := raw["u64"]; raw != nil && !ok {
+		return fmt.Errorf("field u64 in Restricted: required")
+	}
+	type Plain Restricted
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal Restricted: %w", err)
 	}
 	*j = Restricted(plain)
@@ -397,11 +397,11 @@ func (j *U32) UnmarshalYAML(value *yaml.Node) error {
 
 type U64 uint64
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *U64) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *U64) UnmarshalJSON(value []byte) error {
 	type Plain U64
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal U64: %w", err)
 	}
 	if 4294967296 < plain {
@@ -411,11 +411,11 @@ func (j *U64) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *U64) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *U64) UnmarshalYAML(value *yaml.Node) error {
 	type Plain U64
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal U64: %w", err)
 	}
 	if 4294967296 < plain {

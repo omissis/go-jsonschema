@@ -69,24 +69,6 @@ type StrictShapeValueVariant1 struct {
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *StrictShapeValueVariant1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw StrictShapeValueVariant1: %w", err)
-	}
-	if _, ok := raw["name"]; raw != nil && !ok {
-		return fmt.Errorf("field name in StrictShapeValueVariant1: required")
-	}
-	type Plain StrictShapeValueVariant1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal StrictShapeValueVariant1: %w", err)
-	}
-	*j = StrictShapeValueVariant1(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *StrictShapeValueVariant1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -99,6 +81,24 @@ func (j *StrictShapeValueVariant1) UnmarshalJSON(value []byte) error {
 	type Plain StrictShapeValueVariant1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal StrictShapeValueVariant1: %w", err)
+	}
+	*j = StrictShapeValueVariant1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *StrictShapeValueVariant1) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw StrictShapeValueVariant1: %w", err)
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in StrictShapeValueVariant1: required")
+	}
+	type Plain StrictShapeValueVariant1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal StrictShapeValueVariant1: %w", err)
 	}
 	*j = StrictShapeValueVariant1(plain)
