@@ -511,8 +511,15 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 // has already been rejected by the caller, and a schema is never invalid for
 // the sake of a vendor extension.
 func extractExtensions(raw []byte) map[string]any {
+	// UseNumber rather than a plain Unmarshal: decoding into `any` turns
+	// every JSON number into a float64, which silently rounds anything past
+	// 2^53. An extension value is carried through to generated output
+	// verbatim, so 9007199254740993 must not become ...992 on the way.
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+
 	var fields map[string]any
-	if err := json.Unmarshal(raw, &fields); err != nil {
+	if err := dec.Decode(&fields); err != nil {
 		return nil
 	}
 

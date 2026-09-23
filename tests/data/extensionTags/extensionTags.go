@@ -3,6 +3,10 @@
 package test
 
 type ExtensionTags struct {
+	// An integer past 2^53. Decoding into `any` would round it to ...992; the value
+	// is kept undecoded so the literal the author wrote is what reaches the tag.
+	BigId *int `json:"bigId,omitempty,omitzero" yaml:"bigId,omitempty" mapstructure:"bigId,omitempty" precision:"9007199254740993"`
+
 	// Booleans render as true/false.
 	Derived *bool `json:"derived,omitempty,omitzero" yaml:"derived,omitempty" mapstructure:"derived,omitempty" derived:"true"`
 
