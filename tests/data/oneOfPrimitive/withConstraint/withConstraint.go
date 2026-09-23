@@ -7,7 +7,8 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
 type WithConstraint struct {
-	// Value corresponds to the JSON schema field "value".
+	// A variant carrying a constraint the wrapper has nowhere to enforce still
+	// disqualifies it, because the wrapper dispatches on JSON token kind alone.
 	Value interface{} `json:"value" yaml:"value" mapstructure:"value"`
 }
 

@@ -1057,6 +1057,13 @@ type formatValidator struct {
 	// afterAdditionalProperties marks a check on AdditionalProperties' values,
 	// which can only run once that map is decoded.
 	afterAdditionalProperties bool
+
+	// valueExpr overrides the expression the check runs against. Empty means
+	// the default `plain.<Field>`. The primitive-oneOf wrapper sets it
+	// because its decoded value lives in a local inside the generated
+	// UnmarshalJSON, not on a Plain struct — everything else about the check,
+	// including the message, stays identical to the struct-field path.
+	valueExpr string
 }
 
 // containerLevel is one inline array or map between a field and the string a
@@ -1069,7 +1076,11 @@ const (
 )
 
 func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
-	value := getPlainName(v.fieldName)
+	value := v.valueExpr
+	if value == "" {
+		value = getPlainName(v.fieldName)
+	}
+
 	// Quoted like arrayValidator's name: the property name is schema data,
 	// so it is escaped as a Go literal rather than spliced in as is.
 	name := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
