@@ -44,6 +44,12 @@
           "type": "string"
         }
       ]
+    },
+    "mustBeEmpty": {
+      "description": "A closed EMPTY tuple. Every element is additional and so forbidden, which admits only the empty array \u2014 a genuine cap of zero, not the absence of one.",
+      "type": "array",
+      "additionalItems": false,
+      "items": []
     }
   }
 }

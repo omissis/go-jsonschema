@@ -12,6 +12,10 @@ type TupleItemsClosedNoMax struct {
 	// let two more through.
 	LooseMax []string `json:"looseMax,omitempty,omitzero" yaml:"looseMax,omitempty" mapstructure:"looseMax,omitempty"`
 
+	// A closed EMPTY tuple. Every element is additional and so forbidden, which
+	// admits only the empty array — a genuine cap of zero, not the absence of one.
+	MustBeEmpty []interface{} `json:"mustBeEmpty,omitempty,omitzero" yaml:"mustBeEmpty,omitempty" mapstructure:"mustBeEmpty,omitempty"`
+
 	// Left open, the tuple constrains position 0 only and any number of further
 	// elements is allowed, so no cap is emitted.
 	Open []interface{} `json:"open,omitempty,omitzero" yaml:"open,omitempty" mapstructure:"open,omitempty"`
@@ -37,6 +41,9 @@ func (j *TupleItemsClosedNoMax) UnmarshalJSON(value []byte) error {
 	if len(plain.LooseMax) > 1 {
 		return fmt.Errorf("field %s length: must be <= %d", "looseMax", 1)
 	}
+	if len(plain.MustBeEmpty) > 0 {
+		return fmt.Errorf("field %s length: must be <= %d", "mustBeEmpty", 0)
+	}
 	if len(plain.Pair) > 2 {
 		return fmt.Errorf("field %s length: must be <= %d", "pair", 2)
 	}
@@ -56,6 +63,9 @@ func (j *TupleItemsClosedNoMax) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if len(plain.LooseMax) > 1 {
 		return fmt.Errorf("field %s length: must be <= %d", "looseMax", 1)
+	}
+	if len(plain.MustBeEmpty) > 0 {
+		return fmt.Errorf("field %s length: must be <= %d", "mustBeEmpty", 0)
 	}
 	if len(plain.Pair) > 2 {
 		return fmt.Errorf("field %s length: must be <= %d", "pair", 2)
