@@ -393,10 +393,14 @@ type arrayValidator struct {
 	arrayDepth int
 	minItems   int
 	maxItems   int
+
+	// maxItemsSet distinguishes a maximum of zero from no maximum. A closed
+	// empty tuple admits only the empty array, which is a real cap of 0.
+	maxItemsSet bool
 }
 
 func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
-	if v.minItems == 0 && v.maxItems == 0 {
+	if v.minItems == 0 && !v.maxItemsSet {
 		return nil
 	}
 
@@ -435,7 +439,7 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 		out.Printlnf("}")
 	}
 
-	if v.maxItems != 0 {
+	if v.maxItemsSet {
 		out.Printlnf(`if len(%s) > %d {`, value, v.maxItems)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxItems)

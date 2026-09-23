@@ -523,13 +523,14 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 
 				break
-			} else if maxItems := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || maxItems != 0 {
+			} else if maxItems, hasMax := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || hasMax {
 				validators = append(validators, &arrayValidator{
-					fieldName:  f.Name,
-					jsonName:   f.JSONName,
-					arrayDepth: arrayDepth,
-					minItems:   f.SchemaType.MinItems,
-					maxItems:   maxItems,
+					fieldName:   f.Name,
+					jsonName:    f.JSONName,
+					arrayDepth:  arrayDepth,
+					minItems:    f.SchemaType.MinItems,
+					maxItems:    maxItems,
+					maxItemsSet: hasMax,
 				})
 			}
 
@@ -631,25 +632,30 @@ func tupleIsClosed(t *schemas.Type) bool {
 // collapses exactly that shape to []A, so without this the generated slice
 // would accept more elements than the schema allows — `["a", "b"]` would decode
 // cleanly against a tuple that admits one element.
-func effectiveMaxItems(t *schemas.Type) int {
-	tupleMax := 0
-	if len(t.TupleItems) > 0 && isFalseSchema(t.AdditionalItems) {
+func effectiveMaxItems(t *schemas.Type) (int, bool) {
+	// Presence is returned separately from the value because a closed tuple
+	// can legitimately cap the array at zero: `items: [], additionalItems:
+	// false` leaves every element "additional" and so forbidden, admitting
+	// only the empty array. Reporting that as a bare 0 is indistinguishable
+	// from "no maximum" and emits no check at all.
+	tupleMax, tupleClosed := 0, isFalseSchema(t.AdditionalItems)
+	if tupleClosed {
 		tupleMax = len(t.TupleItems)
 	}
 
 	switch {
-	case tupleMax == 0:
-		return t.MaxItems
+	case !tupleClosed:
+		return t.MaxItems, t.MaxItems != 0
 
 	case t.MaxItems == 0:
-		return tupleMax
+		return tupleMax, true
 
 	default:
 		// Both cap the array, so the tighter one wins. A schema may well
 		// declare `maxItems: 3` beside a one-member closed tuple; the
 		// tuple still admits one element, and taking maxItems on its own
 		// would let two more through.
-		return min(t.MaxItems, tupleMax)
+		return min(t.MaxItems, tupleMax), true
 	}
 }
 
