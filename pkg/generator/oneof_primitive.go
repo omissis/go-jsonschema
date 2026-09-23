@@ -88,6 +88,10 @@ func isPrimitiveOneOf(t *schemas.Type) bool {
 // that needs e.g. `format`, `minimum`, or `pattern` checked would silently
 // pass invalid values if routed through this path.
 
+// accessorNameString is the accessor suffix for a string branch that keeps its
+// Go type, i.e. every format except the temporal ones.
+const accessorNameString = "String"
+
 // stringVariantFormat describes how the string branch of a primitive wrapper
 // should honour a `format` declared on its variant.
 //
@@ -100,13 +104,19 @@ type stringVariantFormat struct {
 	goType   string // what the string branch decodes into
 	accessor string // As<accessor>() name for the branch
 	imports  []string
+
+	// validate is the format keyword to enforce at the end of the string
+	// branch, or "" for none. Temporal formats leave this empty: decoding
+	// INTO time.Time already rejects a malformed timestamp, so a second
+	// check would be redundant.
+	validate string
 }
 
 // stringVariantFormatFor finds the string variant of a primitive oneOf and
 // describes how its format should be handled. Returns the plain-string shape
 // when there is no format, or none that needs special treatment.
 func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
-	plain := stringVariantFormat{goType: "string", accessor: "String"}
+	plain := stringVariantFormat{goType: "string", accessor: accessorNameString}
 
 	for _, v := range t.OneOf {
 		if v == nil || len(v.Type) != 1 || v.Type[0] != schemas.TypeNameString {
@@ -126,8 +136,19 @@ func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
 			}
 		}
 
-		// Unreachable today: variantFormatIsSupported only admits temporal
-		// formats, so anything else disqualified the variant upstream.
+		// A validator-backed format leaves the branch a plain string and is
+		// enforced by a check after the decode, exactly as the non-oneOf
+		// string path does. An unrecognised format is annotation-only there
+		// too, so it also falls through to plain.
+		if isKnownFormatKeyword(v.Format) {
+			return stringVariantFormat{
+				format:   v.Format,
+				goType:   "string",
+				accessor: accessorNameString,
+				validate: v.Format,
+			}
+		}
+
 		return plain
 	}
 
@@ -146,36 +167,16 @@ func temporalAccessorName(format string) string {
 		return "Time"
 	}
 
-	return "String"
-}
-
-// variantFormatIsSupported reports whether a `format` on a primitive variant
-// can be honoured by the wrapper, and so need not disqualify it.
-//
-// Two distinct mechanisms, which is easy to miss: temporal formats are a TYPE
-// mapping — `date-time` becomes `time.Time` on the normal path — while the
-// others are validators that leave the Go type as `string`. The wrapper can
-// carry either, but it must do the right one; silently accepting a format it
-// cannot honour would drop the constraint, which is what the fidelity warning
-// exists to prevent.
-func variantFormatIsSupported(v *schemas.Type) bool {
-	if v.Type == nil || len(v.Type) != 1 {
-		return false
-	}
-
-	// Scoped to temporal formats for now. The validator-backed formats
-	// (uuid, email, ...) would additionally need their precompiled regex var
-	// registered at package scope from here, which the wrapper has no hook
-	// for yet; until then they keep disqualifying the variant and the
-	// fidelity warning keeps reporting them, which is the honest outcome.
-	return isTypeTemporal(v.Type[0], v.Format)
+	return accessorNameString
 }
 
 func variantHasValidationConstraints(v *schemas.Type) bool {
-	if v.Format != "" && !variantFormatIsSupported(v) {
-		return true
-	}
-
+	// `format` deliberately absent: the wrapper's string branch now behaves
+	// exactly like the non-oneOf string path. A temporal format maps the
+	// branch to time.Time, a validator-backed format is checked after the
+	// decode when format validation is enabled, and anything else is
+	// annotation-only there too. None of them is a reason to degrade the
+	// whole schema to interface{}.
 	if v.Pattern != "" {
 		return true
 	}
@@ -258,6 +259,31 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 	}
 
 	name := g.output.uniqueTypeName(scope)
+
+	// A validator-backed format is only enforced when the user asked for
+	// format validation, exactly as on the non-oneOf path. Clearing it here
+	// rather than at resolution keeps the type mapping (goType/accessor)
+	// independent of whether the check is switched on.
+	if strFormat.validate != "" && !g.config.FormatValidation.shouldValidate(strFormat.validate) {
+		strFormat.validate = ""
+	}
+
+	if strFormat.validate != "" {
+		// The check is emitted by a formatValidator, so take its imports and
+		// its precompiled-regex decl from the same place the struct-field
+		// path does rather than restating them here.
+		fv := &formatValidator{format: strFormat.validate}
+		for _, imp := range fv.desc().imports {
+			g.output.file.Package.AddImport(imp.qualifiedName, "")
+		}
+
+		for _, decl := range fv.desc().decls {
+			g.output.file.Package.AddDecl(decl)
+		}
+
+		g.output.file.Package.AddImport("fmt", "")
+	}
+
 	if g.config.StructNameFromTitle && t.Title != "" {
 		name = g.caser.Identifierize(t.Title)
 	}
@@ -360,6 +386,11 @@ func emitOneOfPrimitiveUnmarshalJSON(
 			out.Indent(1)
 			out.Printlnf("var v %s", sf.goType)
 			out.Printlnf("if err := json.Unmarshal(value, &v); err != nil { return err }")
+
+			if err := emitStringVariantFormatCheck(out, typeName, sf); err != nil {
+				return err
+			}
+
 			out.Printlnf("j.value = v")
 			out.Indent(-1)
 		}
@@ -470,6 +501,11 @@ func emitOneOfPrimitiveUnmarshalYAML(
 			// what the string branch holds.
 			out.Printlnf("var v %s", sf.goType)
 			out.Printlnf("if err := value.Decode(&v); err != nil { return err }")
+
+			if err := emitStringVariantFormatCheck(out, typeName, sf); err != nil {
+				return err
+			}
+
 			out.Printlnf("j.value = v")
 			out.Indent(-1)
 		}
@@ -650,4 +686,25 @@ func emitOneOfPrimitiveIsNull(typeName string) func(*codegen.Emitter) error {
 
 		return nil
 	}
+}
+
+// emitStringVariantFormatCheck writes the format check for the wrapper's string
+// branch, against the local the branch just decoded into.
+//
+// It reuses formatValidator rather than restating the per-format rules, so the
+// wrapper and the ordinary struct-field path cannot drift: the same schema
+// produces the same check and the same message whether or not the string sits
+// inside a oneOf.
+func emitStringVariantFormatCheck(out *codegen.Emitter, typeName string, sf stringVariantFormat) error {
+	if sf.validate == "" {
+		return nil
+	}
+
+	fv := &formatValidator{
+		jsonName:  typeName,
+		format:    sf.validate,
+		valueExpr: "v",
+	}
+
+	return fv.generate(out, "")
 }
