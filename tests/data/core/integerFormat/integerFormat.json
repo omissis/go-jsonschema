@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "version": {
-      "description": "`format: int64` must carry 64 bits. A bare `int` is 32 bits on 32-bit platforms, where encoding/json and yaml.v3 both refuse a value this schema declares valid — so the generated code cannot parse its own documents there.",
+      "description": "`format: int64` must carry 64 bits. A bare `int` is 32 bits on 32-bit platforms, where encoding/json and yaml.v3 both refuse a value this schema declares valid \u2014 so the generated code cannot parse its own documents there.",
       "type": "integer",
       "format": "int64"
     },
@@ -28,6 +28,12 @@
       "format": "int64",
       "minimum": 0,
       "maximum": 100
+    },
+    "versionWithDefault": {
+      "description": "An integer default on a width-pinned field. Defaults arrive from encoding/json as float64 and are cast to an integer literal before emission; a check for the literal type `int` misses `int64` and emits `= 0.0` against an int64 field.",
+      "type": "integer",
+      "format": "int64",
+      "default": 0
     }
   }
 }

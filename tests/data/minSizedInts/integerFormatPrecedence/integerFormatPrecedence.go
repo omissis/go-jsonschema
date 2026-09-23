@@ -11,6 +11,10 @@ type IntegerFormatPrecedence struct {
 	// more information than the format hint, so it wins over `format: int64` here.
 	Bounded *uint8 `json:"bounded,omitempty,omitzero" yaml:"bounded,omitempty" mapstructure:"bounded,omitempty"`
 
+	// Same for a width derived from bounds rather than from `format`, which is the
+	// pre-existing --min-sized-ints path.
+	BoundedWithDefault uint8 `json:"boundedWithDefault,omitempty,omitzero" yaml:"boundedWithDefault,omitempty" mapstructure:"boundedWithDefault,omitempty"`
+
 	// With no bounds to derive from, --min-sized-ints already widens to int64, so the
 	// format changes nothing.
 	Unbounded *int64 `json:"unbounded,omitempty,omitzero" yaml:"unbounded,omitempty" mapstructure:"unbounded,omitempty"`
@@ -18,6 +22,10 @@ type IntegerFormatPrecedence struct {
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *IntegerFormatPrecedence) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
 	type Plain IntegerFormatPrecedence
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -26,12 +34,22 @@ func (j *IntegerFormatPrecedence) UnmarshalJSON(value []byte) error {
 	if plain.Bounded != nil && 100 < *plain.Bounded {
 		return fmt.Errorf("field %s: must be <= %v", "bounded", 100)
 	}
+	if v, ok := raw["boundedWithDefault"]; !ok || v == nil {
+		plain.BoundedWithDefault = 42
+	}
+	if 100 < plain.BoundedWithDefault {
+		return fmt.Errorf("field %s: must be <= %v", "boundedWithDefault", 100)
+	}
 	*j = IntegerFormatPrecedence(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *IntegerFormatPrecedence) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
 	type Plain IntegerFormatPrecedence
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
@@ -39,6 +57,12 @@ func (j *IntegerFormatPrecedence) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if plain.Bounded != nil && 100 < *plain.Bounded {
 		return fmt.Errorf("field %s: must be <= %v", "bounded", 100)
+	}
+	if v, ok := raw["boundedWithDefault"]; !ok || v == nil {
+		plain.BoundedWithDefault = 42
+	}
+	if 100 < plain.BoundedWithDefault {
+		return fmt.Errorf("field %s: must be <= %v", "boundedWithDefault", 100)
 	}
 	*j = IntegerFormatPrecedence(plain)
 	return nil

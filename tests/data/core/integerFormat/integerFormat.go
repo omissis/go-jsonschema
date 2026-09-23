@@ -25,10 +25,19 @@ type IntegerFormat struct {
 	// platforms, where encoding/json and yaml.v3 both refuse a value this schema
 	// declares valid — so the generated code cannot parse its own documents there.
 	Version *int64 `json:"version,omitempty,omitzero" yaml:"version,omitempty" mapstructure:"version,omitempty"`
+
+	// An integer default on a width-pinned field. Defaults arrive from encoding/json
+	// as float64 and are cast to an integer literal before emission; a check for the
+	// literal type `int` misses `int64` and emits `= 0.0` against an int64 field.
+	VersionWithDefault int64 `json:"versionWithDefault,omitempty,omitzero" yaml:"versionWithDefault,omitempty" mapstructure:"versionWithDefault,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *IntegerFormat) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
 	type Plain IntegerFormat
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -40,12 +49,19 @@ func (j *IntegerFormat) UnmarshalJSON(value []byte) error {
 	if plain.BoundedWithFormat != nil && 0 > *plain.BoundedWithFormat {
 		return fmt.Errorf("field %s: must be >= %v", "boundedWithFormat", 0)
 	}
+	if v, ok := raw["versionWithDefault"]; !ok || v == nil {
+		plain.VersionWithDefault = 0
+	}
 	*j = IntegerFormat(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *IntegerFormat) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
 	type Plain IntegerFormat
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
@@ -56,6 +72,9 @@ func (j *IntegerFormat) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if plain.BoundedWithFormat != nil && 0 > *plain.BoundedWithFormat {
 		return fmt.Errorf("field %s: must be >= %v", "boundedWithFormat", 0)
+	}
+	if v, ok := raw["versionWithDefault"]; !ok || v == nil {
+		plain.VersionWithDefault = 0
 	}
 	*j = IntegerFormat(plain)
 	return nil
