@@ -6,31 +6,79 @@
     "JobStatus": {
       "description": "x-enum-varnames supplies the COMPLETE constant name, matching what oapi-codegen emits for the same file. Without it these would be JobStatusCreated, JobStatusQueued, and so on.",
       "type": "string",
-      "enum": ["created", "queued", "running", "completed"],
-      "x-enum-varnames": ["Created", "Queued", "Running", "Completed"]
+      "enum": [
+        "created",
+        "queued",
+        "running",
+        "completed"
+      ],
+      "x-enum-varnames": [
+        "Created",
+        "Queued",
+        "Running",
+        "Completed"
+      ]
     },
     "RunningStatus": {
       "description": "Entries are often hand-prefixed to disambiguate members that would collide across sibling enums; Running here would otherwise clash with JobStatus's. They are honoured verbatim.",
       "type": "string",
-      "enum": ["running", "cancelling"],
-      "x-enum-varnames": ["RunningStatusRunning", "RunningStatusCancelling"]
+      "enum": [
+        "running",
+        "cancelling"
+      ],
+      "x-enum-varnames": [
+        "RunningStatusRunning",
+        "RunningStatusCancelling"
+      ]
     },
     "Partial": {
       "description": "An empty entry means derive that one, so a schema can name only the members that need it.",
       "type": "string",
-      "enum": ["alpha", "beta"],
-      "x-enum-varnames": ["CustomAlpha", ""]
+      "enum": [
+        "alpha",
+        "beta"
+      ],
+      "x-enum-varnames": [
+        "CustomAlpha",
+        ""
+      ]
     },
     "NoExtension": {
       "description": "No extension, so the derived names are unchanged.",
       "type": "string",
-      "enum": ["OnDemand", "Batch"]
+      "enum": [
+        "OnDemand",
+        "Batch"
+      ]
+    },
+    "Underscored": {
+      "description": "A name that is already a legal Go identifier is taken verbatim. Identifierize would reshape HTTP_Status into HTTPStatus, and renaming what the schema supplied defeats the point of the extension.",
+      "type": "string",
+      "enum": [
+        "a",
+        "b"
+      ],
+      "x-enum-varnames": [
+        "HTTP_Status",
+        "OK_Response"
+      ]
     }
   },
   "properties": {
-    "status":     { "$ref": "#/$defs/JobStatus" },
-    "running":    { "$ref": "#/$defs/RunningStatus" },
-    "partial":    { "$ref": "#/$defs/Partial" },
-    "priority":   { "$ref": "#/$defs/NoExtension" }
+    "status": {
+      "$ref": "#/$defs/JobStatus"
+    },
+    "running": {
+      "$ref": "#/$defs/RunningStatus"
+    },
+    "partial": {
+      "$ref": "#/$defs/Partial"
+    },
+    "priority": {
+      "$ref": "#/$defs/NoExtension"
+    },
+    "underscored": {
+      "$ref": "#/$defs/Underscored"
+    }
   }
 }

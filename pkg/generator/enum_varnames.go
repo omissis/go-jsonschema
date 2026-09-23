@@ -2,8 +2,10 @@ package generator
 
 import (
 	"fmt"
+	"go/token"
 	"unicode"
 
+	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
@@ -61,11 +63,30 @@ func (g *schemaGenerator) enumVarnames(t *schemas.Type, declName string) []strin
 			continue
 		}
 
-		// Identifierize rather than trusting the input: the extension is
-		// author-supplied text, and a value that is not a legal Go
-		// identifier would otherwise emit code that does not compile. It
-		// is a no-op for names that are already identifiers.
-		name := g.caser.Identifierize(raw)
+		// Only repair what needs repairing. Identifierize also *reshapes*
+		// names it considers badly cased — `HTTP_Status` becomes
+		// `HTTPStatus` — and doing that to a name the schema supplied
+		// defeats the point of the extension, which is that the schema
+		// decides the identifier. A name that is already a legal Go
+		// identifier is therefore taken verbatim.
+		name := raw
+		if !token.IsIdentifier(name) {
+			name = g.caser.Identifierize(raw)
+		}
+
+		// A name the package already declares would be dropped in silence:
+		// Package.AddDecl dedupes by name, so a varname colliding with its
+		// own enum's type (`JobStatus` on enum `JobStatus`) emits nothing
+		// at all rather than failing.
+		if g.nameIsDeclared(name) {
+			g.warner(fmt.Sprintf(
+				"Enum %s: x-enum-varnames[%d] %q is already declared in this package; "+
+					"deriving that constant's name instead",
+				declName, i, raw,
+			))
+
+			continue
+		}
 
 		if prev, dup := seen[name]; dup {
 			g.warner(fmt.Sprintf(
@@ -98,6 +119,21 @@ func (g *schemaGenerator) enumConstantName(varnames []string, declName string, i
 func hasIdentifierChar(s string) bool {
 	for _, r := range s {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// nameIsDeclared reports whether the output package already declares name.
+//
+// Package.AddDecl dedupes by name and keeps the first declaration, so a second
+// one is discarded without a word. That is tolerable for identical types but
+// not for a constant the schema explicitly asked for.
+func (g *schemaGenerator) nameIsDeclared(name string) bool {
+	for _, decl := range g.output.file.Package.Decls {
+		if named, ok := decl.(codegen.Named); ok && named.GetName() == name {
 			return true
 		}
 	}
