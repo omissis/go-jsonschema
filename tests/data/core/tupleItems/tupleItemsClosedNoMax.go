@@ -7,6 +7,11 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
 type TupleItemsClosedNoMax struct {
+	// maxItems declared looser than the tuple allows. Both cap the array, so the
+	// tighter one wins — the tuple still admits one element and maxItems alone would
+	// let two more through.
+	LooseMax []string `json:"looseMax,omitempty,omitzero" yaml:"looseMax,omitempty" mapstructure:"looseMax,omitempty"`
+
 	// Left open, the tuple constrains position 0 only and any number of further
 	// elements is allowed, so no cap is emitted.
 	Open []interface{} `json:"open,omitempty,omitzero" yaml:"open,omitempty" mapstructure:"open,omitempty"`
@@ -29,6 +34,9 @@ func (j *TupleItemsClosedNoMax) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
+	if len(plain.LooseMax) > 1 {
+		return fmt.Errorf("field %s length: must be <= %d", "looseMax", 1)
+	}
 	if len(plain.Pair) > 2 {
 		return fmt.Errorf("field %s length: must be <= %d", "pair", 2)
 	}
@@ -45,6 +53,9 @@ func (j *TupleItemsClosedNoMax) UnmarshalYAML(value *yaml.Node) error {
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
+	}
+	if len(plain.LooseMax) > 1 {
+		return fmt.Errorf("field %s length: must be <= %d", "looseMax", 1)
 	}
 	if len(plain.Pair) > 2 {
 		return fmt.Errorf("field %s length: must be <= %d", "pair", 2)

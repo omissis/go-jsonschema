@@ -3,21 +3,47 @@
   "type": "object",
   "properties": {
     "single": {
-      "description": "A tuple closed by additionalItems alone. It permits at most one element, but says so without maxItems — so the generated slice needs the cap derived from the tuple length, or `[\"a\", \"b\"]` would decode cleanly against a schema that rejects it.",
+      "description": "A tuple closed by additionalItems alone. It permits at most one element, but says so without maxItems \u2014 so the generated slice needs the cap derived from the tuple length, or `[\"a\", \"b\"]` would decode cleanly against a schema that rejects it.",
       "type": "array",
       "additionalItems": false,
-      "items": [{ "type": "string" }]
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
     },
     "pair": {
       "description": "Same for a heterogeneous tuple. It cannot be modelled positionally so it stays an untyped array, but the length cap is still knowable and still enforced.",
       "type": "array",
       "additionalItems": false,
-      "items": [{ "type": "string" }, { "type": "number" }]
+      "items": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
     },
     "open": {
       "description": "Left open, the tuple constrains position 0 only and any number of further elements is allowed, so no cap is emitted.",
       "type": "array",
-      "items": [{ "type": "string" }]
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "looseMax": {
+      "description": "maxItems declared looser than the tuple allows. Both cap the array, so the tighter one wins \u2014 the tuple still admits one element and maxItems alone would let two more through.",
+      "type": "array",
+      "additionalItems": false,
+      "maxItems": 3,
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
     }
   }
 }

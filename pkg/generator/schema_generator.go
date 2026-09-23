@@ -632,15 +632,25 @@ func tupleIsClosed(t *schemas.Type) bool {
 // would accept more elements than the schema allows — `["a", "b"]` would decode
 // cleanly against a tuple that admits one element.
 func effectiveMaxItems(t *schemas.Type) int {
-	if t.MaxItems != 0 {
-		return t.MaxItems
-	}
-
+	tupleMax := 0
 	if len(t.TupleItems) > 0 && isFalseSchema(t.AdditionalItems) {
-		return len(t.TupleItems)
+		tupleMax = len(t.TupleItems)
 	}
 
-	return 0
+	switch {
+	case tupleMax == 0:
+		return t.MaxItems
+
+	case t.MaxItems == 0:
+		return tupleMax
+
+	default:
+		// Both cap the array, so the tighter one wins. A schema may well
+		// declare `maxItems: 3` beside a one-member closed tuple; the
+		// tuple still admits one element, and taking maxItems on its own
+		// would let two more through.
+		return min(t.MaxItems, tupleMax)
+	}
 }
 
 // isFalseSchema reports whether t is the JSON Schema `false`.
