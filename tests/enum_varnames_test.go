@@ -106,6 +106,18 @@ func TestEnumVarnames(t *testing.T) {
 		assert.Contains(t, joined, `x-enum-varnames[0] "SelfNamed" is already declared in this package`)
 	})
 
+	t.Run("a name another entry would be derived anyway falls back", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesInvalid.json"), "\n",
+		)
+
+		// Both constants must survive: emitting the supplied name would
+		// collide with the derived one and AddDecl drops the loser silently.
+		assert.Contains(t, joined, `x-enum-varnames[0] "ShadowingBeta" is the name entry 1 would be given anyway`)
+	})
+
 	t.Run("an entry with no identifier characters falls back", func(t *testing.T) {
 		t.Parallel()
 
