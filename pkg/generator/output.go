@@ -57,7 +57,7 @@ func (o *output) isUniqueTypeName(name string) bool {
 // entire context does not yield a unique name, a numeric suffix is used.
 // TODO: we should check for schema equality on name collisions here to deduplicate identifiers.
 func (o *output) uniqueTypeName(scope nameScope) string {
-	if o.minimalNames {
+	if o.minimalNames && !scope.keepRoot {
 		for i := scope.len() - 1; i >= 0; i-- {
 			name := scope.stringFrom(i)
 

@@ -73,7 +73,20 @@ func (g *schemaGenerator) generateRootType() error {
 	for _, name := range sortDefinitionsByName(g.schema.Definitions) {
 		def := g.schema.Definitions[name]
 
-		_, err := g.generateDeclaredType(def, newNameScope(g.caser.Identifierize(name)))
+		// Under the qualify strategy a definition's scope is rooted at its
+		// owning schema's type name, so the identifier depends only on the
+		// schema that declares it. Left bare, several files declaring the
+		// same definition name compete for one identifier and the winner is
+		// whichever is processed first.
+		scope := newNameScope(g.caser.Identifierize(name))
+		if g.config.CollisionStrategy.qualifiesDefinitions() {
+			scope = newRootedNameScope(
+				g.getRootTypeName(g.schema, g.schemaFileName),
+				g.caser.Identifierize(name),
+			)
+		}
+
+		_, err := g.generateDeclaredType(def, scope)
 		if err != nil {
 			return err
 		}

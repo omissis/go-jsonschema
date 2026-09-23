@@ -2,6 +2,7 @@ package generator
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/atombender/go-jsonschema/pkg/schemas"
@@ -61,6 +62,10 @@ type Config struct {
 	DisableCustomTypesForMaps bool
 	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
 	AliasSingleAllOfAnyOfRefs bool
+	// CollisionStrategy decides how two schemas competing for one Go type
+	// name are resolved. Empty means CollisionPositional.
+	CollisionStrategy CollisionStrategy
+
 	// ExtensionTags maps a schema `x-` extension name onto the struct tag it
 	// is emitted as, e.g. {"x-measurement": "slb-measurement"}. Only
 	// extensions named here are emitted, and only onto the field that
@@ -111,6 +116,13 @@ const (
 	// schema specifies a typed additionalProperties (a catch-all field is
 	// generated instead).
 	StrictAdditionalPropertiesStrict StrictAdditionalPropertiesMode = "strict"
+)
+
+// ErrUnknownCollisionStrategy is returned for a --collision-strategy value
+// outside the known set. Caught at startup rather than silently falling back,
+// since the choice decides generated identifiers.
+var ErrUnknownCollisionStrategy = errors.New(
+	"invalid collision strategy (expected one of: \"\", \"positional\", \"qualify\")",
 )
 
 // ErrInvalidStrictAdditionalPropertiesMode is returned when Config holds a
@@ -227,4 +239,43 @@ type SchemaMapping struct {
 	// two mapped packages share a last path segment (e.g. both end in "/v1")
 	// to avoid an `import v1 "..." / import v1 "..."` collision.
 	ImportAlias string
+}
+
+// CollisionStrategy selects how competing type names are resolved.
+type CollisionStrategy string
+
+const (
+	// CollisionPositional appends a numeric suffix, so the schema processed
+	// first keeps the bare name and later ones become Name_1, Name_2. The
+	// default, and the historical behaviour.
+	//
+	// Note the binding depends on processing order: with several files each
+	// declaring the same definition name, whichever is passed first owns the
+	// bare identifier. Adding a file can therefore rebind an existing name.
+	CollisionPositional CollisionStrategy = "positional"
+
+	// CollisionQualify prefixes every definition with its owning schema's
+	// root type name, so the identifier is derived from the schema alone and
+	// does not depend on what else was generated alongside it.
+	CollisionQualify CollisionStrategy = "qualify"
+)
+
+// qualifiesDefinitions reports whether definitions should be name-qualified by
+// their owning schema.
+func (c CollisionStrategy) qualifiesDefinitions() bool {
+	return c == CollisionQualify
+}
+
+// ParseCollisionStrategy validates a --collision-strategy value.
+func ParseCollisionStrategy(s string) (CollisionStrategy, error) {
+	switch CollisionStrategy(s) {
+	case "", CollisionPositional:
+		return CollisionPositional, nil
+
+	case CollisionQualify:
+		return CollisionQualify, nil
+
+	default:
+		return "", fmt.Errorf("%w: %q", ErrUnknownCollisionStrategy, s)
+	}
 }

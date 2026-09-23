@@ -6,10 +6,26 @@ import (
 
 type nameScope struct {
 	stack []string
+
+	// keepRoot suppresses --minimal-names shortening for this scope.
+	//
+	// Shortening works by dropping leading elements, so there is no way to
+	// keep the root while dropping anything else — it is all or nothing. The
+	// qualify collision strategy roots a definition's scope at its owning
+	// schema's type name, and dropping that prefix is precisely what makes a
+	// shared definition name bind positionally to whichever file happened to
+	// be processed first. So a rooted scope is never shortened.
+	keepRoot bool
 }
 
 func newNameScope(s string) nameScope {
 	return nameScope{stack: []string{s}}
+}
+
+// newRootedNameScope starts a scope at root, which --minimal-names will not
+// shorten away.
+func newRootedNameScope(root, s string) nameScope {
+	return nameScope{stack: []string{root, s}, keepRoot: true}
 }
 
 func (ns nameScope) string() string {
