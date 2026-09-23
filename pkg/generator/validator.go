@@ -406,10 +406,27 @@ func isIntegerType(t codegen.Type) bool {
 	case *codegen.NamedType:
 		return isIntegerType(tt.Decl.Type)
 	case codegen.PrimitiveType:
-		return tt.Type == typeInt
+		return isGoIntegerTypeName(tt.Type)
 	}
 
 	return false
+}
+
+// isGoIntegerTypeName reports whether name is one of Go's integer types.
+//
+// Checking for the literal "int" is not enough: a schema can pin the width
+// with `format: int64`, and `--min-sized-ints` derives one from the declared
+// bounds. Missing those left integer defaults going through litter.Sdump as
+// float64, emitting `plain.Version = 0.0` against an int64 field.
+func isGoIntegerTypeName(name string) bool {
+	switch name {
+	case typeInt, "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64":
+		return true
+
+	default:
+		return false
+	}
 }
 
 func (v *defaultValidator) isPointerToInteger() bool {
@@ -424,11 +441,11 @@ func isPointerToInteger(t codegen.Type) bool {
 		return isPointerToInteger(tt.Decl.Type)
 	case codegen.PointerType:
 		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == typeInt
+			return isGoIntegerTypeName(pt.Type)
 		}
 	case *codegen.PointerType:
 		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == typeInt
+			return isGoIntegerTypeName(pt.Type)
 		}
 	}
 
