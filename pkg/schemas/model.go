@@ -219,6 +219,13 @@ type Type struct {
 	// to use for the field.
 	GoJSONSchemaExtension *GoJSONSchemaExtension `json:"goJSONSchema,omitempty"` //nolint:tagliatelle // breaking change
 
+	// XEnumVarnames names the Go constants generated for `enum`, one per
+	// value in declaration order. It is an OpenAPI-ecosystem extension
+	// rather than a JSON Schema keyword, and is modelled as a typed field
+	// rather than through a generic extension map because it changes
+	// generated identifiers and so has to be validated, not passed through.
+	XEnumVarnames []string `json:"x-enum-varnames,omitempty"` //nolint:tagliatelle // name fixed by the OpenAPI ecosystem
+
 	// SubSchemaType marks the type as being a subschema type.
 	subSchemaType     SubSchemaType `json:"-"`
 	subSchemasCount   int           `json:"-"`

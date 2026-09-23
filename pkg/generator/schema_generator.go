@@ -1631,11 +1631,13 @@ func (g *schemaGenerator) generateEnumType(
 
 	// TODO: May be aliased string type.
 	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
-		for _, v := range t.Enum {
+		varnames := g.enumVarnames(t, enumDecl.Name)
+
+		for i, v := range t.Enum {
 			if s, ok := v.(string); ok {
 				// TODO: Make sure the name is unique across scope.
 				g.output.file.Package.AddDecl(&codegen.Constant{
-					Name:  g.makeEnumConstantName(enumDecl.Name, s),
+					Name:  g.enumConstantName(varnames, enumDecl.Name, i, s),
 					Type:  &codegen.NamedType{Decl: &enumDecl},
 					Value: s,
 				})

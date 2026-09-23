@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumVarnamesInvalid",
+  "type": "object",
+  "$defs": {
+    "Mismatch": {
+      "description": "Three names for two values. There is no way to resolve that positionally without guessing which value was meant to be skipped, and guessing would silently misname a constant, so the whole extension is refused and every name is derived.",
+      "type": "string",
+      "enum": ["alpha", "beta"],
+      "x-enum-varnames": ["A", "B", "C"]
+    },
+    "Duplicate": {
+      "description": "Two entries that identifierize to the same Go name would emit a redeclaration that does not compile. The later one is refused and derived instead.",
+      "type": "string",
+      "enum": ["one", "two"],
+      "x-enum-varnames": ["Same", "Same"]
+    },
+    "NotAnIdentifier": {
+      "description": "Entries are author-supplied text, so they are identifierized rather than trusted; this keeps output compilable. A entry that yields nothing usable falls back to the derived name.",
+      "type": "string",
+      "enum": ["x", "y"],
+      "x-enum-varnames": ["kebab-case-name", "!!!"]
+    }
+  },
+  "properties": {
+    "mismatch": { "$ref": "#/$defs/Mismatch" },
+    "duplicate": { "$ref": "#/$defs/Duplicate" },
+    "notAnIdentifier": { "$ref": "#/$defs/NotAnIdentifier" }
+  }
+}
