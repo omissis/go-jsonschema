@@ -150,6 +150,11 @@ type Definitions map[string]*Type
 
 type SubSchemaType string
 
+// extensionPrefix marks the vendor-extension keywords collected into
+// Type.Extensions. JSON Schema reserves nothing under it, and the OpenAPI
+// ecosystem has settled on it for vendor data.
+const extensionPrefix = "x-"
+
 const (
 	SubSchemaTypeAllOf SubSchemaType = "allOf"
 	SubSchemaTypeAnyOf SubSchemaType = "anyOf"
@@ -225,6 +230,14 @@ type Type struct {
 	// rather than through a generic extension map because it changes
 	// generated identifiers and so has to be validated, not passed through.
 	XEnumVarnames []string `json:"x-enum-varnames,omitempty"` //nolint:tagliatelle // name fixed by the OpenAPI ecosystem
+
+	// Extensions holds every `x-`-prefixed keyword declared alongside this
+	// schema, kept verbatim. JSON Schema reserves nothing under that
+	// prefix, and the OpenAPI ecosystem uses it for vendor data that would
+	// otherwise be dropped on the floor by a generator that models only the
+	// keywords it knows. Populated by UnmarshalJSON, not by a struct tag,
+	// since the keys are open-ended.
+	Extensions map[string]any `json:"-"`
 
 	// SubSchemaType marks the type as being a subschema type.
 	subSchemaType     SubSchemaType `json:"-"`
@@ -486,9 +499,38 @@ func (value *Type) UnmarshalJSON(raw []byte) error {
 		obj.Type = TypeList{"object"}
 	}
 
+	obj.Extensions = extractExtensions(raw)
+
 	*value = Type(obj)
 
 	return nil
+}
+
+// extractExtensions collects the `x-`-prefixed keywords declared on a schema
+// object. Errors are not surfaced: anything that failed to decode as an object
+// has already been rejected by the caller, and a schema is never invalid for
+// the sake of a vendor extension.
+func extractExtensions(raw []byte) map[string]any {
+	var fields map[string]any
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return nil
+	}
+
+	var extensions map[string]any
+
+	for key, val := range fields {
+		if !strings.HasPrefix(key, extensionPrefix) {
+			continue
+		}
+
+		if extensions == nil {
+			extensions = map[string]any{}
+		}
+
+		extensions[key] = val
+	}
+
+	return extensions
 }
 
 func AllOf(types []*Type, baseType *Type) (*Type, error) {

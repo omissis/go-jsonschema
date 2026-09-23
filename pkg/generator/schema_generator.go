@@ -1079,6 +1079,8 @@ func (g *schemaGenerator) addStructField(
 		}
 	}
 
+	extraTags = append(extraTags, g.extensionTags(prop, name)...)
+
 	slices.Sort(extraTags)
 
 	if count, ok := uniqueNames[fieldName]; ok {

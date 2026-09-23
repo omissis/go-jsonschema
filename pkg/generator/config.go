@@ -47,6 +47,16 @@ type Config struct {
 	DisableCustomTypesForMaps bool
 	// AliasSingleAllOfAnyOfRefs will convert types with a single nested anyOf or allOf ref type into a type alias.
 	AliasSingleAllOfAnyOfRefs bool
+	// ExtensionTags maps a schema `x-` extension name onto the struct tag it
+	// is emitted as, e.g. {"x-measurement": "slb-measurement"}. Only
+	// extensions named here are emitted, and only onto the field that
+	// declares them; everything else stays out of the generated output.
+	//
+	// The mapping is explicit rather than automatic because a struct tag key
+	// is part of a package's contract with whatever reflects over it, so it
+	// is the consumer, not the schema author, that decides the name.
+	ExtensionTags map[string]string
+
 	// ValidateNullTypes configures the generator to reject a property that is
 	// present with an explicit null where the schema's `type` excludes null.
 	//

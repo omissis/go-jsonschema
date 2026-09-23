@@ -24,6 +24,7 @@ var (
 	defaultPackage            string
 	defaultOutput             string
 	schemaPackages            []string
+	extensionTags             []string
 	schemaOutputs             []string
 	schemaRootTypes           []string
 	capitalizations           []string
@@ -68,11 +69,17 @@ var (
 				abortWithErr(err)
 			}
 
+			extensionTagMap, err := stringSliceToStringMap(extensionTags)
+			if err != nil {
+				abortWithErr(err)
+			}
+
 			cfg := generator.Config{
 				Warner: func(message string) {
 					logf("Warning: %s", message)
 				},
 				ExtraImports:              extraImports,
+				ExtensionTags:             extensionTagMap,
 				Capitalizations:           capitalizations,
 				DefaultOutputName:         defaultOutput,
 				DefaultPackageName:        defaultPackage,
@@ -184,6 +191,9 @@ must be in the format URI=PACKAGE.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
 		`File to write (- for standard output) a specific schema ID to;
 must be in the format URI=FILENAME.`)
+	rootCmd.PersistentFlags().StringSliceVar(&extensionTags, "extension-tag", nil,
+		"Emit a schema x- extension as a struct tag, given as an "+
+			"`extension=tag` pair (e.g. x-measurement=slb-measurement). Repeatable.")
 	rootCmd.PersistentFlags().StringSliceVar(&schemaRootTypes, "schema-root-type", nil,
 		`Override name to use for the root type of a specific schema ID;
 must be in the format URI=TYPE. By default, it is derived from the file name.`)

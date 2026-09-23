@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/extensionTags",
+  "type": "object",
+  "properties": {
+    "oilRate": {
+      "description": "A string extension becomes a struct tag, so a reflection-based consumer can read what the number means. Without this the declaration is dropped and the generated type is unusable with such a consumer.",
+      "type": "number",
+      "x-measurement": "Volume_Flowrate"
+    },
+    "precision": {
+      "description": "Numbers render without a trailing .0, which is what a reader parsing the tag back would expect.",
+      "type": "number",
+      "x-precision": 3
+    },
+    "derived": {
+      "description": "Booleans render as true/false.",
+      "type": "boolean",
+      "x-derived": true
+    },
+    "quoted": {
+      "description": "Values are quoted with strconv.Quote, so an embedded quote is escaped rather than closing the tag early and silently changing what reflection reads back.",
+      "type": "string",
+      "x-measurement": "has \"quotes\" inside"
+    },
+    "unmapped": {
+      "description": "Only extensions named in the configuration are emitted; this one is not mapped, so it stays out of the output.",
+      "type": "string",
+      "x-not-configured": "ignored"
+    },
+    "plain": {
+      "description": "No extensions at all, so the tags are unchanged.",
+      "type": "string"
+    }
+  }
+}
