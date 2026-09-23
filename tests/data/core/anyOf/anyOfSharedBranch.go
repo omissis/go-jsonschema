@@ -10,124 +10,6 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
-// An anyOf generated twice: once for the job definition, once for the root, which
-// merges job in through allOf. Its first branch is one schema in both, declared as
-// JobEnvironment_0 the first time, so the root's validator must use that type
-// rather than a scope-derived AnyOfSharedBranchEnvironment_0 that is never
-// declared.
-type AnyOfSharedBranch struct {
-	// Environment corresponds to the JSON schema field "environment".
-	Environment *AnyOfSharedBranchEnvironment `json:"environment,omitempty,omitzero" yaml:"environment,omitempty" mapstructure:"environment,omitempty"`
-
-	// Jobs corresponds to the JSON schema field "jobs".
-	Jobs []Job `json:"jobs,omitempty,omitzero" yaml:"jobs,omitempty" mapstructure:"jobs,omitempty"`
-}
-
-type AnyOfSharedBranchEnvironment struct {
-	// Global corresponds to the JSON schema field "global".
-	Global EnvVars `json:"global,omitempty,omitzero" yaml:"global,omitempty" mapstructure:"global,omitempty"`
-
-	AdditionalProperties map[string]string `mapstructure:",remain"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnyOfSharedBranchEnvironment) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AnyOfSharedBranchEnvironment: %w", err)
-	}
-	var anyOfSharedBranchEnvironment_0 JobEnvironment_0
-	var anyOfSharedBranchEnvironment_1 EnvVars
-	var errs []error
-	if err := anyOfSharedBranchEnvironment_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := anyOfSharedBranchEnvironment_1.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain AnyOfSharedBranchEnvironment
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AnyOfSharedBranchEnvironment: %w", err)
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := 0; i < st.NumField(); i++ {
-		f := st.Field(i)
-		if f.Name == "AdditionalProperties" {
-			continue
-		}
-		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
-		if name == "-" {
-			continue
-		}
-		if name == "" {
-			name = strings.ToLower(f.Name)
-		}
-		for k := range raw {
-			if k == name {
-				delete(raw, k)
-			}
-		}
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for AnyOfSharedBranchEnvironment: %w", err)
-	}
-	*j = AnyOfSharedBranchEnvironment(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *AnyOfSharedBranchEnvironment) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw AnyOfSharedBranchEnvironment: %w", err)
-	}
-	var anyOfSharedBranchEnvironment_0 JobEnvironment_0
-	var anyOfSharedBranchEnvironment_1 EnvVars
-	var errs []error
-	if err := anyOfSharedBranchEnvironment_0.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := anyOfSharedBranchEnvironment_1.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain AnyOfSharedBranchEnvironment
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal AnyOfSharedBranchEnvironment: %w", err)
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := 0; i < st.NumField(); i++ {
-		f := st.Field(i)
-		if f.Name == "AdditionalProperties" {
-			continue
-		}
-		name := strings.Split(f.Tag.Get("json"), ",")[0]
-		if name == "-" {
-			continue
-		}
-		if name == "" {
-			name = f.Name
-		}
-		for k := range raw {
-			if strings.EqualFold(k, name) {
-				delete(raw, k)
-			}
-		}
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for AnyOfSharedBranchEnvironment: %w", err)
-	}
-	*j = AnyOfSharedBranchEnvironment(plain)
-	return nil
-}
-
 type EnvVars map[string]string
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -138,6 +20,44 @@ func (j *EnvVars) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("unmarshal EnvVars: %w", err)
 	}
 	*j = EnvVars(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *EnvVars) UnmarshalYAML(value *yaml.Node) error {
+	type Plain EnvVars
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal EnvVars: %w", err)
+	}
+	*j = EnvVars(plain)
+	return nil
+}
+
+type JobEnvironment_0 struct {
+	// Global corresponds to the JSON schema field "global".
+	Global EnvVars `json:"global,omitempty,omitzero" yaml:"global,omitempty" mapstructure:"global,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *JobEnvironment_0) UnmarshalJSON(value []byte) error {
+	type Plain JobEnvironment_0
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal JobEnvironment_0: %w", err)
+	}
+	*j = JobEnvironment_0(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *JobEnvironment_0) UnmarshalYAML(value *yaml.Node) error {
+	type Plain JobEnvironment_0
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal JobEnvironment_0: %w", err)
+	}
+	*j = JobEnvironment_0(plain)
 	return nil
 }
 
@@ -255,40 +175,120 @@ func (j *JobEnvironment) UnmarshalYAML(value *yaml.Node) error {
 
 type AnyOfSharedBranchEnvironment_1 = EnvVars
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *EnvVars) UnmarshalYAML(value *yaml.Node) error {
-	type Plain EnvVars
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal EnvVars: %w", err)
-	}
-	*j = EnvVars(plain)
-	return nil
+// An anyOf generated twice: once for the job definition, once for the root, which
+// merges job in through allOf. Its first branch is one schema in both, declared as
+// JobEnvironment_0 the first time, so the root's validator must use that type
+// rather than a scope-derived AnyOfSharedBranchEnvironment_0 that is never
+// declared.
+type AnyOfSharedBranch struct {
+	// Environment corresponds to the JSON schema field "environment".
+	Environment *AnyOfSharedBranchEnvironment `json:"environment,omitempty,omitzero" yaml:"environment,omitempty" mapstructure:"environment,omitempty"`
+
+	// Jobs corresponds to the JSON schema field "jobs".
+	Jobs []Job `json:"jobs,omitempty,omitzero" yaml:"jobs,omitempty" mapstructure:"jobs,omitempty"`
 }
 
-type JobEnvironment_0 struct {
+type AnyOfSharedBranchEnvironment struct {
 	// Global corresponds to the JSON schema field "global".
 	Global EnvVars `json:"global,omitempty,omitzero" yaml:"global,omitempty" mapstructure:"global,omitempty"`
-}
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *JobEnvironment_0) UnmarshalYAML(value *yaml.Node) error {
-	type Plain JobEnvironment_0
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal JobEnvironment_0: %w", err)
-	}
-	*j = JobEnvironment_0(plain)
-	return nil
+	AdditionalProperties map[string]string `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *JobEnvironment_0) UnmarshalJSON(value []byte) error {
-	type Plain JobEnvironment_0
+func (j *AnyOfSharedBranchEnvironment) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw AnyOfSharedBranchEnvironment: %w", err)
+	}
+	var anyOfSharedBranchEnvironment_0 JobEnvironment_0
+	var anyOfSharedBranchEnvironment_1 EnvVars
+	var errs []error
+	if err := anyOfSharedBranchEnvironment_0.UnmarshalJSON(value); err != nil {
+		errs = append(errs, err)
+	}
+	if err := anyOfSharedBranchEnvironment_1.UnmarshalJSON(value); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 2 {
+		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	}
+	type Plain AnyOfSharedBranchEnvironment
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal JobEnvironment_0: %w", err)
+		return fmt.Errorf("unmarshal AnyOfSharedBranchEnvironment: %w", err)
 	}
-	*j = JobEnvironment_0(plain)
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for AnyOfSharedBranchEnvironment: %w", err)
+	}
+	*j = AnyOfSharedBranchEnvironment(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AnyOfSharedBranchEnvironment) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AnyOfSharedBranchEnvironment: %w", err)
+	}
+	var anyOfSharedBranchEnvironment_0 JobEnvironment_0
+	var anyOfSharedBranchEnvironment_1 EnvVars
+	var errs []error
+	if err := anyOfSharedBranchEnvironment_0.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if err := anyOfSharedBranchEnvironment_1.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 2 {
+		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	}
+	type Plain AnyOfSharedBranchEnvironment
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal AnyOfSharedBranchEnvironment: %w", err)
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = strings.ToLower(f.Name)
+		}
+		for k := range raw {
+			if k == name {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for AnyOfSharedBranchEnvironment: %w", err)
+	}
+	*j = AnyOfSharedBranchEnvironment(plain)
 	return nil
 }

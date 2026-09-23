@@ -186,24 +186,6 @@ type Email struct {
 	To string `json:"to" yaml:"to" mapstructure:"to"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Email) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw Email: %w", err)
-	}
-	if _, ok := raw["to"]; raw != nil && !ok {
-		return fmt.Errorf("field to in Email: required")
-	}
-	type Plain Email
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Email: %w", err)
-	}
-	*j = Email(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Email) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -216,6 +198,24 @@ func (j *Email) UnmarshalJSON(value []byte) error {
 	type Plain Email
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Email: %w", err)
+	}
+	*j = Email(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Email) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Email: %w", err)
+	}
+	if _, ok := raw["to"]; raw != nil && !ok {
+		return fmt.Errorf("field to in Email: required")
+	}
+	type Plain Email
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal Email: %w", err)
 	}
 	*j = Email(plain)
@@ -240,27 +240,6 @@ type IncidentOptions struct {
 	When []string `json:"when,omitempty,omitzero" yaml:"when,omitempty" mapstructure:"when,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw Incident: %w", err)
-	}
-	if _, ok := raw["properties"]; raw != nil && !ok {
-		return fmt.Errorf("field properties in Incident: required")
-	}
-	if _, ok := raw["providerType"]; raw != nil && !ok {
-		return fmt.Errorf("field providerType in Incident: required")
-	}
-	type Plain Incident
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Incident: %w", err)
-	}
-	*j = Incident(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Incident) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -276,6 +255,27 @@ func (j *Incident) UnmarshalJSON(value []byte) error {
 	type Plain Incident
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Incident: %w", err)
+	}
+	*j = Incident(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Incident) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Incident: %w", err)
+	}
+	if _, ok := raw["properties"]; raw != nil && !ok {
+		return fmt.Errorf("field properties in Incident: required")
+	}
+	if _, ok := raw["providerType"]; raw != nil && !ok {
+		return fmt.Errorf("field providerType in Incident: required")
+	}
+	type Plain Incident
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal Incident: %w", err)
 	}
 	*j = Incident(plain)
@@ -303,11 +303,11 @@ type Options struct {
 	When []string `json:"when,omitempty,omitzero" yaml:"when,omitempty" mapstructure:"when,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Options) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Options) UnmarshalJSON(value []byte) error {
 	type Plain Options
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal Options: %w", err)
 	}
 	if plain.Verbosity != nil {
@@ -319,11 +319,11 @@ func (j *Options) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Options) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Options) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Options
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal Options: %w", err)
 	}
 	if plain.Verbosity != nil {

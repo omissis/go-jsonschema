@@ -81,30 +81,6 @@ type AnimalCreatureDog struct {
 	Kind string `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnimalCreatureDog) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AnimalCreatureDog: %w", err)
-	}
-	if _, ok := raw["barkAt"]; raw != nil && !ok {
-		return fmt.Errorf("field barkAt in AnimalCreatureDog: required")
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in AnimalCreatureDog: required")
-	}
-	type Plain AnimalCreatureDog
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AnimalCreatureDog: %w", err)
-	}
-	if plain.Kind != "dog" {
-		return fmt.Errorf("field %s: must be equal to %s", "kind", "dog")
-	}
-	*j = AnimalCreatureDog(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnimalCreatureDog) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -120,6 +96,30 @@ func (j *AnimalCreatureDog) UnmarshalJSON(value []byte) error {
 	type Plain AnimalCreatureDog
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal AnimalCreatureDog: %w", err)
+	}
+	if plain.Kind != "dog" {
+		return fmt.Errorf("field %s: must be equal to %s", "kind", "dog")
+	}
+	*j = AnimalCreatureDog(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AnimalCreatureDog) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AnimalCreatureDog: %w", err)
+	}
+	if _, ok := raw["barkAt"]; raw != nil && !ok {
+		return fmt.Errorf("field barkAt in AnimalCreatureDog: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in AnimalCreatureDog: required")
+	}
+	type Plain AnimalCreatureDog
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AnimalCreatureDog: %w", err)
 	}
 	if plain.Kind != "dog" {

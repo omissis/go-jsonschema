@@ -7,6 +7,49 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+type Foo struct {
+	// Foo corresponds to the JSON schema field "foo".
+	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Foo) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw Foo: %w", err)
+	}
+	if _, ok := raw["foo"]; raw != nil && !ok {
+		return fmt.Errorf("field foo in Foo: required")
+	}
+	type Plain Foo
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Foo: %w", err)
+	}
+	*j = Foo(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw Foo: %w", err)
+	}
+	if _, ok := raw["foo"]; raw != nil && !ok {
+		return fmt.Errorf("field foo in Foo: required")
+	}
+	type Plain Foo
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal Foo: %w", err)
+	}
+	*j = Foo(plain)
+	return nil
+}
+
+type AnyOf2ConfigurationsElem_0 = Foo
+
 // object with anyOf properties, some with $defs
 type AnyOf2 struct {
 	// Configurations corresponds to the JSON schema field "configurations".
@@ -29,26 +72,6 @@ type AnyOf2ConfigurationsElem_1 struct {
 	Bar float64 `json:"bar" yaml:"bar" mapstructure:"bar"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *AnyOf2ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw AnyOf2ConfigurationsElem_1: %w", err)
-	}
-	if _, ok := raw["bar"]; raw != nil && !ok {
-		return fmt.Errorf("field bar in AnyOf2ConfigurationsElem_1: required")
-	}
-	type Plain AnyOf2ConfigurationsElem_1
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal AnyOf2ConfigurationsElem_1: %w", err)
-	}
-	*j = AnyOf2ConfigurationsElem_1(plain)
-	return nil
-}
-
-type AnyOf2ConfigurationsElem_0 = Foo
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf2ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -61,6 +84,24 @@ func (j *AnyOf2ConfigurationsElem_1) UnmarshalJSON(value []byte) error {
 	type Plain AnyOf2ConfigurationsElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal AnyOf2ConfigurationsElem_1: %w", err)
+	}
+	*j = AnyOf2ConfigurationsElem_1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *AnyOf2ConfigurationsElem_1) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw AnyOf2ConfigurationsElem_1: %w", err)
+	}
+	if _, ok := raw["bar"]; raw != nil && !ok {
+		return fmt.Errorf("field bar in AnyOf2ConfigurationsElem_1: required")
+	}
+	type Plain AnyOf2ConfigurationsElem_1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal AnyOf2ConfigurationsElem_1: %w", err)
 	}
 	*j = AnyOf2ConfigurationsElem_1(plain)
@@ -153,46 +194,5 @@ func (j *AnyOf2ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unmarshal AnyOf2ConfigurationsElem: %w", err)
 	}
 	*j = AnyOf2ConfigurationsElem(plain)
-	return nil
-}
-
-type Foo struct {
-	// Foo corresponds to the JSON schema field "foo".
-	Foo string `json:"foo" yaml:"foo" mapstructure:"foo"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw Foo: %w", err)
-	}
-	if _, ok := raw["foo"]; raw != nil && !ok {
-		return fmt.Errorf("field foo in Foo: required")
-	}
-	type Plain Foo
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Foo: %w", err)
-	}
-	*j = Foo(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Foo) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw Foo: %w", err)
-	}
-	if _, ok := raw["foo"]; raw != nil && !ok {
-		return fmt.Errorf("field foo in Foo: required")
-	}
-	type Plain Foo
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Foo: %w", err)
-	}
-	*j = Foo(plain)
 	return nil
 }

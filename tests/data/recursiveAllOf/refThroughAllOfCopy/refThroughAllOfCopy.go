@@ -17,17 +17,6 @@ type ConditionVariant0 struct {
 	Operand *Operand `json:"operand,omitempty,omitzero" yaml:"operand,omitempty" mapstructure:"operand,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConditionVariant0) UnmarshalYAML(value *yaml.Node) error {
-	type Plain ConditionVariant0
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal ConditionVariant0: %w", err)
-	}
-	*j = ConditionVariant0(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ConditionVariant0) UnmarshalJSON(value []byte) error {
 	type Plain ConditionVariant0
@@ -39,24 +28,35 @@ func (j *ConditionVariant0) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-type ConditionVariant1 map[string]interface{}
-
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConditionVariant1) UnmarshalYAML(value *yaml.Node) error {
-	type Plain ConditionVariant1
+func (j *ConditionVariant0) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ConditionVariant0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal ConditionVariant1: %w", err)
+		return fmt.Errorf("unmarshal ConditionVariant0: %w", err)
 	}
-	*j = ConditionVariant1(plain)
+	*j = ConditionVariant0(plain)
 	return nil
 }
+
+type ConditionVariant1 map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ConditionVariant1) UnmarshalJSON(value []byte) error {
 	type Plain ConditionVariant1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal ConditionVariant1: %w", err)
+	}
+	*j = ConditionVariant1(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConditionVariant1) UnmarshalYAML(value *yaml.Node) error {
+	type Plain ConditionVariant1
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal ConditionVariant1: %w", err)
 	}
 	*j = ConditionVariant1(plain)
@@ -229,22 +229,22 @@ type Operand struct {
 
 type OperandVariant0 map[string]interface{}
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *OperandVariant0) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *OperandVariant0) UnmarshalJSON(value []byte) error {
 	type Plain OperandVariant0
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal OperandVariant0: %w", err)
 	}
 	*j = OperandVariant0(plain)
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *OperandVariant0) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *OperandVariant0) UnmarshalYAML(value *yaml.Node) error {
 	type Plain OperandVariant0
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal OperandVariant0: %w", err)
 	}
 	*j = OperandVariant0(plain)
@@ -267,22 +267,22 @@ type OperandVariant1FilterVariant0 struct {
 	Operand *Operand `json:"operand,omitempty,omitzero" yaml:"operand,omitempty" mapstructure:"operand,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *OperandVariant1FilterVariant0) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *OperandVariant1FilterVariant0) UnmarshalJSON(value []byte) error {
 	type Plain OperandVariant1FilterVariant0
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal OperandVariant1FilterVariant0: %w", err)
 	}
 	*j = OperandVariant1FilterVariant0(plain)
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *OperandVariant1FilterVariant0) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *OperandVariant1FilterVariant0) UnmarshalYAML(value *yaml.Node) error {
 	type Plain OperandVariant1FilterVariant0
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal OperandVariant1FilterVariant0: %w", err)
 	}
 	*j = OperandVariant1FilterVariant0(plain)
@@ -471,22 +471,22 @@ func (j *OperandVariant1Filter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *OperandVariant1) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *OperandVariant1) UnmarshalJSON(value []byte) error {
 	type Plain OperandVariant1
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal OperandVariant1: %w", err)
 	}
 	*j = OperandVariant1(plain)
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *OperandVariant1) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *OperandVariant1) UnmarshalYAML(value *yaml.Node) error {
 	type Plain OperandVariant1
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal OperandVariant1: %w", err)
 	}
 	*j = OperandVariant1(plain)

@@ -246,33 +246,6 @@ func (j *UncompiledConditionalsChoice_1) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *UncompiledConditionalsChoice) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw UncompiledConditionalsChoice: %w", err)
-	}
-	var uncompiledConditionalsChoice_0 UncompiledConditionalsChoice_0
-	var uncompiledConditionalsChoice_1 UncompiledConditionalsChoice_1
-	var errs []error
-	if err := uncompiledConditionalsChoice_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := uncompiledConditionalsChoice_1.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain UncompiledConditionalsChoice
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal UncompiledConditionalsChoice: %w", err)
-	}
-	*j = UncompiledConditionalsChoice(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *UncompiledConditionalsChoice) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -294,6 +267,33 @@ func (j *UncompiledConditionalsChoice) UnmarshalJSON(value []byte) error {
 	type Plain UncompiledConditionalsChoice
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal UncompiledConditionalsChoice: %w", err)
+	}
+	*j = UncompiledConditionalsChoice(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *UncompiledConditionalsChoice) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw UncompiledConditionalsChoice: %w", err)
+	}
+	var uncompiledConditionalsChoice_0 UncompiledConditionalsChoice_0
+	var uncompiledConditionalsChoice_1 UncompiledConditionalsChoice_1
+	var errs []error
+	if err := uncompiledConditionalsChoice_0.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if err := uncompiledConditionalsChoice_1.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 2 {
+		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	}
+	type Plain UncompiledConditionalsChoice
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal UncompiledConditionalsChoice: %w", err)
 	}
 	*j = UncompiledConditionalsChoice(plain)

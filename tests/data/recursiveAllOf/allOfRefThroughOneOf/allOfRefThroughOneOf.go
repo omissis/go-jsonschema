@@ -47,27 +47,6 @@ type NodeEveryFilterEvery struct {
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NodeEveryFilterEvery) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NodeEveryFilterEvery: %w", err)
-	}
-	if _, ok := raw["filter"]; raw != nil && !ok {
-		return fmt.Errorf("field filter in NodeEveryFilterEvery: required")
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in NodeEveryFilterEvery: required")
-	}
-	type Plain NodeEveryFilterEvery
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NodeEveryFilterEvery: %w", err)
-	}
-	*j = NodeEveryFilterEvery(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeEveryFilterEvery) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -89,33 +68,33 @@ func (j *NodeEveryFilterEvery) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NodeEveryFilterEvery) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NodeEveryFilterEvery: %w", err)
+	}
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in NodeEveryFilterEvery: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in NodeEveryFilterEvery: required")
+	}
+	type Plain NodeEveryFilterEvery
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal NodeEveryFilterEvery: %w", err)
+	}
+	*j = NodeEveryFilterEvery(plain)
+	return nil
+}
+
 type NodeEveryFilterLeaf struct {
 	// Kind corresponds to the JSON schema field "kind".
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
 
 	// Value corresponds to the JSON schema field "value".
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NodeEveryFilterLeaf) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NodeEveryFilterLeaf: %w", err)
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in NodeEveryFilterLeaf: required")
-	}
-	if _, ok := raw["value"]; raw != nil && !ok {
-		return fmt.Errorf("field value in NodeEveryFilterLeaf: required")
-	}
-	type Plain NodeEveryFilterLeaf
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NodeEveryFilterLeaf: %w", err)
-	}
-	*j = NodeEveryFilterLeaf(plain)
-	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -139,33 +118,33 @@ func (j *NodeEveryFilterLeaf) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NodeEveryFilterLeaf) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NodeEveryFilterLeaf: %w", err)
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in NodeEveryFilterLeaf: required")
+	}
+	if _, ok := raw["value"]; raw != nil && !ok {
+		return fmt.Errorf("field value in NodeEveryFilterLeaf: required")
+	}
+	type Plain NodeEveryFilterLeaf
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal NodeEveryFilterLeaf: %w", err)
+	}
+	*j = NodeEveryFilterLeaf(plain)
+	return nil
+}
+
 type NodeEveryFilterSome struct {
 	// Filter corresponds to the JSON schema field "filter".
 	Filter *NodeEveryFilter `json:"filter" yaml:"filter" mapstructure:"filter"`
 
 	// Kind corresponds to the JSON schema field "kind".
 	Kind interface{} `json:"kind" yaml:"kind" mapstructure:"kind"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NodeEveryFilterSome) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NodeEveryFilterSome: %w", err)
-	}
-	if _, ok := raw["filter"]; raw != nil && !ok {
-		return fmt.Errorf("field filter in NodeEveryFilterSome: required")
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in NodeEveryFilterSome: required")
-	}
-	type Plain NodeEveryFilterSome
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NodeEveryFilterSome: %w", err)
-	}
-	*j = NodeEveryFilterSome(plain)
-	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -183,6 +162,27 @@ func (j *NodeEveryFilterSome) UnmarshalJSON(value []byte) error {
 	type Plain NodeEveryFilterSome
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NodeEveryFilterSome: %w", err)
+	}
+	*j = NodeEveryFilterSome(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NodeEveryFilterSome) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NodeEveryFilterSome: %w", err)
+	}
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in NodeEveryFilterSome: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in NodeEveryFilterSome: required")
+	}
+	type Plain NodeEveryFilterSome
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal NodeEveryFilterSome: %w", err)
 	}
 	*j = NodeEveryFilterSome(plain)
@@ -336,27 +336,6 @@ func (j *NodeEveryFilter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NodeEvery) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NodeEvery: %w", err)
-	}
-	if _, ok := raw["filter"]; raw != nil && !ok {
-		return fmt.Errorf("field filter in NodeEvery: required")
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in NodeEvery: required")
-	}
-	type Plain NodeEvery
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NodeEvery: %w", err)
-	}
-	*j = NodeEvery(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeEvery) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -372,6 +351,27 @@ func (j *NodeEvery) UnmarshalJSON(value []byte) error {
 	type Plain NodeEvery
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NodeEvery: %w", err)
+	}
+	*j = NodeEvery(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NodeEvery) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NodeEvery: %w", err)
+	}
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in NodeEvery: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in NodeEvery: required")
+	}
+	type Plain NodeEvery
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal NodeEvery: %w", err)
 	}
 	*j = NodeEvery(plain)
@@ -502,27 +502,6 @@ type NodeSomeFilterLeaf struct {
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NodeSomeFilterLeaf) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NodeSomeFilterLeaf: %w", err)
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in NodeSomeFilterLeaf: required")
-	}
-	if _, ok := raw["value"]; raw != nil && !ok {
-		return fmt.Errorf("field value in NodeSomeFilterLeaf: required")
-	}
-	type Plain NodeSomeFilterLeaf
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NodeSomeFilterLeaf: %w", err)
-	}
-	*j = NodeSomeFilterLeaf(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeSomeFilterLeaf) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -538,6 +517,27 @@ func (j *NodeSomeFilterLeaf) UnmarshalJSON(value []byte) error {
 	type Plain NodeSomeFilterLeaf
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NodeSomeFilterLeaf: %w", err)
+	}
+	*j = NodeSomeFilterLeaf(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NodeSomeFilterLeaf) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NodeSomeFilterLeaf: %w", err)
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in NodeSomeFilterLeaf: required")
+	}
+	if _, ok := raw["value"]; raw != nil && !ok {
+		return fmt.Errorf("field value in NodeSomeFilterLeaf: required")
+	}
+	type Plain NodeSomeFilterLeaf
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal NodeSomeFilterLeaf: %w", err)
 	}
 	*j = NodeSomeFilterLeaf(plain)
@@ -741,27 +741,6 @@ func (j *NodeSomeFilter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *NodeSome) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw NodeSome: %w", err)
-	}
-	if _, ok := raw["filter"]; raw != nil && !ok {
-		return fmt.Errorf("field filter in NodeSome: required")
-	}
-	if _, ok := raw["kind"]; raw != nil && !ok {
-		return fmt.Errorf("field kind in NodeSome: required")
-	}
-	type Plain NodeSome
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal NodeSome: %w", err)
-	}
-	*j = NodeSome(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *NodeSome) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -777,6 +756,27 @@ func (j *NodeSome) UnmarshalJSON(value []byte) error {
 	type Plain NodeSome
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal NodeSome: %w", err)
+	}
+	*j = NodeSome(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *NodeSome) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw NodeSome: %w", err)
+	}
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in NodeSome: required")
+	}
+	if _, ok := raw["kind"]; raw != nil && !ok {
+		return fmt.Errorf("field kind in NodeSome: required")
+	}
+	type Plain NodeSome
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal NodeSome: %w", err)
 	}
 	*j = NodeSome(plain)

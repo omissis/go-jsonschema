@@ -70,11 +70,11 @@ func (j *ElementsByName) UnmarshalYAML(value *yaml.Node) error {
 
 type ElementsListsByName map[string][]string
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ElementsListsByName) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ElementsListsByName) UnmarshalJSON(value []byte) error {
 	type Plain ElementsListsByName
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal ElementsListsByName: %w", err)
 	}
 	for k1 := range plain {
@@ -88,11 +88,11 @@ func (j *ElementsListsByName) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ElementsListsByName) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ElementsListsByName) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ElementsListsByName
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal ElementsListsByName: %w", err)
 	}
 	for k1 := range plain {
@@ -179,11 +179,11 @@ func (j *Elements) UnmarshalYAML(value *yaml.Node) error {
 // A declared array checks its own elements.
 type IdList []string
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *IdList) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *IdList) UnmarshalJSON(value []byte) error {
 	type Plain IdList
 	var plain Plain
-	if err := value.Decode(&plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return fmt.Errorf("unmarshal IdList: %w", err)
 	}
 	for i1 := range plain {
@@ -195,11 +195,11 @@ func (j *IdList) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *IdList) UnmarshalJSON(value []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *IdList) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IdList
 	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
+	if err := value.Decode(&plain); err != nil {
 		return fmt.Errorf("unmarshal IdList: %w", err)
 	}
 	for i1 := range plain {
