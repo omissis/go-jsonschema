@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strconv"
@@ -92,9 +93,15 @@ func extensionTagValue(raw any) (string, bool) {
 	case bool:
 		return strconv.FormatBool(v), true
 
+	case json.Number:
+		// Schema-sourced numbers arrive undecoded, so the exact literal the
+		// author wrote is what reaches the tag.
+		return v.String(), true
+
 	case float64:
-		// JSON numbers arrive as float64. Render integral values without a
-		// trailing ".0", which is what a reader would expect to parse back.
+		// Kept for extensions built programmatically rather than parsed.
+		// Render integral values without a trailing ".0", which is what a
+		// reader would expect to parse back.
 		return strconv.FormatFloat(v, 'f', -1, 64), true
 
 	default:

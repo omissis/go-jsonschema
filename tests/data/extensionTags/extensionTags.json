@@ -31,6 +31,11 @@
     "plain": {
       "description": "No extensions at all, so the tags are unchanged.",
       "type": "string"
+    },
+    "bigId": {
+      "description": "An integer past 2^53. Decoding into `any` would round it to ...992; the value is kept undecoded so the literal the author wrote is what reaches the tag.",
+      "type": "integer",
+      "x-precision": 9007199254740993
     }
   }
 }
