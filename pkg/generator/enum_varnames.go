@@ -45,6 +45,18 @@ func (g *schemaGenerator) enumVarnames(t *schemas.Type, declName string) []strin
 	names := make([]string, len(t.XEnumVarnames))
 	seen := make(map[string]int, len(t.XEnumVarnames))
 
+	// Every position falls back to its derived name, so a supplied name
+	// equal to a *different* position's derived name collides with whatever
+	// ends up using it — and Package.AddDecl drops the loser in silence,
+	// leaving one of the two constants simply absent from the output.
+	derived := make(map[string]int, len(t.Enum))
+
+	for i, v := range t.Enum {
+		if str, ok := v.(string); ok {
+			derived[g.makeEnumConstantName(declName, str)] = i
+		}
+	}
+
 	for i, raw := range t.XEnumVarnames {
 		if raw == "" {
 			continue
@@ -83,6 +95,16 @@ func (g *schemaGenerator) enumVarnames(t *schemas.Type, declName string) []strin
 				"Enum %s: x-enum-varnames[%d] %q is already declared in this package; "+
 					"deriving that constant's name instead",
 				declName, i, raw,
+			))
+
+			continue
+		}
+
+		if other, clash := derived[name]; clash && other != i {
+			g.warner(fmt.Sprintf(
+				"Enum %s: x-enum-varnames[%d] %q is the name entry %d would be given anyway; "+
+					"deriving that constant's name instead",
+				declName, i, raw, other,
 			))
 
 			continue
