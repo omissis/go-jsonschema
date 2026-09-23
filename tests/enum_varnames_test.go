@@ -2,45 +2,17 @@ package tests_test
 
 import (
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/atombender/go-jsonschema/pkg/generator"
 )
 
-// generateCapturingWarnings runs the generator over one schema and returns
-// everything the warner emitted, so the fallback paths can be asserted on
-// directly rather than inferred from the golden file.
+// generateCapturingWarnings runs the generator over one schema under the
+// standard config and returns everything the warner emitted.
 func generateCapturingWarnings(t *testing.T, fileName string) []string {
 	t.Helper()
 
-	var (
-		mu       sync.Mutex
-		warnings []string
-	)
-
-	cfg := basicConfig
-	cfg.Warner = func(message string) {
-		mu.Lock()
-		defer mu.Unlock()
-
-		warnings = append(warnings, message)
-	}
-
-	g, err := generator.New(cfg)
-	require.NoError(t, err)
-	require.NoError(t, g.DoFile(fileName))
-
-	_, err = g.Sources()
-	require.NoError(t, err)
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	return append([]string(nil), warnings...)
+	return generateCapturingWarningsWithConfig(t, basicConfig, fileName)
 }
 
 // TestEnumVarnamesGolden drives the golden files for the feature's own data
