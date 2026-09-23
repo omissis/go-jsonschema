@@ -11,7 +11,7 @@ type Choice1 struct {
 
 type NestedRefsArray struct {
 	// Item corresponds to the JSON schema field "item".
-	Item *Wrapper_1 `json:"item,omitempty,omitzero" yaml:"item,omitempty" mapstructure:"item,omitempty"`
+	Item *WrapperItems `json:"item,omitempty,omitzero" yaml:"item,omitempty" mapstructure:"item,omitempty"`
 
 	// Variant corresponds to the JSON schema field "variant".
 	Variant *Choice1 `json:"variant,omitempty,omitzero" yaml:"variant,omitempty" mapstructure:"variant,omitempty"`
@@ -22,7 +22,7 @@ type Wrapper []struct {
 	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
 
-type Wrapper_1 struct {
+type WrapperItems struct {
 	// Name corresponds to the JSON schema field "name".
 	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
 }
