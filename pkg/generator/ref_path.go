@@ -200,38 +200,61 @@ func checkPointerEscapes(segment string) error {
 // `workflowDispatchInput/properties/options` names a type after the definition
 // and the property rather than after the plumbing between them.
 func refPathTypeName(path string) string {
-	structural := map[string]bool{
-		"properties": true, "patternProperties": true,
-		"definitions": true, "$defs": true,
-		"items": true, "additionalProperties": true, "additionalItems": true,
-		"not":   true,
-		"allOf": true, "anyOf": true, "oneOf": true,
-	}
-
 	// Validation already happened in resolveRefPath; a malformed path cannot
 	// reach here, and falling back to the raw path is harmless if it did.
 	segments, err := splitRefPath(path)
-	if err != nil {
+	if err != nil || len(segments) == 0 {
 		return path
 	}
 
-	kept := make([]string, 0, len(segments))
+	// Walk positionally rather than dropping segments by text. A member can
+	// legitimately be *named* `items`, and text matching cannot tell that
+	// from the keyword — it would drop the name, so
+	// `Foo/properties/items/properties/bar` and `Foo/properties/bar` would
+	// both come out as `FooBar`.
+	//
+	// The first segment names a definition. After that the path alternates:
+	// a keyword, then its argument if it takes one. Consuming the argument
+	// in the same step means it is never examined as a keyword.
+	kept := []string{segments[0]}
 
-	for i, seg := range segments {
-		// A structural keyword is noise only when a name or index follows
-		// it: `Wrapper/properties/foo` is identified by `foo`. When the
-		// keyword is the last segment it is carrying the information
-		// itself, and dropping it leaves `Wrapper/items` named after the
-		// definition it lives in — colliding with that definition.
-		if structural[seg] && i < len(segments)-1 {
-			continue
+	for i := 1; i < len(segments); {
+		keyword := segments[i]
+
+		switch keyword {
+		// Keywords holding a collection: the name or index that follows is
+		// what identifies the subschema, so the keyword itself is noise.
+		case "properties", "patternProperties", "definitions", "$defs",
+			"allOf", "anyOf", "oneOf", "dependencies", "dependentSchemas":
+			if i+1 < len(segments) {
+				kept = append(kept, segments[i+1])
+				i += 2
+
+				continue
+			}
+
+			kept = append(kept, keyword)
+			i++
+
+		// `items` is dual-form: an index follows the tuple form, nothing
+		// follows the single-schema form.
+		case "items":
+			if i+1 < len(segments) {
+				kept = append(kept, segments[i+1])
+				i += 2
+
+				continue
+			}
+
+			kept = append(kept, keyword)
+			i++
+
+		// Keywords holding a single schema carry the information
+		// themselves; nothing follows them to name the subschema.
+		default:
+			kept = append(kept, keyword)
+			i++
 		}
-
-		kept = append(kept, seg)
-	}
-
-	if len(kept) == 0 {
-		return path
 	}
 
 	return strings.Join(kept, "_")

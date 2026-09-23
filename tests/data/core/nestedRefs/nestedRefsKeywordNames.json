@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "Foo": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "description": "A member legitimately NAMED `items`. Dropping segments by text cannot tell this from the keyword, so the name would be lost and this subschema would collide with a sibling.",
+          "type": "object",
+          "properties": { "bar": { "type": "number" } }
+        },
+        "bar": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "nested": { "$ref": "#/definitions/Foo/properties/items/properties/bar" },
+    "sibling": { "$ref": "#/definitions/Foo/properties/bar" }
+  }
+}

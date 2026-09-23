@@ -7,7 +7,7 @@ type Holder struct {
 	Flag *string `json:"flag,omitempty,omitzero" yaml:"flag,omitempty" mapstructure:"flag,omitempty"`
 }
 
-type HolderDependenciesNeedsFlag struct {
+type HolderNeedsFlag struct {
 	// Extra corresponds to the JSON schema field "extra".
 	Extra *string `json:"extra,omitempty,omitzero" yaml:"extra,omitempty" mapstructure:"extra,omitempty"`
 }
@@ -17,5 +17,5 @@ type NestedRefsDependencies struct {
 	// DependentSchemas, so a $ref descending through it resolves there. A
 	// property-name dependency lands in DependentRequired instead, is not a schema,
 	// and correctly finds nothing.
-	ViaDependencies *HolderDependenciesNeedsFlag `json:"viaDependencies,omitempty,omitzero" yaml:"viaDependencies,omitempty" mapstructure:"viaDependencies,omitempty"`
+	ViaDependencies *HolderNeedsFlag `json:"viaDependencies,omitempty,omitzero" yaml:"viaDependencies,omitempty" mapstructure:"viaDependencies,omitempty"`
 }
