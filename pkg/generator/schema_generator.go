@@ -523,13 +523,13 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 
 				break
-			} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+			} else if maxItems := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || maxItems != 0 {
 				validators = append(validators, &arrayValidator{
 					fieldName:  f.Name,
 					jsonName:   f.JSONName,
 					arrayDepth: arrayDepth,
 					minItems:   f.SchemaType.MinItems,
-					maxItems:   f.SchemaType.MaxItems,
+					maxItems:   maxItems,
 				})
 			}
 
@@ -621,6 +621,26 @@ func tupleIsClosed(t *schemas.Type) bool {
 	}
 
 	return isFalseSchema(t.AdditionalItems)
+}
+
+// effectiveMaxItems returns the array length cap a schema implies, including
+// the one a closed tuple carries without saying so.
+//
+// `items: [A], additionalItems: false` permits at most len(items) elements, but
+// expresses that through `additionalItems` rather than `maxItems`. itemsSchema
+// collapses exactly that shape to []A, so without this the generated slice
+// would accept more elements than the schema allows — `["a", "b"]` would decode
+// cleanly against a tuple that admits one element.
+func effectiveMaxItems(t *schemas.Type) int {
+	if t.MaxItems != 0 {
+		return t.MaxItems
+	}
+
+	if len(t.TupleItems) > 0 && isFalseSchema(t.AdditionalItems) {
+		return len(t.TupleItems)
+	}
+
+	return 0
 }
 
 // isFalseSchema reports whether t is the JSON Schema `false`.
