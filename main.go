@@ -31,6 +31,7 @@ var (
 	defaultOutput                 string
 	schemaPackages                []string
 	extensionTags                 []string
+	collisionStrategyRaw          string
 	schemaOutputs                 []string
 	schemaRootTypes               []string
 	knownSchemas                  []string
@@ -97,6 +98,11 @@ var (
 				abortWithErr(err)
 			}
 
+			collisionStrategy, err := generator.ParseCollisionStrategy(collisionStrategyRaw)
+			if err != nil {
+				abortWithErr(err)
+			}
+
 			formatValidation, err := parseValidateFormats(validateFormatsRaw)
 			if err != nil {
 				abortWithErr(err)
@@ -118,6 +124,7 @@ var (
 				},
 				ExtraImports:               extraImports,
 				ExtensionTags:              extensionTagMap,
+				CollisionStrategy:          collisionStrategy,
 				Capitalizations:            capitalizations,
 				DefaultOutputName:          defaultOutput,
 				DefaultPackageName:         defaultPackage,
@@ -247,6 +254,10 @@ no Go code is emitted for it. Repeat for each cross-tree dependency.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
 		`File to write (- for standard output) a specific schema ID to;
 must be in the format URI=FILENAME.`)
+	rootCmd.PersistentFlags().StringVar(&collisionStrategyRaw, "collision-strategy", "",
+		"How to resolve two schemas competing for one Go type name: `positional` "+
+			"(default, append _1/_2 — the schema processed first keeps the bare name) "+
+			"or qualify (prefix each definition with its owning schema's type name).")
 	rootCmd.PersistentFlags().StringSliceVar(&extensionTags, "extension-tag", nil,
 		"Emit a schema x- extension as a struct tag, given as an "+
 			"`extension=tag` pair (e.g. x-dimension=acme-dimension). Repeatable.")
