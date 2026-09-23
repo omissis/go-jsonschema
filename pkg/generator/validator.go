@@ -1012,10 +1012,20 @@ type formatValidator struct {
 	fieldName  string
 	format     string
 	isNillable bool
+
+	// valueExpr overrides the expression the check runs against. Empty means
+	// the default `plain.<Field>`. The primitive-oneOf wrapper sets it
+	// because its decoded value lives in a local inside the generated
+	// UnmarshalJSON, not on a Plain struct — everything else about the check,
+	// including the message, stays identical to the struct-field path.
+	valueExpr string
 }
 
 func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
-	value := getPlainName(v.fieldName)
+	value := v.valueExpr
+	if value == "" {
+		value = getPlainName(v.fieldName)
+	}
 
 	pointerPrefix := ""
 	if v.isNillable {
