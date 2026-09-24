@@ -97,10 +97,25 @@ type nonNullValidator struct {
 }
 
 func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
-	// Deliberately not named `value`: that is the UnmarshalJSON parameter, and
-	// shadowing it here reads as a bug even though the scope is the if-statement.
-	out.Printlnf(`if fieldValue, ok := %s[%q]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
+	// Compared case-insensitively rather than indexed directly, because
+	// encoding/json matches a JSON key to a struct field without regard to
+	// case. An exact lookup of `age` misses `{"Age": null}`, which the decode
+	// still assigns — so the check meant to reject it never fired.
+	//
+	// Where the payload carries two differently-cased spellings and one is
+	// null, this rejects it. encoding/json is no more specific for that input
+	// (with duplicate keys the last one decoded wins), and refusing an
+	// ambiguous payload is the safer answer for a validation flag.
+	//
+	// `fieldValue` is deliberately not named `value`: that is the
+	// UnmarshalJSON parameter, and shadowing it reads as a bug.
+	out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
 	out.Indent(1)
+	out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, v.jsonName)
+	out.Indent(1)
+	out.Printlnf("continue")
+	out.Indent(-1)
+	out.Printlnf("}")
 	out.Printlnf(
 		`return fmt.Errorf("field %s in %s: must not be null")`,
 		goStringText(v.jsonName), goStringText(v.declName),
@@ -115,6 +130,7 @@ func (v *nonNullValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
+		imports:             []packageImport{{qualifiedName: "strings"}},
 	}
 }
 

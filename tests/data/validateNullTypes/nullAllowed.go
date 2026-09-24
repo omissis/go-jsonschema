@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 
 type NullAllowed struct {
 	// Nullable corresponds to the JSON schema field "nullable".
@@ -28,7 +29,10 @@ func (j *NullAllowed) UnmarshalJSON(value []byte) error {
 	if raw == nil {
 		return fmt.Errorf("NullAllowed: must not be null")
 	}
-	if fieldValue, ok := raw["strict"]; ok && fieldValue == nil {
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "strict") {
+			continue
+		}
 		return fmt.Errorf("field strict in NullAllowed: must not be null")
 	}
 	type Plain NullAllowed
@@ -49,7 +53,10 @@ func (j *NullAllowed) UnmarshalYAML(value *yaml.Node) error {
 	if raw == nil {
 		return fmt.Errorf("NullAllowed: must not be null")
 	}
-	if fieldValue, ok := raw["strict"]; ok && fieldValue == nil {
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "strict") {
+			continue
+		}
 		return fmt.Errorf("field strict in NullAllowed: must not be null")
 	}
 	type Plain NullAllowed
