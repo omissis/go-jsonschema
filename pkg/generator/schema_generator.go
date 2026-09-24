@@ -638,7 +638,14 @@ func effectiveMaxItems(t *schemas.Type) (int, bool) {
 	// false` leaves every element "additional" and so forbidden, admitting
 	// only the empty array. Reporting that as a bare 0 is indistinguishable
 	// from "no maximum" and emits no check at all.
-	tupleMax, tupleClosed := 0, isFalseSchema(t.AdditionalItems)
+	// `additionalItems` only has meaning alongside the tuple form of `items`
+	// (draft-07 §6.4.2); with a single-schema `items` it applies to nothing
+	// and must not cap the array. TupleItems is non-nil exactly when the
+	// tuple form was parsed, which is what distinguishes `items: []` — a
+	// closed tuple of zero members — from `items: {...}`.
+	tupleClosed := t.TupleItems != nil && isFalseSchema(t.AdditionalItems)
+
+	tupleMax := 0
 	if tupleClosed {
 		tupleMax = len(t.TupleItems)
 	}

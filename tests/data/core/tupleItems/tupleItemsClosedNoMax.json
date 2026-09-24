@@ -50,6 +50,14 @@
       "type": "array",
       "additionalItems": false,
       "items": []
+    },
+    "singleSchemaItems": {
+      "description": "additionalItems alongside a SINGLE-schema items. Per draft-07 it applies only to the tuple form, so it constrains nothing here and must not cap the array \u2014 treating it as a closed tuple of zero members would reject every element.",
+      "type": "array",
+      "additionalItems": false,
+      "items": {
+        "type": "string"
+      }
     }
   }
 }
