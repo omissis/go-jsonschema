@@ -215,7 +215,9 @@ func sortStrings(s []string) {
 //
 // MarshalJSON / MarshalYAML are identical to the discriminator path.
 func (g *schemaGenerator) generateOneOfTryEach(t *schemas.Type, scope nameScope) (codegen.Type, error) {
-	holderName := g.output.uniqueTypeName(scope)
+	holderName, nameCollided := g.output.uniqueTypeName(scope)
+	g.output.warnNameCollision(nameCollided, scope, holderName)
+
 	if g.config.StructNameFromTitle && t.Title != "" {
 		holderName = g.caser.Identifierize(t.Title)
 	}

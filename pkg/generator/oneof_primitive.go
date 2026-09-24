@@ -370,7 +370,8 @@ func (g *schemaGenerator) emitPrimitiveWrapper(
 		g.output.file.Package.AddImport(imp, "")
 	}
 
-	name := g.output.uniqueTypeName(scope)
+	name, nameCollided := g.output.uniqueTypeName(scope)
+	g.output.warnNameCollision(nameCollided, scope, name)
 
 	// A validator-backed format is only enforced when the user asked for
 	// format validation, exactly as on the non-oneOf path. Clearing it here

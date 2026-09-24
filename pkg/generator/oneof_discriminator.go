@@ -378,7 +378,9 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 	prop string,
 	values []discriminatorValue,
 ) (codegen.Type, error) {
-	holderName := g.output.uniqueTypeName(scope)
+	holderName, nameCollided := g.output.uniqueTypeName(scope)
+	g.output.warnNameCollision(nameCollided, scope, holderName)
+
 	if g.config.StructNameFromTitle && t.Title != "" {
 		holderName = g.caser.Identifierize(t.Title)
 	}

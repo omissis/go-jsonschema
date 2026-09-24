@@ -3,6 +3,7 @@ package tests_test
 import (
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,12 @@ import (
 const (
 	alphaSchema = "./data/collisionStrategy/alphaResults.schema.json"
 	betaSchema  = "./data/collisionStrategy/betaResults.schema.json"
+
+	// The sameName pair is the shape that exposes reporting rather than
+	// naming: the root property and the definition it $refs share a name, so
+	// under qualify both resolve to the same qualified identifier.
+	sameNameASchema = "./data/collisionStrategy/sameNameA.schema.json"
+	sameNameBSchema = "./data/collisionStrategy/sameNameB.schema.json"
 )
 
 // generateFiles runs one generator over several schemas, the way the CLI does
@@ -130,6 +137,75 @@ func TestCollisionStrategyQualifyWithMinimalNames(t *testing.T) {
 
 	assert.NotContains(t, alphaFirst, "type Metadata struct {")
 	assert.Equal(t, sortedLines(alphaFirst), sortedLines(betaFirst))
+}
+
+// TestCollisionStrategyWarnings guards the reporting, not just the names.
+// `uniqueTypeName` used to warn as a side effect, before the caller had decided
+// whether the suffixed name would survive — and generateDeclaredType discards
+// the declaration when the type turns out to be already named. Under `qualify`
+// a definition and the root property that $refs it resolve to the same
+// qualified identifier, so every qualified definition reported a collision and
+// emitted no `_1` type to go with it.
+func TestCollisionStrategyWarnings(t *testing.T) {
+	t.Parallel()
+
+	t.Run("positional reports the collision it actually makes", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := collisionWarnings(t, basicConfig)
+
+		require.NotEmpty(t, warnings, "the bare name is contested, so it is reported")
+		assert.Contains(t, strings.Join(warnings, "\n"), `Multiple types map to the name "Metadata"`)
+
+		// The report has to match the output: the suffixed type is real here.
+		assert.Contains(t, generateFiles(t, basicConfig, sameNameASchema, sameNameBSchema),
+			"type Metadata_1 struct {")
+	})
+
+	t.Run("qualify reports nothing, because nothing collides", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := basicConfig
+		cfg.CollisionStrategy = generator.CollisionQualify
+
+		assert.Empty(t, collisionWarnings(t, cfg),
+			"qualified names do not contest an identifier, so there is nothing to report")
+	})
+}
+
+// collisionWarnings returns just the name-collision reports from generating the
+// two colliding fixtures under cfg.
+func collisionWarnings(t *testing.T, cfg generator.Config) []string {
+	t.Helper()
+
+	var (
+		mu  sync.Mutex
+		out []string
+	)
+
+	cfg.Warner = func(message string) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if strings.Contains(message, "Multiple types map to the name") {
+			out = append(out, message)
+		}
+	}
+
+	g, err := generator.New(cfg)
+	require.NoError(t, err)
+
+	for _, f := range []string{sameNameASchema, sameNameBSchema} {
+		require.NoError(t, g.DoFile(f))
+	}
+
+	_, err = g.Sources()
+	require.NoError(t, err)
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	return append([]string(nil), out...)
 }
 
 func TestParseCollisionStrategy(t *testing.T) {
