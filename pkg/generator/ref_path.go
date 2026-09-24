@@ -236,14 +236,20 @@ func refPathTypeName(path string) string {
 			kept = append(kept, keyword)
 			i++
 
-		// `items` is dual-form: an index follows the tuple form, nothing
-		// follows the single-schema form.
+		// `items` is dual-form, and only the tuple form consumes what
+		// follows. Decided the same way resolveRefPath decides it — by
+		// whether the next segment parses as an index — because the
+		// single-schema form can be followed by a further keyword, and
+		// swallowing that would name `Wrapper/items/properties/bar` after
+		// `properties` instead of `items`.
 		case "items":
 			if i+1 < len(segments) {
-				kept = append(kept, segments[i+1])
-				i += 2
+				if _, err := strconv.Atoi(segments[i+1]); err == nil {
+					kept = append(kept, segments[i+1])
+					i += 2
 
-				continue
+					continue
+				}
 			}
 
 			kept = append(kept, keyword)
