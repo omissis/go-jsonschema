@@ -927,12 +927,18 @@ func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []strin
 		}
 	}
 
+	// The name is schema data and lands inside a quoted tag value, which
+	// reflect parses with strconv.Unquote. Unescaped, `a"b` truncates the
+	// value to `a` and `back\slash` makes the tag unparseable, so reflect
+	// reports it as absent and the field silently falls back to its Go name.
+	quotedName := goQuotedBody(name)
+
 	for _, tag := range g.config.Tags {
 		switch tag {
 		case "json":
-			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitJson)
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, quotedName, omitJson)
 		default:
-			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitRest)
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, quotedName, omitRest)
 		}
 	}
 

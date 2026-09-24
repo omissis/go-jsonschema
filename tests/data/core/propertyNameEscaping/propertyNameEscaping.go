@@ -12,10 +12,13 @@ import yaml "gopkg.in/yaml.v3"
 // sign is read by fmt as a verb.
 type PropertyNameEscaping struct {
 	// AB corresponds to the JSON schema field "a\"b".
-	AB string `json:"a"b" yaml:"a"b" mapstructure:"a"b"`
+	AB string `json:"a\"b" yaml:"a\"b" mapstructure:"a\"b"`
 
 	// BackSlash corresponds to the JSON schema field "back\\slash".
-	BackSlash string `json:"back\slash" yaml:"back\slash" mapstructure:"back\slash"`
+	BackSlash string `json:"back\\slash" yaml:"back\\slash" mapstructure:"back\\slash"`
+
+	// HasTick corresponds to the JSON schema field "has`tick".
+	HasTick string "json:\"has`tick\" yaml:\"has`tick\" mapstructure:\"has`tick\""
 
 	// Ordinary corresponds to the JSON schema field "ordinary".
 	Ordinary string `json:"ordinary" yaml:"ordinary" mapstructure:"ordinary"`
@@ -35,6 +38,9 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["back\\slash"]; raw != nil && !ok {
 		return fmt.Errorf("field back\\slash in PropertyNameEscaping: required")
+	}
+	if _, ok := raw["has`tick"]; raw != nil && !ok {
+		return fmt.Errorf("field has`tick in PropertyNameEscaping: required")
 	}
 	if _, ok := raw["ordinary"]; raw != nil && !ok {
 		return fmt.Errorf("field ordinary in PropertyNameEscaping: required")
@@ -62,6 +68,9 @@ func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["back\\slash"]; raw != nil && !ok {
 		return fmt.Errorf("field back\\slash in PropertyNameEscaping: required")
+	}
+	if _, ok := raw["has`tick"]; raw != nil && !ok {
+		return fmt.Errorf("field has`tick in PropertyNameEscaping: required")
 	}
 	if _, ok := raw["ordinary"]; raw != nil && !ok {
 		return fmt.Errorf("field ordinary in PropertyNameEscaping: required")

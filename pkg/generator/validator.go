@@ -749,7 +749,15 @@ func upperFirst(s string) string {
 // as a verb. Escaping leaves ordinary names byte-for-byte unchanged, so
 // generated output only differs where it was previously broken.
 func goStringText(s string) string {
+	return strings.ReplaceAll(goQuotedBody(s), "%", "%%")
+}
+
+// goQuotedBody escapes s for use inside a Go string literal, without the
+// surrounding quotes. Struct tag values are parsed with strconv.Unquote, so an
+// unescaped quote truncates the value and an unescaped backslash makes the
+// whole tag unparseable — reflect then reports the tag as absent.
+func goQuotedBody(s string) string {
 	quoted := strconv.Quote(s)
 
-	return strings.ReplaceAll(quoted[1:len(quoted)-1], "%", "%%")
+	return quoted[1 : len(quoted)-1]
 }

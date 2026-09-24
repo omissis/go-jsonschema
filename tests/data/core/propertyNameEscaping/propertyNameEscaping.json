@@ -3,10 +3,27 @@
   "type": "object",
   "description": "Property names are schema data, not identifiers, so they can carry characters that are not safe to drop into generated Go source. Interpolated raw, a quote or backslash ends the string literal early and the file does not compile; a percent sign is read by fmt as a verb.",
   "properties": {
-    "a\"b": { "type": "string" },
-    "back\\slash": { "type": "string" },
-    "pct%s": { "type": "string" },
-    "ordinary": { "type": "string" }
+    "a\"b": {
+      "type": "string"
+    },
+    "back\\slash": {
+      "type": "string"
+    },
+    "pct%s": {
+      "type": "string"
+    },
+    "ordinary": {
+      "type": "string"
+    },
+    "has`tick": {
+      "type": "string"
+    }
   },
-  "required": ["a\"b", "back\\slash", "pct%s", "ordinary"]
+  "required": [
+    "a\"b",
+    "back\\slash",
+    "pct%s",
+    "ordinary",
+    "has`tick"
+  ]
 }
