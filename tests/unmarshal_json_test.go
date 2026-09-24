@@ -464,6 +464,26 @@ func TestJsonUnmarshalValidateNullTypes(t *testing.T) {
 		assert.Contains(t, err.Error(), "must not be null")
 	})
 
+	t.Run("a differently-cased key is rejected too", func(t *testing.T) {
+		t.Parallel()
+
+		// encoding/json matches a JSON key to a struct field without regard
+		// to case, so `{"Name": null}` is assigned to the `name` field. An
+		// exact raw-map lookup missed it and the check never fired — the flag
+		// was bypassable by changing a key's case.
+		// Uses an optional property deliberately. For a REQUIRED one the
+		// upstream required check indexes the raw map exactly too, so it
+		// reports "required" first and masks this — a separate gap, in
+		// upstream code, that is not this flag's to fix.
+		for _, payload := range []string{`{"name":"a","Tags":null}`, `{"name":"a","TAGS":null}`} {
+			var v testNullTypes.NullTypes
+
+			err := json.Unmarshal([]byte(payload), &v)
+			require.Error(t, err, "payload %s", payload)
+			assert.Contains(t, err.Error(), "must not be null")
+		}
+	})
+
 	t.Run("omission and valid values are unaffected", func(t *testing.T) {
 		t.Parallel()
 
