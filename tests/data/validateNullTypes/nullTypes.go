@@ -5,6 +5,7 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "strings"
 
 type NullTypes struct {
 	// Name corresponds to the JSON schema field "name".
@@ -26,10 +27,16 @@ func (j *NullTypes) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in NullTypes: required")
 	}
-	if fieldValue, ok := raw["name"]; ok && fieldValue == nil {
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "name") {
+			continue
+		}
 		return fmt.Errorf("field name in NullTypes: must not be null")
 	}
-	if fieldValue, ok := raw["tags"]; ok && fieldValue == nil {
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "tags") {
+			continue
+		}
 		return fmt.Errorf("field tags in NullTypes: must not be null")
 	}
 	type Plain NullTypes
@@ -56,10 +63,16 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in NullTypes: required")
 	}
-	if fieldValue, ok := raw["name"]; ok && fieldValue == nil {
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "name") {
+			continue
+		}
 		return fmt.Errorf("field name in NullTypes: must not be null")
 	}
-	if fieldValue, ok := raw["tags"]; ok && fieldValue == nil {
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "tags") {
+			continue
+		}
 		return fmt.Errorf("field tags in NullTypes: must not be null")
 	}
 	type Plain NullTypes
