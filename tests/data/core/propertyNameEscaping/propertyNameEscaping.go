@@ -14,6 +14,11 @@ type PropertyNameEscaping struct {
 	// AB corresponds to the JSON schema field "a\"b".
 	AB string `json:"a\"b" yaml:"a\"b" mapstructure:"a\"b"`
 
+	// An array whose name carries both a quote and a percent. The length check keeps
+	// the name as an argument rather than splicing it into the format string, so the
+	// percent is never read as a verb and only Go-literal escaping applies.
+	ArrPctS [][]string `json:"arr\"pct%s" yaml:"arr\"pct%s" mapstructure:"arr\"pct%s"`
+
 	// BackSlash corresponds to the JSON schema field "back\\slash".
 	BackSlash string `json:"back\\slash" yaml:"back\\slash" mapstructure:"back\\slash"`
 
@@ -36,6 +41,9 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["a\"b"]; raw != nil && !ok {
 		return fmt.Errorf("field a\"b in PropertyNameEscaping: required")
 	}
+	if _, ok := raw["arr\"pct%s"]; raw != nil && !ok {
+		return fmt.Errorf("field arr\"pct%%s in PropertyNameEscaping: required")
+	}
 	if _, ok := raw["back\\slash"]; raw != nil && !ok {
 		return fmt.Errorf("field back\\slash in PropertyNameEscaping: required")
 	}
@@ -53,6 +61,14 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
+	if plain.ArrPctS != nil && len(plain.ArrPctS) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "arr\"pct%s", 1)
+	}
+	for i1 := range plain.ArrPctS {
+		if plain.ArrPctS[i1] != nil && len(plain.ArrPctS[i1]) < 1 {
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "arr\"pct%s", i1), 1)
+		}
+	}
 	*j = PropertyNameEscaping(plain)
 	return nil
 }
@@ -65,6 +81,9 @@ func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["a\"b"]; raw != nil && !ok {
 		return fmt.Errorf("field a\"b in PropertyNameEscaping: required")
+	}
+	if _, ok := raw["arr\"pct%s"]; raw != nil && !ok {
+		return fmt.Errorf("field arr\"pct%%s in PropertyNameEscaping: required")
 	}
 	if _, ok := raw["back\\slash"]; raw != nil && !ok {
 		return fmt.Errorf("field back\\slash in PropertyNameEscaping: required")
@@ -82,6 +101,14 @@ func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
+	}
+	if plain.ArrPctS != nil && len(plain.ArrPctS) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "arr\"pct%s", 1)
+	}
+	for i1 := range plain.ArrPctS {
+		if plain.ArrPctS[i1] != nil && len(plain.ArrPctS[i1]) < 1 {
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "arr\"pct%s", i1), 1)
+		}
 	}
 	*j = PropertyNameEscaping(plain)
 	return nil

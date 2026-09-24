@@ -401,7 +401,12 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 	}
 
 	value := getPlainName(v.fieldName)
-	fieldName := v.jsonName
+
+	// The name is schema data. Keeping it an ARGUMENT rather than splicing it
+	// into the format string means a `%` in it is never read as a verb, so
+	// only Go-literal escaping is needed — and that is needed, since an
+	// unescaped quote in `a"b` would not compile.
+	quotedName := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
 
 	var indexes []string
 
@@ -410,14 +415,16 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 		indexes = append(indexes, index)
 		out.Printlnf(`for %s := range %s {`, index, value)
 		value += fmt.Sprintf("[%s]", index)
-		fieldName += "[%d]"
 
 		out.Indent(1)
 	}
 
-	fieldName = fmt.Sprintf(`"%s"`, fieldName)
+	fieldName := quotedName
 	if len(indexes) > 0 {
-		fieldName = fmt.Sprintf(`fmt.Sprintf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
+		fieldName = fmt.Sprintf(
+			`fmt.Sprintf(%q, %s, %s)`,
+			"%s"+strings.Repeat("[%d]", len(indexes)), quotedName, strings.Join(indexes, ", "),
+		)
 	}
 
 	if v.minItems != 0 {

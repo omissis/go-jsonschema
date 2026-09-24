@@ -17,6 +17,18 @@
     },
     "has`tick": {
       "type": "string"
+    },
+    "arr\"pct%s": {
+      "description": "An array whose name carries both a quote and a percent. The length check keeps the name as an argument rather than splicing it into the format string, so the percent is never read as a verb and only Go-literal escaping applies.",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      },
+      "minItems": 1
     }
   },
   "required": [
@@ -24,6 +36,7 @@
     "back\\slash",
     "pct%s",
     "ordinary",
-    "has`tick"
+    "has`tick",
+    "arr\"pct%s"
   ]
 }
