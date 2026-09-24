@@ -29,6 +29,11 @@ type TupleItemsClosedNoMax struct {
 	// the tuple length, or `["a", "b"]` would decode cleanly against a schema that
 	// rejects it.
 	Single []string `json:"single,omitempty,omitzero" yaml:"single,omitempty" mapstructure:"single,omitempty"`
+
+	// additionalItems alongside a SINGLE-schema items. Per draft-07 it applies only
+	// to the tuple form, so it constrains nothing here and must not cap the array —
+	// treating it as a closed tuple of zero members would reject every element.
+	SingleSchemaItems []string `json:"singleSchemaItems,omitempty,omitzero" yaml:"singleSchemaItems,omitempty" mapstructure:"singleSchemaItems,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
