@@ -129,6 +129,7 @@ type Testcase struct {
 	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty,omitzero" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
 }
 
+// Different types of peer subjects.
 type PeerKind string
 
 type TestcaseNotExpectedPeerName_0 = PeerName
