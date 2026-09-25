@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/sanity-io/litter"
@@ -477,14 +478,19 @@ func (v *stringValidator) generate(out *codegen.Emitter, format string) error {
 			out.Indent(1)
 		}
 
+		patternLiteral := strconv.Quote(v.pattern)
+		if strconv.CanBackquote(v.pattern) {
+			patternLiteral = "`" + v.pattern + "`"
+		}
+
 		out.Printlnf(
-			`if matched, _ := regexp.MatchString(`+"`%s`"+`, string(%s%s)); !matched {`,
-			v.pattern, pointerPrefix, value,
+			"if matched, _ := regexp.MatchString(%s, string(%s%s)); !matched {",
+			patternLiteral, pointerPrefix, value,
 		)
 		out.Indent(1)
 		out.Printlnf(
-			`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", `+"`%s`"+`)`,
-			v.fieldName, v.pattern,
+			`return fmt.Errorf("field %%s pattern match: must match %%s", "%s", %s)`,
+			v.fieldName, patternLiteral,
 		)
 		out.Indent(-1)
 		out.Printlnf("}")
