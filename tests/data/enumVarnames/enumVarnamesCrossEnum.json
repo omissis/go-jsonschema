@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumVarnamesCrossEnum",
+  "type": "object",
+  "$defs": {
+    "XcFirst": {
+      "description": "Supplies a name that a LATER enum would derive for itself. Each enum only knows its own names, so nothing here can see the clash coming.",
+      "type": "string",
+      "enum": ["p", "q"],
+      "x-enum-varnames": ["XcSecondX", "XcFirstOther"]
+    },
+    "XcSecond": {
+      "description": "Derives XcSecondX for value x. AddDecl dedupes by name and keeps the first declaration, so before this fix the constant was simply absent — not duplicated, not an error.",
+      "type": "string",
+      "enum": ["x", "y"]
+    }
+  },
+  "properties": {
+    "first": { "$ref": "#/$defs/XcFirst" },
+    "second": { "$ref": "#/$defs/XcSecond" }
+  }
+}
