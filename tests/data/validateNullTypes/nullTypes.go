@@ -75,22 +75,13 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in NullTypes: required")
 	}
-	for fieldName, fieldValue := range raw {
-		if fieldValue != nil || !strings.EqualFold(fieldName, "name") {
-			continue
-		}
+	if fieldValue, ok := raw["name"]; ok && fieldValue == nil {
 		return fmt.Errorf("field name in NullTypes: must not be null")
 	}
-	for fieldName, fieldValue := range raw {
-		if fieldValue != nil || !strings.EqualFold(fieldName, "tags") {
-			continue
-		}
+	if fieldValue, ok := raw["tags"]; ok && fieldValue == nil {
 		return fmt.Errorf("field tags in NullTypes: must not be null")
 	}
-	for fieldName, fieldValue := range raw {
-		if fieldValue != nil || !strings.EqualFold(fieldName, "viaRef") {
-			continue
-		}
+	if fieldValue, ok := raw["viaRef"]; ok && fieldValue == nil {
 		return fmt.Errorf("field viaRef in NullTypes: must not be null")
 	}
 	type Plain NullTypes
