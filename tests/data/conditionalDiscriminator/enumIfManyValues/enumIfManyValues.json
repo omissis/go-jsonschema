@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumIfManyValues",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "color": {
+      "type": "string",
+      "enum": [
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "blue",
+        "indigo",
+        "violet",
+        "pink",
+        "brown",
+        "black",
+        "white",
+        "gray",
+        "cyan",
+        "magenta",
+        "teal",
+        "navy",
+        "maroon",
+        "olive",
+        "lime",
+        "aqua"
+      ]
+    },
+    "hex": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "color"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "color": {
+            "enum": [
+              "red",
+              "orange",
+              "yellow",
+              "green",
+              "blue",
+              "indigo",
+              "violet",
+              "pink",
+              "brown",
+              "black",
+              "white",
+              "gray",
+              "cyan",
+              "magenta",
+              "teal",
+              "navy",
+              "maroon",
+              "olive",
+              "lime",
+              "aqua"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "hex"
+        ]
+      }
+    }
+  ]
+}

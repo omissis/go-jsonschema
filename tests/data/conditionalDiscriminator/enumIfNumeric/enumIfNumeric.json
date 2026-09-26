@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumIfNumeric",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "level": {
+      "type": "integer"
+    },
+    "details": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "level"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "details"
+        ]
+      }
+    }
+  ]
+}
