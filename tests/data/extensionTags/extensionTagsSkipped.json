@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/extensionTagsSkipped",
+  "type": "object",
+  "properties": {
+    "composite": {
+      "description": "A struct tag is flat text, so any rendering of an object would be the generator's invention rather than something the schema said, and a consumer would have to guess the encoding back. Refused, with a warning.",
+      "type": "string",
+      "x-measurement": { "unit": "m3/d", "system": "metric" }
+    },
+    "listed": {
+      "description": "Same for arrays.",
+      "type": "string",
+      "x-measurement": ["a", "b"]
+    },
+    "backtick": {
+      "description": "A backtick would terminate the raw string literal the tag list is emitted inside — a compile error in the generated file, not a mangled tag, so there is nothing sensible to escape it to.",
+      "type": "string",
+      "x-measurement": "has ` backtick"
+    }
+  }
+}
