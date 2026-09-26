@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/email",
+  "type": "object",
+  "properties": {
+    "primary": {
+      "type": "string",
+      "format": "email"
+    },
+    "secondary": {
+      "type": "string",
+      "format": "email"
+    }
+  },
+  "required": [
+    "primary"
+  ]
+}
