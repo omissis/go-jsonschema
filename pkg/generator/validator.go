@@ -97,25 +97,36 @@ type nonNullValidator struct {
 }
 
 func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
-	// Compared case-insensitively rather than indexed directly, because
+	// The key-matching rule has to be the decoder's own, or the check
+	// disagrees with what was actually assigned.
+	//
 	// encoding/json matches a JSON key to a struct field without regard to
-	// case. An exact lookup of `age` misses `{"Age": null}`, which the decode
-	// still assigns — so the check meant to reject it never fired.
+	// case, so an exact lookup of `age` misses `{"Age": null}` — which the
+	// decode still assigns, leaving the check that exists to reject it unfired.
 	//
-	// Where the payload carries two differently-cased spellings and one is
-	// null, this rejects it. encoding/json is no more specific for that input
-	// (with duplicate keys the last one decoded wins), and refusing an
-	// ambiguous payload is the safer answer for a validation flag.
-	//
-	// `fieldValue` is deliberately not named `value`: that is the
-	// UnmarshalJSON parameter, and shadowing it reads as a bug.
-	out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
-	out.Indent(1)
-	out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, v.jsonName)
-	out.Indent(1)
-	out.Printlnf("continue")
-	out.Indent(-1)
-	out.Printlnf("}")
+	// yaml.v3 matches case-sensitively, so the same leniency there would
+	// reject `Age: null` when the field was never assigned at all and the
+	// document may well be valid.
+	if format == formatJSON {
+		// `fieldValue` is deliberately not named `value`: that is the
+		// UnmarshalJSON parameter, and shadowing it reads as a bug.
+		//
+		// Where the payload carries two differently-cased spellings and one is
+		// null, this rejects it. encoding/json is no more specific for that
+		// input, and refusing an ambiguous payload is the safer answer for a
+		// validation flag.
+		out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
+		out.Indent(1)
+		out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, v.jsonName)
+		out.Indent(1)
+		out.Printlnf("continue")
+		out.Indent(-1)
+		out.Printlnf("}")
+	} else {
+		out.Printlnf(`if fieldValue, ok := %s[%q]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
+		out.Indent(1)
+	}
+
 	out.Printlnf(
 		`return fmt.Errorf("field %s in %s: must not be null")`,
 		goStringText(v.jsonName), goStringText(v.declName),
@@ -130,7 +141,10 @@ func (v *nonNullValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
-		imports:             []packageImport{{qualifiedName: "strings"}},
+		// `strings` is only reached by the JSON branch, but the descriptor is
+		// format-agnostic and an unused import would not compile — the JSON
+		// unmarshaler is always generated alongside the YAML one.
+		imports: []packageImport{{qualifiedName: "strings"}},
 	}
 }
 

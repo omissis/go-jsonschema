@@ -59,10 +59,7 @@ func (j *NullAllowed) UnmarshalYAML(value *yaml.Node) error {
 	if raw == nil {
 		return fmt.Errorf("NullAllowed: must not be null")
 	}
-	for fieldName, fieldValue := range raw {
-		if fieldValue != nil || !strings.EqualFold(fieldName, "strict") {
-			continue
-		}
+	if fieldValue, ok := raw["strict"]; ok && fieldValue == nil {
 		return fmt.Errorf("field strict in NullAllowed: must not be null")
 	}
 	type Plain NullAllowed
