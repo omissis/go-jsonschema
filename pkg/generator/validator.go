@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/sanity-io/litter"
@@ -37,17 +38,25 @@ type validatorDesc struct {
 	beforeJSONUnmarshal bool
 	requiresRawAfter    bool
 	imports             []packageImport
+	// decls lists package-level declarations the validator needs (e.g.
+	// precompiled regex vars). The orchestrator adds them via
+	// Package.AddDecl, which dedupes by name — so multiple validators sharing
+	// the same regex emit the var only once per output file.
+	decls []codegen.Decl
 }
 
 var (
 	_ validator = new(requiredValidator)
 	_ validator = new(readOnlyValidator)
 	_ validator = new(nullTypeValidator)
+	_ validator = new(nonNullValidator)
+	_ validator = new(nonNullContainerValidator)
 	_ validator = new(defaultValidator)
 	_ validator = new(arrayValidator)
 	_ validator = new(stringValidator)
 	_ validator = new(numericValidator)
 	_ validator = new(anyOfValidator)
+	_ validator = new(formatValidator)
 
 	ErrCannotDumpDefaultSlice = errors.New("cannot dump default slice")
 )
@@ -61,9 +70,9 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) error 
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
-	out.Printlnf(`if _, ok := %s["%s"]; %s != nil && !ok {`, varNameRawMap, v.jsonName, varNameRawMap)
+	out.Printlnf(`if _, ok := %s[%q]; %s != nil && !ok {`, varNameRawMap, v.jsonName, varNameRawMap)
 	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, goStringText(v.jsonName), goStringText(v.declName))
 	out.Indent(-1)
 	out.Printlnf("}")
 
@@ -71,6 +80,103 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) error 
 }
 
 func (v *requiredValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+	}
+}
+
+// nonNullValidator rejects a property that is present with an explicit null
+// where the schema constrains its type to something other than null.
+//
+// This is a `type` assertion, not a `required` one. Per draft-07 §6.5.3,
+// `required` tests presence by name — `{"x": null}` satisfies it — and keywords
+// are vacuously true for instances of a type they do not target. So the null is
+// invalid only because `type` says so, and only when `type` is actually
+// declared and excludes null.
+//
+// Go cannot tell omitted from present-but-null after decoding (both leave the
+// zero value), hence the check against the raw map before unmarshalling.
+type nonNullValidator struct {
+	jsonName string
+	declName string
+}
+
+func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
+	// The key-matching rule has to be the decoder's own, or the check
+	// disagrees with what was actually assigned.
+	//
+	// encoding/json matches a JSON key to a struct field without regard to
+	// case, so an exact lookup of `age` misses `{"Age": null}` — which the
+	// decode still assigns, leaving the check that exists to reject it unfired.
+	//
+	// yaml.v3 matches case-sensitively, so the same leniency there would
+	// reject `Age: null` when the field was never assigned at all and the
+	// document may well be valid.
+	if format == formatJSON {
+		// `fieldValue` is deliberately not named `value`: that is the
+		// UnmarshalJSON parameter, and shadowing it reads as a bug.
+		//
+		// Where the payload carries two differently-cased spellings and one is
+		// null, this rejects it. encoding/json is no more specific for that
+		// input, and refusing an ambiguous payload is the safer answer for a
+		// validation flag.
+		out.Printlnf(`for fieldName, fieldValue := range %s {`, varNameRawMap)
+		out.Indent(1)
+		out.Printlnf(`if fieldValue != nil || !strings.EqualFold(fieldName, %q) {`, v.jsonName)
+		out.Indent(1)
+		out.Printlnf("continue")
+		out.Indent(-1)
+		out.Printlnf("}")
+	} else {
+		out.Printlnf(`if fieldValue, ok := %s[%q]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
+		out.Indent(1)
+	}
+
+	out.Printlnf(
+		`return fmt.Errorf("field %s in %s: must not be null")`,
+		goStringText(v.jsonName), goStringText(v.declName),
+	)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:            true,
+		beforeJSONUnmarshal: true,
+		// `strings` is only reached by the JSON branch, but the descriptor is
+		// format-agnostic and an unused import would not compile — the JSON
+		// unmarshaler is always generated alongside the YAML one.
+		imports: []packageImport{{qualifiedName: "strings"}},
+	}
+}
+
+// nonNullContainerValidator rejects a null instance where the schema's own
+// `type` excludes null. The raw map decodes to nil for a `null` payload, which
+// is indistinguishable from an empty object after unmarshalling.
+//
+// This is the container counterpart to nonNullValidator, and likewise a `type`
+// assertion: for a null instance the object keywords (`required`,
+// `minProperties`) are vacuously true, so `type` is the only thing that can
+// reject it.
+type nonNullContainerValidator struct {
+	declName string
+}
+
+func (v *nonNullContainerValidator) generate(out *codegen.Emitter, format string) error {
+	out.Printlnf(`if %s == nil {`, varNameRawMap)
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("%s: must not be null")`, v.declName)
+	out.Indent(-1)
+	out.Printlnf("}")
+
+	return nil
+}
+
+func (v *nonNullContainerValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
@@ -86,9 +192,9 @@ func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) error 
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
-	out.Printlnf(`if _, ok := %s["%s"]; %s != nil && ok {`, varNameRawMap, v.jsonName, varNameRawMap)
+	out.Printlnf(`if _, ok := %s[%q]; %s != nil && ok {`, varNameRawMap, v.jsonName, varNameRawMap)
 	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, v.jsonName, v.declName)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, goStringText(v.jsonName), goStringText(v.declName))
 	out.Indent(-1)
 	out.Printlnf("}")
 
@@ -165,7 +271,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 		return fmt.Errorf("cannot generate default validator: %w", err)
 	}
 
-	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	out.Printlnf(`if v, ok := %s[%q]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
 	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
@@ -241,14 +347,24 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 
 	// Special handling for pointer-to-integer types (e.g., *int or NamedType wrapping *int).
 	// We need to create a temp variable and take its address.
-	if v.isPointerToInteger() {
+	//
+	// The temp is declared with the pointee's own type, not left to `:=` on an
+	// int literal: once a width can come from `format` or --min-sized-ints the
+	// field may be a *int64 or *uint8, and `&` on an int temp would not be
+	// assignable to it.
+	if elem, ok := pointerToIntegerElem(v.defaultValueType); ok {
 		if f, ok := v.defaultValue.(float64); ok {
-			intVal := int(f)
-			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
-			tmpEmitter.Printlnf("defaultInt := %d", intVal)
-			tmpEmitter.Printlnf(`%s = &defaultInt`, getPlainName(v.fieldName))
+			typeEmitter := codegen.NewEmitter(out.MaxLineLength())
+			if err := elem.Generate(typeEmitter); err == nil {
+				tmpVarName := "default" + v.fieldName
+				tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+				tmpEmitter.Printlnf(
+					"var %s %s = %d", tmpVarName, strings.TrimSpace(typeEmitter.String()), int(f),
+				)
+				tmpEmitter.Printlnf(`%s = &%s`, getPlainName(v.fieldName), tmpVarName)
 
-			return tmpEmitter.String(), nil
+				return tmpEmitter.String(), nil
+			}
 		}
 	}
 
@@ -306,33 +422,51 @@ func isIntegerType(t codegen.Type) bool {
 	case *codegen.NamedType:
 		return isIntegerType(tt.Decl.Type)
 	case codegen.PrimitiveType:
-		return tt.Type == typeInt
+		return isGoIntegerTypeName(tt.Type)
 	}
 
 	return false
 }
 
-func (v *defaultValidator) isPointerToInteger() bool {
-	return isPointerToInteger(v.defaultValueType)
+// isGoIntegerTypeName reports whether name is one of Go's integer types.
+//
+// Checking for the literal "int" is not enough: a schema can pin the width
+// with `format: int64`, and `--min-sized-ints` derives one from the declared
+// bounds. Missing those left integer defaults going through litter.Sdump as
+// float64, emitting `plain.Version = 0.0` against an int64 field.
+func isGoIntegerTypeName(name string) bool {
+	switch name {
+	case typeInt, "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64":
+		return true
+
+	default:
+		return false
+	}
 }
 
-func isPointerToInteger(t codegen.Type) bool {
+// pointerToIntegerElem returns the integer type a pointer-to-integer field
+// points at, so a default can be placed in a temp of exactly that type.
+func pointerToIntegerElem(t codegen.Type) (codegen.Type, bool) {
 	switch tt := t.(type) {
 	case codegen.NamedType:
-		return isPointerToInteger(tt.Decl.Type)
+		return pointerToIntegerElem(tt.Decl.Type)
+
 	case *codegen.NamedType:
-		return isPointerToInteger(tt.Decl.Type)
+		return pointerToIntegerElem(tt.Decl.Type)
+
 	case codegen.PointerType:
-		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == typeInt
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok && isGoIntegerTypeName(pt.Type) {
+			return pt, true
 		}
+
 	case *codegen.PointerType:
-		if pt, ok := tt.Type.(codegen.PrimitiveType); ok {
-			return pt.Type == typeInt
+		if pt, ok := tt.Type.(codegen.PrimitiveType); ok && isGoIntegerTypeName(pt.Type) {
+			return pt, true
 		}
 	}
 
-	return false
+	return nil, false
 }
 
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
@@ -392,15 +526,24 @@ type arrayValidator struct {
 	arrayDepth int
 	minItems   int
 	maxItems   int
+
+	// maxItemsSet distinguishes a maximum of zero from no maximum. A closed
+	// empty tuple admits only the empty array, which is a real cap of 0.
+	maxItemsSet bool
 }
 
 func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
-	if v.minItems == 0 && v.maxItems == 0 {
+	if v.minItems == 0 && !v.maxItemsSet {
 		return nil
 	}
 
 	value := getPlainName(v.fieldName)
-	fieldName := v.jsonName
+
+	// The name is schema data. Keeping it an ARGUMENT rather than splicing it
+	// into the format string means a `%` in it is never read as a verb, so
+	// only Go-literal escaping is needed — and that is needed, since an
+	// unescaped quote in `a"b` would not compile.
+	quotedName := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
 
 	var indexes []string
 
@@ -409,14 +552,16 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 		indexes = append(indexes, index)
 		out.Printlnf(`for %s := range %s {`, index, value)
 		value += fmt.Sprintf("[%s]", index)
-		fieldName += "[%d]"
 
 		out.Indent(1)
 	}
 
-	fieldName = fmt.Sprintf(`"%s"`, fieldName)
+	fieldName := quotedName
 	if len(indexes) > 0 {
-		fieldName = fmt.Sprintf(`fmt.Sprintf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
+		fieldName = fmt.Sprintf(
+			`fmt.Sprintf(%q, %s, %s)`,
+			"%s"+strings.Repeat("[%d]", len(indexes)), quotedName, strings.Join(indexes, ", "),
+		)
 	}
 
 	if v.minItems != 0 {
@@ -427,7 +572,7 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 		out.Printlnf("}")
 	}
 
-	if v.maxItems != 0 {
+	if v.maxItemsSet {
 		out.Printlnf(`if len(%s) > %d {`, value, v.maxItems)
 		out.Indent(1)
 		out.Printlnf(`return fmt.Errorf("field %%s length: must be <= %%d", %s, %d)`, fieldName, v.maxItems)
@@ -737,4 +882,244 @@ func lowerFirst(s string) string {
 
 func upperFirst(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// goStringText escapes s for embedding inside a Go string literal that is also
+// a fmt format string.
+//
+// Property names come from the schema, so they can contain a quote, a
+// backslash or a percent sign. Interpolated raw, the first two end the literal
+// early and produce source that does not compile, and the third is read by fmt
+// as a verb. Escaping leaves ordinary names byte-for-byte unchanged, so
+// generated output only differs where it was previously broken.
+func goStringText(s string) string {
+	return strings.ReplaceAll(goQuotedBody(s), "%", "%%")
+}
+
+// goQuotedBody escapes s for use inside a Go string literal, without the
+// surrounding quotes. Struct tag values are parsed with strconv.Unquote, so an
+// unescaped quote truncates the value and an unescaped backslash makes the
+// whole tag unparseable — reflect then reports the tag as absent.
+func goQuotedBody(s string) string {
+	quoted := strconv.Quote(s)
+
+	return quoted[1 : len(quoted)-1]
+}
+
+// JSON Schema format keywords supported by the built-in formatValidator.
+const (
+	formatKeywordUUID         = "uuid"
+	formatKeywordEmail        = "email"
+	formatKeywordURI          = "uri"
+	formatKeywordURIReference = "uri-reference"
+	formatKeywordHostname     = "hostname"
+	formatKeywordRegex        = "regex"
+)
+
+// Embedded validation patterns expressed in RE2 (Go's regexp syntax).
+const (
+	formatRegexUUID     = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`
+	formatRegexHostname = `^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`
+	// formatRegexURIRef enforces the RFC 3986 character set for URI references:
+	// unreserved + reserved characters and properly formed percent-encoded
+	// triplets. Used in addition to net/url.Parse, which accepts almost any
+	// string and so cannot reject e.g. whitespace or malformed pct-encoding.
+	formatRegexURIRef = `^([A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=]|%[0-9A-Fa-f]{2})*$`
+)
+
+// Names of the precompiled regex vars emitted at package scope when a
+// generated file uses a regex-backed format validator. Reused across all
+// validation call sites so we pay regexp.MustCompile once per pattern per
+// generated package, not per call.
+const (
+	regexpVarNameUUID     = "regexpFormatUUID"
+	regexpVarNameHostname = "regexpFormatHostname"
+	regexpVarNameURIRef   = "regexpFormatURIRef"
+)
+
+// formatRegexpDecl returns the precompiled-regex package-level decl, if any,
+// that the named format keyword needs at runtime. Formats with no regex
+// dependency (e.g. "email", "regex") return nil.
+func formatRegexpDecl(format string) *codegen.RegexpVar {
+	switch format {
+	case formatKeywordUUID:
+		return &codegen.RegexpVar{Name: regexpVarNameUUID, Pattern: formatRegexUUID}
+	case formatKeywordHostname:
+		return &codegen.RegexpVar{Name: regexpVarNameHostname, Pattern: formatRegexHostname}
+	case formatKeywordURI, formatKeywordURIReference:
+		return &codegen.RegexpVar{Name: regexpVarNameURIRef, Pattern: formatRegexURIRef}
+	}
+
+	return nil
+}
+
+// isKnownFormatKeyword reports whether the named format has a built-in
+// runtime validator implemented by formatValidator.
+func isKnownFormatKeyword(format string) bool {
+	switch format {
+	case formatKeywordUUID,
+		formatKeywordEmail,
+		formatKeywordURI,
+		formatKeywordURIReference,
+		formatKeywordHostname,
+		formatKeywordRegex:
+		return true
+	}
+
+	return false
+}
+
+// formatValidatorImports returns the package imports the generated validator
+// for the named format requires.
+// Stdlib import paths used by the generated format validators. Centralised so
+// the per-format dispatch below names them consistently.
+const (
+	importPathRegexp  = "regexp"
+	importPathStrings = "strings"
+	importPathNetMail = "net/mail"
+	importPathNetURL  = "net/url"
+)
+
+func formatValidatorImports(format string) []packageImport {
+	switch format {
+	case formatKeywordUUID, formatKeywordRegex:
+		return []packageImport{{qualifiedName: importPathRegexp}}
+	case formatKeywordHostname:
+		// strings.TrimSuffix lets the length cap exclude the optional trailing
+		// root dot per RFC 1034 §3.1, matching the doc comment on the emit.
+		return []packageImport{
+			{qualifiedName: importPathRegexp},
+			{qualifiedName: importPathStrings},
+		}
+	case formatKeywordEmail:
+		return []packageImport{{qualifiedName: importPathNetMail}}
+	case formatKeywordURI, formatKeywordURIReference:
+		return []packageImport{
+			{qualifiedName: importPathNetURL},
+			{qualifiedName: importPathRegexp},
+		}
+	}
+
+	return nil
+}
+
+// formatValidator emits runtime validation for JSON Schema `format` keywords
+// on string-typed fields. It mirrors stringValidator's nillable-pointer
+// handling and runs after the typed struct has been decoded.
+type formatValidator struct {
+	jsonName   string
+	fieldName  string
+	format     string
+	isNillable bool
+}
+
+func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
+	value := getPlainName(v.fieldName)
+
+	pointerPrefix := ""
+	if v.isNillable {
+		pointerPrefix = "*"
+	}
+
+	target := pointerPrefix + value
+
+	if v.isNillable {
+		out.Printlnf("if %s != nil {", value)
+		out.Indent(1)
+	}
+
+	switch v.format {
+	case formatKeywordUUID:
+		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameUUID, target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uuid", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordHostname:
+		// RFC 1123: each label is enforced by the regex (1 + {0,61} + 1 chars);
+		// the overall hostname length cap (253 octets, exclusive of any trailing
+		// root dot per RFC 1034 §3.1) is checked separately because regex
+		// backtracking on the per-label structure would not bound the total
+		// length on its own. TrimSuffix excludes the optional trailing dot
+		// from the cap so a 253-char hostname plus root dot is still accepted.
+		out.Printlnf(
+			`if !%s.MatchString(string(%s)) || len(strings.TrimSuffix(string(%s), ".")) > 253 {`,
+			regexpVarNameHostname, target, target,
+		)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid hostname", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordEmail:
+		// RFC 5321 addr-spec only: reject display-name forms ("Alice <a@b>")
+		// and require the parsed address to round-trip exactly. net/mail
+		// accepts the broader RFC 5322 syntax by default.
+		out.Printlnf(
+			`if addr, err := mail.ParseAddress(string(%s));`+
+				` err != nil || addr.Name != "" || addr.Address != string(%s) {`,
+			target, target,
+		)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid email (RFC 5321 addr-spec)", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordURI:
+		out.Printlnf("if u, err := url.Parse(string(%s)); err != nil || !u.IsAbs() {", target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameURIRef, target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordURIReference:
+		out.Printlnf("if _, err := url.Parse(string(%s)); err != nil {", target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference: %%w", "%s", err)`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameURIRef, target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference", "%s")`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+
+	case formatKeywordRegex:
+		// JSON Schema specifies the `regex` format as ECMA-262 (JavaScript)
+		// regular expressions, but Go's stdlib only supports RE2 syntax.
+		// Patterns valid in ECMA-262 but not RE2 (backreferences, lookaround)
+		// will be rejected here. The error message reflects what we actually
+		// validate against.
+		out.Printlnf("if _, err := regexp.Compile(string(%s)); err != nil {", target)
+		out.Indent(1)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid RE2 regular expression: %%w", "%s", err)`, v.jsonName)
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	if v.isNillable {
+		out.Indent(-1)
+		out.Printlnf("}")
+	}
+
+	return nil
+}
+
+func (v *formatValidator) desc() *validatorDesc {
+	d := &validatorDesc{
+		hasError: true,
+		imports:  formatValidatorImports(v.format),
+	}
+
+	if regexpDecl := formatRegexpDecl(v.format); regexpDecl != nil {
+		d.decls = append(d.decls, regexpDecl)
+	}
+
+	return d
 }
