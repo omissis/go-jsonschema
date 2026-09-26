@@ -302,9 +302,12 @@ func TestPrimitiveDefs(t *testing.T) {
 			data: `{"myString": "hello"}`,
 		},
 		{
-			desc:    "myString too short",
-			data:    `{"myString": "hi"}`,
-			wantErr: errors.New("field  length: must be >= 5"),
+			desc: "myString too short",
+			data: `{"myString": "hi"}`,
+			// The stringValidator error comes from MinStr.UnmarshalJSON, which
+			// surfaces during PrimitiveDefs's typed Plain decode and is therefore
+			// wrapped by the outer struct's `unmarshal <Type>: %w` formatter.
+			wantErr: errors.New("unmarshal PrimitiveDefs: field  length: must be >= 5"),
 		},
 	}
 
