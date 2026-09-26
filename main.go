@@ -24,6 +24,7 @@ var (
 	defaultPackage            string
 	defaultOutput             string
 	schemaPackages            []string
+	extensionTags             []string
 	schemaOutputs             []string
 	schemaRootTypes           []string
 	capitalizations           []string
@@ -34,6 +35,7 @@ var (
 	minSizedInts              bool
 	minimalNames              bool
 	disableReadOnlyValidation bool
+	validateNullTypes         bool
 	disableCustomTypesForMaps bool
 	disableOmitEmpty          bool
 	disableOmitZero           bool
@@ -67,11 +69,17 @@ var (
 				abortWithErr(err)
 			}
 
+			extensionTagMap, err := stringSliceToStringMap(extensionTags)
+			if err != nil {
+				abortWithErr(err)
+			}
+
 			cfg := generator.Config{
 				Warner: func(message string) {
 					logf("Warning: %s", message)
 				},
 				ExtraImports:              extraImports,
+				ExtensionTags:             extensionTagMap,
 				Capitalizations:           capitalizations,
 				DefaultOutputName:         defaultOutput,
 				DefaultPackageName:        defaultPackage,
@@ -84,6 +92,7 @@ var (
 				MinSizedInts:              minSizedInts,
 				MinimalNames:              minimalNames,
 				DisableReadOnlyValidation: disableReadOnlyValidation,
+				ValidateNullTypes:         validateNullTypes,
 				DisableCustomTypesForMaps: disableCustomTypesForMaps,
 				DisableOmitEmpty:          disableOmitEmpty,
 				DisableOmitZero:           disableOmitZero,
@@ -167,6 +176,8 @@ func main() {
 		"Verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&extraImports, "extra-imports", "e", false,
 		"Allow extra imports (non standard library)")
+	rootCmd.PersistentFlags().BoolVar(&validateNullTypes, "validate-null-types", false,
+		"reject an explicit null where the schema's type excludes it; adds a raw decode to affected types")
 	rootCmd.PersistentFlags().BoolVar(&onlyModels, "only-models", false,
 		"Generate only models (no unmarshal methods, no validation)")
 	rootCmd.PersistentFlags().StringVarP(&defaultPackage, "package", "p", "",
@@ -180,6 +191,9 @@ must be in the format URI=PACKAGE.`)
 	rootCmd.PersistentFlags().StringSliceVar(&schemaOutputs, "schema-output", nil,
 		`File to write (- for standard output) a specific schema ID to;
 must be in the format URI=FILENAME.`)
+	rootCmd.PersistentFlags().StringSliceVar(&extensionTags, "extension-tag", nil,
+		"Emit a schema x- extension as a struct tag, given as an "+
+			"`extension=tag` pair (e.g. x-measurement=slb-measurement). Repeatable.")
 	rootCmd.PersistentFlags().StringSliceVar(&schemaRootTypes, "schema-root-type", nil,
 		`Override name to use for the root type of a specific schema ID;
 must be in the format URI=TYPE. By default, it is derived from the file name.`)
