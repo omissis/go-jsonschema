@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "IntFmtCountThing": {
+      "description": "A named nullable integer with a pinned width, which generates a named pointer alias. A default on a property referencing it needs a temp of the POINTEE's type — `&` on an int temp is not assignable to a *int64.",
+      "type": ["integer", "null"],
+      "format": "int64"
+    }
+  },
+  "properties": {
+    "count": { "$ref": "#/definitions/IntFmtCountThing", "default": 5 }
+  }
+}
