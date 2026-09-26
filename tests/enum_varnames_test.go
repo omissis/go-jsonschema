@@ -118,6 +118,20 @@ func TestEnumVarnames(t *testing.T) {
 		assert.Contains(t, joined, `x-enum-varnames[0] "ShadowingBeta" is the name entry 1 would be given anyway`)
 	})
 
+	t.Run("a constant a later enum would derive is not lost", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesCrossEnum.json"), "\n",
+		)
+
+		// Each enum only knows its own names, so one enum's supplied varname
+		// can be the name a later enum derives. AddDecl keeps the first
+		// declaration, so the later constant used to vanish outright.
+		assert.Contains(t, joined, `constant name "XcSecondX" is already declared in this package`)
+		assert.Contains(t, joined, `"XcSecondX_1"`)
+	})
+
 	t.Run("an entry with no identifier characters falls back", func(t *testing.T) {
 		t.Parallel()
 

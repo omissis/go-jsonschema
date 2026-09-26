@@ -1635,9 +1635,8 @@ func (g *schemaGenerator) generateEnumType(
 
 		for i, v := range t.Enum {
 			if s, ok := v.(string); ok {
-				// TODO: Make sure the name is unique across scope.
 				g.output.file.Package.AddDecl(&codegen.Constant{
-					Name:  g.enumConstantName(varnames, enumDecl.Name, i, s),
+					Name:  g.uniqueEnumConstantName(varnames, enumDecl.Name, i, s),
 					Type:  &codegen.NamedType{Decl: &enumDecl},
 					Value: s,
 				})
