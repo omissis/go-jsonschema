@@ -13,6 +13,12 @@ type NullTypes struct {
 
 	// Tags corresponds to the JSON schema field "tags".
 	Tags []string `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+
+	// A $ref property. StructField.SchemaType keeps the reference as written and a
+	// reference declares no type of its own, so without resolving it this looked like
+	// a schema that constrains nothing and got no check — while the same type inline
+	// got one.
+	ViaRef *StrictName `json:"viaRef,omitempty,omitzero" yaml:"viaRef,omitempty" mapstructure:"viaRef,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -38,6 +44,12 @@ func (j *NullTypes) UnmarshalJSON(value []byte) error {
 			continue
 		}
 		return fmt.Errorf("field tags in NullTypes: must not be null")
+	}
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "viaRef") {
+			continue
+		}
+		return fmt.Errorf("field viaRef in NullTypes: must not be null")
 	}
 	type Plain NullTypes
 	var plain Plain
@@ -75,6 +87,12 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 		}
 		return fmt.Errorf("field tags in NullTypes: must not be null")
 	}
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "viaRef") {
+			continue
+		}
+		return fmt.Errorf("field viaRef in NullTypes: must not be null")
+	}
 	type Plain NullTypes
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
@@ -86,3 +104,5 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	*j = NullTypes(plain)
 	return nil
 }
+
+type StrictName string

@@ -484,6 +484,26 @@ func TestJsonUnmarshalValidateNullTypes(t *testing.T) {
 		}
 	})
 
+	t.Run("a $ref property is checked against its target", func(t *testing.T) {
+		t.Parallel()
+
+		// StructField.SchemaType keeps the reference as written, and a
+		// reference declares no `type` of its own — so unresolved this looked
+		// like a schema constraining nothing and got no check at all.
+		var v testNullTypes.NullTypes
+
+		err := json.Unmarshal([]byte(`{"name":"a","viaRef":null}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must not be null")
+
+		// The other direction: a reference to a target that admits null, and
+		// one to a target with no `type`, both stay valid.
+		var w testNullTypes.NullAllowed
+
+		require.NoError(t, json.Unmarshal([]byte(`{"nullableViaRef":null}`), &w))
+		require.NoError(t, json.Unmarshal([]byte(`{"untypedViaRef":null}`), &w))
+	})
+
 	t.Run("omission and valid values are unaffected", func(t *testing.T) {
 		t.Parallel()
 
