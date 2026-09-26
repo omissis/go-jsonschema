@@ -6,30 +6,23 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-// Property names are schema data, not identifiers, so they can carry characters
-// that are not safe to drop into generated Go source. Interpolated raw, a quote or
-// backslash ends the string literal early and the file does not compile; a percent
-// sign is read by fmt as a verb.
+// Property names encoding/json accepts in a struct tag. They still need escaping
+// on the way into generated Go: a percent sign is read by fmt as a verb unless
+// doubled, and the name is emitted into both map keys and error messages.
 type PropertyNameEscaping struct {
-	// AB corresponds to the JSON schema field "a\"b".
-	AB string `json:"a\"b" yaml:"a\"b" mapstructure:"a\"b"`
-
-	// An array whose name carries both a quote and a percent. The length check keeps
-	// the name as an argument rather than splicing it into the format string, so the
-	// percent is never read as a verb and only Go-literal escaping applies.
-	ArrPctS [][]string `json:"arr\"pct%s" yaml:"arr\"pct%s" mapstructure:"arr\"pct%s"`
-
-	// BackSlash corresponds to the JSON schema field "back\\slash".
-	BackSlash string `json:"back\\slash" yaml:"back\\slash" mapstructure:"back\\slash"`
-
-	// HasTick corresponds to the JSON schema field "has`tick".
-	HasTick string "json:\"has`tick\" yaml:\"has`tick\" mapstructure:\"has`tick\""
+	// An array whose name carries a percent. The length check keeps the name as an
+	// argument rather than splicing it into the format string, so the percent is
+	// never read as a verb.
+	ArrPctS [][]string `json:"arrPct%s" yaml:"arrPct%s" mapstructure:"arrPct%s"`
 
 	// Ordinary corresponds to the JSON schema field "ordinary".
 	Ordinary string `json:"ordinary" yaml:"ordinary" mapstructure:"ordinary"`
 
 	// PctS corresponds to the JSON schema field "pct%s".
 	PctS string `json:"pct%s" yaml:"pct%s" mapstructure:"pct%s"`
+
+	// Punct corresponds to the JSON schema field "punct!#$&()*+-./:;<=>?@[]^_{|}~".
+	Punct string `json:"punct!#$&()*+-./:;<=>?@[]^_{|}~" yaml:"punct!#$&()*+-./:;<=>?@[]^_{|}~" mapstructure:"punct!#$&()*+-./:;<=>?@[]^_{|}~"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -38,17 +31,8 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["a\"b"]; raw != nil && !ok {
-		return fmt.Errorf("field a\"b in PropertyNameEscaping: required")
-	}
-	if _, ok := raw["arr\"pct%s"]; raw != nil && !ok {
-		return fmt.Errorf("field arr\"pct%%s in PropertyNameEscaping: required")
-	}
-	if _, ok := raw["back\\slash"]; raw != nil && !ok {
-		return fmt.Errorf("field back\\slash in PropertyNameEscaping: required")
-	}
-	if _, ok := raw["has`tick"]; raw != nil && !ok {
-		return fmt.Errorf("field has`tick in PropertyNameEscaping: required")
+	if _, ok := raw["arrPct%s"]; raw != nil && !ok {
+		return fmt.Errorf("field arrPct%%s in PropertyNameEscaping: required")
 	}
 	if _, ok := raw["ordinary"]; raw != nil && !ok {
 		return fmt.Errorf("field ordinary in PropertyNameEscaping: required")
@@ -56,17 +40,20 @@ func (j *PropertyNameEscaping) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["pct%s"]; raw != nil && !ok {
 		return fmt.Errorf("field pct%%s in PropertyNameEscaping: required")
 	}
+	if _, ok := raw["punct!#$&()*+-./:;<=>?@[]^_{|}~"]; raw != nil && !ok {
+		return fmt.Errorf("field punct!#$&()*+-./:;<=>?@[]^_{|}~ in PropertyNameEscaping: required")
+	}
 	type Plain PropertyNameEscaping
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if plain.ArrPctS != nil && len(plain.ArrPctS) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "arr\"pct%s", 1)
+		return fmt.Errorf("field %s length: must be >= %d", "arrPct%s", 1)
 	}
 	for i1 := range plain.ArrPctS {
 		if plain.ArrPctS[i1] != nil && len(plain.ArrPctS[i1]) < 1 {
-			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "arr\"pct%s", i1), 1)
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "arrPct%s", i1), 1)
 		}
 	}
 	*j = PropertyNameEscaping(plain)
@@ -79,17 +66,8 @@ func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if _, ok := raw["a\"b"]; raw != nil && !ok {
-		return fmt.Errorf("field a\"b in PropertyNameEscaping: required")
-	}
-	if _, ok := raw["arr\"pct%s"]; raw != nil && !ok {
-		return fmt.Errorf("field arr\"pct%%s in PropertyNameEscaping: required")
-	}
-	if _, ok := raw["back\\slash"]; raw != nil && !ok {
-		return fmt.Errorf("field back\\slash in PropertyNameEscaping: required")
-	}
-	if _, ok := raw["has`tick"]; raw != nil && !ok {
-		return fmt.Errorf("field has`tick in PropertyNameEscaping: required")
+	if _, ok := raw["arrPct%s"]; raw != nil && !ok {
+		return fmt.Errorf("field arrPct%%s in PropertyNameEscaping: required")
 	}
 	if _, ok := raw["ordinary"]; raw != nil && !ok {
 		return fmt.Errorf("field ordinary in PropertyNameEscaping: required")
@@ -97,17 +75,20 @@ func (j *PropertyNameEscaping) UnmarshalYAML(value *yaml.Node) error {
 	if _, ok := raw["pct%s"]; raw != nil && !ok {
 		return fmt.Errorf("field pct%%s in PropertyNameEscaping: required")
 	}
+	if _, ok := raw["punct!#$&()*+-./:;<=>?@[]^_{|}~"]; raw != nil && !ok {
+		return fmt.Errorf("field punct!#$&()*+-./:;<=>?@[]^_{|}~ in PropertyNameEscaping: required")
+	}
 	type Plain PropertyNameEscaping
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if plain.ArrPctS != nil && len(plain.ArrPctS) < 1 {
-		return fmt.Errorf("field %s length: must be >= %d", "arr\"pct%s", 1)
+		return fmt.Errorf("field %s length: must be >= %d", "arrPct%s", 1)
 	}
 	for i1 := range plain.ArrPctS {
 		if plain.ArrPctS[i1] != nil && len(plain.ArrPctS[i1]) < 1 {
-			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "arr\"pct%s", i1), 1)
+			return fmt.Errorf("field %s length: must be >= %d", fmt.Sprintf("%s[%d]", "arrPct%s", i1), 1)
 		}
 	}
 	*j = PropertyNameEscaping(plain)
