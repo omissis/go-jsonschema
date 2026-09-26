@@ -16,7 +16,7 @@ type ReadOnlyAndRequired struct {
 func (j *ReadOnlyAndRequired) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ReadOnlyAndRequired: %w", err)
 	}
 	if _, ok := raw["myReadOnlyRequiredString"]; raw != nil && !ok {
 		return fmt.Errorf("field myReadOnlyRequiredString in ReadOnlyAndRequired: required")
@@ -27,7 +27,7 @@ func (j *ReadOnlyAndRequired) UnmarshalJSON(value []byte) error {
 	type Plain ReadOnlyAndRequired
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ReadOnlyAndRequired: %w", err)
 	}
 	*j = ReadOnlyAndRequired(plain)
 	return nil
@@ -37,7 +37,7 @@ func (j *ReadOnlyAndRequired) UnmarshalJSON(value []byte) error {
 func (j *ReadOnlyAndRequired) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ReadOnlyAndRequired: %w", err)
 	}
 	if _, ok := raw["myReadOnlyRequiredString"]; raw != nil && !ok {
 		return fmt.Errorf("field myReadOnlyRequiredString in ReadOnlyAndRequired: required")
@@ -48,7 +48,7 @@ func (j *ReadOnlyAndRequired) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ReadOnlyAndRequired
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ReadOnlyAndRequired: %w", err)
 	}
 	*j = ReadOnlyAndRequired(plain)
 	return nil
