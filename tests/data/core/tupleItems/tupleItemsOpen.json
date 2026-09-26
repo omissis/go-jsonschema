@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "unrestricted": {
+      "type": "array",
+      "description": "A one-element tuple with no additionalItems:false and no maxItems. Position 0 must be a string, but positions 1+ are unconstrained, so this must NOT collapse to []string.",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "notAdditional": {
+      "type": "array",
+      "description": "additionalItems is a real `not` constraint, not the false schema: anything non-integer may follow position 0. Must NOT collapse to []string.",
+      "items": [
+        {
+          "type": "string"
+        }
+      ],
+      "additionalItems": {
+        "not": {
+          "type": "integer"
+        }
+      }
+    },
+    "typedAdditional": {
+      "type": "array",
+      "description": "additionalItems permits further strings, so the array is still open.",
+      "items": [
+        {
+          "type": "string"
+        }
+      ],
+      "additionalItems": {
+        "type": "string"
+      }
+    }
+  }
+}
