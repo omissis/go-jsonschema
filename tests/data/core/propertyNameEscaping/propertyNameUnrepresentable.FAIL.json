@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A quote in a property name. encoding/json rejects the tag name outright: decoding leaves the field unset and encoding emits a truncated key, so `a\"b` round-trips as `a`. Escaping cannot help — the limitation is in what the codec accepts — so the schema is refused.",
+  "properties": { "a\"b": { "type": "string" } },
+  "required": ["a\"b"]
+}
