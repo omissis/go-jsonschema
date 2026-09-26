@@ -3,8 +3,34 @@
   "$id": "https://example.com/nullOk",
   "type": "object",
   "properties": {
-    "nullable":  { "type": ["string", "null"] },
-    "untyped":   { "description": "no type keyword at all" },
-    "strict":    { "type": "string" }
+    "nullable": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "untyped": {
+      "description": "no type keyword at all"
+    },
+    "strict": {
+      "type": "string"
+    },
+    "nullableViaRef": {
+      "$ref": "#/definitions/NullableName"
+    },
+    "untypedViaRef": {
+      "$ref": "#/definitions/UntypedThing"
+    }
+  },
+  "definitions": {
+    "NullableName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "UntypedThing": {
+      "description": "no type keyword at all"
+    }
   }
 }

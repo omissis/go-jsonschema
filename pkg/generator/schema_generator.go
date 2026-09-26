@@ -440,12 +440,58 @@ func (g *schemaGenerator) nullTypeValidators(
 	var out []validator
 
 	for _, f := range tt.Fields {
-		if schemaExcludesNull(f.SchemaType) {
+		if g.schemaExcludesNullResolved(f.SchemaType) {
 			out = append(out, &nonNullValidator{f.JSONName, declName})
 		}
 	}
 
 	return out
+}
+
+// maxNullCheckRefHops bounds the reference chain walked while deciding whether a
+// property admits null. A schema may legitimately point a `$ref` at another
+// `$ref`, and a cyclic chain must not hang the generator.
+const maxNullCheckRefHops = 16
+
+// schemaExcludesNullResolved answers schemaExcludesNull for a property, looking
+// through any `$ref` first.
+//
+// StructField.SchemaType keeps the reference as written, and a reference
+// declares no `type` of its own — so unresolved, a `$ref` to
+// `{"type": "string"}` looks like a schema that constrains nothing and no check
+// is emitted, while the same type written inline gets one.
+//
+// Resolved by walking this schema's definitions rather than through
+// resolveRef, which generates the referenced type as a side effect. A
+// reference this cannot follow — into another document, or to a definition
+// that is not there — keeps the previous answer rather than forcing one.
+func (g *schemaGenerator) schemaExcludesNullResolved(t *schemas.Type) bool {
+	for hops := 0; t != nil && t.Ref != "" && hops < maxNullCheckRefHops; hops++ {
+		resolved := g.localRefTarget(t)
+		if resolved == nil {
+			return false
+		}
+
+		t = resolved
+	}
+
+	return schemaExcludesNull(t)
+}
+
+// localRefTarget returns the schema a same-document `$ref` points at, or nil
+// when it points elsewhere or cannot be followed. Nothing is generated.
+func (g *schemaGenerator) localRefTarget(t *schemas.Type) *schemas.Type {
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil || fileName != "" || defName == "" {
+		return nil
+	}
+
+	def, err := resolveRefPath(g.schema.Definitions, defName)
+	if err != nil {
+		return nil
+	}
+
+	return def
 }
 
 // schemaExcludesNull reports whether a schema declares a `type` that does not

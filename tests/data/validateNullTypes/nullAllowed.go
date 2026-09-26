@@ -11,11 +11,17 @@ type NullAllowed struct {
 	// Nullable corresponds to the JSON schema field "nullable".
 	Nullable NullAllowedNullable `json:"nullable,omitempty,omitzero" yaml:"nullable,omitempty" mapstructure:"nullable,omitempty"`
 
+	// NullableViaRef corresponds to the JSON schema field "nullableViaRef".
+	NullableViaRef NullableName `json:"nullableViaRef,omitempty,omitzero" yaml:"nullableViaRef,omitempty" mapstructure:"nullableViaRef,omitempty"`
+
 	// Strict corresponds to the JSON schema field "strict".
 	Strict *string `json:"strict,omitempty,omitzero" yaml:"strict,omitempty" mapstructure:"strict,omitempty"`
 
 	// no type keyword at all
 	Untyped interface{} `json:"untyped,omitempty,omitzero" yaml:"untyped,omitempty" mapstructure:"untyped,omitempty"`
+
+	// UntypedViaRef corresponds to the JSON schema field "untypedViaRef".
+	UntypedViaRef UntypedThing `json:"untypedViaRef,omitempty,omitzero" yaml:"untypedViaRef,omitempty" mapstructure:"untypedViaRef,omitempty"`
 }
 
 type NullAllowedNullable *string
@@ -67,3 +73,8 @@ func (j *NullAllowed) UnmarshalYAML(value *yaml.Node) error {
 	*j = NullAllowed(plain)
 	return nil
 }
+
+type NullableName *string
+
+// no type keyword at all
+type UntypedThing interface{}
