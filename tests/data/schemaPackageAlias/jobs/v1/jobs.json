@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/jobs",
+  "$defs": {
+    "JobPriority": {
+      "type": "string"
+    }
+  }
+}

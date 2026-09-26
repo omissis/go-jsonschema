@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/oneOfConstrainedVariant",
+  "type": "object",
+  "properties": {
+    "stillRejected": {
+      "description": "A variant carrying a constraint the wrapper has nowhere to enforce disqualifies the primitive wrapper, because the wrapper dispatches on JSON token kind alone. Degrades to interface{} — and must say so.",
+      "oneOf": [
+        { "type": "string", "minLength": 3 },
+        { "type": "number" }
+      ]
+    },
+    "timeOrNumber": {
+      "description": "A temporal `format` is a type mapping, not a constraint: the string branch decodes into time.Time exactly as the non-oneOf path does. It compiles to a wrapper and must NOT warn.",
+      "oneOf": [
+        { "type": "string", "format": "date-time" },
+        { "type": "number" }
+      ]
+    },
+    "unconstrained": {
+      "description": "The same shape without constraints compiles to a typed wrapper, and must NOT warn.",
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "boolean" }
+      ]
+    }
+  }
+}

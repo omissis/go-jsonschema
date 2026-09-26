@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/animal",
+  "type": "object",
+  "properties": {
+    "creature": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind":   { "type": "string", "const": "dog" },
+            "barkAt": { "type": "string" }
+          },
+          "required": ["kind", "barkAt"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "cat" },
+            "purr": { "type": "boolean" }
+          },
+          "required": ["kind", "purr"]
+        }
+      ]
+    }
+  },
+  "required": ["creature"]
+}
