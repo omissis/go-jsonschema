@@ -162,3 +162,38 @@ func (g *schemaGenerator) nameIsDeclared(name string) bool {
 
 	return false
 }
+
+// uniqueEnumConstantName is enumConstantName with a guarantee that the result is
+// not already declared in the output package.
+//
+// Package.AddDecl dedupes by name and keeps the first declaration, so a
+// colliding constant is not a duplicate declaration or an error — it is simply
+// absent. Enums are emitted in order and each only knows its own names, so one
+// enum's supplied varname can be the name a later enum would derive:
+// `x-enum-varnames: ["BStatusX"]` on enum `A`, then enum `BStatus` with a value
+// `x`, and `BStatus`'s constant disappears.
+//
+// A taken name is suffixed rather than dropped, the way uniqueTypeName handles
+// the same clash for types, and the collision is reported.
+func (g *schemaGenerator) uniqueEnumConstantName(
+	varnames []string, declName string, i int, value string,
+) string {
+	name := g.enumConstantName(varnames, declName, i, value)
+	if !g.nameIsDeclared(name) {
+		return name
+	}
+
+	for suffix := 1; ; suffix++ {
+		candidate := fmt.Sprintf("%s_%d", name, suffix)
+		if g.nameIsDeclared(candidate) {
+			continue
+		}
+
+		g.warner(fmt.Sprintf(
+			"Enum %s: constant name %q is already declared in this package; declaring it as %q instead",
+			declName, name, candidate,
+		))
+
+		return candidate
+	}
+}
