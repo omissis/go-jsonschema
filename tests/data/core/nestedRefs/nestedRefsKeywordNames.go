@@ -24,6 +24,13 @@ type FooItems struct {
 
 type FooItemsBar float64
 
+type KwWrapper []struct {
+	// Bar corresponds to the JSON schema field "bar".
+	Bar *string `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+}
+
+type KwWrapperItemsBar string
+
 type NestedRefsKeywordNames struct {
 	// Nested corresponds to the JSON schema field "nested".
 	Nested *FooItemsBar `json:"nested,omitempty,omitzero" yaml:"nested,omitempty" mapstructure:"nested,omitempty"`
@@ -34,12 +41,5 @@ type NestedRefsKeywordNames struct {
 	// A path continuing past a single-schema `items`. Only the tuple form consumes
 	// what follows, so `items` is kept and the trailing `properties` dropped —
 	// swallowing the next segment would name this after `properties` instead.
-	ThroughItems *WrapperItemsBar `json:"throughItems,omitempty,omitzero" yaml:"throughItems,omitempty" mapstructure:"throughItems,omitempty"`
+	ThroughItems *KwWrapperItemsBar `json:"throughItems,omitempty,omitzero" yaml:"throughItems,omitempty" mapstructure:"throughItems,omitempty"`
 }
-
-type Wrapper []struct {
-	// Bar corresponds to the JSON schema field "bar".
-	Bar *string `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
-}
-
-type WrapperItemsBar string
