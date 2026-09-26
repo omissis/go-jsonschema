@@ -134,6 +134,20 @@ func PrimitiveTypeFromJSONSchemaType(
 	case schemas.TypeNameInteger:
 		t := PrimitiveType{"int"}
 
+		// An explicit `format` fixes the width the value is carried at.
+		// Without this, `{"type":"integer","format":"int64"}` emits a bare
+		// `int`, which is 32 bits on 32-bit platforms — so a value the schema
+		// explicitly declares as 64-bit fails to decode there at all, while
+		// the identical code and input succeed on a 64-bit build.
+		//
+		// `--min-sized-ints` still wins where it applies: it derives a width
+		// from the declared bounds, which is strictly more information than
+		// the format hint, and leaving it on top keeps this change invisible
+		// to anyone already using that flag.
+		if sized, ok := intTypeFromFormat(format); ok {
+			t.Type = sized
+		}
+
 		if minIntSize {
 			newType, removeMin, removeMax := getMinIntType(*minimum, *maximum, *exclusiveMinimum, *exclusiveMaximum)
 			t.Type = newType
@@ -197,6 +211,24 @@ func getMinIntType(
 }
 
 const i64 = "int64"
+
+// intTypeFromFormat maps the OpenAPI integer formats onto Go's sized integer
+// types. Only `int32` and `int64` are recognised: they are the two the OpenAPI
+// Format Registry defines for `type: integer`, and they are what generators on
+// the other side of these schemas emit. Anything else falls through to the
+// caller's default so an unknown format never silently changes the type.
+func intTypeFromFormat(format string) (string, bool) {
+	switch format {
+	case "int32":
+		return "int32", true
+
+	case i64:
+		return i64, true
+
+	default:
+		return "", false
+	}
+}
 
 func adjustForSignedBounds(nMin, nMax *float64) (string, bool, bool) {
 	var minRounded, maxRounded float64

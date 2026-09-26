@@ -18,7 +18,7 @@ type AllOfWithIfThen struct {
 func (j *AllOfWithIfThen) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOfWithIfThen: %w", err)
 	}
 	if _, ok := raw["result"]; raw != nil && !ok {
 		return fmt.Errorf("field result in AllOfWithIfThen: required")
@@ -26,7 +26,7 @@ func (j *AllOfWithIfThen) UnmarshalJSON(value []byte) error {
 	type Plain AllOfWithIfThen
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOfWithIfThen: %w", err)
 	}
 	*j = AllOfWithIfThen(plain)
 	return nil
@@ -36,7 +36,7 @@ func (j *AllOfWithIfThen) UnmarshalJSON(value []byte) error {
 func (j *AllOfWithIfThen) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOfWithIfThen: %w", err)
 	}
 	if _, ok := raw["result"]; raw != nil && !ok {
 		return fmt.Errorf("field result in AllOfWithIfThen: required")
@@ -44,7 +44,7 @@ func (j *AllOfWithIfThen) UnmarshalYAML(value *yaml.Node) error {
 	type Plain AllOfWithIfThen
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal AllOfWithIfThen: %w", err)
 	}
 	*j = AllOfWithIfThen(plain)
 	return nil

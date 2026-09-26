@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/refDiscriminator",
+  "type": "object",
+  "properties": {
+    "event": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/Common" },
+            {
+              "type": "object",
+              "properties": {
+                "kind":   { "type": "string", "const": "click" },
+                "target": { "type": "string" }
+              },
+              "required": ["kind", "target"]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/Common" },
+            {
+              "type": "object",
+              "properties": {
+                "kind":     { "type": "string", "const": "scroll" },
+                "distance": { "type": "integer" }
+              },
+              "required": ["kind", "distance"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "required": ["event"],
+  "$defs": {
+    "Common": {
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

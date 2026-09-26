@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/selfRef",
+  "type": "object",
+  "properties": {
+    "root": {
+      "$ref": "#/$defs/Tree"
+    }
+  },
+  "required": [
+    "root"
+  ],
+  "$defs": {
+    "Base": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Tree": {
+      "description": "Recursive tree node: combines a Base via allOf and refs itself in children.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/Base"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Tree"
+              }
+            }
+          },
+          "required": [
+            "value"
+          ]
+        }
+      ]
+    }
+  }
+}
