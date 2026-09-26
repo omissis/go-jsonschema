@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "definitions": {
-    "Holder": {
+    "DepHolder": {
       "type": "object",
       "properties": { "flag": { "type": "string" } },
       "dependencies": {
@@ -16,7 +16,7 @@
   "properties": {
     "viaDependencies": {
       "description": "Draft-07 `dependencies` is dual-form; the schema form parses into DependentSchemas, so a $ref descending through it resolves there. A property-name dependency lands in DependentRequired instead, is not a schema, and correctly finds nothing.",
-      "$ref": "#/definitions/Holder/dependencies/needsFlag"
+      "$ref": "#/definitions/DepHolder/dependencies/needsFlag"
     }
   }
 }

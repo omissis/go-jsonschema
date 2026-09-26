@@ -19,7 +19,7 @@
         }
       }
     },
-    "Wrapper": {
+    "KwWrapper": {
       "type": "array",
       "items": {
         "type": "object",
@@ -40,7 +40,7 @@
     },
     "throughItems": {
       "description": "A path continuing past a single-schema `items`. Only the tuple form consumes what follows, so `items` is kept and the trailing `properties` dropped \u2014 swallowing the next segment would name this after `properties` instead.",
-      "$ref": "#/definitions/Wrapper/items/properties/bar"
+      "$ref": "#/definitions/KwWrapper/items/properties/bar"
     }
   }
 }

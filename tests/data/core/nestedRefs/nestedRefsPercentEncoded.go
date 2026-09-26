@@ -2,16 +2,16 @@
 
 package test
 
-type Holder struct {
-	// FirstName corresponds to the JSON schema field "first name".
-	FirstName *string `json:"first name,omitempty,omitzero" yaml:"first name,omitempty" mapstructure:"first name,omitempty"`
-}
-
-type HolderFirstName string
-
 type NestedRefsPercentEncoded struct {
 	// A JSON Pointer carried in a URI fragment is percent-encoded (RFC 6901 section
 	// 6), so the escape is undone at the URI layer before the pointer is split.
 	// Splitting first would look up the literal `first%20name`.
-	Encoded *HolderFirstName `json:"encoded,omitempty,omitzero" yaml:"encoded,omitempty" mapstructure:"encoded,omitempty"`
+	Encoded *PctHolderFirstName `json:"encoded,omitempty,omitzero" yaml:"encoded,omitempty" mapstructure:"encoded,omitempty"`
 }
+
+type PctHolder struct {
+	// FirstName corresponds to the JSON schema field "first name".
+	FirstName *string `json:"first name,omitempty,omitzero" yaml:"first name,omitempty" mapstructure:"first name,omitempty"`
+}
+
+type PctHolderFirstName string
