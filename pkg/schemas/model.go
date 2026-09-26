@@ -302,7 +302,19 @@ func splitTupleItems(raw []byte) ([]byte, []byte, error) {
 	}
 
 	items, ok := fields["items"]
-	if !ok || !isJSONArray(items) {
+	if !ok {
+		return raw, nil, nil
+	}
+
+	// `null` is not a schema. Left to the regular decode it lands in Items as
+	// nil, which is indistinguishable from an absent `items` — so an invalid
+	// schema would silently generate an unconstrained array. Rejected here for
+	// the same reason `items: [null]` and `dependencies: null` are.
+	if isJSONNull(items) {
+		return nil, nil, fmt.Errorf("items: %w", ErrNullNotASchema)
+	}
+
+	if !isJSONArray(items) {
 		return raw, nil, nil
 	}
 
