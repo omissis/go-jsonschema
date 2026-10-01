@@ -8,6 +8,21 @@ import yaml "gopkg.in/yaml.v3"
 import "strings"
 
 type NullTypes struct {
+	// Strict, and first of its case variants in the struct: encoding/json gives it
+	// every spelling of `bar` except the exact key of the untyped `bar`.
+	BarStrict *string `json:"Bar,omitempty,omitzero" yaml:"Bar,omitempty" mapstructure:"Bar,omitempty"`
+
+	// Untyped, so it admits null. Its exact key must not trip `foo`'s check.
+	FooUntyped interface{} `json:"Foo,omitempty,omitzero" yaml:"Foo,omitempty" mapstructure:"Foo,omitempty"`
+
+	// Untyped, so it admits null. Its exact key must not trip `Bar`'s check.
+	BarUntyped interface{} `json:"bar,omitempty,omitzero" yaml:"bar,omitempty" mapstructure:"bar,omitempty"`
+
+	// Strict, and a case variant of the untyped `Foo`, which comes first in the
+	// struct. encoding/json gives `Foo` and every inexact spelling to that field, so
+	// only the exact key `foo` is this one's.
+	FooStrict *string `json:"foo,omitempty,omitzero" yaml:"foo,omitempty" mapstructure:"foo,omitempty"`
+
 	// Name corresponds to the JSON schema field "name".
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
@@ -32,6 +47,19 @@ func (j *NullTypes) UnmarshalJSON(value []byte) error {
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in NullTypes: required")
+	}
+	for fieldName, fieldValue := range raw {
+		if fieldValue != nil || !strings.EqualFold(fieldName, "Bar") {
+			continue
+		}
+		switch fieldName {
+		case "bar":
+			continue
+		}
+		return fmt.Errorf("field Bar in NullTypes: must not be null")
+	}
+	if fieldValue, ok := raw["foo"]; ok && fieldValue == nil {
+		return fmt.Errorf("field foo in NullTypes: must not be null")
 	}
 	for fieldName, fieldValue := range raw {
 		if fieldValue != nil || !strings.EqualFold(fieldName, "name") {
@@ -74,6 +102,12 @@ func (j *NullTypes) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
 		return fmt.Errorf("field name in NullTypes: required")
+	}
+	if fieldValue, ok := raw["Bar"]; ok && fieldValue == nil {
+		return fmt.Errorf("field Bar in NullTypes: must not be null")
+	}
+	if fieldValue, ok := raw["foo"]; ok && fieldValue == nil {
+		return fmt.Errorf("field foo in NullTypes: must not be null")
 	}
 	if fieldValue, ok := raw["name"]; ok && fieldValue == nil {
 		return fmt.Errorf("field name in NullTypes: must not be null")

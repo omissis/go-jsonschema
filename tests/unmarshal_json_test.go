@@ -484,6 +484,36 @@ func TestJsonUnmarshalValidateNullTypes(t *testing.T) {
 		}
 	})
 
+	t.Run("properties differing only in case split the keys as encoding/json does", func(t *testing.T) {
+		t.Parallel()
+
+		// encoding/json binds a key to the field with exactly that name, and
+		// otherwise to the first field whose name matches regardless of case.
+		// Matching every key case-insensitively rejected `{"Foo": null}` as a
+		// null `foo`, although encoding/json binds it to the untyped `Foo`.
+		for _, tc := range []struct {
+			payload string
+			reject  bool
+		}{
+			{`{"name":"a","Foo":null}`, false}, // exact: the untyped Foo
+			{`{"name":"a","foo":null}`, true},  // exact: the strict foo
+			{`{"name":"a","FOO":null}`, false}, // inexact: Foo comes first
+			{`{"name":"a","bar":null}`, false}, // exact: the untyped bar
+			{`{"name":"a","Bar":null}`, true},  // exact: the strict Bar
+			{`{"name":"a","BAR":null}`, true},  // inexact: Bar comes first
+		} {
+			var v testNullTypes.NullTypes
+
+			err := json.Unmarshal([]byte(tc.payload), &v)
+			if tc.reject {
+				require.Error(t, err, "payload %s", tc.payload)
+				assert.Contains(t, err.Error(), "must not be null")
+			} else {
+				require.NoError(t, err, "payload %s", tc.payload)
+			}
+		}
+	})
+
 	t.Run("a $ref property is checked against its target", func(t *testing.T) {
 		t.Parallel()
 
