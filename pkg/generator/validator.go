@@ -94,6 +94,14 @@ func (v *requiredValidator) desc() *validatorDesc {
 type nonNullValidator struct {
 	jsonName string
 	declName string
+	// caseVariants are the other properties whose names differ from jsonName
+	// only in case. encoding/json gives a key spelled exactly like one of them
+	// to that property, never to this one.
+	caseVariants []string
+	// exactOnly is set when a case variant comes earlier in the struct:
+	// encoding/json then hands every inexact match to that earlier field, so
+	// only the exact key is ever this field's.
+	exactOnly bool
 }
 
 func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
@@ -107,7 +115,7 @@ func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
 	// yaml.v3 matches case-sensitively, so the same leniency there would
 	// reject `Age: null` when the field was never assigned at all and the
 	// document may well be valid.
-	if format == formatJSON {
+	if format == formatJSON && !v.exactOnly {
 		// `fieldValue` is deliberately not named `value`: that is the
 		// UnmarshalJSON parameter, and shadowing it reads as a bug.
 		//
@@ -122,6 +130,20 @@ func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
 		out.Printlnf("continue")
 		out.Indent(-1)
 		out.Printlnf("}")
+
+		if len(v.caseVariants) > 0 {
+			quoted := make([]string, len(v.caseVariants))
+			for i, name := range v.caseVariants {
+				quoted[i] = fmt.Sprintf("%q", name)
+			}
+
+			out.Printlnf("switch fieldName {")
+			out.Printlnf("case %s:", strings.Join(quoted, ", "))
+			out.Indent(1)
+			out.Printlnf("continue")
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
 	} else {
 		out.Printlnf(`if fieldValue, ok := %s[%q]; ok && fieldValue == nil {`, varNameRawMap, v.jsonName)
 		out.Indent(1)
@@ -138,14 +160,20 @@ func (v *nonNullValidator) generate(out *codegen.Emitter, format string) error {
 }
 
 func (v *nonNullValidator) desc() *validatorDesc {
-	return &validatorDesc{
+	d := &validatorDesc{
 		hasError:            true,
 		beforeJSONUnmarshal: true,
-		// `strings` is only reached by the JSON branch, but the descriptor is
-		// format-agnostic and an unused import would not compile — the JSON
-		// unmarshaler is always generated alongside the YAML one.
-		imports: []packageImport{{qualifiedName: "strings"}},
 	}
+
+	// `strings` is only reached by the JSON branch, but the descriptor is
+	// format-agnostic and an unused import would not compile — the JSON
+	// unmarshaler is always generated alongside the YAML one. An exact-only
+	// check uses the plain map lookup in both branches, so it needs none.
+	if !v.exactOnly {
+		d.imports = []packageImport{{qualifiedName: "strings"}}
+	}
+
+	return d
 }
 
 // nonNullContainerValidator rejects a null instance where the schema's own

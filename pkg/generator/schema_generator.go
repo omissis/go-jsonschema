@@ -467,10 +467,27 @@ func (g *schemaGenerator) nullTypeValidators(
 
 	var out []validator
 
-	for _, f := range tt.Fields {
-		if g.schemaExcludesNullResolved(f.SchemaType) {
-			out = append(out, &nonNullValidator{f.JSONName, declName})
+	for i, f := range tt.Fields {
+		if !g.schemaExcludesNullResolved(f.SchemaType) {
+			continue
 		}
+
+		v := &nonNullValidator{jsonName: f.JSONName, declName: declName}
+
+		// encoding/json binds a key to the field with exactly that name, and
+		// only otherwise to the first field whose name matches it regardless
+		// of case. Properties differing only in case split the keys between
+		// them that way, so the check has to split them the same way.
+		for j, other := range tt.Fields {
+			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
+				continue
+			}
+
+			v.caseVariants = append(v.caseVariants, other.JSONName)
+			v.exactOnly = v.exactOnly || j < i
+		}
+
+		out = append(out, v)
 	}
 
 	return out
