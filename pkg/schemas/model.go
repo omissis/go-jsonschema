@@ -52,38 +52,47 @@ type Schema struct {
 
 // UnmarshalJSON implements json.Unmarshaler for Schema struct.
 func (s *Schema) UnmarshalJSON(data []byte) error {
-	var unmarshSchema unmarshalerSchema
-	if err := json.Unmarshal(data, &unmarshSchema); err != nil {
+	// The root carries the same keywords as any subschema, so decode them
+	// through Type, whose pre-processing must not stop at the root. Decoding
+	// straight into the embedded ObjectAsType bypassed it: dual-form
+	// `dependencies` at the root, for one, never reached DependentRequired or
+	// DependentSchemas.
+	var typ Type
+	if err := json.Unmarshal(data, &typ); err != nil {
+		return fmt.Errorf("failed to unmarshal schema: %w", err)
+	}
+
+	var ids struct {
+		ID       string `json:"$id"`
+		LegacyID string `json:"id"`
+	}
+
+	if err := json.Unmarshal(data, &ids); err != nil {
 		return fmt.Errorf("failed to unmarshal schema: %w", err)
 	}
 
 	// Fall back to id if $id is not present.
-	if unmarshSchema.ID == "" {
-		unmarshSchema.ID = unmarshSchema.LegacyID
+	if ids.ID == "" {
+		ids.ID = ids.LegacyID
 	}
 
-	// Take care of legacy fields.
-	var legacySchema struct {
-		Definitions Definitions `json:"definitions,omitempty"`
-	}
+	// Type has already folded the legacy `definitions` into its $defs. At the
+	// root they belong to Schema, whose field shadows Type's, so move them
+	// across rather than leave a second copy behind.
+	definitions := typ.Definitions
+	typ.Definitions = nil
 
-	if err := json.Unmarshal(data, &legacySchema); err != nil {
-		return fmt.Errorf("failed to unmarshal schema: %w", err)
+	*s = Schema{
+		ObjectAsType: (*ObjectAsType)(&typ),
+		ID:           ids.ID,
+		LegacyID:     ids.LegacyID,
+		Definitions:  definitions,
 	}
-
-	if unmarshSchema.Definitions == nil && legacySchema.Definitions != nil {
-		unmarshSchema.Definitions = legacySchema.Definitions
-	}
-
-	*s = Schema(unmarshSchema)
 
 	return nil
 }
 
-type (
-	unmarshalerSchema Schema
-	ObjectAsType      Type
-)
+type ObjectAsType Type
 
 // TypeList is a list of type names.
 type TypeList []string
