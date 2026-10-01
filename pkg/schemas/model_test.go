@@ -1,6 +1,7 @@
 package schemas_test
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -97,5 +98,32 @@ func TestRootSchemaKeepsIDsAndDefinitions(t *testing.T) {
 				t.Errorf("root definitions duplicated onto the embedded type: %v", s.ObjectAsType.Definitions)
 			}
 		})
+	}
+}
+
+// TestRootSchemaAcceptsTupleItems covers a draft-07 tuple at the root, which
+// failed the whole parse while the root bypassed Type's decoding.
+func TestRootSchemaAcceptsTupleItems(t *testing.T) {
+	t.Parallel()
+
+	s := parseRoot(t, `{"type": "array", "items": [{"type": "string"}, {"type": "integer"}], "additionalItems": false}`)
+
+	if len(s.TupleItems) != 2 {
+		t.Fatalf("TupleItems = %d entries, want 2", len(s.TupleItems))
+	}
+
+	if got := s.TupleItems[1].Type; !reflect.DeepEqual(got, schemas.TypeList{"integer"}) {
+		t.Errorf("TupleItems[1].Type = %v, want [integer]", got)
+	}
+}
+
+// TestRootSchemaRejectsNullItems covers `items: null` at the root. A null never
+// reaches a decoder hook, so only the pre-processing Type does can reject it.
+func TestRootSchemaRejectsNullItems(t *testing.T) {
+	t.Parallel()
+
+	_, err := schemas.FromJSONReader(strings.NewReader(`{"type": "array", "items": null}`))
+	if !errors.Is(err, schemas.ErrNullNotASchema) {
+		t.Fatalf("err = %v, want %v", err, schemas.ErrNullNotASchema)
 	}
 }
