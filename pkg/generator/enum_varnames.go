@@ -3,9 +3,10 @@ package generator
 import (
 	"fmt"
 	"go/token"
+	"go/types"
+	"strings"
 	"unicode"
 
-	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
@@ -86,6 +87,47 @@ func (g *schemaGenerator) enumVarnames(t *schemas.Type, declName string) []strin
 			name = g.caser.Identifierize(raw)
 		}
 
+		// Each enum's allowed values are emitted as a variable under this
+		// prefix, and a constant holding that name makes AddDecl drop the
+		// variable — the enum's validator then ranges over the constant's
+		// string instead, comparing runes: an int32 enum of [66] given a
+		// constant "A" rejects 66 and accepts 65, and nothing fails to
+		// compile. The prefix is the generator's own.
+		if strings.HasPrefix(name, schemas.PrefixEnumValue) {
+			g.warner(fmt.Sprintf(
+				"Enum %s: x-enum-varnames[%d] %q uses the prefix reserved for generated enum value lists; "+
+					"deriving that constant's name instead",
+				declName, i, raw,
+			))
+
+			continue
+		}
+
+		// A predeclared identifier may be redeclared, but a constant named
+		// `nil` or `true` would shadow it for the whole package, and the
+		// generated code compares errors against nil.
+		if types.Universe.Lookup(name) != nil {
+			g.warner(fmt.Sprintf(
+				"Enum %s: x-enum-varnames[%d] %q is a predeclared Go identifier; deriving that constant's name instead",
+				declName, i, raw,
+			))
+
+			continue
+		}
+
+		// An import binds its package name in the file, and a package-level
+		// constant may not share it. An import added after this point is
+		// caught by the final sweep in Generator.Sources instead.
+		if g.output.importsName(name) {
+			g.warner(fmt.Sprintf(
+				"Enum %s: x-enum-varnames[%d] %q is the name of an imported package; "+
+					"deriving that constant's name instead",
+				declName, i, raw,
+			))
+
+			continue
+		}
+
 		// A name the package already declares would be dropped in silence:
 		// Package.AddDecl dedupes by name, so a varname colliding with its
 		// own enum's type (`JobStatus` on enum `JobStatus`) emits nothing
@@ -154,13 +196,7 @@ func hasIdentifierChar(s string) bool {
 // one is discarded without a word. That is tolerable for identical types but
 // not for a constant the schema explicitly asked for.
 func (g *schemaGenerator) nameIsDeclared(name string) bool {
-	for _, decl := range g.output.file.Package.Decls {
-		if named, ok := decl.(codegen.Named); ok && named.GetName() == name {
-			return true
-		}
-	}
-
-	return false
+	return g.output.declaresName(name)
 }
 
 // uniqueEnumConstantName is enumConstantName with a guarantee that the result is
