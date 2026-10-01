@@ -63,6 +63,22 @@
         "ShadowingBeta",
         ""
       ]
+    },
+    "Shadowed": {
+      "description": "Varnames that would shadow something the file needs. `fmt` is imported for the validation error, and a package-level constant may not share a name with an import; `nil` may be redeclared, but would then shadow the predeclared nil the generated code compares errors against; `enumValues_Shadowing` is the variable holding a LATER enum's allowed values, and taking it made that enum's validator range over this constant's string instead. All three fall back to their derived names.",
+      "type": "string",
+      "enum": [
+        "x",
+        "y",
+        "z",
+        "w"
+      ],
+      "x-enum-varnames": [
+        "fmt",
+        "nil",
+        "ShadowedFine",
+        "enumValues_Shadowing"
+      ]
     }
   },
   "properties": {
@@ -80,6 +96,9 @@
     },
     "shadowing": {
       "$ref": "#/$defs/Shadowing"
+    },
+    "shadowed": {
+      "$ref": "#/$defs/Shadowed"
     }
   }
 }

@@ -132,6 +132,73 @@ func TestEnumVarnames(t *testing.T) {
 		assert.Contains(t, joined, `"XcSecondX_1"`)
 	})
 
+	t.Run("a varname naming an import or a predeclared identifier falls back", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesInvalid.json"), "\n",
+		)
+
+		// `const fmt` beside `import "fmt"` does not compile, and `const nil`
+		// would shadow the nil the generated code compares errors against.
+		assert.Contains(t, joined, `x-enum-varnames[0] "fmt" is the name of an imported package`)
+		assert.Contains(t, joined, `x-enum-varnames[1] "nil" is a predeclared Go identifier`)
+	})
+
+	t.Run("a varname cannot take a later enum's value list", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesInvalid.json"), "\n",
+		)
+
+		// Each enum's allowed values are a variable named enumValues_<Type>.
+		// A constant holding that name made AddDecl drop the variable, and
+		// the enum's validator then ranged over the constant's string —
+		// comparing runes, it rejected valid values and accepted others,
+		// with nothing failing to compile.
+		assert.Contains(t, joined,
+			`x-enum-varnames[3] "enumValues_Shadowing" uses the prefix reserved for generated enum value lists`)
+	})
+
+	t.Run("a constant's name is not given to a later type", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesCrossEnum.json"), "\n",
+		)
+
+		// Type allocation only knew other types, so XcTarget was declared
+		// under the constant's name and AddDecl dropped it: the output
+		// referred to a type that no longer existed.
+		assert.Contains(t, joined, `Multiple types map to the name "XcTarget"; declaring duplicate as "XcTarget_1" instead`)
+	})
+
+	t.Run("a varname cannot take a type still being generated", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesCrossEnum.json"), "\n",
+		)
+
+		// XcHolder is registered as a type but not yet declared in the
+		// package when its own property's varname is resolved.
+		assert.Contains(t, joined, `x-enum-varnames[0] "XcHolder" is already declared in this package`)
+	})
+
+	t.Run("a constant an import later claims is renamed", func(t *testing.T) {
+		t.Parallel()
+
+		joined := strings.Join(
+			generateCapturingWarnings(t, "./data/enumVarnames/enumVarnamesCrossEnum.json"), "\n",
+		)
+
+		// Nothing imports time when the constant is named; a later type
+		// does, so the clash is only visible once generation ends.
+		assert.Contains(t, joined,
+			`Constant "time" shares its name with an imported package; declaring it as "time_1" instead`)
+	})
+
 	t.Run("an entry with no identifier characters falls back", func(t *testing.T) {
 		t.Parallel()
 
