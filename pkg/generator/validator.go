@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/sanity-io/litter"
@@ -61,9 +62,9 @@ func (v *requiredValidator) generate(out *codegen.Emitter, format string) error 
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
-	out.Printlnf(`if _, ok := %s["%s"]; %s != nil && !ok {`, varNameRawMap, v.jsonName, varNameRawMap)
+	out.Printlnf(`if _, ok := %s[%q]; %s != nil && !ok {`, varNameRawMap, v.jsonName, varNameRawMap)
 	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, v.jsonName, v.declName)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: required")`, goStringText(v.jsonName), goStringText(v.declName))
 	out.Indent(-1)
 	out.Printlnf("}")
 
@@ -86,9 +87,9 @@ func (v *readOnlyValidator) generate(out *codegen.Emitter, format string) error 
 	// The container itself may be null (if the type is ["null", "object"]), in which case
 	// the map will be nil and none of the properties are present. This shouldn't fail
 	// the validation, though, as that's allowed as long as the container is allowed to be null.
-	out.Printlnf(`if _, ok := %s["%s"]; %s != nil && ok {`, varNameRawMap, v.jsonName, varNameRawMap)
+	out.Printlnf(`if _, ok := %s[%q]; %s != nil && ok {`, varNameRawMap, v.jsonName, varNameRawMap)
 	out.Indent(1)
-	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, v.jsonName, v.declName)
+	out.Printlnf(`return fmt.Errorf("field %s in %s: read only")`, goStringText(v.jsonName), goStringText(v.declName))
 	out.Indent(-1)
 	out.Printlnf("}")
 
@@ -165,7 +166,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 		return fmt.Errorf("cannot generate default validator: %w", err)
 	}
 
-	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	out.Printlnf(`if v, ok := %s[%q]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	out.Indent(1)
 	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
@@ -400,7 +401,12 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 	}
 
 	value := getPlainName(v.fieldName)
-	fieldName := v.jsonName
+
+	// The name is schema data. Keeping it an ARGUMENT rather than splicing it
+	// into the format string means a `%` in it is never read as a verb, so
+	// only Go-literal escaping is needed — and that is needed, since an
+	// unescaped quote in `a"b` would not compile.
+	quotedName := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
 
 	var indexes []string
 
@@ -409,14 +415,16 @@ func (v *arrayValidator) generate(out *codegen.Emitter, format string) error {
 		indexes = append(indexes, index)
 		out.Printlnf(`for %s := range %s {`, index, value)
 		value += fmt.Sprintf("[%s]", index)
-		fieldName += "[%d]"
 
 		out.Indent(1)
 	}
 
-	fieldName = fmt.Sprintf(`"%s"`, fieldName)
+	fieldName := quotedName
 	if len(indexes) > 0 {
-		fieldName = fmt.Sprintf(`fmt.Sprintf(%s, %s)`, fieldName, strings.Join(indexes, ", "))
+		fieldName = fmt.Sprintf(
+			`fmt.Sprintf(%q, %s, %s)`,
+			"%s"+strings.Repeat("[%d]", len(indexes)), quotedName, strings.Join(indexes, ", "),
+		)
 	}
 
 	if v.minItems != 0 {
@@ -737,4 +745,26 @@ func lowerFirst(s string) string {
 
 func upperFirst(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// goStringText escapes s for embedding inside a Go string literal that is also
+// a fmt format string.
+//
+// Property names come from the schema, so they can contain a quote, a
+// backslash or a percent sign. Interpolated raw, the first two end the literal
+// early and produce source that does not compile, and the third is read by fmt
+// as a verb. Escaping leaves ordinary names byte-for-byte unchanged, so
+// generated output only differs where it was previously broken.
+func goStringText(s string) string {
+	return strings.ReplaceAll(goQuotedBody(s), "%", "%%")
+}
+
+// goQuotedBody escapes s for use inside a Go string literal, without the
+// surrounding quotes. Struct tag values are parsed with strconv.Unquote, so an
+// unescaped quote truncates the value and an unescaped backslash makes the
+// whole tag unparseable — reflect then reports the tag as absent.
+func goQuotedBody(s string) string {
+	quoted := strconv.Quote(s)
+
+	return quoted[1 : len(quoted)-1]
 }
