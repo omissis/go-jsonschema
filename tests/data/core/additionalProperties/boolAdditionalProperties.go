@@ -26,7 +26,7 @@ func (j *BoolAdditionalProperties) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if v, ok := raw[""]; !ok || v == nil {
+	if plain.AdditionalProperties == nil {
 		plain.AdditionalProperties = map[string]bool{}
 	}
 	st := reflect.TypeOf(Plain{})
@@ -52,7 +52,7 @@ func (j *BoolAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if v, ok := raw[""]; !ok || v == nil {
+	if plain.AdditionalProperties == nil {
 		plain.AdditionalProperties = map[string]bool{}
 	}
 	st := reflect.TypeOf(Plain{})

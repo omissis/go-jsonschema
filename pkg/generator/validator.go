@@ -165,7 +165,11 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 		return fmt.Errorf("cannot generate default validator: %w", err)
 	}
 
-	out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	if v.fieldName == additionalProperties {
+		out.Printlnf(`if %s == nil {`, getPlainName(v.fieldName))
+	} else {
+		out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	}
 	out.Indent(1)
 	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
@@ -381,7 +385,7 @@ func (v *defaultValidator) desc() *validatorDesc {
 	return &validatorDesc{
 		hasError:            false,
 		beforeJSONUnmarshal: false,
-		requiresRawAfter:    true,
+		requiresRawAfter:    v.fieldName != additionalProperties,
 		imports:             packages,
 	}
 }
