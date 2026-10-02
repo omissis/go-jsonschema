@@ -170,6 +170,7 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 	} else {
 		out.Printlnf(`if v, ok := %s["%s"]; !ok || v == nil {`, varNameRawMap, v.jsonName)
 	}
+
 	out.Indent(1)
 	out.Printlnf("%s", defaultValue)
 	out.Indent(-1)
