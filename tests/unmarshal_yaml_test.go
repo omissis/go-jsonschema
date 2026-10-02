@@ -6,9 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testNullTypes "github.com/atombender/go-jsonschema/tests/data/validateNullTypes"
 )
 
 func TestYamlV3Unmarshal(t *testing.T) {
@@ -67,4 +69,27 @@ func TestYamlV3UnmarshalInvalidEnum(t *testing.T) {
 	if !strings.Contains(err.Error(), "invalid value (expected one of") {
 		t.Error("Expected unmarshal error to contain enum values")
 	}
+}
+
+// TestYamlValidateNullTypesKeyMatching pins the key-matching rule per format.
+//
+// encoding/json matches a JSON key to a struct field without regard to case, so
+// the JSON check has to be case-insensitive or `{"Age": null}` slips past it.
+// yaml.v3 matches case-sensitively, so the same leniency in the YAML check would
+// reject `Age: null` when the field was never assigned at all.
+func TestYamlValidateNullTypesKeyMatching(t *testing.T) {
+	t.Parallel()
+
+	t.Run("yaml rejects only the exact key", func(t *testing.T) {
+		t.Parallel()
+
+		var v testNullTypes.NullTypes
+
+		require.Error(t, yamlv3.Unmarshal([]byte("name: a\ntags: null\n"), &v))
+
+		// yaml.v3 never assigns `Tags` to the `tags` field, so rejecting the
+		// document would refuse input the schema does not forbid.
+		var w testNullTypes.NullTypes
+		require.NoError(t, yamlv3.Unmarshal([]byte("name: a\nTags: null\n"), &w))
+	})
 }
