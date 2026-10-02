@@ -75,6 +75,7 @@ func TestYamlV3UnmarshalIPDefault(t *testing.T) {
 	t.Parallel()
 
 	yamlData := []byte(`{}`)
+
 	var conf testIpDefault.IpDefault
 
 	if err := yamlv3.Unmarshal(yamlData, &conf); err != nil {
