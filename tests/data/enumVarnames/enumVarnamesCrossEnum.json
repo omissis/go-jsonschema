@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumVarnamesCrossEnum",
+  "type": "object",
+  "$defs": {
+    "XcFirst": {
+      "description": "Supplies a name that a LATER enum would derive for itself. Each enum only knows its own names, so nothing here can see the clash coming.",
+      "type": "string",
+      "enum": ["p", "q"],
+      "x-enum-varnames": ["XcSecondX", "XcFirstOther"]
+    },
+    "XcSecond": {
+      "description": "Derives XcSecondX for value x. AddDecl dedupes by name and keeps the first declaration, so before this fix the constant was simply absent — not duplicated, not an error.",
+      "type": "string",
+      "enum": ["x", "y"]
+    },
+    "XcAaaImport": {
+      "description": "Supplies `time`, which nothing imports yet. XcZzzWhen's date-time property imports it LATER, so the clash only exists once generation ends; the constant is renamed then.",
+      "type": "string",
+      "enum": ["m"],
+      "x-enum-varnames": ["time"]
+    },
+    "XcClaimsType": {
+      "description": "Supplies the name of a type generated after it. Type allocation used to see only other types, so XcTarget was declared under a name the constant already held and AddDecl dropped it.",
+      "type": "string",
+      "enum": ["v"],
+      "x-enum-varnames": ["XcTarget"]
+    },
+    "XcTarget": {
+      "type": "object",
+      "properties": { "w": { "type": "string" } }
+    },
+    "XcHolder": {
+      "description": "Its own enum property asks for the name XcHolder while XcHolder is still being generated: registered as a type, not yet a declaration in the package.",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["k"], "x-enum-varnames": ["XcHolder"] }
+      }
+    },
+    "XcZzzWhen": {
+      "description": "A date-time property maps to time.Time, importing `time` with no unmarshaler of its own to generate.",
+      "type": "object",
+      "properties": { "at": { "type": "string", "format": "date-time" } }
+    }
+  },
+  "properties": {
+    "first": { "$ref": "#/$defs/XcFirst" },
+    "second": { "$ref": "#/$defs/XcSecond" },
+    "imported": { "$ref": "#/$defs/XcAaaImport" },
+    "claims": { "$ref": "#/$defs/XcClaimsType" },
+    "target": { "$ref": "#/$defs/XcTarget" },
+    "holder": { "$ref": "#/$defs/XcHolder" },
+    "when": { "$ref": "#/$defs/XcZzzWhen" }
+  }
+}
