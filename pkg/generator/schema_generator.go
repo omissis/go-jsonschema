@@ -1639,7 +1639,7 @@ func (g *schemaGenerator) generateEnumType(
 	if !g.config.OnlyModels {
 		valueConstant := &codegen.Var{
 			Name:  schemas.PrefixEnumValue + enumDecl.Name,
-			Value: t.Enum,
+			Value: g.enumValueList(enumType, t.Enum, enumDecl.Name),
 		}
 		g.output.file.Package.AddDecl(valueConstant)
 
@@ -1813,4 +1813,86 @@ func isTypeNullable(t *schemas.Type) (int, bool) {
 
 func isTypeTemporal(typ, format string) bool {
 	return typ == schemas.TypeNameString && (format == "date-time" || format == "date" || format == "time")
+}
+
+// enumValueList is what an enum's allowed-values variable is emitted with. The
+// enum's validator decodes into the underlying type and compares each element
+// with reflect.DeepEqual, so the elements have to carry that type. An untyped
+// list serves `int` — an untyped integer constant in an []interface{} is an int
+// — but for a sized integer, `int32` from `format: int32` or a width
+// --min-sized-ints picked, no element ever matched and every value was
+// rejected, valid ones included. litter keeps a slice's element type but not an
+// interface element's, so a sized integer enum gets a typed slice.
+//
+// A member the width cannot hold is left out: decoding never produces it, so
+// it could not be accepted anyway, and keeping it would mean keeping the
+// untyped list, which rejects every member. The schema is contradicting itself
+// there, so it is reported.
+func (g *schemaGenerator) enumValueList(enumType codegen.Type, values []any, declName string) any {
+	prim, ok := enumType.(codegen.PrimitiveType)
+	if !ok || prim.Type == typeInt {
+		return values
+	}
+
+	elem, ok := sizedIntegerType(prim.Type)
+	if !ok {
+		return values
+	}
+
+	list := reflect.MakeSlice(reflect.SliceOf(elem), 0, len(values))
+
+	for _, v := range values {
+		n, ok := v.(int)
+		if !ok {
+			return values
+		}
+
+		ev := reflect.New(elem).Elem()
+
+		switch {
+		case ev.CanInt() && !ev.OverflowInt(int64(n)):
+			ev.SetInt(int64(n))
+
+		case ev.CanUint() && n >= 0 && !ev.OverflowUint(uint64(n)):
+			ev.SetUint(uint64(n))
+
+		default:
+			g.warner(fmt.Sprintf(
+				"Enum %s: value %d does not fit %s, so it can never be decoded; leaving it out of the allowed values",
+				declName, n, prim.Type,
+			))
+
+			continue
+		}
+
+		list = reflect.Append(list, ev)
+	}
+
+	return list.Interface()
+}
+
+// sizedIntegerType maps a sized Go integer type name to its reflect.Type.
+func sizedIntegerType(name string) (reflect.Type, bool) {
+	switch name {
+	case "int8":
+		return reflect.TypeFor[int8](), true
+	case "int16":
+		return reflect.TypeFor[int16](), true
+	case "int32":
+		return reflect.TypeFor[int32](), true
+	case "int64":
+		return reflect.TypeFor[int64](), true
+	case "uint":
+		return reflect.TypeFor[uint](), true
+	case "uint8":
+		return reflect.TypeFor[uint8](), true
+	case "uint16":
+		return reflect.TypeFor[uint16](), true
+	case "uint32":
+		return reflect.TypeFor[uint32](), true
+	case "uint64":
+		return reflect.TypeFor[uint64](), true
+	default:
+		return nil, false
+	}
 }
