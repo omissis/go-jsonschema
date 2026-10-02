@@ -137,6 +137,20 @@ func TestExtensionTagsBehaviour(t *testing.T) {
 		assert.Contains(t, joined, `Property "backtick" declares x-dimension with a value containing a backtick`)
 	})
 
+	t.Run("a tag key reflect cannot read is refused", func(t *testing.T) {
+		t.Parallel()
+
+		// Such a key still compiles, so without the check the tag would be
+		// silently invisible to the reflection-based consumer it exists for.
+		for _, key := range []string{"", "bad key", "bad:key", `bad"key`} {
+			cfg := extensionTagConfig()
+			cfg.ExtensionTags = map[string]string{"x-dimension": key}
+
+			_, err := generator.New(cfg)
+			require.ErrorContains(t, err, "invalid struct tag key", "key %q", key)
+		}
+	})
+
 	t.Run("no configured extensions leaves output untouched", func(t *testing.T) {
 		t.Parallel()
 

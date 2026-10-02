@@ -108,3 +108,20 @@ func extensionTagValue(raw any) (string, bool) {
 		return "", false
 	}
 }
+
+// isStructTagKey reports whether key is a struct tag key reflect can read:
+// non-empty, with no space, quote, colon or control character. A backtick is
+// fine — tags carrying one are emitted as interpreted string literals.
+func isStructTagKey(key string) bool {
+	if key == "" {
+		return false
+	}
+
+	for _, r := range key {
+		if r <= ' ' || r == '"' || r == ':' || r == 0x7f {
+			return false
+		}
+	}
+
+	return true
+}
