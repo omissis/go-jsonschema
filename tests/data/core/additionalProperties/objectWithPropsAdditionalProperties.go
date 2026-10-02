@@ -29,7 +29,7 @@ func (j *ObjectWithPropsAdditionalProperties) UnmarshalJSON(value []byte) error 
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
-	if v, ok := raw[""]; !ok || v == nil {
+	if plain.AdditionalProperties == nil {
 		plain.AdditionalProperties = map[string]interface{}{}
 	}
 	st := reflect.TypeOf(Plain{})
@@ -55,7 +55,7 @@ func (j *ObjectWithPropsAdditionalProperties) UnmarshalYAML(value *yaml.Node) er
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if v, ok := raw[""]; !ok || v == nil {
+	if plain.AdditionalProperties == nil {
 		plain.AdditionalProperties = map[string]interface{}{}
 	}
 	st := reflect.TypeOf(Plain{})
