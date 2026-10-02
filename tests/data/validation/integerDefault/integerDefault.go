@@ -43,8 +43,8 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 		plain.Count = 42
 	}
 	if v, ok := raw["nullableCount"]; !ok || v == nil {
-		defaultInt := 0
-		plain.NullableCount = &defaultInt
+		var defaultNullableCount int = 0
+		plain.NullableCount = &defaultNullableCount
 
 	}
 	if v, ok := raw["programId"]; !ok || v == nil {
@@ -78,8 +78,8 @@ func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 		plain.Count = 42
 	}
 	if v, ok := raw["nullableCount"]; !ok || v == nil {
-		defaultInt := 0
-		plain.NullableCount = &defaultInt
+		var defaultNullableCount int = 0
+		plain.NullableCount = &defaultNullableCount
 
 	}
 	if v, ok := raw["programId"]; !ok || v == nil {
