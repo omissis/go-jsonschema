@@ -8,6 +8,7 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 
 	"github.com/atombender/go-jsonschema/pkg/generator"
+	testAdditionalElements "github.com/atombender/go-jsonschema/tests/data/formatValidation/additionalElements"
 	testElements "github.com/atombender/go-jsonschema/tests/data/formatValidation/elements"
 	testInlineMaps "github.com/atombender/go-jsonschema/tests/data/formatValidationInlineMaps"
 )
@@ -75,6 +76,21 @@ func TestFormatValidationElements(t *testing.T) {
 		var v testElements.Elements
 
 		require.ErrorContains(t, yamlv3.Unmarshal([]byte("ids: [nope]\n"), &v), `field ids[0]: must be a valid uuid`)
+	})
+
+	t.Run("additional property beside named ones", func(t *testing.T) {
+		t.Parallel()
+
+		// AdditionalProperties is filled after the other checks run, so its
+		// check must come after that decode or it sees an empty map.
+		var v testAdditionalElements.AdditionalElements
+
+		require.NoError(t, json.Unmarshal([]byte(`{"foo": "x", "extra": "`+u+`"}`), &v))
+		require.Equal(t, map[string]string{"extra": u}, v.AdditionalProperties)
+		require.ErrorContains(t, json.Unmarshal([]byte(`{"foo": "x", "extra": "nope"}`), &v),
+			`field ["extra"]: must be a valid uuid`)
+		require.ErrorContains(t, yamlv3.Unmarshal([]byte("foo: x\nextra: nope\n"), &v),
+			`field ["extra"]: must be a valid uuid`)
 	})
 
 	t.Run("inline map value", func(t *testing.T) {

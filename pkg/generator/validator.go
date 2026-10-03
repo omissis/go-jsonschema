@@ -43,6 +43,11 @@ type validatorDesc struct {
 	// Package.AddDecl, which dedupes by name — so multiple validators sharing
 	// the same regex emit the var only once per output file.
 	decls []codegen.Decl
+
+	// afterAdditionalProperties runs the validator once AdditionalProperties
+	// has been decoded. The after validators run before that, while the map
+	// is still empty, so a check on its values would check nothing.
+	afterAdditionalProperties bool
 }
 
 var (
@@ -1048,6 +1053,9 @@ type formatValidator struct {
 	// isElemNillable marks a pointer element, such as []*string, which is
 	// checked only when set.
 	isElemNillable bool
+	// afterAdditionalProperties marks a check on AdditionalProperties' values,
+	// which can only run once that map is decoded.
+	afterAdditionalProperties bool
 }
 
 // containerLevel is one inline array or map between a field and the string a
@@ -1061,7 +1069,9 @@ const (
 
 func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 	value := getPlainName(v.fieldName)
-	name := fmt.Sprintf(`"%s"`, v.jsonName)
+	// Quoted like arrayValidator's name: the property name is schema data,
+	// so it is escaped as a Go literal rather than spliced in as is.
+	name := fmt.Sprintf(`"%s"`, goQuotedBody(v.jsonName))
 	open := 0
 
 	if v.isNillable {
@@ -1200,8 +1210,9 @@ func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 
 func (v *formatValidator) desc() *validatorDesc {
 	d := &validatorDesc{
-		hasError: true,
-		imports:  formatValidatorImports(v.format),
+		hasError:                  true,
+		imports:                   formatValidatorImports(v.format),
+		afterAdditionalProperties: v.afterAdditionalProperties,
 	}
 
 	if regexpDecl := formatRegexpDecl(v.format); regexpDecl != nil {

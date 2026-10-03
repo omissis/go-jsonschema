@@ -57,15 +57,23 @@ func generateUnmarshalBody(
 	var (
 		beforeValidators []validator
 		afterValidators  []validator
-		forceBefore      bool
+		// apValidators check AdditionalProperties' values, so they run once
+		// that map is decoded.
+		apValidators []validator
+		forceBefore  bool
 	)
 
 	for _, v := range validators {
 		d := v.desc()
 
-		if d.beforeJSONUnmarshal {
+		switch {
+		case d.beforeJSONUnmarshal:
 			beforeValidators = append(beforeValidators, v)
-		} else {
+
+		case d.afterAdditionalProperties:
+			apValidators = append(apValidators, v)
+
+		default:
 			afterValidators = append(afterValidators, v)
 			forceBefore = forceBefore || d.requiresRawAfter
 		}
@@ -172,6 +180,12 @@ func generateUnmarshalBody(
 			out.Printlnf("return err")
 			out.Indent(-1)
 			out.Printlnf("}")
+		}
+
+		for _, v := range apValidators {
+			if err := v.generate(out, ctx.formatName); err != nil {
+				return fmt.Errorf("cannot generate additional-properties validators: %w", err)
+			}
 		}
 
 		out.Printlnf("*j = %s(%s)", declType.Name, varNamePlainStruct)
