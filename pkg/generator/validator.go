@@ -1034,33 +1034,92 @@ func formatValidatorImports(format string) []packageImport {
 // formatValidator emits runtime validation for JSON Schema `format` keywords
 // on string-typed fields. It mirrors stringValidator's nillable-pointer
 // handling and runs after the typed struct has been decoded.
+//
+// A string held inside inline arrays or maps is reached through elements,
+// which lists those containers outermost first. The check is then emitted
+// inside one loop per container, and the error names the element, as in
+// `ids[1]` or `byName["a"]`.
 type formatValidator struct {
 	jsonName   string
 	fieldName  string
 	format     string
 	isNillable bool
+	elements   []containerLevel
+	// isElemNillable marks a pointer element, such as []*string, which is
+	// checked only when set.
+	isElemNillable bool
 }
+
+// containerLevel is one inline array or map between a field and the string a
+// formatValidator checks.
+type containerLevel int
+
+const (
+	containerArray containerLevel = iota
+	containerMap
+)
 
 func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 	value := getPlainName(v.fieldName)
-
-	pointerPrefix := ""
-	if v.isNillable {
-		pointerPrefix = "*"
-	}
-
-	target := pointerPrefix + value
+	name := fmt.Sprintf(`"%s"`, v.jsonName)
+	open := 0
 
 	if v.isNillable {
 		out.Printlnf("if %s != nil {", value)
 		out.Indent(1)
+
+		open++
+
+		value = "*" + value
+		if len(v.elements) > 0 {
+			value = "(" + value + ")"
+		}
 	}
+
+	var nameFormat strings.Builder
+
+	nameFormat.WriteString("%s")
+
+	nameArgs := make([]string, 0, len(v.elements))
+
+	for i, level := range v.elements {
+		iter, verb := fmt.Sprintf("i%d", i+1), "[%d]"
+		if level == containerMap {
+			iter, verb = fmt.Sprintf("k%d", i+1), "[%q]"
+		}
+
+		out.Printlnf("for %s := range %s {", iter, value)
+		out.Indent(1)
+
+		open++
+
+		value = fmt.Sprintf("%s[%s]", value, iter)
+
+		nameFormat.WriteString(verb)
+
+		nameArgs = append(nameArgs, iter)
+	}
+
+	if len(nameArgs) > 0 {
+		name = fmt.Sprintf("fmt.Sprintf(%q, %s, %s)", nameFormat.String(), name, strings.Join(nameArgs, ", "))
+	}
+
+	if v.isElemNillable {
+		out.Printlnf("if %s != nil {", value)
+		out.Indent(1)
+
+		open++
+
+		value = "*" + value
+	}
+
+	target := value
 
 	switch v.format {
 	case formatKeywordUUID:
 		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameUUID, target)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uuid", "%s")`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uuid", %s)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 
@@ -1076,7 +1135,7 @@ func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 			regexpVarNameHostname, target, target,
 		)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid hostname", "%s")`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid hostname", %s)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 
@@ -1090,31 +1149,31 @@ func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 			target, target,
 		)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid email (RFC 5321 addr-spec)", "%s")`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid email (RFC 5321 addr-spec)", %s)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 
 	case formatKeywordURI:
 		out.Printlnf("if u, err := url.Parse(string(%s)); err != nil || !u.IsAbs() {", target)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", "%s")`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", %s)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameURIRef, target)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", "%s")`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid absolute uri", %s)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 
 	case formatKeywordURIReference:
 		out.Printlnf("if _, err := url.Parse(string(%s)); err != nil {", target)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference: %%w", "%s", err)`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference: %%w", %s, err)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 		out.Printlnf("if !%s.MatchString(string(%s)) {", regexpVarNameURIRef, target)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference", "%s")`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid uri reference", %s)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 
@@ -1126,12 +1185,12 @@ func (v *formatValidator) generate(out *codegen.Emitter, _ string) error {
 		// validate against.
 		out.Printlnf("if _, err := regexp.Compile(string(%s)); err != nil {", target)
 		out.Indent(1)
-		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid RE2 regular expression: %%w", "%s", err)`, v.jsonName)
+		out.Printlnf(`return fmt.Errorf("field %%s: must be a valid RE2 regular expression: %%w", %s, err)`, name)
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
 
-	if v.isNillable {
+	for ; open > 0; open-- {
 		out.Indent(-1)
 		out.Printlnf("}")
 	}
