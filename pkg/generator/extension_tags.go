@@ -37,11 +37,31 @@ func (g *schemaGenerator) extensionTags(prop *schemas.Type, propName string) []s
 
 	slices.Sort(extNames)
 
+	// goJSONSchema.extraTags is the schema's own instruction for this one
+	// field, so a key it already sets is left to it. Emitting the extension
+	// as well would only add a second entry, which reflect never reads.
+	var fieldTags map[string]string
+	if prop.GoJSONSchemaExtension != nil {
+		fieldTags = prop.GoJSONSchemaExtension.ExtraTags
+	}
+
 	tags := make([]string, 0, len(extNames))
 
 	for _, extName := range extNames {
 		raw, ok := prop.Extensions[extName]
 		if !ok {
+			continue
+		}
+
+		key := g.config.ExtensionTags[extName]
+
+		if _, set := fieldTags[key]; set {
+			g.warner(fmt.Sprintf(
+				"Property %q declares %s, but its goJSONSchema.extraTags already sets "+
+					"the %s tag; the field keeps that one and the extension is skipped",
+				propName, extName, key,
+			))
+
 			continue
 		}
 
@@ -73,7 +93,7 @@ func (g *schemaGenerator) extensionTags(prop *schemas.Type, propName string) []s
 		// strconv.Quote rather than %q-into-a-hand-built-string: the value
 		// is author-supplied, and an embedded quote would otherwise close
 		// the tag early and silently change what reflection reads back.
-		tags = append(tags, g.config.ExtensionTags[extName]+":"+strconv.Quote(value))
+		tags = append(tags, key+":"+strconv.Quote(value))
 	}
 
 	return tags
@@ -107,6 +127,38 @@ func extensionTagValue(raw any) (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+// checkExtensionTagKeys refuses a mapping whose struct tag reflect would never
+// read back. Such a tag still compiles, so without the check it would be
+// silently invisible to the consumers --extension-tag exists for.
+//
+// A key must be one reflect can parse at all, and it must not repeat a key the
+// tag already carries, from tags or from another mapping: Lookup returns the
+// first entry for a key and never a second, so x-dimension=json would sit
+// unread behind the field's own json tag.
+func checkExtensionTagKeys(extensionTags map[string]string, tags []string) error {
+	emittedBy := make(map[string]string, len(tags)+len(extensionTags))
+	for _, tag := range tags {
+		emittedBy[tag] = "--tags"
+	}
+
+	for _, ext := range sortedKeys(extensionTags) {
+		key := extensionTags[ext]
+
+		if !isStructTagKey(key) {
+			return fmt.Errorf("%w: --extension-tag %s=%q", errInvalidExtensionTagKey, ext, key)
+		}
+
+		if owner, taken := emittedBy[key]; taken {
+			return fmt.Errorf("%w: --extension-tag %s=%s repeats a key already emitted by %s",
+				errDuplicateExtensionTagKey, ext, key, owner)
+		}
+
+		emittedBy[key] = "--extension-tag " + ext + "=" + key
+	}
+
+	return nil
 }
 
 // isStructTagKey reports whether key is a struct tag key reflect can read:

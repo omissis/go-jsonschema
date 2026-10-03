@@ -15,4 +15,9 @@ type ExtensionTagsSkipped struct {
 
 	// Same for arrays.
 	Listed *string `json:"listed,omitempty,omitzero" yaml:"listed,omitempty" mapstructure:"listed,omitempty"`
+
+	// goJSONSchema.extraTags is this field's own instruction, and it already sets the
+	// tag x-dimension maps to. reflect reads only the first entry for a key, so the
+	// extension is skipped, with a warning, and the field keeps its own tag.
+	Overridden *string `json:"overridden,omitempty,omitzero" yaml:"overridden,omitempty" mapstructure:"overridden,omitempty" acme-dimension:"Mass"`
 }

@@ -55,6 +55,11 @@ type Config struct {
 	// The mapping is explicit rather than automatic because a struct tag key
 	// is part of a package's contract with whatever reflects over it, so it
 	// is the consumer, not the schema author, that decides the name.
+	//
+	// A key already emitted through Tags or another mapping is refused by
+	// New: reflect reads only the first entry for a key, so the second would
+	// never be seen. On a field whose goJSONSchema.extraTags sets the key,
+	// that entry is kept and the extension is skipped with a warning.
 	ExtensionTags map[string]string
 
 	// ValidateNullTypes configures the generator to reject a property that is
