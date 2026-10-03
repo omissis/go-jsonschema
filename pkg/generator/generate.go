@@ -31,6 +31,7 @@ var (
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 	errCannotGenerateSources          = errors.New("cannot generate sources")
 	errInvalidExtensionTagKey         = errors.New("invalid struct tag key")
+	errDuplicateExtensionTagKey       = errors.New("duplicate struct tag key")
 )
 
 type Generator struct {
@@ -52,14 +53,8 @@ type qualifiedDefinition struct {
 }
 
 func New(config Config) (*Generator, error) {
-	// A tag key is written into every struct tag verbatim, and reflect only
-	// reads a key that is non-empty and free of spaces, quotes, colons and
-	// control characters. Anything else still compiles, so the tag would be
-	// silently invisible to the consumers --extension-tag exists for.
-	for _, ext := range sortedKeys(config.ExtensionTags) {
-		if key := config.ExtensionTags[ext]; !isStructTagKey(key) {
-			return nil, fmt.Errorf("%w: --extension-tag %s=%q", errInvalidExtensionTagKey, ext, key)
-		}
+	if err := checkExtensionTagKeys(config.ExtensionTags, config.Tags); err != nil {
+		return nil, err
 	}
 
 	formatters := []formatter{

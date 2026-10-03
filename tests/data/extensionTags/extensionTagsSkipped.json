@@ -17,6 +17,16 @@
       "description": "A backtick would terminate the raw string literal the tag list is emitted inside — a compile error in the generated file, not a mangled tag, so there is nothing sensible to escape it to.",
       "type": "string",
       "x-dimension": "has ` backtick"
+    },
+    "overridden": {
+      "description": "goJSONSchema.extraTags is this field's own instruction, and it already sets the tag x-dimension maps to. reflect reads only the first entry for a key, so the extension is skipped, with a warning, and the field keeps its own tag.",
+      "type": "string",
+      "x-dimension": "Volume",
+      "goJSONSchema": {
+        "extraTags": {
+          "acme-dimension": "Mass"
+        }
+      }
     }
   }
 }
