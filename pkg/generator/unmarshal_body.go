@@ -131,17 +131,22 @@ func generateUnmarshalBody(
 			//   - encoding/json matches field names case-INsensitively, so a
 			//     payload like {"foo": ..., "FOO": ...} where `foo` is declared
 			//     binds one of them to the field. Prune case-insensitively, or
-			//     the unbound variant leaks into AdditionalProperties.
+			//     the unbound variant leaks into AdditionalProperties. A field
+			//     with no json tag binds under its Go name.
 			//   - yaml.v3 matches case-SENSITIVELY: given a declared `foo`, the
 			//     key `FOO` is left unbound and is a genuine additional
 			//     property. Pruning it case-insensitively would silently drop
-			//     it, so the YAML path compares exactly.
+			//     it, so the YAML path compares exactly. A field with no yaml
+			//     tag (every field, when Tags leaves yaml out) binds under its
+			//     LOWERCASED Go name, so `Foo` takes the key `foo`.
 			tagName := formatJSON
 			matchExpr := `strings.EqualFold(k, name)`
+			untaggedName := "f.Name"
 
 			if ctx.formatName == formatYAML {
 				tagName = formatYAML
 				matchExpr = `k == name`
+				untaggedName = "strings.ToLower(f.Name)"
 			}
 
 			out.Printlnf("st := reflect.TypeOf(%s{})", tp)
@@ -151,7 +156,7 @@ func generateUnmarshalBody(
 			out.Printlnf(`if f.Name == %q { continue }`, additionalProperties)
 			out.Printlnf(`name := strings.Split(f.Tag.Get(%q), ",")[0]`, tagName)
 			out.Printlnf(`if name == "-" { continue }`)
-			out.Printlnf(`if name == "" { name = f.Name }`)
+			out.Printlnf(`if name == "" { name = %s }`, untaggedName)
 			out.Printlnf("for k := range %s {", varNameRawMap)
 			out.Indent(1)
 			out.Printlnf(`if %s { delete(%s, k) }`, matchExpr, varNameRawMap)

@@ -84,7 +84,7 @@ func (j *ObjectWithPropsAdditionalProperties) UnmarshalYAML(value *yaml.Node) er
 			continue
 		}
 		if name == "" {
-			name = f.Name
+			name = strings.ToLower(f.Name)
 		}
 		for k := range raw {
 			if k == name {

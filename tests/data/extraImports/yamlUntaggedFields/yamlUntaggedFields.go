@@ -9,26 +9,29 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
-type ObjectAdditionalProperties struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *string `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+// Generated with Tags set to json only, so no field carries a yaml tag. yaml.v3
+// binds such a field under its lowercased Go name, and pruning
+// AdditionalProperties must remove that same key.
+type YamlUntaggedFields struct {
+	// Bound by yaml.v3 as `foo`, the lowercased name of the field Foo.
+	Foo *string `json:"foo,omitempty,omitzero"`
 
-	AdditionalProperties map[string]interface{} `mapstructure:",remain"`
+	AdditionalProperties map[string]string `mapstructure:",remain"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
+func (j *YamlUntaggedFields) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw ObjectAdditionalProperties: %w", err)
+		return fmt.Errorf("unmarshal raw YamlUntaggedFields: %w", err)
 	}
-	type Plain ObjectAdditionalProperties
+	type Plain YamlUntaggedFields
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]interface{}{}
+		plain.AdditionalProperties = map[string]string{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -52,23 +55,23 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
 	}
-	*j = ObjectAdditionalProperties(plain)
+	*j = YamlUntaggedFields(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
+func (j *YamlUntaggedFields) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw ObjectAdditionalProperties: %w", err)
+		return fmt.Errorf("unmarshal raw YamlUntaggedFields: %w", err)
 	}
-	type Plain ObjectAdditionalProperties
+	type Plain YamlUntaggedFields
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	if v, ok := raw[""]; !ok || v == nil {
-		plain.AdditionalProperties = map[string]interface{}{}
+		plain.AdditionalProperties = map[string]string{}
 	}
 	st := reflect.TypeOf(Plain{})
 	for i := 0; i < st.NumField(); i++ {
@@ -92,6 +95,6 @@ func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
 		return err
 	}
-	*j = ObjectAdditionalProperties(plain)
+	*j = YamlUntaggedFields(plain)
 	return nil
 }

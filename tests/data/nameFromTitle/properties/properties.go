@@ -102,7 +102,7 @@ func (j *Eta) UnmarshalYAML(value *yaml.Node) error {
 			continue
 		}
 		if name == "" {
-			name = f.Name
+			name = strings.ToLower(f.Name)
 		}
 		for k := range raw {
 			if k == name {
@@ -163,7 +163,7 @@ func (j *Properties) UnmarshalYAML(value *yaml.Node) error {
 			continue
 		}
 		if name == "" {
-			name = f.Name
+			name = strings.ToLower(f.Name)
 		}
 		for k := range raw {
 			if k == name {
