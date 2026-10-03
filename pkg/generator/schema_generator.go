@@ -778,6 +778,8 @@ func (g *schemaGenerator) elementFormatValidator(
 		isNillable:     isNillable,
 		elements:       levels,
 		isElemNillable: isElemNillable,
+		// The struct's catch-all map is filled after the other checks run.
+		afterAdditionalProperties: f.Name == additionalProperties,
 	}
 }
 
@@ -1259,9 +1261,11 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			codegen.StructField{
 				Name:         additionalProperties,
 				DefaultValue: defaultValue,
-				SchemaType:   &schemas.Type{},
-				Type:         fieldType,
-				Tags:         "mapstructure:\",remain\"",
+				// The map's own schema, so its values are checked like any
+				// other map's (their `format`, say).
+				SchemaType: &schemas.Type{AdditionalProperties: t.AdditionalProperties},
+				Type:       fieldType,
+				Tags:       "mapstructure:\",remain\"",
 			},
 		)
 	}
