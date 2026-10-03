@@ -432,13 +432,33 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			g.generateUnmarshaler(&decl, validators)
 		}
 
-	case codegen.MapType, *codegen.MapType:
-		if t.IsSubSchemaTypeElem() {
-			g.generateUnmarshaler(&decl, []validator{})
-		}
+	case codegen.MapType, *codegen.MapType, codegen.ArrayType, *codegen.ArrayType:
+		g.generateContainerUnmarshaler(&decl, t, tt)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+// generateContainerUnmarshaler gives a declared map or array the unmarshaler it
+// needs. A map that is a subschema element always gets one. Either kind also
+// gets one to check the `format` of the strings it holds, since a field holding
+// it sees only the named type; a declared array, such as a `$ref`'d definition
+// of `type: array`, gets none otherwise.
+func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t *schemas.Type, tt codegen.Type) {
+	validators := []validator{}
+
+	if fv := g.elementFormatValidator(codegen.StructField{Type: tt, SchemaType: t}, tt, false); fv != nil {
+		validators = append(validators, fv)
+	}
+
+	_, isMap := tt.(codegen.MapType)
+	if _, ok := tt.(*codegen.MapType); ok {
+		isMap = true
+	}
+
+	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
+		g.generateUnmarshaler(decl, validators)
+	}
 }
 
 // nullTypeValidators builds the opt-in `type` checks for explicit nulls. The
@@ -693,9 +713,106 @@ func (g *schemaGenerator) structFieldValidators(
 
 			t = v.Type
 		}
+
+		if fv := g.elementFormatValidator(f, v, isNillable); fv != nil {
+			validators = append(validators, fv)
+		}
+
+	case codegen.ArrayType, *codegen.MapType, codegen.MapType:
+		if fv := g.elementFormatValidator(f, t, isNillable); fv != nil {
+			validators = append(validators, fv)
+		}
 	}
 
 	return validators
+}
+
+// elementFormatValidator returns the `format` check for the string held in an
+// inline array or map, nested ones included, or nil when there is nothing to
+// check. Without it the check only ever reached a string-typed field, so
+// `items: {format: uuid}` let any string through.
+//
+// The walk stops at a named element type: that type is declared separately and
+// checks its own value in its own unmarshaler.
+func (g *schemaGenerator) elementFormatValidator(
+	f codegen.StructField,
+	t codegen.Type,
+	isNillable bool,
+) validator {
+	schema := f.SchemaType
+
+	var levels []containerLevel
+
+	for schema != nil {
+		elem, elemSchema, level, ok := containerElement(t, schema)
+		if !ok {
+			break
+		}
+
+		levels = append(levels, level)
+		t, schema = elem, elemSchema
+	}
+
+	if len(levels) == 0 || schema == nil {
+		return nil
+	}
+
+	isElemNillable := false
+	if pt, ok := t.(*codegen.PointerType); ok {
+		t, isElemNillable = pt.Type, true
+	}
+
+	if !isStringType(t) {
+		return nil
+	}
+
+	format := schema.Format
+	if format == "" || !isKnownFormatKeyword(format) || !g.config.FormatValidation.shouldValidate(format) {
+		return nil
+	}
+
+	return &formatValidator{
+		jsonName:       f.JSONName,
+		fieldName:      f.Name,
+		format:         format,
+		isNillable:     isNillable,
+		elements:       levels,
+		isElemNillable: isElemNillable,
+	}
+}
+
+// containerElement steps from an inline array or map to the element it holds,
+// together with the element's schema. Both forms of each type occur: inline
+// fields hold pointers, while declared types and map values hold values.
+func containerElement(t codegen.Type, s *schemas.Type) (codegen.Type, *schemas.Type, containerLevel, bool) {
+	switch ct := t.(type) {
+	case *codegen.ArrayType:
+		return ct.Type, elementSchema(s), containerArray, true
+
+	case codegen.ArrayType:
+		return ct.Type, elementSchema(s), containerArray, true
+
+	case *codegen.MapType:
+		return ct.ValueType, s.AdditionalProperties, containerMap, true
+
+	case codegen.MapType:
+		return ct.ValueType, s.AdditionalProperties, containerMap, true
+	}
+
+	return nil, nil, 0, false
+}
+
+// isStringType reports whether t is the primitive string type.
+func isStringType(t codegen.Type) bool {
+	switch pt := t.(type) {
+	case codegen.PrimitiveType:
+		return pt.Type == schemas.TypeNameString
+
+	case *codegen.PrimitiveType:
+		return pt.Type == schemas.TypeNameString
+	}
+
+	return false
 }
 
 func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
@@ -788,6 +905,24 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 // returns nil, leaving the caller to fall back to an untyped array. Positional
 // types and `additionalItems` are not otherwise enforced.
 func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if items := elementSchema(t); items != nil || len(t.TupleItems) == 0 {
+		return items
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a tuple for items that does not describe a single "+
+			"element type; positional types are not modelled and it will be "+
+			"represented as an untyped array",
+		scope.string(),
+	))
+
+	return nil
+}
+
+// elementSchema returns the schema every element of the array t follows, or
+// nil when there is none. It is itemsSchema without the warning, for callers
+// that only read the schema.
+func elementSchema(t *schemas.Type) *schemas.Type {
 	if len(t.TupleItems) == 0 {
 		return t.Items
 	}
@@ -798,13 +933,6 @@ func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas
 	if len(t.TupleItems) == 1 && tupleIsClosed(t) {
 		return t.TupleItems[0]
 	}
-
-	g.warner(fmt.Sprintf(
-		"Array %s uses a tuple for items that does not describe a single "+
-			"element type; positional types are not modelled and it will be "+
-			"represented as an untyped array",
-		scope.string(),
-	))
 
 	return nil
 }

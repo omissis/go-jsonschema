@@ -178,10 +178,11 @@ only specific validations remain to be fully implemented.
 ### Opt-in `format` validation
 
 Setting `Config.FormatValidation.Enabled = true` emits a runtime check on
-every `format` keyword listed below. The validator runs after the typed
-struct decode, so the field's Go type is already its target form. Optional
-pointer fields are skipped when nil, so absent values do not trigger
-validation.
+every `format` keyword listed below, including strings held in arrays and
+maps (nested ones too); the error then names the element, as in `ids[1]` or
+`byName["a"]`. The validator runs after the typed struct decode, so the
+field's Go type is already its target form. Optional pointer fields are
+skipped when nil, so absent values do not trigger validation.
 
 | `format` | Strategy | Notes |
 | --- | --- | --- |
