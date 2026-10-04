@@ -55,8 +55,8 @@ func (j *TemporalVariantTimeOrNumber) IsZero() bool {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (j *TemporalVariantTimeOrNumber) MarshalJSON() ([]byte, error) {
-	if j == nil || !j.present {
+func (j TemporalVariantTimeOrNumber) MarshalJSON() ([]byte, error) {
+	if !j.present {
 		return nil, fmt.Errorf("TemporalVariantTimeOrNumber: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -66,8 +66,8 @@ func (j *TemporalVariantTimeOrNumber) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshaler.
-func (j *TemporalVariantTimeOrNumber) MarshalYAML() (interface{}, error) {
-	if j == nil || !j.present {
+func (j TemporalVariantTimeOrNumber) MarshalYAML() (interface{}, error) {
+	if !j.present {
 		return nil, fmt.Errorf("TemporalVariantTimeOrNumber: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -110,7 +110,7 @@ func (j *TemporalVariantTimeOrNumber) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("TemporalVariantTimeOrNumber: expected scalar YAML node")
 	}
 	switch value.Tag {
-	case "!!str":
+	case "!!str", "!!timestamp":
 		var v time.Time
 		if err := value.Decode(&v); err != nil {
 			return err

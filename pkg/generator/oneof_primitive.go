@@ -443,14 +443,19 @@ func emitOneOfPrimitiveUnmarshalJSON(
 func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalJSON implements json.Marshaler.")
-		out.Printlnf("func (j *%s) MarshalJSON() ([]byte, error) {", typeName)
+		// A value receiver, so the method is found on a wrapper held by
+		// value too. encoding/json skips a pointer-receiver MarshalJSON on a
+		// field it cannot address (a parent marshaled by value) and would
+		// emit the wrapper's unexported fields as {}. A nil pointer never
+		// gets here: the encoder writes null for it first.
+		out.Printlnf("func (j %s) MarshalJSON() ([]byte, error) {", typeName)
 		out.Indent(1)
 
 		if kinds.has(oneOfKindNull) {
 			// Unset (no Unmarshal call has touched j) → emit null. The
 			// receiver's surrounding struct is responsible for using
 			// `omitzero` if it wants to omit the field entirely.
-			out.Printlnf("if j == nil || !j.present { return []byte(\"null\"), nil }")
+			out.Printlnf("if !j.present { return []byte(\"null\"), nil }")
 			// Explicit JSON null was decoded → preserve it.
 			out.Printlnf("if j.value == nil { return []byte(\"null\"), nil }")
 		} else {
@@ -458,7 +463,7 @@ func emitOneOfPrimitiveMarshalJSON(typeName string, kinds oneOfKind) func(*codeg
 			// unset wrapper or a wrapper whose value is nil (which would
 			// round-trip as null and the matching UnmarshalJSON would
 			// reject). Forces round-trip correctness.
-			out.Printlnf("if j == nil || !j.present {")
+			out.Printlnf("if !j.present {")
 			out.Indent(1)
 			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal unset value (schema does not allow null)")`, typeName)
 			out.Indent(-1)
@@ -495,7 +500,11 @@ func emitOneOfPrimitiveUnmarshalYAML(
 		out.Printlnf("switch value.Tag {")
 
 		if kinds.has(oneOfKindString) {
-			out.Printlnf(`case "!!str":`)
+			// yaml.v3 tags an unquoted date or timestamp `!!timestamp`. It is
+			// still a string in the schema's terms, and decoding the node
+			// yields its original text for a string branch and a time.Time
+			// for a temporal one.
+			out.Printlnf(`case "!!str", "!!timestamp":`)
 			out.Indent(1)
 			// Same mapped type as the JSON path, so YAML and JSON agree on
 			// what the string branch holds.
@@ -552,15 +561,18 @@ func emitOneOfPrimitiveUnmarshalYAML(
 func emitOneOfPrimitiveMarshalYAML(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalYAML implements yaml.Marshaler.")
-		out.Printlnf("func (j *%s) MarshalYAML() (interface{}, error) {", typeName)
+		// A value receiver for the same reason as MarshalJSON, and more so:
+		// yaml.v3 never takes a field's address, so a pointer-receiver
+		// MarshalYAML on a wrapper held by value is never called at all.
+		out.Printlnf("func (j %s) MarshalYAML() (interface{}, error) {", typeName)
 		out.Indent(1)
 
 		if kinds.has(oneOfKindNull) {
 			// Unset → emit null. Explicit null also yields nil (yaml.v3
 			// emits `null` for a nil interface).
-			out.Printlnf("if j == nil || !j.present { return nil, nil }")
+			out.Printlnf("if !j.present { return nil, nil }")
 		} else {
-			out.Printlnf("if j == nil || !j.present {")
+			out.Printlnf("if !j.present {")
 			out.Indent(1)
 			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal unset value (schema does not allow null)")`, typeName)
 			out.Indent(-1)
