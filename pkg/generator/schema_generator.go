@@ -590,7 +590,10 @@ func (g *schemaGenerator) strictFieldsValidatorFor(
 	tt *codegen.StructType,
 	declName string,
 ) *strictFieldsValidator {
-	schemaSaysFalse := t.AdditionalProperties != nil && t.AdditionalProperties.Not != nil
+	// Only the `false` schema forbids every extra property. Any other
+	// `not` schema forbids some values and allows the rest, so enforcing
+	// on it would reject data the schema accepts.
+	schemaSaysFalse := isFalseSchema(t.AdditionalProperties)
 	schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
 
 	switch g.config.StrictAdditionalProperties {
@@ -1239,7 +1242,10 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 		// enforcement is suppressed in that case (see strictFieldsValidatorFor),
 		// so an empty struct would silently drop pattern-matched keys instead
 		// of preserving the map behavior.
-		schemaSaysFalse := t.AdditionalProperties != nil && t.AdditionalProperties.Not != nil
+		// Only the `false` schema forbids every extra property. Any other
+		// `not` schema forbids some values and allows the rest, so enforcing
+		// on it would reject data the schema accepts.
+		schemaSaysFalse := isFalseSchema(t.AdditionalProperties)
 		schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
 		hasPatternProps := len(t.PatternProperties) > 0
 
