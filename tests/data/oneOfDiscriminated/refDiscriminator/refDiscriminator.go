@@ -201,21 +201,28 @@ func (j *RefDiscriminatorEvent) UnmarshalJSON(value []byte) error {
 	if len(peek.Discriminator) == 0 {
 		return fmt.Errorf("RefDiscriminatorEvent: missing discriminator field kind")
 	}
-	switch string(peek.Discriminator) {
-	case "\"click\"":
+	if string(peek.Discriminator) == "null" {
+		return fmt.Errorf("RefDiscriminatorEvent: kind discriminator must be a string, got null")
+	}
+	var disc string
+	if err := json.Unmarshal(peek.Discriminator, &disc); err != nil {
+		return fmt.Errorf("RefDiscriminatorEvent: kind discriminator must be a string: %w", err)
+	}
+	switch disc {
+	case "click":
 		var v RefDiscriminatorEventClick
 		if err := json.Unmarshal(value, &v); err != nil {
 			return fmt.Errorf("RefDiscriminatorEvent.Click: %w", err)
 		}
 		j.Click = &v
-	case "\"scroll\"":
+	case "scroll":
 		var v RefDiscriminatorEventScroll
 		if err := json.Unmarshal(value, &v); err != nil {
 			return fmt.Errorf("RefDiscriminatorEvent.Scroll: %w", err)
 		}
 		j.Scroll = &v
 	default:
-		return fmt.Errorf("RefDiscriminatorEvent: unknown kind value %s", string(peek.Discriminator))
+		return fmt.Errorf("RefDiscriminatorEvent: unknown kind value %q", disc)
 	}
 	return nil
 }

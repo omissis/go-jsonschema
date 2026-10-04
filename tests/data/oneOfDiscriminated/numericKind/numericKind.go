@@ -233,6 +233,9 @@ func (j *NumericKindPayload) UnmarshalYAML(value *yaml.Node) error {
 	if peek.Discriminator.Kind == 0 {
 		return fmt.Errorf("NumericKindPayload: missing discriminator field version")
 	}
+	if peek.Discriminator.Tag == "!!null" {
+		return fmt.Errorf("NumericKindPayload: version discriminator must be numeric, got null")
+	}
 	var disc float64
 	if err := peek.Discriminator.Decode(&disc); err != nil {
 		return fmt.Errorf("NumericKindPayload: version discriminator must be numeric: %w", err)
