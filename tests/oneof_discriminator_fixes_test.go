@@ -85,11 +85,11 @@ func TestOneOfDiscriminatorEdgeShapes(t *testing.T) {
 	t.Run("an escaped string discriminator matches", func(t *testing.T) {
 		t.Parallel()
 
-		// "dog" is "dog". Matching the raw token missed it wherever
+		// "d\u006fg" is "dog". Matching the raw token missed it wherever
 		// json.RawMessage keeps the escape, as Go 1.25's encoding/json does.
 		var v testCaseCollision.CaseCollision
 
-		require.NoError(t, json.Unmarshal([]byte(`{"pet": {"kind": "dog", "bark": "wf"}}`), &v))
+		require.NoError(t, json.Unmarshal([]byte(`{"pet": {"kind": "d\u006fg", "bark": "wf"}}`), &v))
 		require.NotNil(t, v.Pet.Dog)
 	})
 }

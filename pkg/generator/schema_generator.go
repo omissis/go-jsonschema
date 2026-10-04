@@ -1084,10 +1084,17 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	// On merge failure (e.g. unsupported nested definitions whose refs
 	// can't resolve), warn and fall back to interface{} rather than
 	// surfacing a hard error — preserves the previous silent-fallback
-	// behaviour for schemas that hit unsupported features.
+	// behaviour for schemas that hit unsupported features. A schema that
+	// declares `type: object` is the exception: it went through
+	// generateStructType before, which returned the merge error, so it
+	// still fails rather than becoming an unchecked interface{}.
 	if len(t.AnyOf) > 0 {
 		dt, err := g.generateAnyOfType(t, scope)
 		if err != nil {
+			if slices.Contains(t.Type, schemas.TypeNameObject) {
+				return nil, err
+			}
+
 			g.warner(fmt.Sprintf("anyOf generation failed for %v; falling back to interface{}: %v", scope, err))
 
 			return codegen.EmptyInterfaceType{}, nil
@@ -1099,6 +1106,10 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	if len(t.AllOf) > 0 {
 		dt, err := g.generateAllOfType(t, scope)
 		if err != nil {
+			if slices.Contains(t.Type, schemas.TypeNameObject) {
+				return nil, err
+			}
+
 			g.warner(fmt.Sprintf("allOf generation failed for %v; falling back to interface{}: %v", scope, err))
 
 			return codegen.EmptyInterfaceType{}, nil
