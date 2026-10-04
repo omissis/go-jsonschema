@@ -570,6 +570,9 @@ func (j *NumericNullWithZero) UnmarshalYAML(value *yaml.Node) error {
 	if peek.Discriminator.Kind == 0 {
 		return fmt.Errorf("NumericNullWithZero: missing discriminator field version")
 	}
+	if peek.Discriminator.Tag == "!!null" {
+		return fmt.Errorf("NumericNullWithZero: version discriminator must be numeric, got null")
+	}
 	var disc float64
 	if err := peek.Discriminator.Decode(&disc); err != nil {
 		return fmt.Errorf("NumericNullWithZero: version discriminator must be numeric: %w", err)

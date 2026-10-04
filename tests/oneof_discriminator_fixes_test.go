@@ -76,6 +76,21 @@ func TestOneOfDiscriminatorEdgeShapes(t *testing.T) {
 
 		require.ErrorContains(t, json.Unmarshal([]byte(`{"withZero": {"version": null}}`), &v),
 			"must be numeric, got null")
+
+		// yaml.v3 decodes a null scalar into a float64 as 0 without an error.
+		require.ErrorContains(t, yamlv3.Unmarshal([]byte("withZero:\n  version: null\n"), &v),
+			"must be numeric, got null")
+	})
+
+	t.Run("an escaped string discriminator matches", func(t *testing.T) {
+		t.Parallel()
+
+		// "dog" is "dog". Matching the raw token missed it wherever
+		// json.RawMessage keeps the escape, as Go 1.25's encoding/json does.
+		var v testCaseCollision.CaseCollision
+
+		require.NoError(t, json.Unmarshal([]byte(`{"pet": {"kind": "dog", "bark": "wf"}}`), &v))
+		require.NotNil(t, v.Pet.Dog)
 	})
 }
 

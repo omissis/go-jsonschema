@@ -161,21 +161,28 @@ func (j *Pet) UnmarshalJSON(value []byte) error {
 	if len(peek.Discriminator) == 0 {
 		return fmt.Errorf("Pet: missing discriminator field kind")
 	}
-	switch string(peek.Discriminator) {
-	case "\"dog\"":
+	if string(peek.Discriminator) == "null" {
+		return fmt.Errorf("Pet: kind discriminator must be a string, got null")
+	}
+	var disc string
+	if err := json.Unmarshal(peek.Discriminator, &disc); err != nil {
+		return fmt.Errorf("Pet: kind discriminator must be a string: %w", err)
+	}
+	switch disc {
+	case "dog":
 		var v PetDog
 		if err := json.Unmarshal(value, &v); err != nil {
 			return fmt.Errorf("Pet.Dog: %w", err)
 		}
 		j.Dog = &v
-	case "\"cat\"":
+	case "cat":
 		var v PetCat
 		if err := json.Unmarshal(value, &v); err != nil {
 			return fmt.Errorf("Pet.Cat: %w", err)
 		}
 		j.Cat = &v
 	default:
-		return fmt.Errorf("Pet: unknown kind value %s", string(peek.Discriminator))
+		return fmt.Errorf("Pet: unknown kind value %q", disc)
 	}
 	return nil
 }

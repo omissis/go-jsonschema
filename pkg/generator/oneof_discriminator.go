@@ -492,19 +492,19 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 }
 
 // emitOneOfDiscriminatorUnmarshalJSON returns the codegen callback that
-// writes the holder type's UnmarshalJSON. The body resets the holder,
-// peeks the discriminator JSON token via a json.RawMessage scratch
-// struct, then dispatches: string-typed discriminators go through a
-// `switch string(peek.Discriminator)` lexeme match; numeric-typed
-// discriminators (per bindingsAreNumeric) parse the token into a
-// float64 and switch on the value so equivalent encodings (1 / 1.0 /
-// 1e0) all match.
+// writes the holder type's UnmarshalJSON. The body resets the holder, peeks
+// the discriminator JSON token via a json.RawMessage scratch struct, then
+// dispatches on it. When every non-null discriminator is a number, or every
+// one a string, the token is decoded first and the switch is on the value:
+// JSON spells one number several ways (1 / 1.0 / 1e0) and one string too
+// ("dog" / "d\u006fg"). A mixed set switches on the raw token. null is routed
+// before the decode, which would read it as 0 or "".
 func emitOneOfDiscriminatorUnmarshalJSON(
 	typeName, prop string,
 	bindings []variantBinding,
 ) func(*codegen.Emitter) error {
-	numeric := bindingsAreNumeric(bindings)
 	nullBinding, scalarBindings := splitNullBinding(bindings)
+	decode := jsonDiscriminatorDecodeFor(scalarBindings)
 
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalJSON implements json.Unmarshaler. It peeks the")
@@ -535,34 +535,14 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 
 		cases := bindings
 
-		if numeric {
-			// null is not a number: decoding it into the float64 succeeds
-			// and leaves 0, selecting a `0` variant, and a null variant has
-			// no numeric case at all. Route it first, as the YAML path does.
+		if decode.goType != "" {
 			cases = scalarBindings
 
-			out.Printlnf(`if string(peek.Discriminator) == "null" {`)
-			out.Indent(1)
-
-			if nullBinding != nil {
-				emitJSONDispatchAssign(out, typeName, *nullBinding)
-				out.Printlnf("return nil")
-			} else {
-				out.Printlnf(`return fmt.Errorf("%s: %s discriminator must be numeric, got null")`, typeName, prop)
-			}
-
-			out.Indent(-1)
-			out.Printlnf("}")
-			// Numeric-typed discriminator: parse the raw JSON token as a
-			// number and switch on the value, so equivalent encodings
-			// (1 / 1.0 / 1e0) all match the same case.
-			out.Printlnf("var disc float64")
+			emitJSONNullRoute(out, typeName, prop, decode, nullBinding)
+			out.Printlnf("var disc %s", decode.goType)
 			out.Printlnf("if err := json.Unmarshal(peek.Discriminator, &disc); err != nil {")
 			out.Indent(1)
-			out.Printlnf(
-				`return fmt.Errorf("%s: %s discriminator must be numeric: %%w", err)`,
-				typeName, prop,
-			)
+			out.Printlnf(`return fmt.Errorf("%s: %s discriminator must be %s: %%w", err)`, typeName, prop, decode.noun)
 			out.Indent(-1)
 			out.Printlnf("}")
 			out.Printlnf("switch disc {")
@@ -571,12 +551,7 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 		}
 
 		for _, b := range cases {
-			caseLit := b.jsonLitGo
-			if numeric {
-				caseLit = numericCaseLiteral(b.constValue)
-			}
-
-			out.Printlnf("case %s:", caseLit)
+			out.Printlnf("case %s:", decode.caseLiteral(b))
 			out.Indent(1)
 			emitJSONDispatchAssign(out, typeName, b)
 			out.Indent(-1)
@@ -585,11 +560,8 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 		out.Printlnf("default:")
 		out.Indent(1)
 
-		if numeric {
-			out.Printlnf(
-				`return fmt.Errorf("%s: unknown %s value %%v", disc)`,
-				typeName, prop,
-			)
+		if decode.goType != "" {
+			out.Printlnf(`return fmt.Errorf("%s: unknown %s value %s", disc)`, typeName, prop, decode.verb)
 		} else {
 			out.Printlnf(
 				`return fmt.Errorf("%s: unknown %s value %%s", string(peek.Discriminator))`,
@@ -605,6 +577,79 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 
 		return nil
 	}
+}
+
+// jsonDiscriminatorDecode says how the JSON discriminator token is compared.
+type jsonDiscriminatorDecode struct {
+	goType string // decoded into before the switch; "" compares the raw token
+	noun   string // what the error says the token must be
+	verb   string // how the error prints an unknown value
+}
+
+// jsonDiscriminatorDecodeFor picks the decode for the non-null bindings: a
+// number when all are numbers, a string when all are strings, otherwise none.
+func jsonDiscriminatorDecodeFor(scalarBindings []variantBinding) jsonDiscriminatorDecode {
+	switch {
+	case bindingsAreNumeric(scalarBindings):
+		return jsonDiscriminatorDecode{goType: float64Type, noun: "numeric", verb: "%v"}
+
+	case bindingsAreStrings(scalarBindings):
+		return jsonDiscriminatorDecode{goType: schemas.TypeNameString, noun: "a string", verb: "%q"}
+	}
+
+	return jsonDiscriminatorDecode{}
+}
+
+// caseLiteral renders b's discriminator value as a case of the dispatch switch.
+func (d jsonDiscriminatorDecode) caseLiteral(b variantBinding) string {
+	switch d.goType {
+	case float64Type:
+		return numericCaseLiteral(b.constValue)
+
+	case schemas.TypeNameString:
+		return fmt.Sprintf("%q", b.constValue)
+	}
+
+	return b.jsonLitGo
+}
+
+// bindingsAreStrings reports whether there are bindings and every one's
+// discriminator const is a string.
+func bindingsAreStrings(bindings []variantBinding) bool {
+	if len(bindings) == 0 {
+		return false
+	}
+
+	for _, b := range bindings {
+		if _, ok := b.constValue.(string); !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
+// emitJSONNullRoute routes a null discriminator before the typed decode, which
+// would read it as 0 or "" and pick the variant of that value: to the null
+// variant when there is one, otherwise to an error.
+func emitJSONNullRoute(
+	out *codegen.Emitter,
+	typeName, prop string,
+	decode jsonDiscriminatorDecode,
+	nullBinding *variantBinding,
+) {
+	out.Printlnf(`if string(peek.Discriminator) == "null" {`)
+	out.Indent(1)
+
+	if nullBinding != nil {
+		emitJSONDispatchAssign(out, typeName, *nullBinding)
+		out.Printlnf("return nil")
+	} else {
+		out.Printlnf(`return fmt.Errorf("%s: %s discriminator must be %s, got null")`, typeName, prop, decode.noun)
+	}
+
+	out.Indent(-1)
+	out.Printlnf("}")
 }
 
 // emitJSONDispatchAssign emits the per-case body that decodes the whole JSON
@@ -746,6 +791,15 @@ func emitOneOfDiscriminatorUnmarshalYAML(
 			out.Indent(1)
 			emitYAMLDispatchAssign(out, typeName, *nullBinding)
 			out.Printlnf("return nil")
+			out.Indent(-1)
+			out.Printlnf("}")
+		} else if bindingsAreNumeric(scalarBindings) {
+			// yaml.v3 decodes a null scalar into a float64 as 0, without an
+			// error, so with no null variant it would pick a `0` variant.
+			// Reject it, as the JSON path does.
+			out.Printlnf(`if peek.Discriminator.Tag == "!!null" {`)
+			out.Indent(1)
+			out.Printlnf(`return fmt.Errorf("%s: %s discriminator must be numeric, got null")`, typeName, prop)
 			out.Indent(-1)
 			out.Printlnf("}")
 		}
