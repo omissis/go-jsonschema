@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/onlyModelsOneOfDiscriminated",
+  "type": "object",
+  "properties": {
+    "pet": {
+      "description": "Under OnlyModels no holder is built, so the property stays an inline interface{} rather than becoming a named one.",
+      "oneOf": [
+        { "type": "object", "properties": { "kind": { "const": "dog" } }, "required": ["kind"] },
+        { "type": "object", "properties": { "kind": { "const": "cat" } }, "required": ["kind"] }
+      ]
+    }
+  }
+}
