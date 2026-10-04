@@ -95,9 +95,10 @@ const accessorNameString = "String"
 // stringVariantFormat describes how the string branch of a primitive wrapper
 // should honour a `format` declared on its variant.
 //
-// Temporal formats are a TYPE mapping: `date-time` decodes into time.Time,
-// exactly as the non-oneOf path does, so the wrapper exposes AsDateTime rather
-// than AsString. The remaining formats leave the Go type as string and are
+// Temporal formats are a TYPE mapping, the one the non-oneOf path uses:
+// `date-time` decodes into time.Time, `date` into types.SerializableDate and
+// `time` into types.SerializableTime, so the wrapper exposes AsDateTime,
+// AsDate and AsTime rather than AsString. The remaining formats leave the Go type as string and are
 // enforced by a check, reusing the validators already in-tree.
 type stringVariantFormat struct {
 	format   string // canonical keyword; "" when the variant declares none
@@ -110,6 +111,11 @@ type stringVariantFormat struct {
 	// INTO time.Time already rejects a malformed timestamp, so a second
 	// check would be redundant.
 	validate string
+
+	// jsonOnly marks a mapped type with JSON methods only
+	// (types.SerializableDate, types.SerializableTime). The YAML paths go
+	// through those methods: yaml.v3 would treat the struct as a mapping.
+	jsonOnly bool
 }
 
 // stringVariantFormatFor finds the string variant of a primitive oneOf and
@@ -128,12 +134,7 @@ func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
 		}
 
 		if isTypeTemporal(v.Type[0], v.Format) {
-			return stringVariantFormat{
-				format:   v.Format,
-				goType:   "time.Time",
-				accessor: temporalAccessorName(v.Format),
-				imports:  []string{"time"},
-			}
+			return temporalVariantFormat(v.Format)
 		}
 
 		// A validator-backed format leaves the branch a plain string and is
@@ -155,15 +156,49 @@ func stringVariantFormatFor(t *schemas.Type) stringVariantFormat {
 	return plain
 }
 
+// importPathPkgTypes is the package holding the date and time types a field of
+// format `date` or `time` gets.
+const importPathPkgTypes = "github.com/atombender/go-jsonschema/pkg/types"
+
+// The temporal format keywords a string variant maps to a time type.
+const (
+	temporalFormatDateTime = "date-time"
+	temporalFormatDate     = "date"
+	temporalFormatTime     = "time"
+)
+
+// temporalVariantFormat maps a temporal format to the Go type an ordinary field
+// of that format gets. time.Time parses only RFC 3339 date-times, so decoding a
+// `date` or `time` into it rejected "2024-01-02" and "03:04:05Z" and accepted a
+// full date-time instead.
+func temporalVariantFormat(format string) stringVariantFormat {
+	sf := stringVariantFormat{
+		format:   format,
+		goType:   "time.Time",
+		accessor: temporalAccessorName(format),
+		imports:  []string{"time"},
+	}
+
+	switch format {
+	case temporalFormatDate:
+		sf.goType, sf.imports, sf.jsonOnly = "types.SerializableDate", []string{importPathPkgTypes}, true
+
+	case temporalFormatTime:
+		sf.goType, sf.imports, sf.jsonOnly = "types.SerializableTime", []string{importPathPkgTypes}, true
+	}
+
+	return sf
+}
+
 // temporalAccessorName maps a temporal format to its accessor suffix, so the
 // generated API says what it holds — AsDateTime, not AsString.
 func temporalAccessorName(format string) string {
 	switch format {
-	case "date-time":
+	case temporalFormatDateTime:
 		return "DateTime"
-	case "date":
+	case temporalFormatDate:
 		return "Date"
-	case "time":
+	case temporalFormatTime:
 		return "Time"
 	}
 
@@ -334,7 +369,7 @@ func (g *schemaGenerator) generateOneOfPrimitive(t *schemas.Type, scope nameScop
 
 	if hasYAMLFormatter {
 		addMethod("UnmarshalYAML", emitOneOfPrimitiveUnmarshalYAML(name, kinds, strFormat))
-		addMethod("MarshalYAML", emitOneOfPrimitiveMarshalYAML(name, kinds))
+		addMethod("MarshalYAML", emitOneOfPrimitiveMarshalYAML(name, kinds, strFormat))
 	}
 
 	addMethod("Value", emitOneOfPrimitiveValue(name))
@@ -509,7 +544,16 @@ func emitOneOfPrimitiveUnmarshalYAML(
 			// Same mapped type as the JSON path, so YAML and JSON agree on
 			// what the string branch holds.
 			out.Printlnf("var v %s", sf.goType)
-			out.Printlnf("if err := value.Decode(&v); err != nil { return err }")
+
+			if sf.jsonOnly {
+				// The type parses through its JSON methods only, so the
+				// scalar's text goes through them too. json.Marshal cannot
+				// fail on a string.
+				out.Printlnf("text, _ := json.Marshal(value.Value)")
+				out.Printlnf("if err := json.Unmarshal(text, &v); err != nil { return err }")
+			} else {
+				out.Printlnf("if err := value.Decode(&v); err != nil { return err }")
+			}
 
 			if err := emitStringVariantFormatCheck(out, typeName, sf); err != nil {
 				return err
@@ -558,7 +602,11 @@ func emitOneOfPrimitiveUnmarshalYAML(
 	}
 }
 
-func emitOneOfPrimitiveMarshalYAML(typeName string, kinds oneOfKind) func(*codegen.Emitter) error {
+func emitOneOfPrimitiveMarshalYAML(
+	typeName string,
+	kinds oneOfKind,
+	sf stringVariantFormat,
+) func(*codegen.Emitter) error {
 	return func(out *codegen.Emitter) error {
 		out.Commentf("MarshalYAML implements yaml.Marshaler.")
 		// A value receiver for the same reason as MarshalJSON, and more so:
@@ -580,6 +628,21 @@ func emitOneOfPrimitiveMarshalYAML(typeName string, kinds oneOfKind) func(*codeg
 			out.Printlnf("if j.value == nil {")
 			out.Indent(1)
 			out.Printlnf(`return nil, fmt.Errorf("%s: cannot marshal nil value (schema does not allow null)")`, typeName)
+			out.Indent(-1)
+			out.Printlnf("}")
+		}
+
+		if kinds.has(oneOfKindString) && sf.jsonOnly {
+			// The type has JSON methods only, and yaml.v3 would emit its
+			// embedded time.Time as a mapping. Emit the text the JSON
+			// methods produce instead, which is what the decode accepts.
+			out.Printlnf("if v, ok := j.value.(%s); ok {", sf.goType)
+			out.Indent(1)
+			out.Printlnf("text, err := json.Marshal(v)")
+			out.Printlnf("if err != nil { return nil, err }")
+			out.Printlnf("var s string")
+			out.Printlnf("if err := json.Unmarshal(text, &s); err != nil { return nil, err }")
+			out.Printlnf("return s, nil")
 			out.Indent(-1)
 			out.Printlnf("}")
 		}

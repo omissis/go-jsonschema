@@ -10,6 +10,20 @@
         { "type": "number" }
       ]
     },
+    "day": {
+      "description": "A `date` variant holds types.SerializableDate, as a `date` field does: time.Time would reject \"2024-01-02\" and accept a full date-time.",
+      "oneOf": [
+        { "type": "string", "format": "date" },
+        { "type": "number" }
+      ]
+    },
+    "clock": {
+      "description": "Likewise a `time` variant holds types.SerializableTime.",
+      "oneOf": [
+        { "type": "string", "format": "time" },
+        { "type": "number" }
+      ]
+    },
     "stillRejected": {
       "description": "A non-temporal constraint still disqualifies the wrapper, and the fidelity warning still reports it.",
       "oneOf": [

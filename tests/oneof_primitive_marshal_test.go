@@ -62,3 +62,47 @@ func TestOneOfPrimitiveYAMLUnquotedTimestamp(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "2024-01-02", s)
 }
+
+// TestOneOfPrimitiveDateAndTimeVariants decodes `date` and `time` variants into
+// the types an ordinary field of those formats gets. time.Time parses only
+// RFC 3339 date-times, so it rejected "2024-01-02" and "03:04:05Z" and took a
+// full date-time for a date.
+func TestOneOfPrimitiveDateAndTimeVariants(t *testing.T) {
+	t.Parallel()
+
+	var v testTemporal.TemporalVariant
+
+	require.NoError(t, json.Unmarshal([]byte(`{"day": "2024-01-02", "clock": "03:04:05Z"}`), &v))
+
+	day, ok := v.Day.AsDate()
+	require.True(t, ok)
+	require.Equal(t, "2024-01-02", day.Format(time.DateOnly))
+
+	_, ok = v.Clock.AsTime()
+	require.True(t, ok)
+
+	out, err := json.Marshal(v)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"day": "2024-01-02", "clock": "03:04:05"}`, string(out))
+
+	var wrong testTemporal.TemporalVariant
+
+	require.Error(t, json.Unmarshal([]byte(`{"day": "2024-01-02T00:00:00Z"}`), &wrong),
+		"a date variant must not take a date-time")
+
+	// YAML goes through the same types: an unquoted date is a !!timestamp.
+	var y testTemporal.TemporalVariant
+
+	require.NoError(t, yamlv3.Unmarshal([]byte("day: 2024-01-02\nclock: \"03:04:05Z\"\n"), &y))
+
+	text, err := yamlv3.Marshal(y)
+	require.NoError(t, err)
+
+	var back testTemporal.TemporalVariant
+
+	require.NoError(t, yamlv3.Unmarshal(text, &back), "yaml: %s", text)
+
+	backDay, ok := back.Day.AsDate()
+	require.True(t, ok, "yaml: %s", text)
+	require.Equal(t, "2024-01-02", backDay.Format(time.DateOnly))
+}
