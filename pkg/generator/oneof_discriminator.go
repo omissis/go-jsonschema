@@ -24,6 +24,11 @@ type discriminatorResult struct {
 	prop   string
 	values []discriminatorValue
 	ok     bool
+	// qualifying lists every property that would do, sorted; prop is the
+	// first. The caller that generates the holder warns when there are
+	// several — detection also runs from needsDeclaredType, so warning here
+	// would report the same tie twice.
+	qualifying []string
 }
 
 // detectDiscriminator inspects a `oneOf` and returns the JSON property name
@@ -130,16 +135,9 @@ func (g *schemaGenerator) detectDiscriminator(variants []*schemas.Type) discrimi
 		return discriminatorResult{}
 	}
 
-	// Step 5: pick alphabetically first, warn on ties.
+	// Step 5: pick alphabetically first; the generating caller warns on ties.
 	sort.Strings(qualifying)
 	prop := qualifying[0]
-
-	if len(qualifying) > 1 {
-		g.warner(fmt.Sprintf(
-			"oneOf: multiple discriminator candidates %v; picking %q alphabetically",
-			qualifying, prop,
-		))
-	}
 
 	values := make([]discriminatorValue, len(variants))
 	for i, c := range candidates {
@@ -149,7 +147,7 @@ func (g *schemaGenerator) detectDiscriminator(variants []*schemas.Type) discrimi
 		}
 	}
 
-	return discriminatorResult{prop: prop, values: values, ok: true}
+	return discriminatorResult{prop: prop, values: values, ok: true, qualifying: qualifying}
 }
 
 // flattenForDiscriminator returns a schema equivalent to v but with $ref
@@ -375,19 +373,39 @@ func bindingsAreNumeric(bindings []variantBinding) bool {
 func (g *schemaGenerator) generateOneOfDiscriminator(
 	t *schemas.Type,
 	scope nameScope,
-	prop string,
-	values []discriminatorValue,
+	d discriminatorResult,
 ) (codegen.Type, error) {
+	prop, values := d.prop, d.values
+
+	if len(d.qualifying) > 1 {
+		g.warner(fmt.Sprintf(
+			"oneOf: multiple discriminator candidates %v; picking %q alphabetically",
+			d.qualifying, prop,
+		))
+	}
+
 	holderName := g.output.uniqueTypeName(scope)
 	if g.config.StructNameFromTitle && t.Title != "" {
 		holderName = g.caser.Identifierize(t.Title)
 	}
 
+	// Registered before the variants are generated, so a variant referring
+	// back to this oneOf (a recursive schema) resolves to the holder rather
+	// than to a type that is never declared. The type is filled in below.
+	holderDecl := &codegen.TypeDecl{
+		Name:       holderName,
+		Comment:    t.Description,
+		SchemaType: t,
+	}
+	g.output.declsBySchema[t] = holderDecl
+	g.output.declsByName[holderDecl.Name] = holderDecl
+
 	bindings := make([]variantBinding, len(t.OneOf))
+	fieldNames := make(map[string]struct{}, len(t.OneOf))
 
 	for i, variant := range t.OneOf {
 		dv := values[i]
-		fieldName := variantFieldName(g.caser, dv.constValue)
+		fieldName := g.uniqueVariantFieldName(fieldNames, dv.constValue, holderName)
 		variantScope := scope.add(fieldName)
 
 		// Force generation of the variant as its own struct (not inlined).
@@ -431,15 +449,7 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 		})
 	}
 
-	holderDecl := &codegen.TypeDecl{
-		Name:       holderName,
-		Comment:    t.Description,
-		Type:       holderStruct,
-		SchemaType: t,
-	}
-
-	g.output.declsBySchema[t] = holderDecl
-	g.output.declsByName[holderDecl.Name] = holderDecl
+	holderDecl.Type = holderStruct
 	g.output.file.Package.AddDecl(holderDecl)
 
 	if g.config.OnlyModels {
@@ -461,12 +471,6 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 
 	if hasYAML {
 		g.output.file.Package.AddImport(YAMLPackage, "yaml")
-
-		if bindingsAreNumeric(bindings) {
-			// strconv.ParseFloat is used in the YAML emit to parse the
-			// scalar text into a float64 for value-based dispatch.
-			g.output.file.Package.AddImport("strconv", "")
-		}
 	}
 
 	addMethod := func(suffix string, impl func(*codegen.Emitter) error) {
@@ -499,6 +503,9 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 	typeName, prop string,
 	bindings []variantBinding,
 ) func(*codegen.Emitter) error {
+	numeric := bindingsAreNumeric(bindings)
+	nullBinding, scalarBindings := splitNullBinding(bindings)
+
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalJSON implements json.Unmarshaler. It peeks the")
 		out.Commentf("discriminator property %q and dispatches the decode into the", prop)
@@ -526,7 +533,26 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 		out.Indent(-1)
 		out.Printlnf("}")
 
-		if bindingsAreNumeric(bindings) {
+		cases := bindings
+
+		if numeric {
+			// null is not a number: decoding it into the float64 succeeds
+			// and leaves 0, selecting a `0` variant, and a null variant has
+			// no numeric case at all. Route it first, as the YAML path does.
+			cases = scalarBindings
+
+			out.Printlnf(`if string(peek.Discriminator) == "null" {`)
+			out.Indent(1)
+
+			if nullBinding != nil {
+				emitJSONDispatchAssign(out, typeName, *nullBinding)
+				out.Printlnf("return nil")
+			} else {
+				out.Printlnf(`return fmt.Errorf("%s: %s discriminator must be numeric, got null")`, typeName, prop)
+			}
+
+			out.Indent(-1)
+			out.Printlnf("}")
 			// Numeric-typed discriminator: parse the raw JSON token as a
 			// number and switch on the value, so equivalent encodings
 			// (1 / 1.0 / 1e0) all match the same case.
@@ -544,28 +570,22 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 			out.Printlnf("switch string(peek.Discriminator) {")
 		}
 
-		for _, b := range bindings {
+		for _, b := range cases {
 			caseLit := b.jsonLitGo
-			if bindingsAreNumeric(bindings) {
+			if numeric {
 				caseLit = numericCaseLiteral(b.constValue)
 			}
 
 			out.Printlnf("case %s:", caseLit)
 			out.Indent(1)
-			out.Printlnf("var v %s", b.decl.Name)
-			out.Printlnf("if err := json.Unmarshal(value, &v); err != nil {")
-			out.Indent(1)
-			out.Printlnf(`return fmt.Errorf("%s.%s: %%w", err)`, typeName, b.fieldName)
-			out.Indent(-1)
-			out.Printlnf("}")
-			out.Printlnf("j.%s = &v", b.fieldName)
+			emitJSONDispatchAssign(out, typeName, b)
 			out.Indent(-1)
 		}
 
 		out.Printlnf("default:")
 		out.Indent(1)
 
-		if bindingsAreNumeric(bindings) {
+		if numeric {
 			out.Printlnf(
 				`return fmt.Errorf("%s: unknown %s value %%v", disc)`,
 				typeName, prop,
@@ -585,6 +605,39 @@ func emitOneOfDiscriminatorUnmarshalJSON(
 
 		return nil
 	}
+}
+
+// emitJSONDispatchAssign emits the per-case body that decodes the whole JSON
+// value into the variant's struct and assigns the holder's pointer field.
+func emitJSONDispatchAssign(out *codegen.Emitter, typeName string, b variantBinding) {
+	out.Printlnf("var v %s", b.decl.Name)
+	out.Printlnf("if err := json.Unmarshal(value, &v); err != nil {")
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("%s.%s: %%w", err)`, typeName, b.fieldName)
+	out.Indent(-1)
+	out.Printlnf("}")
+	out.Printlnf("j.%s = &v", b.fieldName)
+}
+
+// splitNullBinding separates the (optional) `const: null` variant from the
+// others. It dispatches on its own: in YAML via the node's tag, in JSON before
+// a numeric decode, which would read null as 0.
+func splitNullBinding(bindings []variantBinding) (*variantBinding, []variantBinding) {
+	var nullBinding *variantBinding
+
+	others := make([]variantBinding, 0, len(bindings))
+
+	for i := range bindings {
+		if bindings[i].constIsNull {
+			nullBinding = &bindings[i]
+
+			continue
+		}
+
+		others = append(others, bindings[i])
+	}
+
+	return nullBinding, others
 }
 
 // numericCaseLiteral renders a Go switch-case literal for a numeric
@@ -646,9 +699,9 @@ func emitOneOfDiscriminatorMarshalJSON(
 // inputs. It peeks the discriminator into a yaml.Node so it can
 // distinguish missing (Kind == 0) from explicit-null (Tag == "!!null")
 // from a scalar-text value, then dispatches: null variants are matched
-// via the YAML tag check; numeric-typed discriminators parse the scalar
-// text via strconv.ParseFloat and switch on the value; string-typed
-// discriminators switch on the lexeme.
+// via the YAML tag check; numeric-typed discriminators decode the node into
+// a float64 and switch on the value; string-typed discriminators switch on
+// the lexeme.
 func emitOneOfDiscriminatorUnmarshalYAML(
 	typeName, prop string,
 	bindings []variantBinding,
@@ -658,19 +711,7 @@ func emitOneOfDiscriminatorUnmarshalYAML(
 	// `case "":` literal that collides with both an explicit empty-string
 	// scalar and a missing-field decode (yaml.v3 produces `""` for both
 	// when the peek field is typed `string`).
-	var nullBinding *variantBinding
-
-	scalarBindings := make([]variantBinding, 0, len(bindings))
-
-	for i := range bindings {
-		if bindings[i].constIsNull {
-			nullBinding = &bindings[i]
-
-			continue
-		}
-
-		scalarBindings = append(scalarBindings, bindings[i])
-	}
+	nullBinding, scalarBindings := splitNullBinding(bindings)
 
 	return func(out *codegen.Emitter) error {
 		out.Commentf("UnmarshalYAML mirrors UnmarshalJSON: peek the discriminator")
@@ -710,13 +751,13 @@ func emitOneOfDiscriminatorUnmarshalYAML(
 		}
 
 		if bindingsAreNumeric(scalarBindings) {
-			// Numeric-typed discriminator: parse the YAML scalar text as a
-			// number so equivalent encodings (1 / 1.0 / 1e0) all match
-			// the same case. yaml.v3 always exposes the scalar text via
-			// .Value; converting via strconv keeps the dispatch consistent
-			// with the JSON path (which uses json.Unmarshal into float64).
-			out.Printlnf("disc, err := strconv.ParseFloat(peek.Discriminator.Value, 64)")
-			out.Printlnf("if err != nil {")
+			// Numeric-typed discriminator: decode the node as a number so
+			// equivalent encodings (1 / 1.0 / 1e0) all match the same case.
+			// Decoding through yaml.v3 rather than strconv.ParseFloat on the
+			// scalar text reads every YAML number form (0x1F, 0o17, 017),
+			// and a quoted "1" stays a string, as the JSON path treats it.
+			out.Printlnf("var disc float64")
+			out.Printlnf("if err := peek.Discriminator.Decode(&disc); err != nil {")
 			out.Indent(1)
 			out.Printlnf(
 				`return fmt.Errorf("%s: %s discriminator must be numeric: %%w", err)`,
@@ -841,6 +882,36 @@ func variantFieldName(caser *text.Caser, constValue any) string {
 	}
 
 	return fmt.Sprintf("ConstV%v", constValue)
+}
+
+// uniqueVariantFieldName returns the holder field name for a variant, unique
+// within the holder. Distinct discriminator values can map to one Go
+// identifier ("dog" and "Dog", "foo-bar" and "foo_bar"), and the holder would
+// then declare the same field twice, which does not compile; a repeat gets a
+// numeric suffix, the way a repeated struct field name does.
+func (g *schemaGenerator) uniqueVariantFieldName(used map[string]struct{}, constValue any, holderName string) string {
+	name := variantFieldName(g.caser, constValue)
+	unique := name
+
+	for n := 2; ; n++ {
+		if _, taken := used[unique]; !taken {
+			break
+		}
+
+		unique = fmt.Sprintf("%s_%d", name, n)
+	}
+
+	used[unique] = struct{}{}
+
+	if unique != name {
+		g.warner(fmt.Sprintf(
+			"oneOf %s: discriminator value %v maps to the field name %s already taken by another variant; "+
+				"declaring it as %s",
+			holderName, constValue, name, unique,
+		))
+	}
+
+	return unique
 }
 
 // numberSuffix renders a float64 as a Go numeric literal in its shortest

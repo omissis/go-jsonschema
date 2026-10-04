@@ -341,7 +341,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	// without the methods the holder is unusable.
 	if len(t.OneOf) > 1 && !g.config.OnlyModels {
 		if d := g.detectDiscriminator(t.OneOf); d.ok {
-			return g.generateOneOfDiscriminator(t, scope, d.prop, d.values)
+			return g.generateOneOfDiscriminator(t, scope, d)
 		}
 	}
 
@@ -1748,8 +1748,11 @@ func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
 	}
 
 	// A discriminated object `oneOf` emits a holder plus per-variant types;
-	// it likewise carries no top-level `type`.
-	if len(t.OneOf) > 1 {
+	// it likewise carries no top-level `type`. Not under OnlyModels:
+	// generateDeclaredType does not build the holder there, and routing the
+	// property through it would only turn the inline interface{} into a
+	// named one.
+	if len(t.OneOf) > 1 && !g.config.OnlyModels {
 		return g.detectDiscriminator(t.OneOf).ok
 	}
 

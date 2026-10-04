@@ -5,7 +5,6 @@ package test
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
-import "strconv"
 
 type NumericKind struct {
 	// Payload corresponds to the JSON schema field "payload".
@@ -191,6 +190,9 @@ func (j *NumericKindPayload) UnmarshalJSON(value []byte) error {
 	if len(peek.Discriminator) == 0 {
 		return fmt.Errorf("NumericKindPayload: missing discriminator field version")
 	}
+	if string(peek.Discriminator) == "null" {
+		return fmt.Errorf("NumericKindPayload: version discriminator must be numeric, got null")
+	}
 	var disc float64
 	if err := json.Unmarshal(peek.Discriminator, &disc); err != nil {
 		return fmt.Errorf("NumericKindPayload: version discriminator must be numeric: %w", err)
@@ -231,8 +233,8 @@ func (j *NumericKindPayload) UnmarshalYAML(value *yaml.Node) error {
 	if peek.Discriminator.Kind == 0 {
 		return fmt.Errorf("NumericKindPayload: missing discriminator field version")
 	}
-	disc, err := strconv.ParseFloat(peek.Discriminator.Value, 64)
-	if err != nil {
+	var disc float64
+	if err := peek.Discriminator.Decode(&disc); err != nil {
 		return fmt.Errorf("NumericKindPayload: version discriminator must be numeric: %w", err)
 	}
 	switch disc {
