@@ -53,8 +53,8 @@ func (j *OneOfVariantIdOrNumber) IsZero() bool {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (j *OneOfVariantIdOrNumber) MarshalJSON() ([]byte, error) {
-	if j == nil || !j.present {
+func (j OneOfVariantIdOrNumber) MarshalJSON() ([]byte, error) {
+	if !j.present {
 		return nil, fmt.Errorf("OneOfVariantIdOrNumber: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -64,8 +64,8 @@ func (j *OneOfVariantIdOrNumber) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshaler.
-func (j *OneOfVariantIdOrNumber) MarshalYAML() (interface{}, error) {
-	if j == nil || !j.present {
+func (j OneOfVariantIdOrNumber) MarshalYAML() (interface{}, error) {
+	if !j.present {
 		return nil, fmt.Errorf("OneOfVariantIdOrNumber: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -111,7 +111,7 @@ func (j *OneOfVariantIdOrNumber) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("OneOfVariantIdOrNumber: expected scalar YAML node")
 	}
 	switch value.Tag {
-	case "!!str":
+	case "!!str", "!!timestamp":
 		var v string
 		if err := value.Decode(&v); err != nil {
 			return err

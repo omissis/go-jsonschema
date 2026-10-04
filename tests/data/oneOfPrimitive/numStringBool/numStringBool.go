@@ -53,8 +53,8 @@ func (j *NumStringBoolValue) IsZero() bool {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (j *NumStringBoolValue) MarshalJSON() ([]byte, error) {
-	if j == nil || !j.present {
+func (j NumStringBoolValue) MarshalJSON() ([]byte, error) {
+	if !j.present {
 		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -64,8 +64,8 @@ func (j *NumStringBoolValue) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshaler.
-func (j *NumStringBoolValue) MarshalYAML() (interface{}, error) {
-	if j == nil || !j.present {
+func (j NumStringBoolValue) MarshalYAML() (interface{}, error) {
+	if !j.present {
 		return nil, fmt.Errorf("NumStringBoolValue: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -114,7 +114,7 @@ func (j *NumStringBoolValue) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("NumStringBoolValue: expected scalar YAML node")
 	}
 	switch value.Tag {
-	case "!!str":
+	case "!!str", "!!timestamp":
 		var v string
 		if err := value.Decode(&v); err != nil {
 			return err

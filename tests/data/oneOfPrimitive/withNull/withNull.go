@@ -42,8 +42,8 @@ func (j *WithNullValue) IsZero() bool {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (j *WithNullValue) MarshalJSON() ([]byte, error) {
-	if j == nil || !j.present {
+func (j WithNullValue) MarshalJSON() ([]byte, error) {
+	if !j.present {
 		return []byte("null"), nil
 	}
 	if j.value == nil {
@@ -53,8 +53,8 @@ func (j *WithNullValue) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshaler.
-func (j *WithNullValue) MarshalYAML() (interface{}, error) {
-	if j == nil || !j.present {
+func (j WithNullValue) MarshalYAML() (interface{}, error) {
+	if !j.present {
 		return nil, nil
 	}
 	return j.value, nil
@@ -93,7 +93,7 @@ func (j *WithNullValue) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("WithNullValue: expected scalar YAML node")
 	}
 	switch value.Tag {
-	case "!!str":
+	case "!!str", "!!timestamp":
 		var v string
 		if err := value.Decode(&v); err != nil {
 			return err

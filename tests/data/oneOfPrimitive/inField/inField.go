@@ -56,8 +56,8 @@ func (j *InFieldValue) IsZero() bool {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (j *InFieldValue) MarshalJSON() ([]byte, error) {
-	if j == nil || !j.present {
+func (j InFieldValue) MarshalJSON() ([]byte, error) {
+	if !j.present {
 		return nil, fmt.Errorf("InFieldValue: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -67,8 +67,8 @@ func (j *InFieldValue) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML implements yaml.Marshaler.
-func (j *InFieldValue) MarshalYAML() (interface{}, error) {
-	if j == nil || !j.present {
+func (j InFieldValue) MarshalYAML() (interface{}, error) {
+	if !j.present {
 		return nil, fmt.Errorf("InFieldValue: cannot marshal unset value (schema does not allow null)")
 	}
 	if j.value == nil {
@@ -117,7 +117,7 @@ func (j *InFieldValue) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("InFieldValue: expected scalar YAML node")
 	}
 	switch value.Tag {
-	case "!!str":
+	case "!!str", "!!timestamp":
 		var v string
 		if err := value.Decode(&v); err != nil {
 			return err
