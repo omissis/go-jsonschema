@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -72,7 +73,7 @@ func (v *conditionalDiscriminatorValidator) generate(out *codegen.Emitter, _ str
 	out.Indent(1)
 	out.Printlnf(
 		`return fmt.Errorf("field %s in %s: must be a string for discriminator dispatch")`,
-		v.discriminator, v.declName,
+		goStringText(v.discriminator), v.declName,
 	)
 	out.Indent(-1)
 	out.Printlnf(`}`)
@@ -141,17 +142,32 @@ func matchPredicate(values []string) string {
 // template with one `%s` placeholder; runtimeExpr is `discStr` so the
 // caller emits an extra fmt.Errorf arg at runtime. The error names the
 // specific value that triggered the branch rather than the whole set.
+//
+// The multi-value else side has no single value to name, so its label lists
+// the whole set statically: `when K not in [X, Y]`. Every schema-derived part
+// is escaped for the generated format string.
 func branchContextLabel(discriminator string, values []string, isElse bool) (string, string) {
-	op := "='"
-	if isElse {
-		op = "!='"
-	}
+	disc := goStringText(discriminator)
 
 	if len(values) == 1 {
-		return fmt.Sprintf("when %s%s%s'", discriminator, op, values[0]), ""
+		op := "='"
+		if isElse {
+			op = "!='"
+		}
+
+		return fmt.Sprintf("when %s%s%s'", disc, op, goStringText(values[0])), ""
 	}
 
-	return fmt.Sprintf("when %s%s%%s'", discriminator, op), "discStr"
+	if isElse {
+		escaped := make([]string, len(values))
+		for i, v := range values {
+			escaped[i] = goStringText(v)
+		}
+
+		return fmt.Sprintf("when %s not in [%s]", disc, strings.Join(escaped, ", ")), ""
+	}
+
+	return fmt.Sprintf("when %s='%%s'", disc), "discStr"
 }
 
 // emitRequiredChecks writes a presence check per field listed in the
@@ -176,12 +192,12 @@ func (v *conditionalDiscriminatorValidator) emitRequiredChecks(
 		if runtimeContextExpr == "" {
 			out.Printlnf(
 				`return fmt.Errorf("field %s in %s (%s): required")`,
-				req, v.declName, contextLabel,
+				goStringText(req), v.declName, contextLabel,
 			)
 		} else {
 			out.Printlnf(
 				`return fmt.Errorf("field %s in %s (%s): required", %s)`,
-				req, v.declName, contextLabel, runtimeContextExpr,
+				goStringText(req), v.declName, contextLabel, runtimeContextExpr,
 			)
 		}
 
@@ -230,13 +246,13 @@ func (g *schemaGenerator) detectConditionalDiscriminator(t *schemas.Type) (*cond
 			return nil, false
 		}
 
-		// Decline detection if then/else carries composition keywords or
-		// nested conditionals that this validator can't compile end-to-end.
-		// Without this guard, the generator silently accepts the branch and
-		// emits per-variant required-field checks while ignoring the
-		// nested constraints — under-validating schemas the user expected
-		// to be rejected.
-		if hasUnsupportedConditionalSubschema(elem.Then) || hasUnsupportedConditionalSubschema(elem.Else) {
+		// The validator enforces only the branches' `required`, on a struct
+		// built from the parent alone. An element declaring anything else
+		// would have it dropped, so detection declines, and says why: the
+		// allOf merge path it falls back to does not warn.
+		if reason := unsupportedConditionalReason(elem); reason != "" {
+			g.warner(fmt.Sprintf("conditional-discriminator detection declined on allOf[%d]: %s", i, reason))
+
 			return nil, false
 		}
 
@@ -490,12 +506,64 @@ func discriminatorInvalidReason(t *schemas.Type, discriminator string, branches 
 	return ""
 }
 
+// unsupportedConditionalReason explains why the conditional validator cannot
+// compile an allOf element end to end, or returns "" when it can.
+func unsupportedConditionalReason(elem *schemas.Type) string {
+	switch {
+	case hasUnsupportedConditionalSubschema(elem.Then) || hasUnsupportedConditionalSubschema(elem.Else):
+		return "then/else nests a composition or a conditional, which would not be enforced"
+
+	case !onlyRequired(elem.Then) || !onlyRequired(elem.Else):
+		return "then/else declares keywords besides required, which would not be enforced"
+
+	case !onlyConditional(elem):
+		return "the element declares keywords besides if/then/else, which would not be enforced"
+	}
+
+	return ""
+}
+
+// onlyConditional reports whether an allOf element declares nothing besides
+// its if/then/else and annotations.
+func onlyConditional(elem *schemas.Type) bool {
+	rest := *elem
+	rest.If, rest.Then, rest.Else = nil, nil, nil
+
+	return isAnnotationOnly(&rest)
+}
+
+// onlyRequired reports whether a then/else subschema declares nothing besides
+// `required`, an object `type` and annotations. A nil subschema qualifies.
+func onlyRequired(sub *schemas.Type) bool {
+	if sub == nil {
+		return true
+	}
+
+	rest := *sub
+	rest.Required = nil
+
+	if len(rest.Type) == 1 && rest.Type[0] == schemas.TypeNameObject {
+		rest.Type = nil
+	}
+
+	return isAnnotationOnly(&rest)
+}
+
+// isAnnotationOnly reports whether t declares nothing but a title or a
+// description.
+func isAnnotationOnly(t *schemas.Type) bool {
+	rest := *t
+	rest.Title, rest.Description = "", ""
+
+	return reflect.DeepEqual(rest, schemas.Type{})
+}
+
 // hasUnsupportedConditionalSubschema returns true if the given then/else
 // subschema carries composition keywords or nested conditionals that the
 // conditional-discriminator validator can't compile end-to-end. Used as a
-// detection guard so the schema falls through to the interface{} path
-// (and a fidelity warning) instead of generating per-variant required-only
-// code that silently ignores the nested constraints.
+// detection guard (see unsupportedConditionalReason) so the schema falls
+// through to the allOf merge path instead of generating per-variant
+// required-only code that silently ignores the nested constraints.
 func hasUnsupportedConditionalSubschema(sub *schemas.Type) bool {
 	if sub == nil {
 		return false

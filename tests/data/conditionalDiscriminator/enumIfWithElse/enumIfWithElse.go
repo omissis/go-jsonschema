@@ -93,7 +93,7 @@ func (j *EnumIfWithElse) UnmarshalJSON(value []byte) error {
 			}
 		} else {
 			if _, ok := raw["freeReason"]; !ok {
-				return fmt.Errorf("field freeReason in EnumIfWithElse (when tier!='%s'): required", discStr)
+				return fmt.Errorf("field freeReason in EnumIfWithElse (when tier not in [premium, gold, silver]): required")
 			}
 		}
 	}
@@ -127,7 +127,7 @@ func (j *EnumIfWithElse) UnmarshalYAML(value *yaml.Node) error {
 			}
 		} else {
 			if _, ok := raw["freeReason"]; !ok {
-				return fmt.Errorf("field freeReason in EnumIfWithElse (when tier!='%s'): required", discStr)
+				return fmt.Errorf("field freeReason in EnumIfWithElse (when tier not in [premium, gold, silver]): required")
 			}
 		}
 	}

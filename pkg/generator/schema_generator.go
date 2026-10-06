@@ -1222,7 +1222,7 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 	// and emit the struct as a regular object — the per-discriminator
 	// conditional checks attach as a runtime validator in
 	// generateDeclaredType.
-	if _, ok := g.detectConditionalDiscriminator(t); ok && !g.config.OnlyModels {
+	if _, ok := g.detectConditionalDiscriminator(t); ok {
 		tCopy := *t
 		tCopy.AllOf = nil
 
@@ -1987,6 +1987,12 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		}
 
 		if len(t.AllOf) > 0 {
+			// The conditional-discriminator pattern compiles to a validator
+			// that attaches only on a declared type, so it skips the merge.
+			if _, ok := g.detectConditionalDiscriminator(t); ok {
+				return g.generateDeclaredType(t, scope)
+			}
+
 			return g.generateAllOfType(t, scope)
 		}
 

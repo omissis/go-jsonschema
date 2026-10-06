@@ -11,10 +11,9 @@ import (
 // conditional-discriminator detector emits a named warning when an
 // enum-form `if` clause is structurally close to the canonical shape but
 // fails one of the validation rules (non-string values, mixed types,
-// empty enum, branch value not in parent enum). Pre-existing decline
-// reasons (e.g., outer-if extra constraints) keep their silent-decline
-// behavior — only NEW reasons added by the enum extension are surfaced
-// here, to keep the existing const-form test surface stable.
+// empty enum, branch value not in parent enum), or when an element or its
+// then/else declares something the validator would not enforce. Extra
+// constraints on the if clause keep their silent-decline behavior.
 func TestConditionalDiscriminatorDeclineWarnings(t *testing.T) {
 	t.Parallel()
 
@@ -42,6 +41,16 @@ func TestConditionalDiscriminatorDeclineWarnings(t *testing.T) {
 			desc:          "branch value not in parent enum",
 			schemaPath:    "./data/conditionalDiscriminator/enumIfBranchValueNotInParentEnum/enumIfBranchValueNotInParentEnum.json",
 			wantSubstring: `not a member of the "kind" enum`,
+		},
+		{
+			desc:          "then constrains more than required",
+			schemaPath:    "./data/conditionalDiscriminator/thenConstraints/thenConstraints.json",
+			wantSubstring: "then/else declares keywords besides required",
+		},
+		{
+			desc:          "element declares more than its conditional",
+			schemaPath:    "./data/conditionalDiscriminator/elementKeywords/elementKeywords.json",
+			wantSubstring: "the element declares keywords besides if/then/else",
 		},
 	}
 

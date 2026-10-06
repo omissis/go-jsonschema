@@ -16,6 +16,8 @@ import (
 	testCondDiscMixed "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfMixedWithConst"
 	testCondDiscOverlap "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfOverlapping"
 	testCondDiscEnumElse "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/enumIfWithElse"
+	testCondDiscEscaped "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/escapedText"
+	testCondDiscNested "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/nestedProperty"
 	testCondDiscWithElse "github.com/atombender/go-jsonschema/tests/data/conditionalDiscriminator/withElse"
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
@@ -1577,6 +1579,42 @@ func TestJsonUnmarshalConditionalDiscriminator(t *testing.T) {
 // enforcement when discStr is in the branch's value set, runtime
 // interpolation of the offending value into the error message, and the
 // const-vs-enum precedence + overlapping-branch semantics.
+// TestJsonUnmarshalConditionalDiscriminatorEscapedText: discriminator values
+// and a field name carrying a quote, a backslash or a percent sign reach the
+// generated error literals escaped, so the code compiles and the message names
+// them as written.
+func TestJsonUnmarshalConditionalDiscriminatorEscapedText(t *testing.T) {
+	t.Parallel()
+
+	var v testCondDiscEscaped.EscapedText
+
+	err := json.Unmarshal([]byte(`{"kind": "a\"b"}`), &v)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `field x%y in EscapedText (when kind='a"b'): required`)
+
+	err = json.Unmarshal([]byte(`{"kind": "g"}`), &v)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `(when kind not in [c%d, e\f])`)
+
+	require.NoError(t, json.Unmarshal([]byte(`{"kind": "c%d", "x%y": "1"}`), &v))
+}
+
+// TestJsonUnmarshalConditionalDiscriminatorNested: the pattern inside a
+// property gets the per-variant checks too. It used to go through the allOf
+// merge, which drops them.
+func TestJsonUnmarshalConditionalDiscriminatorNested(t *testing.T) {
+	t.Parallel()
+
+	var v testCondDiscNested.NestedProperty
+
+	err := json.Unmarshal([]byte(`{"pet": {"kind": "dog"}}`), &v)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "field bark in NestedPropertyPet (when kind='dog'): required")
+
+	require.NoError(t, json.Unmarshal([]byte(`{"pet": {"kind": "dog", "bark": "woof"}}`), &v))
+	require.NoError(t, json.Unmarshal([]byte(`{"pet": {"kind": "cat"}}`), &v))
+}
+
 func TestJsonUnmarshalConditionalDiscriminatorEnumForm(t *testing.T) {
 	t.Parallel()
 
@@ -1643,10 +1681,12 @@ func TestJsonUnmarshalConditionalDiscriminatorEnumForm(t *testing.T) {
 		var v testCondDiscEnumElse.EnumIfWithElse
 		require.NoError(t, json.Unmarshal([]byte(`{"tier":"free","freeReason":"trial"}`), &v))
 
+		// The else side has no single value to name, so the label lists the
+		// whole set; naming the input would read `tier!='free'`.
 		err := json.Unmarshal([]byte(`{"tier":"free"}`), &v)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "freeReason")
-		assert.Contains(t, err.Error(), "tier!='free'")
+		assert.Contains(t, err.Error(), "tier not in [premium, gold, silver]")
 	})
 
 	t.Run("enumIfWithElse: premium does NOT trigger else", func(t *testing.T) {
