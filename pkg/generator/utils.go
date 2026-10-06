@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"reflect"
 	"slices"
 	"sort"
 
@@ -80,15 +79,6 @@ func isMapType(t codegen.Type) bool {
 	_, isMapType := t.(*codegen.MapType)
 
 	return isMapType
-}
-
-// isAnnotationOnly reports whether t declares nothing but a title or a
-// description.
-func isAnnotationOnly(t *schemas.Type) bool {
-	rest := *t
-	rest.Title, rest.Description = "", ""
-
-	return reflect.DeepEqual(rest, schemas.Type{})
 }
 
 // mergesIntoStruct reports whether merging parent's anyOf branches yields an
