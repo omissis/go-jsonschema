@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/consumerRequired",
+  "description": "Requires header, so the generated file also imports encoding/json for its UnmarshalJSON.",
+  "type": "object",
+  "properties": {
+    "header": {
+      "$ref": "../header/v1/header.json"
+    }
+  },
+  "required": ["header"]
+}

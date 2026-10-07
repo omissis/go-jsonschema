@@ -382,22 +382,84 @@ func TestSchemaPackageWithAlias(t *testing.T) {
 func TestSchemaPackageRejectsInvalidImportAlias(t *testing.T) {
 	t.Parallel()
 
-	cfg := basicConfig
-	cfg.SchemaMappings = []generator.SchemaMapping{
-		{
-			SchemaID:    "https://example.com/schema",
-			PackageName: "example.com/foo/v1",
-			ImportAlias: "1bad", // starts with digit, not a valid Go identifier
-		},
-	}
+	// "1bad" is not a Go identifier. "_" and "init" are, but a blank import
+	// cannot be referred to and Go reserves init for functions.
+	for _, alias := range []string{"1bad", "_", "init"} {
+		t.Run(alias, func(t *testing.T) {
+			t.Parallel()
 
-	_, err := generator.New(cfg)
-	if err == nil {
-		t.Fatal("expected New to reject invalid ImportAlias, got nil")
-	}
+			cfg := basicConfig
+			cfg.SchemaMappings = []generator.SchemaMapping{
+				{
+					SchemaID:    "https://example.com/schema",
+					PackageName: "example.com/foo/v1",
+					ImportAlias: alias,
+				},
+			}
 
-	if !errors.Is(err, generator.ErrInvalidImportAlias) {
-		t.Errorf("expected ErrInvalidImportAlias, got %v", err)
+			_, err := generator.New(cfg)
+			if err == nil {
+				t.Fatal("expected New to reject invalid ImportAlias, got nil")
+			}
+
+			if !errors.Is(err, generator.ErrInvalidImportAlias) {
+				t.Errorf("expected ErrInvalidImportAlias, got %v", err)
+			}
+		})
+	}
+}
+
+// TestSchemaPackageRejectsImportAliasCollision: a file that would import two
+// packages under one name fails to generate, naming both, rather than emitting
+// code that does not compile. The consumer fixture imports header/v1 and
+// jobs/v1, whose derived names are both "v1"; consumerRequired also imports
+// encoding/json, which an alias of "json" collides with.
+func TestSchemaPackageRejectsImportAliasCollision(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name        string
+		consumer    string
+		headerAlias string
+		jobsAlias   string
+	}{
+		{name: "two derived names", consumer: "consumer"},
+		{name: "an explicit alias against a derived name", consumer: "consumer", jobsAlias: "v1"},
+		{name: "two explicit aliases", consumer: "consumer", headerAlias: "same", jobsAlias: "same"},
+		{name: "an alias against a standard import", consumer: "consumerRequired", headerAlias: "json", jobsAlias: "jobsv1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := basicConfig
+			cfg.SchemaMappings = []generator.SchemaMapping{
+				{
+					SchemaID:    "https://example.com/header",
+					PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/header/v1",
+					OutputName:  "../header/v1/header.go",
+					ImportAlias: tc.headerAlias,
+				},
+				{
+					SchemaID:    "https://example.com/jobs",
+					PackageName: "github.com/atombender/go-jsonschema/tests/data/schemaPackageAlias/jobs/v1",
+					OutputName:  "../jobs/v1/jobs.go",
+					ImportAlias: tc.jobsAlias,
+				},
+			}
+
+			g, err := generator.New(cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := g.DoFile("./data/schemaPackageAlias/" + tc.consumer + "/" + tc.consumer + ".json"); err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := g.Sources(); !errors.Is(err, generator.ErrImportAliasCollision) {
+				t.Errorf("expected ErrImportAliasCollision, got %v", err)
+			}
+		})
 	}
 }
 

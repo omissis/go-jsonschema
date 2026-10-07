@@ -128,10 +128,10 @@ var ErrInvalidStrictAdditionalPropertiesMode = errors.New(
 )
 
 // ErrInvalidImportAlias is returned when a SchemaMapping carries an ImportAlias
-// that isn't a valid (non-keyword) Go identifier. Caught at startup so a typo
-// (e.g. "v 1") doesn't silently propagate into broken `import` statements.
+// that cannot name an import (see IsValidImportAlias). Caught at startup so a
+// typo (e.g. "v 1") doesn't silently propagate into broken `import` statements.
 var ErrInvalidImportAlias = errors.New(
-	"invalid ImportAlias on SchemaMapping (must be a non-keyword Go identifier)",
+	"invalid ImportAlias on SchemaMapping (must be a Go identifier other than a keyword, _ or init)",
 )
 
 // ErrConflictingImportAlias is returned when two SchemaMappings declare the
@@ -142,6 +142,12 @@ var ErrInvalidImportAlias = errors.New(
 var ErrConflictingImportAlias = errors.New(
 	"conflicting ImportAlias values for the same PackageName on SchemaMappings",
 )
+
+// ErrImportAliasCollision is returned when one generated file would import
+// two packages under the same name, whether that name is an ImportAlias or
+// derived from the last path segment. Go rejects the file, so generation
+// stops and names both packages.
+var ErrImportAliasCollision = errors.New("two packages would share an import name in one generated file")
 
 // IsValid reports whether the mode is one of the documented values.
 func (m StrictAdditionalPropertiesMode) IsValid() bool {
