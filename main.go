@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -454,7 +453,7 @@ func splitPackageAlias(value string) (string, string, error) {
 	}
 
 	candidate := value[i+1:]
-	if candidate == "" || token.IsKeyword(candidate) || !token.IsIdentifier(candidate) {
+	if !generator.IsValidImportAlias(candidate) {
 		return "", "", fmt.Errorf("%w: %q", errInvalidImportAlias, candidate)
 	}
 

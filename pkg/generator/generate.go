@@ -76,7 +76,7 @@ func New(config Config) (*Generator, error) {
 			continue
 		}
 
-		if token.IsKeyword(m.ImportAlias) || !token.IsIdentifier(m.ImportAlias) {
+		if !IsValidImportAlias(m.ImportAlias) {
 			return nil, fmt.Errorf("%w: schema %q -> %q",
 				ErrInvalidImportAlias, m.SchemaID, m.ImportAlias)
 		}
@@ -158,6 +158,13 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 		}
 
 		g.renameConstantsShadowingImports(output)
+
+		if a, b, name, clash := importNameCollision(output.file.Package.Imports); clash {
+			return nil, fmt.Errorf(
+				"%w: %q and %q as %q in %s; an ImportAlias (--schema-package URL=PATH:ALIAS) tells schema packages apart",
+				ErrImportAliasCollision, a, b, name, output.file.FileName,
+			)
+		}
 
 		emitter := codegen.NewEmitter(maxLineLength)
 
@@ -344,4 +351,73 @@ func (g *Generator) renameConstantsShadowingImports(o *output) {
 			break
 		}
 	}
+}
+
+// IsValidImportAlias reports whether alias can name an import in generated
+// code: a Go identifier, other than a keyword, the blank identifier `_` (a
+// blank import cannot be referred to) and `init` (which Go reserves for
+// functions).
+func IsValidImportAlias(alias string) bool {
+	return token.IsIdentifier(alias) && !token.IsKeyword(alias) && alias != "_" && alias != "init"
+}
+
+// importNameCollision returns two import paths that Go would bind to the same
+// name in one file, and that name. It runs once a file's imports are complete,
+// since a clash can come from any of them: two schema packages, aliased or
+// not, or a schema package aliased like a standard one such as `json`.
+func importNameCollision(imports []codegen.Import) (string, string, string, bool) {
+	seen := make(map[string]string, len(imports))
+
+	for _, i := range imports {
+		name := effectiveImportName(i)
+		if name == "_" || name == "." {
+			continue
+		}
+
+		if prev, ok := seen[name]; ok && prev != i.QualifiedName {
+			return prev, i.QualifiedName, name, true
+		}
+
+		seen[name] = i.QualifiedName
+	}
+
+	return "", "", "", false
+}
+
+// effectiveImportName returns the name an import binds: its alias, or else the
+// package name Go conventionally derives from its path, the last element without
+// a major-version suffix (`.../mapstructure/v2` is `mapstructure`) or a gopkg.in
+// `.vN` (`gopkg.in/yaml.v3` is `yaml`).
+func effectiveImportName(i codegen.Import) string {
+	if i.Name != "" {
+		return i.Name
+	}
+
+	parts := strings.Split(i.QualifiedName, "/")
+	last := parts[len(parts)-1]
+
+	if len(parts) > 1 && isMajorVersion(last) {
+		last = parts[len(parts)-2]
+	}
+
+	if j := strings.Index(last, ".v"); j > 0 && isMajorVersion(last[j+1:]) {
+		last = last[:j]
+	}
+
+	return last
+}
+
+// isMajorVersion reports whether s is a module major-version element like `v2`.
+func isMajorVersion(s string) bool {
+	if len(s) < 2 || s[0] != 'v' {
+		return false
+	}
+
+	for _, r := range s[1:] {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+
+	return true
 }

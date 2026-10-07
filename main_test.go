@@ -112,6 +112,8 @@ func TestSplitPackageAlias(t *testing.T) {
 		{name: "alias starting with digit rejected", input: "example.com/foo:1bad", wantErr: errInvalidImportAlias},
 		{name: "alias with hyphen rejected", input: "example.com/foo:bad-alias", wantErr: errInvalidImportAlias},
 		{name: "alias matching keyword rejected", input: "example.com/foo:type", wantErr: errInvalidImportAlias},
+		{name: "blank alias rejected", input: "example.com/foo:_", wantErr: errInvalidImportAlias},
+		{name: "init alias rejected", input: "example.com/foo:init", wantErr: errInvalidImportAlias},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
