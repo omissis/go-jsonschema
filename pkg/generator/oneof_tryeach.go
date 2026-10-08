@@ -420,11 +420,15 @@ func sortStrings(s []string) {
 // MarshalJSON / MarshalYAML are identical to the discriminator path.
 func (g *schemaGenerator) generateOneOfTryEach(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	holderName, nameCollided := g.output.uniqueTypeName(scope)
-	g.output.warnNameCollision(nameCollided, scope, holderName)
 
 	if g.config.StructNameFromTitle && t.Title != "" {
+		// The title supplies the name outright, so whatever the scope would
+		// have collided with is no longer relevant.
 		holderName = g.caser.Identifierize(t.Title)
+		nameCollided = false
 	}
+
+	g.output.warnNameCollision(nameCollided, scope, holderName)
 
 	// Registered before the variants are generated, so a variant referring
 	// back to this oneOf (a recursive schema) resolves to the holder rather

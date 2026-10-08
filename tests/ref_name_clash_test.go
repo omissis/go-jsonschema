@@ -20,7 +20,7 @@ const (
 func TestRefNamedLikeItsDefinition(t *testing.T) {
 	t.Parallel()
 
-	assert.Empty(t, refClashWarnings(t, basicConfig, namedLikeDefinitionSchema),
+	assert.Empty(t, collisionWarnings(t, basicConfig, namedLikeDefinitionSchema),
 		"the property's own reservation is not a second type, so nothing collides")
 
 	src := generateFiles(t, basicConfig, namedLikeDefinitionSchema)
@@ -39,7 +39,7 @@ func TestRefNamedLikeItsDefinition(t *testing.T) {
 func TestRefNamedLikeTwoDefinitions(t *testing.T) {
 	t.Parallel()
 
-	warnings := refClashWarnings(t, basicConfig, namedLikeTwoDefinitionsSchema)
+	warnings := collisionWarnings(t, basicConfig, namedLikeTwoDefinitionsSchema)
 	require.Len(t, warnings, 1, "two definitions contest one name: one report")
 	assert.Contains(t, warnings[0], `Multiple types map to the name "InvoiceShipping"`)
 
@@ -64,7 +64,7 @@ const rememberedDefinitionSchema = "./data/collisionStrategy/rememberedDefinitio
 func TestRefToDefinitionDeclaredAsAnotherType(t *testing.T) {
 	t.Parallel()
 
-	assert.Empty(t, refClashWarnings(t, basicConfig, rememberedDefinitionSchema),
+	assert.Empty(t, collisionWarnings(t, basicConfig, rememberedDefinitionSchema),
 		"the definition is one type, so nothing collides")
 
 	src := generateFiles(t, basicConfig, rememberedDefinitionSchema)
