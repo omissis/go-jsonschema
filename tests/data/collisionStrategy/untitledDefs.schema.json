@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/collisionStrategy/untitledDefs",
+  "type": "object",
+  "$defs": {
+    "metadata": { "type": "object", "properties": { "a": { "type": "string" } } },
+    "status": { "type": "object", "properties": { "b": { "type": "string" } } },
+    "shape": { "type": "object", "properties": { "c": { "type": "string" } } }
+  },
+  "properties": {
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "status": { "$ref": "#/$defs/status" },
+    "shape": { "$ref": "#/$defs/shape" }
+  }
+}

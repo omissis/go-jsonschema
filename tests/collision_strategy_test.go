@@ -21,6 +21,10 @@ const (
 	// under qualify both resolve to the same qualified identifier.
 	sameNameASchema = "./data/collisionStrategy/sameNameA.schema.json"
 	sameNameBSchema = "./data/collisionStrategy/sameNameB.schema.json"
+
+	// Titled oneOf definitions whose scopes collide with untitled ones.
+	untitledDefsSchema = "./data/collisionStrategy/untitledDefs.schema.json"
+	titledOneOfsSchema = "./data/collisionStrategy/titledOneOfs.schema.json"
 )
 
 // generateFiles runs one generator over several schemas, the way the CLI does
@@ -173,9 +177,9 @@ func TestCollisionStrategyWarnings(t *testing.T) {
 	})
 }
 
-// collisionWarnings returns just the name-collision reports from generating the
-// two colliding fixtures under cfg.
-func collisionWarnings(t *testing.T, cfg generator.Config) []string {
+// collisionWarnings returns just the name-collision reports from generating
+// fileNames (by default the two colliding fixtures) under cfg.
+func collisionWarnings(t *testing.T, cfg generator.Config, fileNames ...string) []string {
 	t.Helper()
 
 	var (
@@ -195,7 +199,11 @@ func collisionWarnings(t *testing.T, cfg generator.Config) []string {
 	g, err := generator.New(cfg)
 	require.NoError(t, err)
 
-	for _, f := range []string{sameNameASchema, sameNameBSchema} {
+	if len(fileNames) == 0 {
+		fileNames = []string{sameNameASchema, sameNameBSchema}
+	}
+
+	for _, f := range fileNames {
 		require.NoError(t, g.DoFile(f))
 	}
 
@@ -206,6 +214,26 @@ func collisionWarnings(t *testing.T, cfg generator.Config) []string {
 	defer mu.Unlock()
 
 	return append([]string(nil), out...)
+}
+
+// TestCollisionWarningsWithTitles: under --struct-name-from-title a titled
+// definition takes its title, so a collision on its scope's natural name never
+// produces the suffixed type and must not be reported. The oneOf builders
+// (discriminated, primitive, try-each) used to report it before applying the
+// title, naming a `_1` type that was never declared.
+func TestCollisionWarningsWithTitles(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StructNameFromTitle = true
+
+	assert.Empty(t, collisionWarnings(t, cfg, untitledDefsSchema, titledOneOfsSchema),
+		"each titled definition takes its title, so nothing collides")
+
+	src := generateFiles(t, cfg, untitledDefsSchema, titledOneOfsSchema)
+	for _, name := range []string{"BetaMetadata", "BetaStatus", "BetaShape"} {
+		assert.Contains(t, src, "type "+name+" struct {")
+	}
 }
 
 func TestParseCollisionStrategy(t *testing.T) {
