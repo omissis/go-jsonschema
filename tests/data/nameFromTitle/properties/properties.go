@@ -21,6 +21,25 @@ type Alpha struct {
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
 
+type Beta struct {
+	// CommType corresponds to the JSON schema field "commType".
+	CommType string `json:"commType" yaml:"commType" mapstructure:"commType"`
+
+	// Epsilon corresponds to the JSON schema field "epsilon".
+	Epsilon BetaEpsilon `json:"epsilon" yaml:"epsilon" mapstructure:"epsilon"`
+
+	// Route corresponds to the JSON schema field "route".
+	Route *string `json:"route,omitempty,omitzero" yaml:"route,omitempty" mapstructure:"route,omitempty"`
+
+	// Theta corresponds to the JSON schema field "theta".
+	Theta Theta `json:"theta" yaml:"theta" mapstructure:"theta"`
+
+	// Zeta corresponds to the JSON schema field "zeta".
+	Zeta BetaZeta `json:"zeta" yaml:"zeta" mapstructure:"zeta"`
+
+	AdditionalProperties interface{} `mapstructure:",remain"`
+}
+
 type BetaDelta struct {
 	// CommType corresponds to the JSON schema field "commType".
 	CommType string `json:"commType" yaml:"commType" mapstructure:"commType"`
@@ -336,117 +355,9 @@ func (j *BetaZeta) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type Eta struct {
-	// Epsilon corresponds to the JSON schema field "epsilon".
-	Epsilon string `json:"epsilon" yaml:"epsilon" mapstructure:"epsilon"`
-
-	// Theta corresponds to the JSON schema field "theta".
-	Theta Theta `json:"theta" yaml:"theta" mapstructure:"theta"`
-
-	AdditionalProperties interface{} `mapstructure:",remain"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Eta) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw Eta: %w", err)
-	}
-	if _, ok := raw["epsilon"]; raw != nil && !ok {
-		return fmt.Errorf("field epsilon in Eta: required")
-	}
-	if _, ok := raw["theta"]; raw != nil && !ok {
-		return fmt.Errorf("field theta in Eta: required")
-	}
-	type Plain Eta
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Eta: %w", err)
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := 0; i < st.NumField(); i++ {
-		f := st.Field(i)
-		if f.Name == "AdditionalProperties" {
-			continue
-		}
-		name := strings.Split(f.Tag.Get("json"), ",")[0]
-		if name == "-" {
-			continue
-		}
-		if name == "" {
-			name = f.Name
-		}
-		for k := range raw {
-			if strings.EqualFold(k, name) {
-				delete(raw, k)
-			}
-		}
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return fmt.Errorf("decode additional properties for Eta: %w", err)
-	}
-	*j = Eta(plain)
-	return nil
-}
-
-type Theta int
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Theta) UnmarshalJSON(value []byte) error {
-	type Plain Theta
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Theta: %w", err)
-	}
-	if 65535 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65535)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
-	*j = Theta(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Theta) UnmarshalYAML(value *yaml.Node) error {
-	type Plain Theta
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Theta: %w", err)
-	}
-	if 65535 < plain {
-		return fmt.Errorf("field %s: must be <= %v", "", 65535)
-	}
-	if 0 > plain {
-		return fmt.Errorf("field %s: must be >= %v", "", 0)
-	}
-	*j = Theta(plain)
-	return nil
-}
-
 type Beta_0 = BetaGamma
 
 type Beta_1 = BetaDelta
-
-type Beta struct {
-	// CommType corresponds to the JSON schema field "commType".
-	CommType string `json:"commType" yaml:"commType" mapstructure:"commType"`
-
-	// Epsilon corresponds to the JSON schema field "epsilon".
-	Epsilon BetaEpsilon `json:"epsilon" yaml:"epsilon" mapstructure:"epsilon"`
-
-	// Route corresponds to the JSON schema field "route".
-	Route *string `json:"route,omitempty,omitzero" yaml:"route,omitempty" mapstructure:"route,omitempty"`
-
-	// Theta corresponds to the JSON schema field "theta".
-	Theta Theta `json:"theta" yaml:"theta" mapstructure:"theta"`
-
-	// Zeta corresponds to the JSON schema field "zeta".
-	Zeta BetaZeta `json:"zeta" yaml:"zeta" mapstructure:"zeta"`
-
-	AdditionalProperties interface{} `mapstructure:",remain"`
-}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Beta) UnmarshalJSON(value []byte) error {
@@ -543,6 +454,59 @@ func (j *Beta) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("decode additional properties for Beta: %w", err)
 	}
 	*j = Beta(plain)
+	return nil
+}
+
+type Eta struct {
+	// Epsilon corresponds to the JSON schema field "epsilon".
+	Epsilon string `json:"epsilon" yaml:"epsilon" mapstructure:"epsilon"`
+
+	// Theta corresponds to the JSON schema field "theta".
+	Theta Theta `json:"theta" yaml:"theta" mapstructure:"theta"`
+
+	AdditionalProperties interface{} `mapstructure:",remain"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Eta) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw Eta: %w", err)
+	}
+	if _, ok := raw["epsilon"]; raw != nil && !ok {
+		return fmt.Errorf("field epsilon in Eta: required")
+	}
+	if _, ok := raw["theta"]; raw != nil && !ok {
+		return fmt.Errorf("field theta in Eta: required")
+	}
+	type Plain Eta
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Eta: %w", err)
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for Eta: %w", err)
+	}
+	*j = Eta(plain)
 	return nil
 }
 
@@ -696,4 +660,40 @@ type TITLE struct {
 	Lambda []IotaKappaLambdaElem `json:"lambda,omitempty,omitzero" yaml:"lambda,omitempty" mapstructure:"lambda,omitempty"`
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
+}
+
+type Theta int
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Theta) UnmarshalJSON(value []byte) error {
+	type Plain Theta
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal Theta: %w", err)
+	}
+	if 65535 < plain {
+		return fmt.Errorf("field %s: must be <= %v", "", 65535)
+	}
+	if 0 > plain {
+		return fmt.Errorf("field %s: must be >= %v", "", 0)
+	}
+	*j = Theta(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Theta) UnmarshalYAML(value *yaml.Node) error {
+	type Plain Theta
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal Theta: %w", err)
+	}
+	if 65535 < plain {
+		return fmt.Errorf("field %s: must be <= %v", "", 65535)
+	}
+	if 0 > plain {
+		return fmt.Errorf("field %s: must be >= %v", "", 0)
+	}
+	*j = Theta(plain)
+	return nil
 }

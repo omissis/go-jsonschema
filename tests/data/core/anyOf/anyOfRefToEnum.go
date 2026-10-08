@@ -7,6 +7,16 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
+// An anyOf whose first branch is a $ref to a string enum. The enum declares its
+// own UnmarshalJSON; referring to it from the anyOf used to add a second, plain
+// one, and Go rejects a type declaring a method twice.
+type AnyOfRefToEnum struct {
+	// Kind corresponds to the JSON schema field "kind".
+	Kind interface{} `json:"kind,omitempty,omitzero" yaml:"kind,omitempty" mapstructure:"kind,omitempty"`
+}
+
+type AnyOfRefToEnumKind_0 = FieldType
+
 type FieldType string
 
 const FieldTypeNumber FieldType = "number"
@@ -55,14 +65,4 @@ func (j *FieldType) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = FieldType(v)
 	return nil
-}
-
-type AnyOfRefToEnumKind_0 = FieldType
-
-// An anyOf whose first branch is a $ref to a string enum. The enum declares its
-// own UnmarshalJSON; referring to it from the anyOf used to add a second, plain
-// one, and Go rejects a type declaring a method twice.
-type AnyOfRefToEnum struct {
-	// Kind corresponds to the JSON schema field "kind".
-	Kind interface{} `json:"kind,omitempty,omitzero" yaml:"kind,omitempty" mapstructure:"kind,omitempty"`
 }

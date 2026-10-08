@@ -313,6 +313,13 @@ func (p AliasType) Generate(out *Emitter) error {
 	return nil
 }
 
+// GetName returns the alias, the name the declaration introduces. With it,
+// every package-level declaration is Named, so Package.Generate orders them by
+// one key instead of treating an alias as equal to everything.
+func (p AliasType) GetName() string {
+	return p.Alias
+}
+
 type PointerType struct {
 	Type Type
 }

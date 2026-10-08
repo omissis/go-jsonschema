@@ -11,6 +11,30 @@ import "unicode/utf8"
 
 type AnyOf4 []AnyOf4Elem
 
+type AnyOf4Elem struct {
+	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
+	// the 'from' key, this is the parent's parent.
+	From *EmbeddedlinkendFrom `json:"from,omitempty,omitzero" yaml:"from,omitempty" mapstructure:"from,omitempty"`
+
+	// LinkKind corresponds to the JSON schema field "linkKind".
+	LinkKind *string `json:"linkKind,omitempty,omitzero" yaml:"linkKind,omitempty" mapstructure:"linkKind,omitempty"`
+
+	// LinkType corresponds to the JSON schema field "linkType".
+	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
+
+	// Tags corresponds to the JSON schema field "tags".
+	Tags EmbeddedlinkendTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
+
+	// Target corresponds to the JSON schema field "target".
+	Target *EmbeddedlinkrelationTarget `json:"target,omitempty,omitzero" yaml:"target,omitempty" mapstructure:"target,omitempty"`
+}
+
+type AnyOf4Elem_0 = Embeddedlinkend
+
+type AnyOf4Elem_1 = Embeddedlinkpath
+
+type AnyOf4Elem_2 = Embeddedlinkrelation
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *AnyOf4Elem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
@@ -522,28 +546,4 @@ func (j *Embeddedlinkrelation) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*j = Embeddedlinkrelation(plain)
 	return nil
-}
-
-type AnyOf4Elem_0 = Embeddedlinkend
-
-type AnyOf4Elem_1 = Embeddedlinkpath
-
-type AnyOf4Elem_2 = Embeddedlinkrelation
-
-type AnyOf4Elem struct {
-	// When consuming a CDEvent, you are consuming a parent event. So, when looking at
-	// the 'from' key, this is the parent's parent.
-	From *EmbeddedlinkendFrom `json:"from,omitempty,omitzero" yaml:"from,omitempty" mapstructure:"from,omitempty"`
-
-	// LinkKind corresponds to the JSON schema field "linkKind".
-	LinkKind *string `json:"linkKind,omitempty,omitzero" yaml:"linkKind,omitempty" mapstructure:"linkKind,omitempty"`
-
-	// LinkType corresponds to the JSON schema field "linkType".
-	LinkType EmbeddedlinkendLinkType `json:"linkType" yaml:"linkType" mapstructure:"linkType"`
-
-	// Tags corresponds to the JSON schema field "tags".
-	Tags EmbeddedlinkendTags `json:"tags,omitempty,omitzero" yaml:"tags,omitempty" mapstructure:"tags,omitempty"`
-
-	// Target corresponds to the JSON schema field "target".
-	Target *EmbeddedlinkrelationTarget `json:"target,omitempty,omitzero" yaml:"target,omitempty" mapstructure:"target,omitempty"`
 }

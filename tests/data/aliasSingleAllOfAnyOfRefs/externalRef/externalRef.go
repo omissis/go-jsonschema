@@ -6,6 +6,10 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+type AllOf = Thing
+
+type ExternalRef = Thing
+
 type Thing struct {
 	// Values corresponds to the JSON schema field "values".
 	Values []Value `json:"values,omitempty,omitzero" yaml:"values,omitempty" mapstructure:"values,omitempty"`
@@ -34,7 +38,3 @@ func (j *Thing) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type Value float64
-
-type AllOf = Thing
-
-type ExternalRef = Thing
