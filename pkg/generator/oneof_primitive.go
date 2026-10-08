@@ -295,7 +295,9 @@ func isPrimitiveMultiTypeUnion(t *schemas.Type) bool {
 		return false
 	}
 
-	if primitiveHasValidationConstraints(t) {
+	// primitiveHasValidationConstraints leaves `format` alone, since the
+	// oneOf path applies it to a string variant; a union has nowhere to.
+	if primitiveHasValidationConstraints(t) || t.Format != "" {
 		return false
 	}
 
@@ -795,7 +797,7 @@ func emitOneOfPrimitiveIsZero(typeName string, hasNull bool) func(*codegen.Emitt
 			comment += " Note: an explicitly-decoded JSON `null` is NOT zero — see IsNull."
 		}
 
-		out.Commentf(comment)
+		out.Commentf("%s", comment)
 		out.Printlnf("func (j *%s) IsZero() bool {", typeName)
 		out.Indent(1)
 		out.Printlnf("return j == nil || !j.present")
