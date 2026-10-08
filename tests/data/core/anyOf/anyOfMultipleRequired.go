@@ -10,92 +10,6 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
-type MultipleRequiredBase struct {
-	// BaseField corresponds to the JSON schema field "baseField".
-	BaseField string `json:"baseField" yaml:"baseField" mapstructure:"baseField"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
-	}
-	if _, ok := raw["baseField"]; raw != nil && !ok {
-		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
-	}
-	type Plain MultipleRequiredBase
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
-	}
-	*j = MultipleRequiredBase(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
-	}
-	if _, ok := raw["baseField"]; raw != nil && !ok {
-		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
-	}
-	type Plain MultipleRequiredBase
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
-	}
-	*j = MultipleRequiredBase(plain)
-	return nil
-}
-
-type MultipleRequiredMiddle struct {
-	// MiddleField corresponds to the JSON schema field "middleField".
-	MiddleField float64 `json:"middleField" yaml:"middleField" mapstructure:"middleField"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
-	}
-	if _, ok := raw["middleField"]; raw != nil && !ok {
-		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
-	}
-	type Plain MultipleRequiredMiddle
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
-	}
-	*j = MultipleRequiredMiddle(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
-	}
-	if _, ok := raw["middleField"]; raw != nil && !ok {
-		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
-	}
-	type Plain MultipleRequiredMiddle
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
-	}
-	*j = MultipleRequiredMiddle(plain)
-	return nil
-}
-
-type ComposedWithMultipleRequired_0 = MultipleRequiredBase
-
-type ComposedWithMultipleRequired_1 = MultipleRequiredMiddle
-
 type ComposedWithMultipleRequired struct {
 	// BaseField corresponds to the JSON schema field "baseField".
 	BaseField *string `json:"baseField,omitempty,omitzero" yaml:"baseField,omitempty" mapstructure:"baseField,omitempty"`
@@ -108,6 +22,10 @@ type ComposedWithMultipleRequired struct {
 
 	AdditionalProperties interface{} `mapstructure:",remain"`
 }
+
+type ComposedWithMultipleRequired_0 = MultipleRequiredBase
+
+type ComposedWithMultipleRequired_1 = MultipleRequiredMiddle
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
@@ -204,5 +122,87 @@ func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("decode additional properties for ComposedWithMultipleRequired: %w", err)
 	}
 	*j = ComposedWithMultipleRequired(plain)
+	return nil
+}
+
+type MultipleRequiredBase struct {
+	// BaseField corresponds to the JSON schema field "baseField".
+	BaseField string `json:"baseField" yaml:"baseField" mapstructure:"baseField"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
+	}
+	if _, ok := raw["baseField"]; raw != nil && !ok {
+		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
+	}
+	type Plain MultipleRequiredBase
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
+	}
+	*j = MultipleRequiredBase(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
+	}
+	if _, ok := raw["baseField"]; raw != nil && !ok {
+		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
+	}
+	type Plain MultipleRequiredBase
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
+	}
+	*j = MultipleRequiredBase(plain)
+	return nil
+}
+
+type MultipleRequiredMiddle struct {
+	// MiddleField corresponds to the JSON schema field "middleField".
+	MiddleField float64 `json:"middleField" yaml:"middleField" mapstructure:"middleField"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
+	}
+	if _, ok := raw["middleField"]; raw != nil && !ok {
+		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
+	}
+	type Plain MultipleRequiredMiddle
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
+	}
+	*j = MultipleRequiredMiddle(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
+	}
+	if _, ok := raw["middleField"]; raw != nil && !ok {
+		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
+	}
+	type Plain MultipleRequiredMiddle
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
+	}
+	*j = MultipleRequiredMiddle(plain)
 	return nil
 }

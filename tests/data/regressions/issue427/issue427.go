@@ -111,7 +111,14 @@ func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type TestcaseExpectedPeerName_0 = PeerName
+// Represents an individual Limbo testcase.
+type Testcase struct {
+	// For server (i.e. client-side) validation: the expected peer name, if any
+	ExpectedPeerName *TestcaseExpectedPeerName `json:"expected_peer_name" yaml:"expected_peer_name" mapstructure:"expected_peer_name"`
+
+	// For server (i.e. client-side) validation: the expected peer name, if any
+	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty,omitzero" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
+}
 
 // For server (i.e. client-side) validation: the expected peer name, if any
 type TestcaseExpectedPeerName struct {
@@ -121,6 +128,8 @@ type TestcaseExpectedPeerName struct {
 	// The peer's name
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
 }
+
+type TestcaseExpectedPeerName_0 = PeerName
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
@@ -168,17 +177,6 @@ func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type TestcaseNotExpectedPeerName_0 = PeerName
-
-// Represents an individual Limbo testcase.
-type Testcase struct {
-	// For server (i.e. client-side) validation: the expected peer name, if any
-	ExpectedPeerName *TestcaseExpectedPeerName `json:"expected_peer_name" yaml:"expected_peer_name" mapstructure:"expected_peer_name"`
-
-	// For server (i.e. client-side) validation: the expected peer name, if any
-	NotExpectedPeerName *TestcaseNotExpectedPeerName `json:"not_expected_peer_name,omitempty,omitzero" yaml:"not_expected_peer_name,omitempty" mapstructure:"not_expected_peer_name,omitempty"`
-}
-
 // For server (i.e. client-side) validation: the expected peer name, if any
 type TestcaseNotExpectedPeerName struct {
 	// The kind of peer name
@@ -187,6 +185,8 @@ type TestcaseNotExpectedPeerName struct {
 	// The peer's name
 	Value string `json:"value" yaml:"value" mapstructure:"value"`
 }
+
+type TestcaseNotExpectedPeerName_0 = PeerName
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
