@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/rootConstNotInEnum",
+  "description": "The const is not one of the enum values, so no value matches; generation fails, as for an empty enum.",
+  "enum": ["a"],
+  "const": "b"
+}

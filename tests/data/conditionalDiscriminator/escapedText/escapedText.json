@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/escapedText",
+  "description": "Discriminator values and a field name carrying a quote, a backslash and a percent sign, which the generated error literals must escape.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["a\"b", "c%d", "e\\f", "g"] },
+    "x%y": { "type": "string" },
+    "z": { "type": "string" }
+  },
+  "required": ["kind"],
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "a\"b" } } }, "then": { "required": ["x%y"] } },
+    {
+      "if": { "properties": { "kind": { "enum": ["c%d", "e\\f"] } } },
+      "then": { "required": ["x%y"] },
+      "else": { "required": ["z"] }
+    }
+  ]
+}

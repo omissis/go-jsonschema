@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/enumIf",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "operator": {
+      "type": "string",
+      "enum": [
+        "gt",
+        "lt",
+        "gte",
+        "lte",
+        "eq"
+      ]
+    },
+    "value": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "operator"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operator": {
+            "enum": [
+              "gt",
+              "lt",
+              "gte",
+              "lte"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "value"
+        ]
+      }
+    }
+  ]
+}

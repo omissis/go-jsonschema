@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/notAdditionalProperties",
+  "type": "object",
+  "properties": {
+    "value": {
+      "description": "Only `additionalProperties: false` makes a variant strict. A `not` schema forbids some extra values and allows the rest, so an extra key must not rule its variant out.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "name": { "type": "string" } },
+          "required": ["name"],
+          "additionalProperties": { "not": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "properties": { "id": { "type": "integer" } },
+          "required": ["id"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
