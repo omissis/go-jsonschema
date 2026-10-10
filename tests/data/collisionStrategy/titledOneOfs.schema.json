@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/collisionStrategy/titledOneOfs",
+  "type": "object",
+  "$defs": {
+    "metadata": {
+      "title": "BetaMetadata",
+      "oneOf": [
+        { "type": "object", "properties": { "kind": { "const": "x" } }, "required": ["kind"] },
+        { "type": "object", "properties": { "kind": { "const": "y" } }, "required": ["kind"] }
+      ]
+    },
+    "status": {
+      "title": "BetaStatus",
+      "oneOf": [ { "type": "string" }, { "type": "number" } ]
+    },
+    "shape": {
+      "title": "BetaShape",
+      "oneOf": [
+        { "type": "object", "properties": { "w": { "type": "number" } }, "required": ["w"], "additionalProperties": false },
+        { "type": "object", "properties": { "r": { "type": "number" } }, "required": ["r"], "additionalProperties": false }
+      ]
+    }
+  },
+  "properties": {
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "status": { "$ref": "#/$defs/status" },
+    "shape": { "$ref": "#/$defs/shape" }
+  }
+}

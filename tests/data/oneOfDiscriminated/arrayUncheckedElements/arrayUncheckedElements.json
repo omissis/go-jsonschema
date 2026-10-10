@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/arrayUncheckedElements",
+  "type": "object",
+  "properties": {
+    "licenses": {
+      "description": "The first variant's elements have neither required keys nor additionalProperties false, so its shape check has nothing to check per element. Its generated loop used not to compile.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "object", "properties": { "license": { "type": "string" } } }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "expression": { "type": "string" } },
+            "required": ["expression"]
+          }
+        }
+      ]
+    }
+  }
+}
