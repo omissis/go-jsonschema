@@ -28,12 +28,12 @@ type DecoratedPlannerDecorator struct {
 func (j *DecoratedPlannerDecorator) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DecoratedPlannerDecorator: %w", err)
 	}
 	type Plain DecoratedPlannerDecorator
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal DecoratedPlannerDecorator: %w", err)
 	}
 	if v, ok := raw["color"]; !ok || v == nil {
 		plain.Color = "#ffffff"
@@ -46,12 +46,12 @@ func (j *DecoratedPlannerDecorator) UnmarshalJSON(value []byte) error {
 func (j *DecoratedPlannerDecorator) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DecoratedPlannerDecorator: %w", err)
 	}
 	type Plain DecoratedPlannerDecorator
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal DecoratedPlannerDecorator: %w", err)
 	}
 	if v, ok := raw["color"]; !ok || v == nil {
 		plain.Color = "#ffffff"
@@ -64,12 +64,12 @@ func (j *DecoratedPlannerDecorator) UnmarshalYAML(value *yaml.Node) error {
 func (j *DecoratedPlanner) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DecoratedPlanner: %w", err)
 	}
 	type Plain DecoratedPlanner
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal DecoratedPlanner: %w", err)
 	}
 	if v, ok := raw["decorator"]; !ok || v == nil {
 		plain.Decorator = DecoratedPlannerDecorator{
@@ -85,12 +85,12 @@ func (j *DecoratedPlanner) UnmarshalYAML(value *yaml.Node) error {
 func (j *DecoratedPlanner) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw DecoratedPlanner: %w", err)
 	}
 	type Plain DecoratedPlanner
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal DecoratedPlanner: %w", err)
 	}
 	if v, ok := raw["decorator"]; !ok || v == nil {
 		plain.Decorator = DecoratedPlannerDecorator{
@@ -225,12 +225,12 @@ func (j *EventTagsElem) UnmarshalJSON(value []byte) error {
 func (j *Event) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Event: %w", err)
 	}
 	type Plain Event
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Event: %w", err)
 	}
 	if v, ok := raw["tags"]; !ok || v == nil {
 		plain.Tags = []EventTagsElem{}
@@ -243,12 +243,12 @@ func (j *Event) UnmarshalJSON(value []byte) error {
 func (j *Event) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Event: %w", err)
 	}
 	type Plain Event
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Event: %w", err)
 	}
 	if v, ok := raw["tags"]; !ok || v == nil {
 		plain.Tags = []EventTagsElem{}
@@ -283,7 +283,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_0) UnmarshalYAML(value *yaml.Node) 
 	type Plain ObjectPropertiesDefaultPlannersElem_0
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectPropertiesDefaultPlannersElem_0: %w", err)
 	}
 	*j = ObjectPropertiesDefaultPlannersElem_0(plain)
 	return nil
@@ -294,7 +294,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_0) UnmarshalJSON(value []byte) erro
 	type Plain ObjectPropertiesDefaultPlannersElem_0
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectPropertiesDefaultPlannersElem_0: %w", err)
 	}
 	*j = ObjectPropertiesDefaultPlannersElem_0(plain)
 	return nil
@@ -310,7 +310,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalJSON(value []byte) erro
 	type Plain ObjectPropertiesDefaultPlannersElem_1
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectPropertiesDefaultPlannersElem_1: %w", err)
 	}
 	*j = ObjectPropertiesDefaultPlannersElem_1(plain)
 	return nil
@@ -321,7 +321,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalYAML(value *yaml.Node) 
 	type Plain ObjectPropertiesDefaultPlannersElem_1
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectPropertiesDefaultPlannersElem_1: %w", err)
 	}
 	*j = ObjectPropertiesDefaultPlannersElem_1(plain)
 	return nil
@@ -331,7 +331,7 @@ func (j *ObjectPropertiesDefaultPlannersElem_1) UnmarshalYAML(value *yaml.Node) 
 func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ObjectPropertiesDefaultPlannersElem: %w", err)
 	}
 	var objectPropertiesDefaultPlannersElem_0 ObjectPropertiesDefaultPlannersElem_0
 	var objectPropertiesDefaultPlannersElem_1 ObjectPropertiesDefaultPlannersElem_1
@@ -348,7 +348,7 @@ func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalJSON(value []byte) error 
 	type Plain ObjectPropertiesDefaultPlannersElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectPropertiesDefaultPlannersElem: %w", err)
 	}
 	*j = ObjectPropertiesDefaultPlannersElem(plain)
 	return nil
@@ -358,7 +358,7 @@ func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalJSON(value []byte) error 
 func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ObjectPropertiesDefaultPlannersElem: %w", err)
 	}
 	var objectPropertiesDefaultPlannersElem_0 ObjectPropertiesDefaultPlannersElem_0
 	var objectPropertiesDefaultPlannersElem_1 ObjectPropertiesDefaultPlannersElem_1
@@ -375,7 +375,7 @@ func (j *ObjectPropertiesDefaultPlannersElem) UnmarshalYAML(value *yaml.Node) er
 	type Plain ObjectPropertiesDefaultPlannersElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ObjectPropertiesDefaultPlannersElem: %w", err)
 	}
 	*j = ObjectPropertiesDefaultPlannersElem(plain)
 	return nil

@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "step": {
+      "$ref": "#/definitions/step"
+    }
+  },
+  "definitions": {
+    "step": {
+      "type": "object",
+      "properties": {
+        "run": {
+          "type": "string"
+        },
+        "shell": {
+          "type": "string"
+        },
+        "working-directory": {
+          "type": "string"
+        },
+        "credit-card": {
+          "type": "string"
+        }
+      },
+      "dependencies": {
+        "shell": [
+          "run"
+        ],
+        "working-directory": [
+          "run"
+        ],
+        "credit-card": {
+          "properties": {
+            "billing-address": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "billing-address"
+          ]
+        }
+      }
+    }
+  }
+}

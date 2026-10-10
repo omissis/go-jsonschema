@@ -44,12 +44,12 @@ type ArrayMyObjectArrayElem map[string]interface{}
 func (j *Array) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Array: %w", err)
 	}
 	type Plain Array
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Array: %w", err)
 	}
 	for i0 := range plain.MyNestedNullArray {
 		for i1 := range plain.MyNestedNullArray[i0] {
@@ -71,12 +71,12 @@ func (j *Array) UnmarshalJSON(value []byte) error {
 func (j *Array) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Array: %w", err)
 	}
 	type Plain Array
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Array: %w", err)
 	}
 	for i0 := range plain.MyNestedNullArray {
 		for i1 := range plain.MyNestedNullArray[i0] {

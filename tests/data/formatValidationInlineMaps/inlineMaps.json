@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/formatValidationInlineMaps",
+  "description": "Generated with DisableCustomTypesForMaps, so a map stays inline in its field and the field's own validators check its values.",
+  "type": "object",
+  "properties": {
+    "byName": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "format": "uuid" }
+    }
+  }
+}
