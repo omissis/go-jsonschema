@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/validatorFormatUnchecked",
+  "type": "object",
+  "properties": {
+    "idOrNumber": {
+      "description": "A validator-backed format no longer disqualifies the wrapper. With format validation off no check is emitted, which is exactly what the non-oneOf string path does with the same declaration — the format is annotation-only there too.",
+      "oneOf": [
+        { "type": "string", "format": "uuid" },
+        { "type": "number" }
+      ]
+    },
+    "unknownFormat": {
+      "description": "An unrecognised format is annotation-only everywhere, so it does not disqualify the wrapper either.",
+      "oneOf": [
+        { "type": "string", "format": "not-a-known-format" },
+        { "type": "boolean" }
+      ]
+    }
+  }
+}

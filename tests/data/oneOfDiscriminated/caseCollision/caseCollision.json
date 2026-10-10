@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/caseCollision",
+  "type": "object",
+  "properties": {
+    "pet": {
+      "description": "\"dog\" and \"Dog\" are distinct discriminator values that map to one Go identifier, so the second variant's holder field is suffixed; without that the holder declared Dog twice and did not compile.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "dog" }, "bark": { "type": "string" } },
+          "required": ["kind"]
+        },
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "Dog" }, "howl": { "type": "string" } },
+          "required": ["kind"]
+        }
+      ]
+    }
+  }
+}

@@ -21,7 +21,7 @@ type IpMyObject struct {
 func (j *IpMyObject) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IpMyObject: %w", err)
 	}
 	if _, ok := raw["myIp"]; raw != nil && !ok {
 		return fmt.Errorf("field myIp in IpMyObject: required")
@@ -29,7 +29,7 @@ func (j *IpMyObject) UnmarshalJSON(value []byte) error {
 	type Plain IpMyObject
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IpMyObject: %w", err)
 	}
 	*j = IpMyObject(plain)
 	return nil
@@ -39,7 +39,7 @@ func (j *IpMyObject) UnmarshalJSON(value []byte) error {
 func (j *IpMyObject) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IpMyObject: %w", err)
 	}
 	if _, ok := raw["myIp"]; raw != nil && !ok {
 		return fmt.Errorf("field myIp in IpMyObject: required")
@@ -47,7 +47,7 @@ func (j *IpMyObject) UnmarshalYAML(value *yaml.Node) error {
 	type Plain IpMyObject
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal IpMyObject: %w", err)
 	}
 	*j = IpMyObject(plain)
 	return nil
