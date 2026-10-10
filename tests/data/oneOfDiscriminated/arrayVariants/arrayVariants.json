@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/arrayVariants",
+  "type": "object",
+  "properties": {
+    "licenses": {
+      "$ref": "#/definitions/licenseChoice"
+    }
+  },
+  "definitions": {
+    "licenseChoice": {
+      "type": "array",
+      "description": "Mirrors CycloneDX licenseChoice: a oneOf over two array variants whose element key-sets are disjoint.",
+      "oneOf": [
+        {
+          "type": "array",
+          "title": "Multiple licenses",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "license"
+            ],
+            "properties": {
+              "license": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "array",
+          "title": "SPDX License Expression",
+          "additionalItems": false,
+          "minItems": 1,
+          "maxItems": 1,
+          "items": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "expression"
+              ],
+              "properties": {
+                "expression": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

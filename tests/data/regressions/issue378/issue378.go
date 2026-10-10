@@ -17,7 +17,7 @@ func (j *Issue378) UnmarshalJSON(value []byte) error {
 	type Plain Issue378
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Issue378: %w", err)
 	}
 	if plain.Memory != nil {
 		if matched, _ := regexp.MatchString(`^\d+([tgmk]b)?$`, string(*plain.Memory)); !matched {
@@ -33,7 +33,7 @@ func (j *Issue378) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Issue378
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Issue378: %w", err)
 	}
 	if plain.Memory != nil {
 		if matched, _ := regexp.MatchString(`^\d+([tgmk]b)?$`, string(*plain.Memory)); !matched {
