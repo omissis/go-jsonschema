@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/rootConst",
+  "description": "A root that is only a const is generated as the one-value enum it is equivalent to, so it is typed from its value and checked.",
+  "const": "fixed"
+}

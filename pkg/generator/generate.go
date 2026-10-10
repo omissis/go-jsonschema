@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"go/token"
 	"os"
 	"strings"
 
@@ -23,6 +24,7 @@ var (
 	errSchemaHasNoRoot                = errors.New("schema has no root")
 	errEnumArrCannotBeEmpty           = errors.New("enum array cannot be empty")
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
+	errRootConstNotInEnum             = errors.New("root const is not one of its enum values, so no value matches")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errCannotResolveRef               = errors.New("cannot resolve reference")
@@ -30,6 +32,8 @@ var (
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 	errCannotGenerateSources          = errors.New("cannot generate sources")
+	errInvalidExtensionTagKey         = errors.New("invalid struct tag key")
+	errDuplicateExtensionTagKey       = errors.New("duplicate struct tag key")
 )
 
 type Generator struct {
@@ -51,6 +55,40 @@ type qualifiedDefinition struct {
 }
 
 func New(config Config) (*Generator, error) {
+	if err := checkExtensionTagKeys(config.ExtensionTags, config.Tags); err != nil {
+		return nil, err
+	}
+
+	if !config.StrictAdditionalProperties.IsValid() {
+		return nil, fmt.Errorf("%w: got %q",
+			ErrInvalidStrictAdditionalPropertiesMode, config.StrictAdditionalProperties)
+	}
+
+	// aliasByPackage tracks the alias each PackageName has been bound to
+	// so far. Two SchemaMappings with the same PackageName but different
+	// ImportAlias values would have resolveImportAlias silently picking
+	// one and ignoring the other — reject at New() time so the
+	// inconsistency surfaces loudly.
+	aliasByPackage := make(map[string]string, len(config.SchemaMappings))
+
+	for _, m := range config.SchemaMappings {
+		if m.ImportAlias == "" {
+			continue
+		}
+
+		if !IsValidImportAlias(m.ImportAlias) {
+			return nil, fmt.Errorf("%w: schema %q -> %q",
+				ErrInvalidImportAlias, m.SchemaID, m.ImportAlias)
+		}
+
+		if prev, exists := aliasByPackage[m.PackageName]; exists && prev != m.ImportAlias {
+			return nil, fmt.Errorf("%w: package %q has conflicting aliases %q and %q",
+				ErrConflictingImportAlias, m.PackageName, prev, m.ImportAlias)
+		}
+
+		aliasByPackage[m.PackageName] = m.ImportAlias
+	}
+
 	formatters := []formatter{
 		&jsonFormatter{},
 	}
@@ -70,10 +108,43 @@ func New(config Config) (*Generator, error) {
 	}
 
 	if config.Loader == nil {
-		generator.loader = schemas.NewDefaultCacheLoader(config.ResolveExtensions, config.YAMLExtensions)
+		// When the caller supplied Cache, build the default chain by hand and
+		// hand the populated map to NewCachedLoader so cache hits short-circuit
+		// before any FileLoader / HTTPLoader work.
+		if config.Cache != nil {
+			generator.loader = schemas.NewCachedLoader(
+				schemas.NewDefaultMultiLoader(config.ResolveExtensions, config.YAMLExtensions),
+				config.Cache,
+			)
+		} else {
+			generator.loader = schemas.NewDefaultCacheLoader(config.ResolveExtensions, config.YAMLExtensions)
+		}
 	}
 
 	return generator, nil
+}
+
+// resolveImportAlias returns the alias to use for an `import` statement that
+// references the given Go package import path. When a SchemaMapping with a
+// non-empty ImportAlias is present for the path, that alias wins; otherwise
+// the historical last-path-segment derivation (codegen.Package.Name) is used.
+//
+// The same alias must be returned for the same qualifiedName at every call
+// site (in particular, the duplicate-import check and the AddImport call in
+// generateReferencedType) — otherwise the dup check mis-categorizes and two
+// imports for the same package end up emitted.
+func (g *Generator) resolveImportAlias(qualifiedName string) string {
+	for _, m := range g.config.SchemaMappings {
+		if m.PackageName == qualifiedName && m.ImportAlias != "" {
+			return m.ImportAlias
+		}
+	}
+
+	if i := strings.LastIndex(qualifiedName, "/"); i != -1 && i < len(qualifiedName)-1 {
+		return qualifiedName[i+1:]
+	}
+
+	return qualifiedName
 }
 
 func (g *Generator) Sources() (map[string][]byte, error) {
@@ -84,6 +155,15 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 	for _, output := range g.outputs {
 		if output.file.FileName == "" {
 			continue
+		}
+
+		g.renameConstantsShadowingImports(output)
+
+		if a, b, name, clash := importNameCollision(output.file.Package.Imports); clash {
+			return nil, fmt.Errorf(
+				"%w: %q and %q as %q in %s; an ImportAlias (--schema-package URL=PATH:ALIAS) tells schema packages apart",
+				ErrImportAliasCollision, a, b, name, output.file.FileName,
+			)
 		}
 
 		emitter := codegen.NewEmitter(maxLineLength)
@@ -198,7 +278,8 @@ func (g *Generator) beginOutput(
 		if o.file.FileName == outputName && o.file.Package.QualifiedName != packageName {
 			return nil, fmt.Errorf(
 				"%w (%s) mapped to two different Go packages (%q and %q) for schema %q",
-				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id)
+				errConflictSameFile, o.file.FileName, o.file.Package.QualifiedName, packageName, id,
+			)
 		}
 
 		if o.file.FileName == outputName && o.file.Package.QualifiedName == packageName {
@@ -239,4 +320,104 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 	}
 
 	return typeName + idv
+}
+
+// renameConstantsShadowingImports renames a package-level constant that shares
+// its name with an import, which Go rejects. enumVarnames refuses a varname
+// naming a package already imported, but an import can arrive after the
+// constant — a later type adding mapstructure, say — so the final set is
+// checked here. Generated code never refers to an enum constant by name, so
+// renaming one is safe; the warning says what the user-facing name became.
+func (g *Generator) renameConstantsShadowingImports(o *output) {
+	for _, decl := range o.file.Package.Decls {
+		c, ok := decl.(*codegen.Constant)
+		if !ok || !o.importsName(c.Name) {
+			continue
+		}
+
+		for n := 1; ; n++ {
+			candidate := fmt.Sprintf("%s_%d", c.Name, n)
+			if o.importsName(candidate) || o.declaresName(candidate) {
+				continue
+			}
+
+			g.config.Warner(fmt.Sprintf(
+				"Constant %q shares its name with an imported package; declaring it as %q instead",
+				c.Name, candidate,
+			))
+
+			c.Name = candidate
+
+			break
+		}
+	}
+}
+
+// IsValidImportAlias reports whether alias can name an import in generated
+// code: a Go identifier, other than a keyword, the blank identifier `_` (a
+// blank import cannot be referred to) and `init` (which Go reserves for
+// functions).
+func IsValidImportAlias(alias string) bool {
+	return token.IsIdentifier(alias) && !token.IsKeyword(alias) && alias != "_" && alias != "init"
+}
+
+// importNameCollision returns two import paths that Go would bind to the same
+// name in one file, and that name. It runs once a file's imports are complete,
+// since a clash can come from any of them: two schema packages, aliased or
+// not, or a schema package aliased like a standard one such as `json`.
+func importNameCollision(imports []codegen.Import) (string, string, string, bool) {
+	seen := make(map[string]string, len(imports))
+
+	for _, i := range imports {
+		name := effectiveImportName(i)
+		if name == "_" || name == "." {
+			continue
+		}
+
+		if prev, ok := seen[name]; ok && prev != i.QualifiedName {
+			return prev, i.QualifiedName, name, true
+		}
+
+		seen[name] = i.QualifiedName
+	}
+
+	return "", "", "", false
+}
+
+// effectiveImportName returns the name an import binds: its alias, or else the
+// package name Go conventionally derives from its path, the last element without
+// a major-version suffix (`.../mapstructure/v2` is `mapstructure`) or a gopkg.in
+// `.vN` (`gopkg.in/yaml.v3` is `yaml`).
+func effectiveImportName(i codegen.Import) string {
+	if i.Name != "" {
+		return i.Name
+	}
+
+	parts := strings.Split(i.QualifiedName, "/")
+	last := parts[len(parts)-1]
+
+	if len(parts) > 1 && isMajorVersion(last) {
+		last = parts[len(parts)-2]
+	}
+
+	if j := strings.Index(last, ".v"); j > 0 && isMajorVersion(last[j+1:]) {
+		last = last[:j]
+	}
+
+	return last
+}
+
+// isMajorVersion reports whether s is a module major-version element like `v2`.
+func isMajorVersion(s string) bool {
+	if len(s) < 2 || s[0] != 'v' {
+		return false
+	}
+
+	for _, r := range s[1:] {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+
+	return true
 }

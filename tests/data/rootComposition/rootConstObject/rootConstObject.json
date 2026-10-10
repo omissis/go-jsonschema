@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/rootConstObject",
+  "description": "An object const takes no enum route, which accepts only primitives; it stays an unchecked interface{}, as a nested typeless const does.",
+  "const": { "enabled": true }
+}

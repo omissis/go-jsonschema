@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -62,7 +63,7 @@ func (o *output) uniqueTypeName(scope nameScope) string {
 			name := scope.stringFrom(i)
 
 			v, ok := o.declsByName[name]
-			if !ok || (ok && v.Type == nil) {
+			if (!ok || (ok && v.Type == nil)) && !o.declaresConstant(name) {
 				// An identifier using the current amount of name context is unique, use it.
 				return name
 			}
@@ -74,19 +75,99 @@ func (o *output) uniqueTypeName(scope nameScope) string {
 	name := scope.string()
 
 	v, ok := o.declsByName[name]
-	if !ok || (ok && v.Type == nil) {
+	if (!ok || (ok && v.Type == nil)) && !o.declaresConstant(name) {
 		return name
 	}
 
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
-		if _, ok := o.declsByName[suffixed]; !ok {
+		if _, ok := o.declsByName[suffixed]; !ok && !o.declaresConstant(suffixed) {
 			o.warner(fmt.Sprintf(
-				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
+				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed,
+			))
 
 			return suffixed
 		}
 
 		count++
 	}
+}
+
+// declaresName reports whether the package declares name, as a type or a
+// constant. A type still being generated is registered in declsByName before it
+// reaches Package.Decls, and anything that took its name meanwhile would make
+// AddDecl drop the type once it finishes.
+func (o *output) declaresName(name string) bool {
+	if _, ok := o.declsByName[name]; ok {
+		return true
+	}
+
+	for _, decl := range o.file.Package.Decls {
+		if named, ok := decl.(codegen.Named); ok && named.GetName() == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// declaresConstant reports whether the package declares a constant named name.
+// declsByName only knows types, but a type given a constant's name would be
+// dropped by AddDecl, so type allocation has to treat it as taken.
+func (o *output) declaresConstant(name string) bool {
+	for _, decl := range o.file.Package.Decls {
+		if c, ok := decl.(*codegen.Constant); ok && c.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// importsName reports whether an import binds name in the file.
+func (o *output) importsName(name string) bool {
+	for _, imp := range o.file.Package.Imports {
+		if importedName(imp) == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// importedName is the identifier an import binds: its alias, or otherwise the
+// package name its path implies — the last element, skipping a major-version
+// element (`mapstructure/v2`) and dropping a gopkg.in version suffix
+// (`yaml.v3`).
+func importedName(imp codegen.Import) string {
+	if imp.Name != "" {
+		return imp.Name
+	}
+
+	elems := strings.Split(imp.QualifiedName, "/")
+	name := elems[len(elems)-1]
+
+	if len(elems) > 1 && strings.HasPrefix(name, "v") && isDigits(name[1:]) {
+		name = elems[len(elems)-2]
+	}
+
+	if i := strings.LastIndex(name, ".v"); i > 0 && isDigits(name[i+2:]) {
+		name = name[:i]
+	}
+
+	return name
+}
+
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+
+	return true
 }
