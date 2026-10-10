@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "definitions": {
+    "Foo": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "description": "A member legitimately NAMED `items`. Dropping segments by text cannot tell this from the keyword, so the name would be lost and this subschema would collide with a sibling.",
+          "type": "object",
+          "properties": {
+            "bar": {
+              "type": "number"
+            }
+          }
+        },
+        "bar": {
+          "type": "string"
+        }
+      }
+    },
+    "KwWrapper": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bar": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "nested": {
+      "$ref": "#/definitions/Foo/properties/items/properties/bar"
+    },
+    "sibling": {
+      "$ref": "#/definitions/Foo/properties/bar"
+    },
+    "throughItems": {
+      "description": "A path continuing past a single-schema `items`. Only the tuple form consumes what follows, so `items` is kept and the trailing `properties` dropped \u2014 swallowing the next segment would name this after `properties` instead.",
+      "$ref": "#/definitions/KwWrapper/items/properties/bar"
+    }
+  }
+}

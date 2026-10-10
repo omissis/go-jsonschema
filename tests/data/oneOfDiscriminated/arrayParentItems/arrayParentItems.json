@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/arrayParentItems",
+  "type": "object",
+  "properties": {
+    "list": {
+      "description": "The array holding the oneOf declares its own element schema. A holder would replace the field that checks it, so the typed array stays.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": { "id": { "type": "string" } },
+        "required": ["id"]
+      },
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "object", "properties": { "license": { "type": "string" } }, "required": ["license"] }
+        },
+        {
+          "type": "array",
+          "items": { "type": "object", "properties": { "expression": { "type": "string" } }, "required": ["expression"] }
+        }
+      ]
+    }
+  }
+}
