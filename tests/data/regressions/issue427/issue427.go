@@ -76,7 +76,7 @@ type PeerName struct {
 func (j *PeerName) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw PeerName: %w", err)
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in PeerName: required")
@@ -97,7 +97,7 @@ func (j *PeerName) UnmarshalJSON(value []byte) error {
 func (j *PeerName) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw PeerName: %w", err)
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in PeerName: required")
@@ -137,7 +137,7 @@ type TestcaseNotExpectedPeerName_0 = PeerName
 func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TestcaseExpectedPeerName: %w", err)
 	}
 	var testcaseExpectedPeerName_0 TestcaseExpectedPeerName_0
 	var errs []error
@@ -160,7 +160,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TestcaseExpectedPeerName: %w", err)
 	}
 	var testcaseExpectedPeerName_0 TestcaseExpectedPeerName_0
 	var errs []error
@@ -192,7 +192,7 @@ type TestcaseNotExpectedPeerName struct {
 func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TestcaseNotExpectedPeerName: %w", err)
 	}
 	var testcaseNotExpectedPeerName_0 TestcaseNotExpectedPeerName_0
 	var errs []error
@@ -215,7 +215,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
 func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw TestcaseNotExpectedPeerName: %w", err)
 	}
 	var testcaseNotExpectedPeerName_0 TestcaseNotExpectedPeerName_0
 	var errs []error
@@ -238,7 +238,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 func (j *Testcase) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Testcase: %w", err)
 	}
 	if _, ok := raw["expected_peer_name"]; raw != nil && !ok {
 		return fmt.Errorf("field expected_peer_name in Testcase: required")
@@ -256,7 +256,7 @@ func (j *Testcase) UnmarshalJSON(value []byte) error {
 func (j *Testcase) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Testcase: %w", err)
 	}
 	if _, ok := raw["expected_peer_name"]; raw != nil && !ok {
 		return fmt.Errorf("field expected_peer_name in Testcase: required")

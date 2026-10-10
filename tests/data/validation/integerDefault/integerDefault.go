@@ -11,19 +11,17 @@ type IntegerDefault struct {
 	Count int `json:"count" yaml:"count" mapstructure:"count"`
 
 	// NullableCount corresponds to the JSON schema field "nullableCount".
-	NullableCount IntegerDefaultNullableCount `json:"nullableCount" yaml:"nullableCount" mapstructure:"nullableCount"`
+	NullableCount *int `json:"nullableCount" yaml:"nullableCount" mapstructure:"nullableCount"`
 
 	// ProgramId corresponds to the JSON schema field "programId".
 	ProgramId int `json:"programId" yaml:"programId" mapstructure:"programId"`
 }
 
-type IntegerDefaultNullableCount *int
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerDefault: %w", err)
 	}
 	if _, ok := raw["count"]; raw != nil && !ok {
 		return fmt.Errorf("field count in IntegerDefault: required")
@@ -43,9 +41,8 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 		plain.Count = 42
 	}
 	if v, ok := raw["nullableCount"]; !ok || v == nil {
-		defaultInt := 0
-		plain.NullableCount = &defaultInt
-
+		var defaultNullableCount int = 0
+		plain.NullableCount = &defaultNullableCount
 	}
 	if v, ok := raw["programId"]; !ok || v == nil {
 		plain.ProgramId = 0
@@ -58,7 +55,7 @@ func (j *IntegerDefault) UnmarshalJSON(value []byte) error {
 func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw IntegerDefault: %w", err)
 	}
 	if _, ok := raw["count"]; raw != nil && !ok {
 		return fmt.Errorf("field count in IntegerDefault: required")
@@ -78,9 +75,8 @@ func (j *IntegerDefault) UnmarshalYAML(value *yaml.Node) error {
 		plain.Count = 42
 	}
 	if v, ok := raw["nullableCount"]; !ok || v == nil {
-		defaultInt := 0
-		plain.NullableCount = &defaultInt
-
+		var defaultNullableCount int = 0
+		plain.NullableCount = &defaultNullableCount
 	}
 	if v, ok := raw["programId"]; !ok || v == nil {
 		plain.ProgramId = 0

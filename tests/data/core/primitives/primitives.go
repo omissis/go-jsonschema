@@ -27,7 +27,7 @@ type Primitives struct {
 func (j *Primitives) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Primitives: %w", err)
 	}
 	type Plain Primitives
 	var plain Plain
@@ -45,7 +45,7 @@ func (j *Primitives) UnmarshalJSON(value []byte) error {
 func (j *Primitives) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Primitives: %w", err)
 	}
 	type Plain Primitives
 	var plain Plain
