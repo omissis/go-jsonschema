@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/nullablePrimitives",
+  "type": "object",
+  "properties": {
+    "oilRate": {
+      "description": "A nullable primitive becomes a plain *float64. The alias form `type X *float64` is a named POINTER type, which Go rejects as a method receiver, so the name could never carry UnmarshalJSON or validation.",
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "label": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "count": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "enabled": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "observedAt": {
+      "description": "Already a plain *time.Time before this change, via the temporal special case added upstream in #570 / #607.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "tags": {
+      "description": "Arrays keep their named type: `type X []string` is not a pointer type and can take methods, so the name is not dead weight.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "meta": {
+      "description": "Objects keep their named struct and are wrapped in a pointer, which is unchanged.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "a": {
+          "type": "string"
+        }
+      }
+    },
+    "score": {
+      "description": "A nullable primitive carrying a constraint. Before this change the alias path emitted no UnmarshalJSON at all, so `minimum` was silently dropped and never enforced.",
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 5
+    },
+    "name": {
+      "description": "Same for string constraints: `minLength` was silently dropped.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 3
+    }
+  }
+}

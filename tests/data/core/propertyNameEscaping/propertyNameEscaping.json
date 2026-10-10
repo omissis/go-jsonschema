@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Property names encoding/json accepts in a struct tag. They still need escaping on the way into generated Go: a percent sign is read by fmt as a verb unless doubled, and the name is emitted into both map keys and error messages.",
+  "properties": {
+    "pct%s": { "type": "string" },
+    "punct!#$&()*+-./:;<=>?@[]^_{|}~": { "type": "string" },
+    "ordinary": { "type": "string" },
+    "arrPct%s": {
+      "description": "An array whose name carries a percent. The length check keeps the name as an argument rather than splicing it into the format string, so the percent is never read as a verb.",
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+      "minItems": 1
+    }
+  },
+  "required": ["pct%s", "punct!#$&()*+-./:;<=>?@[]^_{|}~", "ordinary", "arrPct%s"]
+}
