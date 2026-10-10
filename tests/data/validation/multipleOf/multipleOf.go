@@ -25,7 +25,7 @@ type MultipleOf struct {
 func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleOf: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in MultipleOf: required")
@@ -64,7 +64,7 @@ func (j *MultipleOf) UnmarshalJSON(value []byte) error {
 func (j *MultipleOf) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleOf: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in MultipleOf: required")

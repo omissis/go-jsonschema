@@ -26,7 +26,7 @@ type AllOf2ConfigurationsElem struct {
 func (j *AllOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOf2ConfigurationsElem: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AllOf2ConfigurationsElem: required")
@@ -47,7 +47,7 @@ func (j *AllOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
 func (j *AllOf2ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AllOf2ConfigurationsElem: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in AllOf2ConfigurationsElem: required")
@@ -73,7 +73,7 @@ type Bar struct {
 func (j *Bar) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Bar: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in Bar: required")
@@ -91,7 +91,7 @@ func (j *Bar) UnmarshalJSON(value []byte) error {
 func (j *Bar) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Bar: %w", err)
 	}
 	if _, ok := raw["bar"]; raw != nil && !ok {
 		return fmt.Errorf("field bar in Bar: required")
@@ -119,7 +119,7 @@ type Foo struct {
 func (j *Foo) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Foo: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in Foo: required")
@@ -137,7 +137,7 @@ func (j *Foo) UnmarshalJSON(value []byte) error {
 func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Foo: %w", err)
 	}
 	if _, ok := raw["foo"]; raw != nil && !ok {
 		return fmt.Errorf("field foo in Foo: required")

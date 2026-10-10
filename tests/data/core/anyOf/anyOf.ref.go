@@ -74,7 +74,7 @@ type AnyOfRef_0_1 = Agreement
 func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOfRef_0: %w", err)
 	}
 	var anyOfRef_0_0 AnyOfRef_0_0
 	var anyOfRef_0_1 AnyOfRef_0_1
@@ -101,7 +101,7 @@ func (j *AnyOfRef_0) UnmarshalJSON(value []byte) error {
 func (j *AnyOfRef_0) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw AnyOfRef_0: %w", err)
 	}
 	var anyOfRef_0_0 AnyOfRef_0_0
 	var anyOfRef_0_1 AnyOfRef_0_1
