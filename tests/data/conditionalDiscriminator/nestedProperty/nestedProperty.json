@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/nestedProperty",
+  "description": "The pattern inside a property gets its declared type and validator too, instead of the allOf merge.",
+  "type": "object",
+  "properties": {
+    "pet": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["dog", "cat"] },
+        "bark": { "type": "string" }
+      },
+      "required": ["kind"],
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "dog" } } }, "then": { "required": ["bark"] } }
+      ]
+    }
+  }
+}
