@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Integer enums declaring a sized format. Each validator decodes into the sized type and compares with reflect.DeepEqual, so the allowed-values list has to hold that type too: an untyped list holds ints, matched nothing, and rejected every value, valid ones included.",
+  "properties": {
+    "code": { "$ref": "#/definitions/IntegerFormatEnumCode" },
+    "wide": { "$ref": "#/definitions/IntegerFormatEnumWide" },
+    "mixed": { "$ref": "#/definitions/IntegerFormatEnumMixed" }
+  },
+  "definitions": {
+    "IntegerFormatEnumCode": { "type": "integer", "format": "int32", "enum": [66, 67] },
+    "IntegerFormatEnumWide": { "type": "integer", "format": "int64", "enum": [1643178300132] },
+    "IntegerFormatEnumMixed": {
+      "description": "A member too wide for the declared int32. Decoding can never produce it, so it is left out of the allowed values with a warning; keeping it used to mean keeping an untyped list, which rejected the valid members too.",
+      "type": "integer",
+      "format": "int32",
+      "enum": [66, 2147483648]
+    }
+  }
+}

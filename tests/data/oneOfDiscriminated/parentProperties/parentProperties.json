@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/parentProperties",
+  "type": "object",
+  "properties": {
+    "pet": {
+      "description": "Discriminated. The parent's own name property belongs in every variant, typed and required.",
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "required": ["name"],
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "dog" }, "barks": { "type": "boolean" } },
+          "required": ["kind"]
+        },
+        {
+          "type": "object",
+          "properties": { "kind": { "const": "cat" } },
+          "required": ["kind"]
+        }
+      ]
+    },
+    "kernel": {
+      "description": "Try-each. Each variant only requires one of the parent's properties; their types live on the parent.",
+      "type": "object",
+      "properties": { "package": { "type": "string" }, "flavor": { "type": "string" } },
+      "oneOf": [
+        { "type": "object", "required": ["package"] },
+        { "type": "object", "required": ["flavor"] }
+      ]
+    },
+    "tagged": {
+      "description": "Declined by try-each: the parent's patternProperties would reach every variant, whose struct cannot hold pattern-matched keys. It keeps the plain struct.",
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "patternProperties": { "^x-": { "type": "string" } },
+      "oneOf": [
+        { "type": "object", "properties": { "a": { "type": "string" } }, "required": ["a"] },
+        { "type": "object", "properties": { "b": { "type": "string" } }, "required": ["b"] }
+      ]
+    },
+    "redefined": {
+      "description": "Declined: a variant redeclares the parent's name without its maxLength. Both would have to hold, but the variant type carries one, so the parent struct stays.",
+      "type": "object",
+      "properties": { "name": { "type": "string", "maxLength": 5 } },
+      "required": ["name"],
+      "oneOf": [
+        { "type": "object", "properties": { "name": { "type": "string" }, "a": { "type": "string" } }, "required": ["a"] },
+        { "type": "object", "properties": { "b": { "type": "string" } }, "required": ["b"] }
+      ]
+    },
+    "loosened": {
+      "description": "Declined: a variant's additionalProperties would replace the parent's false.",
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "additionalProperties": false,
+      "oneOf": [
+        { "type": "object", "properties": { "a": { "type": "string" } }, "required": ["a"], "additionalProperties": true },
+        { "type": "object", "properties": { "b": { "type": "string" } }, "required": ["b"] }
+      ]
+    },
+    "keyed": {
+      "description": "Kept: the parent declares the discriminator too, and each variant's const only narrows it.",
+      "type": "object",
+      "properties": { "kind": { "type": "string" }, "name": { "type": "string", "maxLength": 5 } },
+      "required": ["kind"],
+      "oneOf": [
+        { "type": "object", "properties": { "kind": { "const": "dog" } }, "required": ["kind"] },
+        { "type": "object", "properties": { "kind": { "const": "cat" } }, "required": ["kind"] }
+      ]
+    }
+  }
+}
