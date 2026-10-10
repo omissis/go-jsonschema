@@ -24,7 +24,7 @@ type ExclusiveMaximum struct {
 func (j *ExclusiveMaximum) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ExclusiveMaximum: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in ExclusiveMaximum: required")
@@ -35,7 +35,7 @@ func (j *ExclusiveMaximum) UnmarshalJSON(value []byte) error {
 	type Plain ExclusiveMaximum
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ExclusiveMaximum: %w", err)
 	}
 	if 2 <= plain.MyInteger {
 		return fmt.Errorf("field %s: must be < %v", "myInteger", 2)
@@ -57,7 +57,7 @@ func (j *ExclusiveMaximum) UnmarshalJSON(value []byte) error {
 func (j *ExclusiveMaximum) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ExclusiveMaximum: %w", err)
 	}
 	if _, ok := raw["myInteger"]; raw != nil && !ok {
 		return fmt.Errorf("field myInteger in ExclusiveMaximum: required")
@@ -68,7 +68,7 @@ func (j *ExclusiveMaximum) UnmarshalYAML(value *yaml.Node) error {
 	type Plain ExclusiveMaximum
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal ExclusiveMaximum: %w", err)
 	}
 	if 2 <= plain.MyInteger {
 		return fmt.Errorf("field %s: must be < %v", "myInteger", 2)

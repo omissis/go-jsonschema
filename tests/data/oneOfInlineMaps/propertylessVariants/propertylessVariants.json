@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/propertylessVariants",
+  "type": "object",
+  "properties": {
+    "kernel": {
+      "description": "Generated with DisableCustomTypesForMaps, which makes an object variant without properties an inline map. The holder needs a named type per variant, so the generic type stays; generation used to fail.",
+      "oneOf": [
+        { "type": "object", "required": ["package"] },
+        { "type": "object", "required": ["flavor"] }
+      ]
+    }
+  }
+}

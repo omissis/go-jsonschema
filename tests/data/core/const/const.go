@@ -25,7 +25,7 @@ func (j *Const) UnmarshalJSON(value []byte) error {
 	type Plain Const
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Const: %w", err)
 	}
 	if plain.MyBoolean != nil && *plain.MyBoolean != true {
 		return fmt.Errorf("field %s: must be equal to %t", "myBoolean", true)
@@ -48,7 +48,7 @@ func (j *Const) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Const
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Const: %w", err)
 	}
 	if plain.MyBoolean != nil && *plain.MyBoolean != true {
 		return fmt.Errorf("field %s: must be equal to %t", "myBoolean", true)
@@ -84,7 +84,7 @@ type Required struct {
 func (j *Required) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Required: %w", err)
 	}
 	if _, ok := raw["myBoolean"]; raw != nil && !ok {
 		return fmt.Errorf("field myBoolean in Required: required")
@@ -101,7 +101,7 @@ func (j *Required) UnmarshalJSON(value []byte) error {
 	type Plain Required
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Required: %w", err)
 	}
 	if plain.MyBoolean != true {
 		return fmt.Errorf("field %s: must be equal to %t", "myBoolean", true)
@@ -123,7 +123,7 @@ func (j *Required) UnmarshalJSON(value []byte) error {
 func (j *Required) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Required: %w", err)
 	}
 	if _, ok := raw["myBoolean"]; raw != nil && !ok {
 		return fmt.Errorf("field myBoolean in Required: required")
@@ -140,7 +140,7 @@ func (j *Required) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Required
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Required: %w", err)
 	}
 	if plain.MyBoolean != true {
 		return fmt.Errorf("field %s: must be equal to %t", "myBoolean", true)
