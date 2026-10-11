@@ -189,9 +189,12 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return dt, nil
 	}
 
-	nt, ok := dt.(*codegen.NamedType)
-	if !ok {
-		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, t)
+	// A nullable definition, such as an anyOf of an object and null, comes
+	// back as a pointer to its declared type; references to it keep the
+	// pointer.
+	nt, err := g.extractPointedType(dt)
+	if err != nil {
+		return nil, err
 	}
 
 	if isCycle {
@@ -218,10 +221,16 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, sg.output.file.Package.Name())
 	}
 
-	return &codegen.NamedType{
+	ref := &codegen.NamedType{
 		Package: &sg.output.file.Package,
 		Decl:    nt.Decl,
-	}, nil
+	}
+
+	if _, isPointer := dt.(*codegen.PointerType); isPointer {
+		return &codegen.PointerType{Type: ref}, nil
+	}
+
+	return ref, nil
 }
 
 func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, error) {
