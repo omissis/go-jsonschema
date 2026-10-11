@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "mapping admits an object, a list of strings or a string, so it is interface{}. Its default, an empty object, is assigned as the value decoding {} into it gives; a struct-style literal of the interface type would not compile.",
+  "properties": {
+    "extensions": { "$ref": "#/definitions/mapping", "default": {} }
+  },
+  "definitions": {
+    "mapping": {
+      "anyOf": [
+        { "type": "object", "additionalProperties": { "type": "string" } },
+        { "type": "array", "items": { "type": "string" } },
+        { "type": "string" }
+      ]
+    }
+  }
+}

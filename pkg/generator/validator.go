@@ -317,7 +317,10 @@ func (v *defaultValidator) generate(out *codegen.Emitter, format string) error {
 
 func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any, error) {
 	if v.defaultValueType != nil {
-		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok {
+		// A named interface{}, such as an anyOf that admits objects and
+		// other values alike, takes the default as a plain value below;
+		// only a struct or a map is filled in key by key here.
+		if nt, ok := v.defaultValueType.(*codegen.NamedType); ok && !isEmptyInterfaceDecl(nt) {
 			dvm, ok := v.defaultValue.(map[string]any)
 			if ok {
 				var b strings.Builder
@@ -1370,4 +1373,14 @@ func (v *wrapperDefaultValidator) desc() *validatorDesc {
 		requiresRawAfter: true,
 		imports:          []packageImport{{qualifiedName: "encoding/json"}},
 	}
+}
+
+// isEmptyInterfaceDecl reports whether nt names a type declared as interface{}.
+func isEmptyInterfaceDecl(nt *codegen.NamedType) bool {
+	switch nt.Decl.Type.(type) {
+	case codegen.EmptyInterfaceType, *codegen.EmptyInterfaceType:
+		return true
+	}
+
+	return false
 }
