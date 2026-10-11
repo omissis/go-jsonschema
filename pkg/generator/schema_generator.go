@@ -344,23 +344,58 @@ func (g *schemaGenerator) generateOneOfComposition(
 	return nil, false, nil
 }
 
+// alreadyDeclaredType is the type of t, which declsBySchema holds as decl, for
+// use at scope.
+func (g *schemaGenerator) alreadyDeclaredType(
+	t *schemas.Type,
+	decl *codegen.TypeDecl,
+	scope nameScope,
+) (codegen.Type, error) {
+	// A $ref's own declaration is only a placeholder while the ref resolves,
+	// dropped as soon as it does. Reached again before then, through a copy
+	// of a schema enclosing it, the placeholder would end up named in the
+	// output but never declared; the ref is what it stands for.
+	//
+	// The placeholder is kept, as before, where the ref cannot be resolved
+	// here, and where definitions that are only $refs to one another lead
+	// back to this ref while it is still being resolved.
+	if _, resolving := g.resolvingRefs[t]; decl.Type == nil && resolvesToRef(t) && !resolving {
+		g.resolvingRefs[t] = struct{}{}
+		defer delete(g.resolvingRefs, t)
+
+		if rt, err := g.generateReferencedType(t); err == nil {
+			// A cycle through the ref comes back as a pointer to the type.
+			// Callers want the declared type itself, package qualifier
+			// included, and add the pointer themselves where their own
+			// reference is cyclic.
+			if pt, ok := rt.(*codegen.PointerType); ok {
+				if nt, ok := pt.Type.(*codegen.NamedType); ok {
+					return nt, nil
+				}
+			}
+
+			return rt, nil
+		}
+	}
+
+	if t.Dereferenced && decl.Name != scope.string() {
+		declAlias := &codegen.AliasType{
+			Alias: scope.string(),
+			Name:  decl.Name,
+		}
+
+		g.generateUnmarshaler(decl, nil)
+
+		g.output.file.Package.AddDecl(declAlias)
+	}
+
+	return &codegen.NamedType{Decl: decl}, nil
+}
+
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
-		if t.Dereferenced {
-			if decl.Name != scope.string() {
-				declAlias := &codegen.AliasType{
-					Alias: scope.string(),
-					Name:  decl.Name,
-				}
-
-				g.generateUnmarshaler(decl, nil)
-
-				g.output.file.Package.AddDecl(declAlias)
-			}
-		}
-
-		return &codegen.NamedType{Decl: decl}, nil
+		return g.alreadyDeclaredType(t, decl, scope)
 	}
 
 	if !g.output.isUniqueTypeName(scope.string()) {

@@ -50,6 +50,18 @@ func namedDecl(t codegen.Type) *codegen.TypeDecl {
 	return nil
 }
 
+// resolvesToRef reports whether generateType renders t as the type its $ref
+// points to, rather than as an enum or a goJSONSchema type override.
+func resolvesToRef(t *schemas.Type) bool {
+	if t.Ref == "" || t.Enum != nil {
+		return false
+	}
+
+	ext := t.GoJSONSchemaExtension
+
+	return ext == nil || ext.Type == nil
+}
+
 func isNamedType(t codegen.Type) bool {
 	switch x := t.(type) {
 	case *codegen.NamedType:

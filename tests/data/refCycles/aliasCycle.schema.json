@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Two definitions that are only $refs to each other. Resolving either leads back to the other while it is still being resolved; resolving the ref in place of the placeholder each time recursed until the stack overflowed.",
+  "properties": {
+    "x": { "$ref": "#/definitions/a" }
+  },
+  "definitions": {
+    "a": { "$ref": "#/definitions/b" },
+    "b": { "$ref": "#/definitions/a" }
+  }
+}
