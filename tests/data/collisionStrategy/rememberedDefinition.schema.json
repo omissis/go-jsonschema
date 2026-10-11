@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "step_condition is an anyOf, so its type is the type declared for the merged anyOf, under the same name, and the definition declares nothing of its own. workflow_step.when refers to it once more through an allOf copy. Once forgotten, the definition was generated again there and declared as an unused StepCondition_1 with a collision warning. (The anyOf mixes object and primitive branches, whose validator does not compile yet; this schema is for name checks only.)",
+  "description": "step_condition is an anyOf of objects, so its type is the struct declared for the merged anyOf under the definition's own name, and the definition declares nothing itself. workflow_step.when refers to it again through an allOf copy. Once forgotten, the definition was generated again there and declared as an unused, suffixed StepCondition with a collision warning.",
   "definitions": {
     "step_condition_predicate": {
       "type": "object",
@@ -16,17 +16,20 @@
           "$ref": "#/definitions/step_condition_predicate"
         },
         {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/step_condition"
+          "type": "object",
+          "properties": {
+            "all": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/step_condition"
+              }
+            }
           }
         },
         {
+          "type": "object",
           "properties": {
-            "all": {
+            "any": {
               "anyOf": [
                 {
                   "$ref": "#/definitions/step_condition"

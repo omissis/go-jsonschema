@@ -2,6 +2,7 @@ package generator
 
 import (
 	"reflect"
+	"slices"
 	"sort"
 
 	"github.com/atombender/go-jsonschema/pkg/codegen"
@@ -76,4 +77,92 @@ func isAnnotationOnly(t *schemas.Type) bool {
 	rest.Title, rest.Description = "", ""
 
 	return reflect.DeepEqual(rest, schemas.Type{})
+}
+
+// mergesIntoObject reports whether merging parent's anyOf branches yields an
+// object: the merge keeps the first type list it meets, the parent's before
+// the branches'.
+func mergesIntoObject(parent *schemas.Type, branches []*schemas.Type) bool {
+	if len(parent.Type) > 0 {
+		return slices.Contains(parent.Type, schemas.TypeNameObject)
+	}
+
+	for _, b := range branches {
+		if len(b.Type) > 0 {
+			return slices.Contains(b.Type, schemas.TypeNameObject)
+		}
+	}
+
+	return false
+}
+
+// mixesObjectAndNonObject reports whether some of parent's anyOf branches
+// admit objects while others admit a primitive or an array.
+func mixesObjectAndNonObject(parent *schemas.Type, branches []*schemas.Type) bool {
+	var object, other bool
+
+	for _, b := range branches {
+		o, n := branchAdmits(parent, b)
+		object = object || o
+		other = other || n
+	}
+
+	return object && other
+}
+
+// branchAdmits reports whether a resolved anyOf branch admits objects and
+// whether it admits anything besides objects and null. A branch without a type
+// takes its parent's, as generateAnyOfType gives it. Without either, object
+// keywords make it an object, while the empty schema, a bare not, and an enum
+// or const of non-objects admit other values too; anything else, such as a
+// branch listing only required, counts as neither.
+func branchAdmits(parent, b *schemas.Type) (bool, bool) {
+	types := b.Type
+	if len(types) == 0 {
+		types = parent.Type
+	}
+
+	if len(types) > 0 {
+		var object, other bool
+
+		for _, name := range types {
+			switch name {
+			case schemas.TypeNameObject:
+				object = true
+
+			case schemas.TypeNameNull:
+
+			default:
+				other = true
+			}
+		}
+
+		return object, other
+	}
+
+	if len(b.Properties) > 0 || len(b.PatternProperties) > 0 || b.AdditionalProperties != nil {
+		return true, false
+	}
+
+	rest := *b
+	rest.Not = nil
+
+	if isAnnotationOnly(&rest) {
+		return false, true
+	}
+
+	values := make([]any, 0, len(b.Enum)+1)
+	values = append(values, b.Enum...)
+
+	if b.Const != nil {
+		values = append(values, b.Const)
+	}
+
+	for _, v := range values {
+		if _, isObject := v.(map[string]any); !isObject && v != nil {
+			return false, true
+		}
+	}
+
+	return false, false
 }

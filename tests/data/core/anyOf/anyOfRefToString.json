@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "description": "An anyOf whose second branch is a $ref to a string definition. The branch is generated inline as a string, which has no name; the validator must use the type the definition is declared as, LanguageName, rather than an AnyOfRefToStringLanguage_1 that is never declared.",
+  "description": "An anyOf whose branches are an object and a $ref to a string. A struct merged from them could hold only the object, and so would reject the strings the schema allows, so the anyOf is interface{}, as upstream generates it, with a fidelity warning.",
   "properties": {
     "language": {
       "$ref": "#/definitions/language"

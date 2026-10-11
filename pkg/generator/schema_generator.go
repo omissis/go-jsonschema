@@ -1682,6 +1682,14 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return g.primitiveType(rAnyOf[0], rAnyOf[0].Type[0], true)
 	}
 
+	// When the branches merge into an object, the anyOf becomes a struct,
+	// which can hold only an object. If a branch admits a primitive or an
+	// array too, that struct would reject values the schema allows, so the
+	// anyOf is interface{} instead, as upstream generates it for these.
+	if mergesIntoObject(t, rAnyOf) && mixesObjectAndNonObject(t, rAnyOf) {
+		return emptyInterfaceTypeVal, nil
+	}
+
 	variantNames := make([]string, len(rAnyOf))
 
 	for i, typ := range rAnyOf {

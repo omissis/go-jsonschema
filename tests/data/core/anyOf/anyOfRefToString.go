@@ -3,24 +3,20 @@
 package test
 
 import "encoding/json"
-import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "unicode/utf8"
 
-// An anyOf whose second branch is a $ref to a string definition. The branch is
-// generated inline as a string, which has no name; the validator must use the type
-// the definition is declared as, LanguageName, rather than an
-// AnyOfRefToStringLanguage_1 that is never declared.
+// An anyOf whose branches are an object and a $ref to a string. A struct merged
+// from them could hold only the object, and so would reject the strings the schema
+// allows, so the anyOf is interface{}, as upstream generates it, with a fidelity
+// warning.
 type AnyOfRefToString struct {
 	// Language corresponds to the JSON schema field "language".
-	Language *Language `json:"language,omitempty,omitzero" yaml:"language,omitempty" mapstructure:"language,omitempty"`
+	Language Language `json:"language,omitempty,omitzero" yaml:"language,omitempty" mapstructure:"language,omitempty"`
 }
 
-type Language struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *LanguageName `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
-}
+type Language interface{}
 
 type LanguageName string
 
@@ -49,86 +45,5 @@ func (j *LanguageName) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("field %s length: must be >= %d", "", 1)
 	}
 	*j = LanguageName(plain)
-	return nil
-}
-
-type Language_0 struct {
-	// Name corresponds to the JSON schema field "name".
-	Name *LanguageName `json:"name,omitempty,omitzero" yaml:"name,omitempty" mapstructure:"name,omitempty"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Language_0) UnmarshalJSON(value []byte) error {
-	type Plain Language_0
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Language_0: %w", err)
-	}
-	*j = Language_0(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Language_0) UnmarshalYAML(value *yaml.Node) error {
-	type Plain Language_0
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Language_0: %w", err)
-	}
-	*j = Language_0(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Language) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return fmt.Errorf("unmarshal raw Language: %w", err)
-	}
-	var language_0 Language_0
-	var language_1 LanguageName
-	var errs []error
-	if err := language_0.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := language_1.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain Language
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return fmt.Errorf("unmarshal Language: %w", err)
-	}
-	*j = Language(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Language) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return fmt.Errorf("unmarshal raw Language: %w", err)
-	}
-	var language_0 Language_0
-	var language_1 LanguageName
-	var errs []error
-	if err := language_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := language_1.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain Language
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return fmt.Errorf("unmarshal Language: %w", err)
-	}
-	*j = Language(plain)
 	return nil
 }
