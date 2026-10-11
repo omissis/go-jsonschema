@@ -120,6 +120,12 @@ func collectDroppedKeywords(t *schemas.Type) []string {
 			add("const")
 		}
 
+		// A branch that refers to another schema carries that schema's
+		// constraints, which go unchecked with the branch.
+		if t.Ref != "" {
+			add("$ref " + t.Ref)
+		}
+
 		for _, child := range t.AllOf {
 			walk(child)
 		}

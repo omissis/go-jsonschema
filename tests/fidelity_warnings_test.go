@@ -103,6 +103,16 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Contains(t, joined, "declared property(ies)")
 	})
 
+	t.Run("a $ref branch dropped with its oneOf is named", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t, "./data/fidelityWarnings/oneOfRefOrNull/oneOfRefOrNull.json")
+		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+
+		assert.Contains(t, joined, "falls back to interface{} due to oneOf not compiled")
+		assert.Contains(t, joined, "$ref #/definitions/pair")
+	})
+
 	t.Run("schema with no enforcement-implying keywords stays silent", func(t *testing.T) {
 		t.Parallel()
 
