@@ -1754,6 +1754,15 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 
 	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
+	// A recursive allOf, whose merged type leads back to an allOf with the same
+	// merge, would merge into a fresh copy at every level and never finish: no
+	// cache knows the copies. Its re-entry refers to the merge still being
+	// generated instead, through a pointer, the way a $ref cycle is broken.
+	key := allOfMergeKey(t, rAllOf)
+	if merged, ok := g.mergingAllOf[key]; ok {
+		return g.allOfCycleType(merged, scope)
+	}
+
 	allOfType, err := schemas.AllOf(rAllOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge allOf types: %w", err)
@@ -1761,7 +1770,51 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 
 	allOfType.AllOf = nil
 
+	g.mergingAllOf[key] = allOfType
+	defer delete(g.mergingAllOf, key)
+
 	return g.generateTypeInline(allOfType, scope)
+}
+
+// allOfMergeKey identifies what an allOf merges into. An allOf of a single
+// schema that declares nothing besides annotations merges into a copy of that
+// schema wherever it is written, so it is keyed by that schema: recursion
+// through two such allOfs of one schema is then caught at the first repeat,
+// not after every combination of them. Any other allOf is keyed by itself.
+func allOfMergeKey(t *schemas.Type, resolved []*schemas.Type) *schemas.Type {
+	if len(t.AllOf) != 1 || len(resolved) != 1 {
+		return t
+	}
+
+	rest := *t
+	rest.AllOf = nil
+
+	if !isAnnotationOnly(&rest) {
+		return t
+	}
+
+	return resolved[0]
+}
+
+// allOfCycleType is the type of a recursive allOf's re-entry: a pointer to the
+// type declared for the merge still being generated. A merged object or oneOf
+// registers its declaration before generating its body, so the re-entry finds
+// it; a merge that declares itself only afterwards is declared here instead,
+// and its own re-entry then finds that.
+func (g *schemaGenerator) allOfCycleType(merged *schemas.Type, scope nameScope) (codegen.Type, error) {
+	decl, ok := g.output.declsBySchema[merged]
+	if !ok {
+		dt, err := g.generateDeclaredType(merged, scope)
+		if err != nil {
+			return nil, err
+		}
+
+		return codegen.WrapTypeInPointer(dt), nil
+	}
+
+	g.warner(fmt.Sprintf("Cycle detected; must wrap type %s in pointer", decl.Name))
+
+	return codegen.WrapTypeInPointer(&codegen.NamedType{Decl: decl}), nil
 }
 
 func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
