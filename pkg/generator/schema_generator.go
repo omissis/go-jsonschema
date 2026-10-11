@@ -372,7 +372,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	if isNamedType(theType) || (isMapType(theType) && g.config.DisableCustomTypesForMaps) {
 		// Don't declare named types under a new name.
-		g.output.forgetDecl(t, &decl)
+		g.output.forgetDecl(t, &decl, theType)
 
 		return theType, nil
 	}

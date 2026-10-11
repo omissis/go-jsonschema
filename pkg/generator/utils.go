@@ -32,6 +32,22 @@ func sortDefinitionsByName(defs schemas.Definitions) []string {
 	return names
 }
 
+// namedDecl returns the declaration t names, directly or through a pointer, or
+// nil when t is not a named type.
+func namedDecl(t codegen.Type) *codegen.TypeDecl {
+	switch x := t.(type) {
+	case *codegen.NamedType:
+		return x.Decl
+
+	case *codegen.PointerType:
+		if nt, ok := x.Type.(*codegen.NamedType); ok {
+			return nt.Decl
+		}
+	}
+
+	return nil
+}
+
 func isNamedType(t codegen.Type) bool {
 	switch x := t.(type) {
 	case *codegen.NamedType:

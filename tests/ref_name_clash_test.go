@@ -52,3 +52,23 @@ func TestRefNamedLikeTwoDefinitions(t *testing.T) {
 	assert.Contains(t, src, "Other *InvoiceShipping_1 `")
 	assert.Contains(t, declaredType(src, "InvoiceShipping_1"), "TrackingNumber")
 }
+
+const rememberedDefinitionSchema = "./data/collisionStrategy/rememberedDefinition.schema.json"
+
+// TestRefToDefinitionDeclaredAsAnotherType covers a definition whose type is
+// another named type: step_condition is an anyOf, so it is the type declared
+// for the merged anyOf, and declares nothing itself. It used to be forgotten
+// once generated, so the next reference generated it again; with the name
+// taken by the merged type, that copy came out as an unused StepCondition_1,
+// reported as a collision.
+func TestRefToDefinitionDeclaredAsAnotherType(t *testing.T) {
+	t.Parallel()
+
+	assert.Empty(t, refClashWarnings(t, basicConfig, rememberedDefinitionSchema),
+		"the definition is one type, so nothing collides")
+
+	src := generateFiles(t, basicConfig, rememberedDefinitionSchema)
+
+	assert.NotEmpty(t, declaredType(src, "StepCondition"))
+	assert.NotContains(t, src, "type StepCondition_1 ", "the definition is not declared a second time")
+}
