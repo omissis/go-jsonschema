@@ -77,6 +77,14 @@ func (o *output) forgetDecl(t *schemas.Type, decl *codegen.TypeDecl, resolved co
 	}
 }
 
+// ownUnmarshalers records that decl's unmarshalers are emitted by the code
+// that declared it, as for an enum or a oneOf holder, so generateUnmarshaler
+// does not add a second, plain pair: Go rejects a type declaring a method
+// twice.
+func (o *output) ownUnmarshalers(decl *codegen.TypeDecl) {
+	o.unmarshallersByTypeDecl[decl] = true
+}
+
 func (o *output) isUniqueTypeName(name string) bool {
 	v, ok := o.declsByName[name]
 

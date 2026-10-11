@@ -481,6 +481,7 @@ func (g *schemaGenerator) generateOneOfDiscriminator(
 	}
 
 	addMethod("UnmarshalJSON", emitOneOfDiscriminatorUnmarshalJSON(holderName, prop, bindings))
+	g.output.ownUnmarshalers(holderDecl)
 	addMethod("MarshalJSON", emitOneOfDiscriminatorMarshalJSON(holderName, bindings))
 
 	if hasYAML {
