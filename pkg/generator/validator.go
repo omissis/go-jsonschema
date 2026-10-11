@@ -52,6 +52,7 @@ type validatorDesc struct {
 
 var (
 	_ validator = new(requiredValidator)
+	_ validator = new(wrapperDefaultValidator)
 	_ validator = new(readOnlyValidator)
 	_ validator = new(nullTypeValidator)
 	_ validator = new(nonNullValidator)
@@ -1288,5 +1289,65 @@ func (v *strictFieldsValidator) desc() *validatorDesc {
 		hasError:            true,
 		beforeJSONUnmarshal: true,
 		imports:             []packageImport{{qualifiedName: "sort"}},
+	}
+}
+
+// wrapperDefaultValidator sets a primitive union wrapper field to its default
+// while its key is absent, by decoding the default, as JSON, through the
+// wrapper's own UnmarshalJSON. A wrapper is a struct with unexported fields,
+// so a literal of the default's value cannot be assigned to it.
+type wrapperDefaultValidator struct {
+	jsonName  string
+	fieldName string
+	// encoded is the default, encoded as JSON.
+	encoded string
+	// acceptsNull is set when the wrapper holds null as a value. An explicit
+	// null is then kept, and only an absent key takes the default.
+	acceptsNull bool
+}
+
+func (v *wrapperDefaultValidator) generate(out *codegen.Emitter, format string) error {
+	// yaml.v3 does not hand a null node to UnmarshalYAML, so in YAML an
+	// explicit null reaches a wrapper that accepts it as the zero value, not
+	// as null; it is decoded into the wrapper here instead.
+	keepNull := v.acceptsNull && format == formatYAML
+
+	switch {
+	case keepNull:
+		out.Printlnf(`if v, ok := %s[%q]; !ok {`, varNameRawMap, v.jsonName)
+	case v.acceptsNull:
+		out.Printlnf(`if _, ok := %s[%q]; !ok {`, varNameRawMap, v.jsonName)
+	default:
+		out.Printlnf(`if v, ok := %s[%q]; !ok || v == nil {`, varNameRawMap, v.jsonName)
+	}
+
+	v.decodeInto(out, v.encoded)
+
+	if keepNull {
+		out.Printlnf(`} else if v == nil {`)
+		v.decodeInto(out, "null")
+	}
+
+	out.Printlnf("}")
+
+	return nil
+}
+
+// decodeInto emits the decoding of the JSON text encoded into the field.
+func (v *wrapperDefaultValidator) decodeInto(out *codegen.Emitter, encoded string) {
+	out.Indent(1)
+	out.Printlnf(`if err := json.Unmarshal([]byte(%q), &%s); err != nil {`, encoded, getPlainName(v.fieldName))
+	out.Indent(1)
+	out.Printlnf(`return fmt.Errorf("field %%s: default: %%w", %q, err)`, v.jsonName)
+	out.Indent(-1)
+	out.Printlnf("}")
+	out.Indent(-1)
+}
+
+func (v *wrapperDefaultValidator) desc() *validatorDesc {
+	return &validatorDesc{
+		hasError:         true,
+		requiresRawAfter: true,
+		imports:          []packageImport{{qualifiedName: "encoding/json"}},
 	}
 }

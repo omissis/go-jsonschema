@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -416,13 +417,9 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 					dvIsPointer = true
 				}
 
-				validators = append(validators, &defaultValidator{
-					jsonName:         f.JSONName,
-					fieldName:        f.Name,
-					defaultValueType: dvType,
-					defaultValue:     f.DefaultValue,
-					isPointer:        dvIsPointer,
-				})
+				if v := g.defaultValidatorFor(f, dvType, dvIsPointer); v != nil {
+					validators = append(validators, v)
+				}
 			}
 
 			if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
@@ -893,6 +890,49 @@ func isStringType(t codegen.Type) bool {
 	}
 
 	return false
+}
+
+// defaultValidatorFor sets field f to its default while its key is absent;
+// dvType is f's type with any pointer removed.
+//
+// A primitive union wrapper takes its default the way it takes any value,
+// through its own UnmarshalJSON, so the default is stored exactly as a decoded
+// one would be. A default of a kind the wrapper does not accept is left out
+// with a warning: it could never be decoded, and a default is only an
+// annotation.
+func (g *schemaGenerator) defaultValidatorFor(
+	f codegen.StructField,
+	dvType codegen.Type,
+	isPointer bool,
+) validator {
+	if nt, ok := dvType.(*codegen.NamedType); ok {
+		if kinds, ok := g.output.primitiveWrapperKinds[nt.Decl]; ok {
+			encoded, err := json.Marshal(f.DefaultValue)
+			if err != nil || !kinds.has(oneOfKindOf(f.DefaultValue)) {
+				g.warner(fmt.Sprintf(
+					"default %s for field %q is not a value its type %s accepts; it is left out",
+					encoded, f.JSONName, nt.Decl.Name,
+				))
+
+				return nil
+			}
+
+			return &wrapperDefaultValidator{
+				jsonName:    f.JSONName,
+				fieldName:   f.Name,
+				encoded:     string(encoded),
+				acceptsNull: kinds.has(oneOfKindNull),
+			}
+		}
+	}
+
+	return &defaultValidator{
+		jsonName:         f.JSONName,
+		fieldName:        f.Name,
+		defaultValueType: dvType,
+		defaultValue:     f.DefaultValue,
+		isPointer:        isPointer,
+	}
 }
 
 func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {

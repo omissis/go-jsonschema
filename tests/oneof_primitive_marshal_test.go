@@ -5,12 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 
 	testInField "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/inField"
 	testNumString "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/numString"
 	testTemporal "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/temporalVariant"
+	testWithDefault "github.com/atombender/go-jsonschema/tests/data/oneOfPrimitive/withDefault"
 )
 
 // TestOneOfPrimitiveMarshalByValue marshals a parent holding a required wrapper
@@ -105,4 +107,76 @@ func TestOneOfPrimitiveDateAndTimeVariants(t *testing.T) {
 	backDay, ok := back.Day.AsDate()
 	require.True(t, ok, "yaml: %s", text)
 	require.Equal(t, "2024-01-02", backDay.Format(time.DateOnly))
+}
+
+// TestOneOfPrimitiveDefault covers defaults on primitive union wrappers. The
+// default is decoded into the wrapper, so it reads back exactly as the same
+// value sent on the wire would, through JSON and YAML alike, and a value that
+// is present replaces it.
+func TestOneOfPrimitiveDefault(t *testing.T) {
+	t.Parallel()
+
+	assertDefaults := func(t *testing.T, v testWithDefault.WithDefault) {
+		t.Helper()
+
+		debug, ok := v.Debug.AsBool()
+		assert.True(t, ok)
+		assert.False(t, debug)
+
+		tab, ok := v.Tab.AsNumber()
+		assert.True(t, ok)
+		assert.InDelta(t, 1.0, tab, 0)
+
+		label, ok := v.Label.AsString()
+		assert.True(t, ok)
+		assert.Equal(t, "auto", label)
+
+		nullable, ok := v.Nullable.AsString()
+		assert.True(t, ok)
+		assert.Equal(t, "x", nullable)
+
+		assert.True(t, v.Mismatch.IsZero(), "a default the union does not accept is left out")
+	}
+
+	t.Run("json", func(t *testing.T) {
+		t.Parallel()
+
+		var v testWithDefault.WithDefault
+
+		require.NoError(t, json.Unmarshal([]byte(`{}`), &v))
+		assertDefaults(t, v)
+	})
+
+	t.Run("yaml", func(t *testing.T) {
+		t.Parallel()
+
+		var v testWithDefault.WithDefault
+
+		require.NoError(t, yamlv3.Unmarshal([]byte(`{}`), &v))
+		assertDefaults(t, v)
+	})
+
+	t.Run("an explicit null stays null where the union accepts it", func(t *testing.T) {
+		t.Parallel()
+
+		var v testWithDefault.WithDefault
+
+		require.NoError(t, json.Unmarshal([]byte(`{"nullable":null}`), &v))
+		assert.True(t, v.Nullable.IsNull())
+
+		require.NoError(t, yamlv3.Unmarshal([]byte(`nullable: null`), &v))
+		assert.True(t, v.Nullable.IsNull())
+	})
+
+	t.Run("a present value replaces the default", func(t *testing.T) {
+		t.Parallel()
+
+		var v testWithDefault.WithDefault
+
+		require.NoError(t, json.Unmarshal([]byte(`{"debug":"verbose"}`), &v))
+
+		debug, ok := v.Debug.AsString()
+		assert.True(t, ok)
+		assert.Equal(t, "verbose", debug)
+	})
 }

@@ -233,6 +233,7 @@ func (g *Generator) beginOutput(
 		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
 		declsByName:             map[string]*codegen.TypeDecl{},
 		unmarshallersByTypeDecl: map[*codegen.TypeDecl]bool{},
+		primitiveWrapperKinds:   map[*codegen.TypeDecl]oneOfKind{},
 		processedSchemas:        map[string]bool{},
 	}
 	g.outputs[id] = output
