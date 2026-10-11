@@ -397,6 +397,8 @@ func (g *schemaGenerator) generateOneOfComposition(
 	}
 
 	if isPrimitiveOneOf(t) {
+		g.warnUncompiledVariants(t, scope)
+
 		return g.generateOneOfPrimitive(t, scope), true, nil
 	}
 
@@ -490,6 +492,9 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 		}
 	}
 
+	// Enums and oneOf compositions return before generateType sees t.
+	g.warnUncompiledConditional(t, scope)
+
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
 	}
@@ -525,6 +530,8 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	decl.Type = theType
+
+	g.warnUncompiledOneOf(t, theType, scope)
 
 	g.output.file.Package.AddDecl(&decl)
 
@@ -1254,6 +1261,8 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		}
 	}
 
+	g.warnUncompiledConditional(t, scope)
+
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
 	}
@@ -1497,7 +1506,10 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 
 		var err error
 
-		if t.AdditionalProperties != nil {
+		// `false` admits no value, so it has no value type to generate; the
+		// map keeps interface{}, and whether its keys are checked is up to
+		// StrictAdditionalProperties.
+		if t.AdditionalProperties != nil && !schemaSaysFalse {
 			if valueType, err = g.generateType(t.AdditionalProperties, scope.add("Value")); err != nil {
 				return nil, err
 			}
@@ -1902,6 +1914,10 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	anyOfType.AnyOf = nil
 	g.output.anyOfVariants[anyOfType] = variantNames
 
+	// The merge carries the conditionals of t, reported with t, and of its
+	// branches, reported with each branch's type above.
+	g.reportedConditionals[anyOfType] = struct{}{}
+
 	return g.generateTypeInline(anyOfType, scope)
 }
 
@@ -1959,7 +1975,20 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 		}
 
 		g.warnFallback(t, scope, trigger)
+	} else if reason, has := constrainingComposition(t); has {
+		// The merged type keeps its shape, but the conditional or the not
+		// it drops goes unchecked. A declined conditional discriminator has
+		// said why it declined, but not in these terms, so it is reported
+		// here as well.
+		if _, reported := g.reportedConditionals[t]; !reported && !g.config.OnlyModels {
+			g.reportedConditionals[t] = struct{}{}
+			g.warnNotEnforced(scope, reason)
+		}
 	}
+
+	// The merge carries the conditionals of t and its branches, which are
+	// accounted for above.
+	g.reportedConditionals[allOfType] = struct{}{}
 
 	g.mergingAllOf[key] = allOfType
 	defer delete(g.mergingAllOf, key)
@@ -2126,6 +2155,8 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 				return &codegen.CustomNameType{Type: *ext.Type, Nillable: ext.Nillable}, nil
 			}
 		}
+
+		g.warnUncompiledConditional(t, scope)
 
 		if len(t.AnyOf) > 0 {
 			return g.generateAnyOfType(t, scope)

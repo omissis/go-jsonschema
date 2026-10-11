@@ -46,11 +46,14 @@ type Generator struct {
 	// resolvingRefs holds the $ref schemas alreadyDeclaredType is resolving in
 	// place of their placeholder declarations.
 	resolvingRefs map[*schemas.Type]struct{}
-	outputs       map[string]*output
-	warner        func(string)
-	formatters    []formatter
-	loader        schemas.Loader
-	minimalNames  bool
+	// reportedConditionals holds the schemas whose uncompiled conditional or
+	// not has been reported, so it is not reported a second time.
+	reportedConditionals map[*schemas.Type]struct{}
+	outputs              map[string]*output
+	warner               func(string)
+	formatters           []formatter
+	loader               schemas.Loader
+	minimalNames         bool
 }
 
 type qualifiedDefinition struct {
@@ -78,16 +81,17 @@ func New(config Config) (*Generator, error) {
 	}
 
 	generator := &Generator{
-		caser:         text.NewCaser(config.Capitalizations, config.ResolveExtensions),
-		config:        config,
-		inScope:       map[qualifiedDefinition]struct{}{},
-		mergingAllOf:  map[*schemas.Type]*schemas.Type{},
-		resolvingRefs: map[*schemas.Type]struct{}{},
-		outputs:       map[string]*output{},
-		warner:        config.Warner,
-		formatters:    formatters,
-		loader:        config.Loader,
-		minimalNames:  config.MinimalNames,
+		caser:                text.NewCaser(config.Capitalizations, config.ResolveExtensions),
+		config:               config,
+		inScope:              map[qualifiedDefinition]struct{}{},
+		mergingAllOf:         map[*schemas.Type]*schemas.Type{},
+		resolvingRefs:        map[*schemas.Type]struct{}{},
+		reportedConditionals: map[*schemas.Type]struct{}{},
+		outputs:              map[string]*output{},
+		warner:               config.Warner,
+		formatters:           formatters,
+		loader:               config.Loader,
+		minimalNames:         config.MinimalNames,
 	}
 
 	if config.Loader == nil {

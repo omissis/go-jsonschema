@@ -103,6 +103,25 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Contains(t, joined, "declared property(ies)")
 	})
 
+	t.Run("a oneOf of required-only branches on a struct is reported", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t, "./data/fidelityWarnings/oneOfRequiredOnly/oneOfRequiredOnly.json")
+		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+
+		assert.Contains(t, joined, "does not enforce all it declares: oneOf of 2 branches not compiled")
+	})
+
+	t.Run("a conditional the allOf merge drops is reported", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/conditionalRequiredInIf/conditionalRequiredInIf.json")
+		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+
+		assert.Contains(t, joined, "does not enforce all it declares: if/then/else not compiled (in allOf branch)")
+	})
+
 	t.Run("a $ref branch dropped with its oneOf is named", func(t *testing.T) {
 		t.Parallel()
 
@@ -111,6 +130,67 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 
 		assert.Contains(t, joined, "falls back to interface{} due to oneOf not compiled")
 		assert.Contains(t, joined, "$ref #/definitions/pair")
+	})
+
+	t.Run("conditionals and negations no code path compiles are reported once each", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/uncompiledConditionals/uncompiledConditionals.json"))
+
+		assert.ElementsMatch(t, []string{
+			"schema fidelity: type UncompiledConditionals does not enforce all it declares: " +
+				"if/then/else not compiled",
+			"schema fidelity: type UncompiledConditionalsChoice_0 does not enforce all it declares: " +
+				`"not" keyword not compiled`,
+			"schema fidelity: type UncompiledConditionalsCode falls back to interface{} due to " +
+				"if/then/else not compiled (in allOf branch); declared but not enforced: if/then/else (in allOf branch)",
+			"schema fidelity: type UncompiledConditionalsEither falls back to interface{} due to " +
+				`oneOf not compiled; declared but not enforced: "not" (in oneOf branch)`,
+			"schema fidelity: type UncompiledConditionalsLegacy does not enforce all it declares: " +
+				"false schema not compiled, so any value passes",
+			"schema fidelity: type UncompiledConditionalsMerged does not enforce all it declares: " +
+				"if/then/else not compiled (in allOf branch)",
+			"schema fidelity: type UncompiledConditionalsName does not enforce all it declares: " +
+				`"not" keyword not compiled`,
+			"schema fidelity: type UncompiledConditionalsStatus does not enforce all it declares: " +
+				`"not" keyword not compiled`,
+			"schema fidelity: type UncompiledConditionalsValue does not enforce all it declares: " +
+				`"not" keyword not compiled (in oneOf branch)`,
+			"schema fidelity: type NamesElem does not enforce all it declares: " +
+				`"not" keyword not compiled`,
+			"schema fidelity: type Shape does not enforce all it declares: " +
+				"if/then/else not compiled",
+		}, warnings)
+	})
+
+	t.Run("only models enforce nothing, so nothing is reported as not enforced", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := basicConfig
+		cfg.OnlyModels = true
+
+		// A type that falls back to interface{} is still reported: its shape
+		// is lost whether or not anything is enforced.
+		var notEnforced []string
+
+		for _, w := range filterFidelityWarnings(generateWithConfigAndWarnerCapture(t, cfg,
+			"./data/fidelityWarnings/uncompiledConditionals/uncompiledConditionals.json")) {
+			if strings.Contains(w, "does not enforce all it declares") {
+				notEnforced = append(notEnforced, w)
+			}
+		}
+
+		assert.Empty(t, notEnforced)
+	})
+
+	t.Run("conditionals that lose nothing stay silent", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/fidelityWarnings/vacuousConditionals/vacuousConditionals.json"))
+
+		assert.Empty(t, warnings, "an if alone, a vacuous then and else, and a compiled discriminator lose nothing")
 	})
 
 	t.Run("schema with no enforcement-implying keywords stays silent", func(t *testing.T) {
@@ -128,6 +208,14 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 func generateWithWarnerCapture(t *testing.T, schemaPath string) []string {
 	t.Helper()
 
+	return generateWithConfigAndWarnerCapture(t, basicConfig, schemaPath)
+}
+
+// generateWithConfigAndWarnerCapture is generateWithWarnerCapture with cfg in
+// place of basicConfig.
+func generateWithConfigAndWarnerCapture(t *testing.T, cfg generator.Config, schemaPath string) []string {
+	t.Helper()
+
 	abs, err := filepath.Abs(schemaPath)
 	require.NoError(t, err)
 
@@ -136,7 +224,6 @@ func generateWithWarnerCapture(t *testing.T, schemaPath string) []string {
 		captured []string
 	)
 
-	cfg := basicConfig
 	cfg.Warner = func(msg string) {
 		mu.Lock()
 		defer mu.Unlock()

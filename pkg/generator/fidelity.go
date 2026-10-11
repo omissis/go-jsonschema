@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/atombender/go-jsonschema/pkg/codegen"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
@@ -21,6 +22,14 @@ import (
 // users can find the responsible keyword.
 func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger string) {
 	dropped := collectDroppedKeywords(t)
+
+	// collectDroppedKeywords leaves a conditional to the trigger, but a type
+	// that declares nothing besides one still loses it, as does one whose
+	// trigger names something else.
+	if conditional, has := findConditional(t, ownConditional); has {
+		dropped = append(dropped, conditional)
+	}
+
 	if len(dropped) == 0 {
 		return
 	}
@@ -35,6 +44,160 @@ func (g *schemaGenerator) warnFallback(t *schemas.Type, scope nameScope, trigger
 	}
 
 	g.warner(msg)
+}
+
+// warnNotEnforced emits a structured warning when a type keeps its shape but
+// drops something it declares, which the generated code then does not check;
+// reason says what. warnFallback covers a type that degrades to interface{}
+// as a whole.
+func (g *schemaGenerator) warnNotEnforced(scope nameScope, reason string) {
+	g.warner(fmt.Sprintf("schema fidelity: type %s does not enforce all it declares: %s", scope.string(), reason))
+}
+
+// warnUncompiledOneOf warns when t declares a oneOf that no oneOf strategy
+// compiled while t itself became a struct: the struct holds t's own
+// properties and checks none of the branches, such as branches that only list
+// required, so a value matching none or several of them passes.
+func (g *schemaGenerator) warnUncompiledOneOf(t *schemas.Type, theType codegen.Type, scope nameScope) {
+	if len(t.OneOf) == 0 || g.config.OnlyModels {
+		return
+	}
+
+	if _, isStruct := theType.(*codegen.StructType); isStruct {
+		g.warnNotEnforced(scope, fmt.Sprintf(
+			"oneOf of %d branches not compiled, so a value matching none or several of them passes",
+			len(t.OneOf),
+		))
+	}
+}
+
+// warnUncompiledConditional warns when t declares an if/then/else or a not
+// of its own, which no code path compiles outside the conditional
+// discriminator pattern. It leaves an allOf to generateAllOfType, which
+// reports the allOf's own conditional together with its branches'; a $ref to
+// the schema it refers to; and a schema that the goJSONSchema extension maps to
+// a Go type of the user's to that type. A schema is reported once, though it
+// may pass through more than one of the generator's entry points.
+func (g *schemaGenerator) warnUncompiledConditional(t *schemas.Type, scope nameScope) {
+	if g.config.OnlyModels || len(t.AllOf) > 0 || t.Ref != "" {
+		return
+	}
+
+	if ext := t.GoJSONSchemaExtension; ext != nil && ext.Type != nil {
+		return
+	}
+
+	if _, reported := g.reportedConditionals[t]; reported {
+		return
+	}
+
+	if reason := ownConditionalReason(t); reason != "" {
+		g.reportedConditionals[t] = struct{}{}
+		g.warnNotEnforced(scope, reason)
+	}
+}
+
+// warnUncompiledVariants reports the if/then/else or not of a primitive
+// oneOf's variants, which the wrapper does not compile: it checks only the
+// JSON kind of each, and declares no type of theirs that would report them.
+func (g *schemaGenerator) warnUncompiledVariants(t *schemas.Type, scope nameScope) {
+	for _, variant := range t.OneOf {
+		if _, reported := g.reportedConditionals[variant]; reported {
+			continue
+		}
+
+		if reason := ownConditionalReason(variant); reason != "" {
+			g.reportedConditionals[variant] = struct{}{}
+			g.warnNotEnforced(scope, reason+" (in oneOf branch)")
+		}
+	}
+}
+
+// The conditionals ownConditional names.
+const (
+	conditionalIfThenElse  = "if/then/else"
+	conditionalFalseSchema = "false schema"
+	conditionalNot         = `"not"`
+)
+
+// ownConditional names t's own if/then/else, false schema or not, if it
+// constrains a value, or returns "": a conditional whose then and else impose
+// nothing is vacuous, so dropping it loses nothing. The schema `false` is
+// read as a not of the empty schema, and is named as such.
+func ownConditional(t *schemas.Type) string {
+	switch {
+	case (t.If != nil || t.Then != nil || t.Else != nil) && (imposes(t.Then) || imposes(t.Else)):
+		return conditionalIfThenElse
+	case isFalseSchema(t):
+		return conditionalFalseSchema
+	case t.Not != nil:
+		return conditionalNot
+	}
+
+	return ""
+}
+
+// ownConditionalReason says why the conditional ownConditional names goes
+// unchecked, or returns "" if t has none.
+func ownConditionalReason(t *schemas.Type) string {
+	switch ownConditional(t) {
+	case conditionalIfThenElse:
+		return "if/then/else not compiled"
+	case conditionalFalseSchema:
+		return "false schema not compiled, so any value passes"
+	case conditionalNot:
+		return `"not" keyword not compiled`
+	}
+
+	return ""
+}
+
+// constrainingComposition is hasUnsupportedComposition limited to what
+// actually constrains a value, as ownConditionalReason decides it for t and
+// each of its branches.
+func constrainingComposition(t *schemas.Type) (string, bool) {
+	return findConditional(t, ownConditionalReason)
+}
+
+// findConditional returns what describe says of t, or else of the first of its
+// branches, at any depth, of which it says anything, followed by the branches
+// that lead to it.
+func findConditional(t *schemas.Type, describe func(*schemas.Type) string) (string, bool) {
+	if description := describe(t); description != "" {
+		return description, true
+	}
+
+	for _, branches := range []struct {
+		keyword schemas.SubSchemaType
+		list    []*schemas.Type
+	}{
+		{schemas.SubSchemaTypeAllOf, t.AllOf},
+		{schemas.SubSchemaTypeAnyOf, t.AnyOf},
+		{schemas.SubSchemaTypeOneOf, t.OneOf},
+	} {
+		for _, child := range branches.list {
+			if description, has := findConditional(child, describe); has {
+				return description + " (in " + string(branches.keyword) + " branch)", true
+			}
+		}
+	}
+
+	return "", false
+}
+
+// imposes reports whether a then or else subschema constrains a value.
+func imposes(t *schemas.Type) bool {
+	if t == nil {
+		return false
+	}
+
+	if len(collectDroppedKeywords(t)) > 0 {
+		return true
+	}
+
+	_, has := constrainingComposition(t)
+
+	return has
 }
 
 // collectDroppedKeywords lists schema keywords whose presence indicates the
