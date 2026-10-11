@@ -23,9 +23,9 @@ func (j *AnyOf6Qux2Elem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf6Qux2Elem: %w", err)
 	}
-	var anyOf6Qux2Elem_0 AnyOf6Qux2Elem_0
-	var anyOf6Qux2Elem_1 AnyOf6Qux2Elem_1
-	var anyOf6Qux2Elem_2 AnyOf6Qux2Elem_2
+	var anyOf6Qux2Elem_0 Foo2
+	var anyOf6Qux2Elem_1 Bar2
+	var anyOf6Qux2Elem_2 Baz2
 	var errs []error
 	if err := anyOf6Qux2Elem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -54,9 +54,9 @@ func (j *AnyOf6Qux2Elem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf6Qux2Elem: %w", err)
 	}
-	var anyOf6Qux2Elem_0 AnyOf6Qux2Elem_0
-	var anyOf6Qux2Elem_1 AnyOf6Qux2Elem_1
-	var anyOf6Qux2Elem_2 AnyOf6Qux2Elem_2
+	var anyOf6Qux2Elem_0 Foo2
+	var anyOf6Qux2Elem_1 Bar2
+	var anyOf6Qux2Elem_2 Baz2
 	var errs []error
 	if err := anyOf6Qux2Elem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -95,9 +95,9 @@ func (j *Bar2ContentElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Bar2ContentElem: %w", err)
 	}
-	var bar2ContentElem_0 Bar2ContentElem_0
-	var bar2ContentElem_1 Bar2ContentElem_1
-	var bar2ContentElem_2 Bar2ContentElem_2
+	var bar2ContentElem_0 Foo2
+	var bar2ContentElem_1 Bar2
+	var bar2ContentElem_2 Baz2
 	var errs []error
 	if err := bar2ContentElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -126,9 +126,9 @@ func (j *Bar2ContentElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Bar2ContentElem: %w", err)
 	}
-	var bar2ContentElem_0 Bar2ContentElem_0
-	var bar2ContentElem_1 Bar2ContentElem_1
-	var bar2ContentElem_2 Bar2ContentElem_2
+	var bar2ContentElem_0 Foo2
+	var bar2ContentElem_1 Bar2
+	var bar2ContentElem_2 Baz2
 	var errs []error
 	if err := bar2ContentElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -219,9 +219,9 @@ func (j *Baz2ContentElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Baz2ContentElem: %w", err)
 	}
-	var baz2ContentElem_0 Baz2ContentElem_0
-	var baz2ContentElem_1 Baz2ContentElem_1
-	var baz2ContentElem_2 Baz2ContentElem_2
+	var baz2ContentElem_0 Foo2
+	var baz2ContentElem_1 Bar2
+	var baz2ContentElem_2 Baz2
 	var errs []error
 	if err := baz2ContentElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -261,9 +261,9 @@ func (j *Baz2ContentElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Baz2ContentElem: %w", err)
 	}
-	var baz2ContentElem_0 Baz2ContentElem_0
-	var baz2ContentElem_1 Baz2ContentElem_1
-	var baz2ContentElem_2 Baz2ContentElem_2
+	var baz2ContentElem_0 Foo2
+	var baz2ContentElem_1 Bar2
+	var baz2ContentElem_2 Baz2
 	var errs []error
 	if err := baz2ContentElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -307,9 +307,9 @@ func (j *Foo2ContentElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Foo2ContentElem: %w", err)
 	}
-	var foo2ContentElem_0 Foo2ContentElem_0
-	var foo2ContentElem_1 Foo2ContentElem_1
-	var foo2ContentElem_2 Foo2ContentElem_2
+	var foo2ContentElem_0 Foo2
+	var foo2ContentElem_1 Bar2
+	var foo2ContentElem_2 Baz2
 	var errs []error
 	if err := foo2ContentElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -338,9 +338,9 @@ func (j *Foo2ContentElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Foo2ContentElem: %w", err)
 	}
-	var foo2ContentElem_0 Foo2ContentElem_0
-	var foo2ContentElem_1 Foo2ContentElem_1
-	var foo2ContentElem_2 Foo2ContentElem_2
+	var foo2ContentElem_0 Foo2
+	var foo2ContentElem_1 Bar2
+	var foo2ContentElem_2 Baz2
 	var errs []error
 	if err := foo2ContentElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)

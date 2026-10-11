@@ -361,8 +361,8 @@ func (j *Beta) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw Beta: %w", err)
 	}
-	var beta_0 Beta_0
-	var beta_1 Beta_1
+	var beta_0 BetaGamma
+	var beta_1 BetaDelta
 	var errs []error
 	if err := beta_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -410,8 +410,8 @@ func (j *Beta) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw Beta: %w", err)
 	}
-	var beta_0 Beta_0
-	var beta_1 Beta_1
+	var beta_0 BetaGamma
+	var beta_1 BetaDelta
 	var errs []error
 	if err := beta_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)

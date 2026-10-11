@@ -69,7 +69,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
-	var callToolResultContentElem_0 CallToolResultContentElem_0
+	var callToolResultContentElem_0 TextContent
 	var errs []error
 	if err := callToolResultContentElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -92,7 +92,7 @@ func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
-	var callToolResultContentElem_0 CallToolResultContentElem_0
+	var callToolResultContentElem_0 TextContent
 	var errs []error
 	if err := callToolResultContentElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)

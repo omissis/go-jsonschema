@@ -100,7 +100,7 @@ func (j *AnyOf2ConfigurationsElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf2ConfigurationsElem: %w", err)
 	}
-	var anyOf2ConfigurationsElem_0 AnyOf2ConfigurationsElem_0
+	var anyOf2ConfigurationsElem_0 Foo
 	var anyOf2ConfigurationsElem_1 AnyOf2ConfigurationsElem_1
 	var anyOf2ConfigurationsElem_2 AnyOf2ConfigurationsElem_2
 	var errs []error
@@ -131,7 +131,7 @@ func (j *AnyOf2ConfigurationsElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf2ConfigurationsElem: %w", err)
 	}
-	var anyOf2ConfigurationsElem_0 AnyOf2ConfigurationsElem_0
+	var anyOf2ConfigurationsElem_0 Foo
 	var anyOf2ConfigurationsElem_1 AnyOf2ConfigurationsElem_1
 	var anyOf2ConfigurationsElem_2 AnyOf2ConfigurationsElem_2
 	var errs []error

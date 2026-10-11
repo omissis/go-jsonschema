@@ -69,7 +69,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithAllOfAndProperties: %w", err)
 	}
-	var composedWithAllOfAndProperties_0 ComposedWithAllOfAndProperties_0
+	var composedWithAllOfAndProperties_0 BaseObject
 	var errs []error
 	if err := composedWithAllOfAndProperties_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -114,7 +114,7 @@ func (j *ComposedWithAllOfAndProperties) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithAllOfAndProperties: %w", err)
 	}
-	var composedWithAllOfAndProperties_0 ComposedWithAllOfAndProperties_0
+	var composedWithAllOfAndProperties_0 BaseObject
 	var errs []error
 	if err := composedWithAllOfAndProperties_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)

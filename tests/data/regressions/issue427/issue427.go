@@ -139,7 +139,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw TestcaseExpectedPeerName: %w", err)
 	}
-	var testcaseExpectedPeerName_0 TestcaseExpectedPeerName_0
+	var testcaseExpectedPeerName_0 PeerName
 	var errs []error
 	if err := testcaseExpectedPeerName_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -162,7 +162,7 @@ func (j *TestcaseExpectedPeerName) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw TestcaseExpectedPeerName: %w", err)
 	}
-	var testcaseExpectedPeerName_0 TestcaseExpectedPeerName_0
+	var testcaseExpectedPeerName_0 PeerName
 	var errs []error
 	if err := testcaseExpectedPeerName_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -194,7 +194,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw TestcaseNotExpectedPeerName: %w", err)
 	}
-	var testcaseNotExpectedPeerName_0 TestcaseNotExpectedPeerName_0
+	var testcaseNotExpectedPeerName_0 PeerName
 	var errs []error
 	if err := testcaseNotExpectedPeerName_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -217,7 +217,7 @@ func (j *TestcaseNotExpectedPeerName) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw TestcaseNotExpectedPeerName: %w", err)
 	}
-	var testcaseNotExpectedPeerName_0 TestcaseNotExpectedPeerName_0
+	var testcaseNotExpectedPeerName_0 PeerName
 	var errs []error
 	if err := testcaseNotExpectedPeerName_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)

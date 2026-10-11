@@ -115,8 +115,8 @@ func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
 	}
-	var composedWithMultipleRequired_0 ComposedWithMultipleRequired_0
-	var composedWithMultipleRequired_1 ComposedWithMultipleRequired_1
+	var composedWithMultipleRequired_0 MultipleRequiredBase
+	var composedWithMultipleRequired_1 MultipleRequiredMiddle
 	var errs []error
 	if err := composedWithMultipleRequired_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -164,8 +164,8 @@ func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
 	}
-	var composedWithMultipleRequired_0 ComposedWithMultipleRequired_0
-	var composedWithMultipleRequired_1 ComposedWithMultipleRequired_1
+	var composedWithMultipleRequired_0 MultipleRequiredBase
+	var composedWithMultipleRequired_1 MultipleRequiredMiddle
 	var errs []error
 	if err := composedWithMultipleRequired_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)

@@ -35,9 +35,9 @@ func (j *AnyOf4Elem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf4Elem: %w", err)
 	}
-	var anyOf4Elem_0 AnyOf4Elem_0
-	var anyOf4Elem_1 AnyOf4Elem_1
-	var anyOf4Elem_2 AnyOf4Elem_2
+	var anyOf4Elem_0 Embeddedlinkend
+	var anyOf4Elem_1 Embeddedlinkpath
+	var anyOf4Elem_2 Embeddedlinkrelation
 	var errs []error
 	if err := anyOf4Elem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -66,9 +66,9 @@ func (j *AnyOf4Elem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf4Elem: %w", err)
 	}
-	var anyOf4Elem_0 AnyOf4Elem_0
-	var anyOf4Elem_1 AnyOf4Elem_1
-	var anyOf4Elem_2 AnyOf4Elem_2
+	var anyOf4Elem_0 Embeddedlinkend
+	var anyOf4Elem_1 Embeddedlinkpath
+	var anyOf4Elem_2 Embeddedlinkrelation
 	var errs []error
 	if err := anyOf4Elem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)

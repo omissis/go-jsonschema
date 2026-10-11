@@ -873,11 +873,31 @@ func getPlainName(fieldName string) string {
 type anyOfValidator struct {
 	fieldName string
 	elemCount int
+	// typeNames holds the Go type of each branch, by position.
+	typeNames []string
+}
+
+// newAnyOfValidator checks that a value decodes as at least one of a type's
+// elemCount anyOf branches. variants names the types the branches were
+// declared as; a branch without a name there is taken to be declared as
+// fieldName_<position>.
+func newAnyOfValidator(fieldName string, elemCount int, variants []string) *anyOfValidator {
+	typeNames := make([]string, elemCount)
+
+	for i := range typeNames {
+		if i < len(variants) && variants[i] != "" {
+			typeNames[i] = variants[i]
+		} else {
+			typeNames[i] = fmt.Sprintf("%s_%d", upperFirst(fieldName), i)
+		}
+	}
+
+	return &anyOfValidator{fieldName: fieldName, elemCount: elemCount, typeNames: typeNames}
 }
 
 func (v *anyOfValidator) generate(out *codegen.Emitter, format string) error {
 	for i := range v.elemCount {
-		out.Printlnf(`var %s_%d %s_%d`, lowerFirst(v.fieldName), i, upperFirst(v.fieldName), i)
+		out.Printlnf(`var %s_%d %s`, lowerFirst(v.fieldName), i, v.typeNames[i])
 	}
 
 	out.Printlnf(`var errs []error`)

@@ -12,10 +12,13 @@ import (
 )
 
 type output struct {
-	minimalNames            bool
-	file                    *codegen.File
-	declsByName             map[string]*codegen.TypeDecl
-	declsBySchema           map[*schemas.Type]*codegen.TypeDecl
+	minimalNames  bool
+	file          *codegen.File
+	declsByName   map[string]*codegen.TypeDecl
+	declsBySchema map[*schemas.Type]*codegen.TypeDecl
+	// anyOfVariants holds, for a type merged from an anyOf, the Go type of
+	// each branch, so its validator can name the types that were declared.
+	anyOfVariants           map[*schemas.Type][]string
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
 	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
 	// accepts.

@@ -390,7 +390,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	switch tt := theType.(type) {
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
-			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
+			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
 			g.generateUnmarshaler(&decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
@@ -1682,6 +1682,8 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return g.primitiveType(rAnyOf[0], rAnyOf[0].Type[0], true)
 	}
 
+	variantNames := make([]string, len(rAnyOf))
+
 	for i, typ := range rAnyOf {
 		// infer type from base if not set
 		if len(typ.Type) == 0 {
@@ -1707,8 +1709,18 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 			typ.Type.Add(schemas.TypeNameNull)
 		}
 
-		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
+		variant, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i)))
+		if err != nil {
 			return nil, err
+		}
+
+		// A branch generated earlier keeps the name it was declared under,
+		// which need not be this scope's. So does a branch that is a declared
+		// definition generated inline here, such as a $ref to a string.
+		if named := namedDecl(variant); named != nil {
+			variantNames[i] = named.Name
+		} else if decl, ok := g.output.declsBySchema[typ]; ok {
+			variantNames[i] = decl.Name
 		}
 	}
 
@@ -1722,6 +1734,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	}
 
 	anyOfType.AnyOf = nil
+	g.output.anyOfVariants[anyOfType] = variantNames
 
 	return g.generateTypeInline(anyOfType, scope)
 }

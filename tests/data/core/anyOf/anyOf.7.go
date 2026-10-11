@@ -29,7 +29,7 @@ func (j *AnyOf7BarElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf7BarElem: %w", err)
 	}
-	var anyOf7BarElem_0 AnyOf7BarElem_0
+	var anyOf7BarElem_0 Item
 	var errs []error
 	if err := anyOf7BarElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -52,7 +52,7 @@ func (j *AnyOf7BarElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf7BarElem: %w", err)
 	}
-	var anyOf7BarElem_0 AnyOf7BarElem_0
+	var anyOf7BarElem_0 Item
 	var errs []error
 	if err := anyOf7BarElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -100,7 +100,7 @@ func (j *AnyOf7BazElem) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf7BazElem: %w", err)
 	}
-	var anyOf7BazElem_0 AnyOf7BazElem_0
+	var anyOf7BazElem_0 Item
 	var errs []error
 	if err := anyOf7BazElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -123,7 +123,7 @@ func (j *AnyOf7BazElem) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf7BazElem: %w", err)
 	}
-	var anyOf7BazElem_0 AnyOf7BazElem_0
+	var anyOf7BazElem_0 Item
 	var errs []error
 	if err := anyOf7BazElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -153,7 +153,7 @@ func (j *AnyOf7Foo) UnmarshalJSON(value []byte) error {
 	if err := json.Unmarshal(value, &raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf7Foo: %w", err)
 	}
-	var anyOf7Foo_0 AnyOf7Foo_0
+	var anyOf7Foo_0 Item
 	var errs []error
 	if err := anyOf7Foo_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -176,7 +176,7 @@ func (j *AnyOf7Foo) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&raw); err != nil {
 		return fmt.Errorf("unmarshal raw AnyOf7Foo: %w", err)
 	}
-	var anyOf7Foo_0 AnyOf7Foo_0
+	var anyOf7Foo_0 Item
 	var errs []error
 	if err := anyOf7Foo_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
