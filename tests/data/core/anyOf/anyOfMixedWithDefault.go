@@ -6,9 +6,9 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-// mapping admits an object, a list of strings or a string, so it is interface{}.
-// Its default, an empty object, is assigned as the value decoding {} into it
-// gives; a struct-style literal of the interface type would not compile.
+// mapping admits an object with a name, a list of strings or a string, so it is
+// interface{}. Its default, an empty object, is assigned as the value decoding {}
+// into it gives; a struct-style literal of the interface type would not compile.
 type AnyOfMixedWithDefault struct {
 	// Extensions corresponds to the JSON schema field "extensions".
 	Extensions Mapping `json:"extensions,omitempty,omitzero" yaml:"extensions,omitempty" mapstructure:"extensions,omitempty"`

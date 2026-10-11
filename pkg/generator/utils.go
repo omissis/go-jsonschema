@@ -79,17 +79,32 @@ func isAnnotationOnly(t *schemas.Type) bool {
 	return reflect.DeepEqual(rest, schemas.Type{})
 }
 
-// mergesIntoObject reports whether merging parent's anyOf branches yields an
-// object: the merge keeps the first type list it meets, the parent's before
-// the branches'.
-func mergesIntoObject(parent *schemas.Type, branches []*schemas.Type) bool {
-	if len(parent.Type) > 0 {
-		return slices.Contains(parent.Type, schemas.TypeNameObject)
+// mergesIntoStruct reports whether merging parent's anyOf branches yields an
+// object with properties, which becomes a struct rather than a map. The merge
+// keeps the first type list it meets, the parent's before the branches', and
+// collects the properties of all of them.
+func mergesIntoStruct(parent *schemas.Type, branches []*schemas.Type) bool {
+	types := parent.Type
+
+	for _, b := range branches {
+		if len(types) > 0 {
+			break
+		}
+
+		types = b.Type
+	}
+
+	if !slices.Contains(types, schemas.TypeNameObject) {
+		return false
+	}
+
+	if len(parent.Properties) > 0 {
+		return true
 	}
 
 	for _, b := range branches {
-		if len(b.Type) > 0 {
-			return slices.Contains(b.Type, schemas.TypeNameObject)
+		if len(b.Properties) > 0 {
+			return true
 		}
 	}
 
