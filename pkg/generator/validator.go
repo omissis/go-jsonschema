@@ -3,6 +3,7 @@ package generator
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"strings"
 
@@ -21,6 +22,9 @@ var (
 	ErrInvalidDefaultValue            = errors.New("invalid default value")
 	ErrCannotFindSlideToDump          = errors.New("didn't find a slice to dump")
 	ErrDefaultDurationIsNotAString    = errors.New("duration default value must be a string")
+	ErrDefaultIPIsNotAString          = errors.New("ip default value must be a string")
+	ErrIPIsEmpty                      = errors.New("ip default value must not be an empty string")
+	ErrInvalidDefaultIP               = errors.New("invalid ip default value")
 )
 
 type validator interface {
@@ -193,6 +197,45 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 			}
 		}
 
+		if isNetIPAddr(v.defaultValueType) {
+			defaultIPStr, ok := v.defaultValue.(string)
+
+			if !ok {
+				return nil, fmt.Errorf("%w: %T given", ErrDefaultIPIsNotAString, v.defaultValue)
+			}
+
+			if defaultIPStr == "" {
+				return nil, ErrIPIsEmpty
+			}
+
+			if _, err := netip.ParseAddr(defaultIPStr); err != nil {
+				return nil, fmt.Errorf("%w: %w", ErrInvalidDefaultIP, err)
+			}
+
+			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
+
+			defaultValue := "defaultIP"
+
+			tmpEmitter.Printlnf("%s, err := netip.ParseAddr(\"%s\")", defaultValue, defaultIPStr)
+			tmpEmitter.Printlnf("if err != nil {")
+			tmpEmitter.Indent(1)
+			tmpEmitter.Printlnf(
+				"return fmt.Errorf(\"failed to parse the \\\"%s\\\" default value for field %s: %%w\", err)",
+				defaultIPStr,
+				v.jsonName,
+			)
+			tmpEmitter.Indent(-1)
+			tmpEmitter.Printlnf("}")
+
+			if v.isPointer {
+				tmpEmitter.Printlnf(`%s.%s = &%s`, varNamePlainStruct, v.fieldName, defaultValue)
+			} else {
+				tmpEmitter.Printlnf(`%s.%s = %s`, varNamePlainStruct, v.fieldName, defaultValue)
+			}
+
+			return tmpEmitter.String(), nil
+		}
+
 		if _, ok := v.defaultValueType.(codegen.DurationType); ok {
 			defaultDurationISO8601, ok := v.defaultValue.(string)
 
@@ -335,6 +378,31 @@ func isPointerToInteger(t codegen.Type) bool {
 	return false
 }
 
+func isNetIPAddr(t codegen.Type) bool {
+	switch tt := t.(type) {
+	case codegen.PointerType:
+		return isNetIPAddr(tt.Type)
+	case *codegen.PointerType:
+		if tt != nil {
+			return isNetIPAddr(tt.Type)
+		}
+	case codegen.NamedType:
+		return isNamedTypeNetIPAddr(&tt)
+	case *codegen.NamedType:
+		return isNamedTypeNetIPAddr(tt)
+	}
+
+	return false
+}
+
+func isNamedTypeNetIPAddr(nt *codegen.NamedType) bool {
+	if nt == nil || nt.Decl == nil || nt.Package == nil {
+		return false
+	}
+
+	return nt.Package.QualifiedName == "net/netip" && nt.Decl.Name == "Addr"
+}
+
 func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error) {
 	tmpEmitter := codegen.NewEmitter(maxLineLen)
 
@@ -367,13 +435,22 @@ func (v *defaultValidator) tryDumpDefaultSlice(maxLineLen int32) (string, error)
 func (v *defaultValidator) desc() *validatorDesc {
 	var packages []packageImport
 
-	_, ok := v.defaultValueType.(codegen.DurationType)
-	if v.defaultValueType != nil && ok {
-		defaultDurationISO8601, ok := v.defaultValue.(string)
-		if ok && defaultDurationISO8601 != "" {
-			packages = []packageImport{
-				{qualifiedName: "fmt"},
-				{qualifiedName: "time"},
+	if v.defaultValueType != nil {
+		if _, ok := v.defaultValueType.(codegen.DurationType); ok {
+			defaultDurationISO8601, ok := v.defaultValue.(string)
+			if ok && defaultDurationISO8601 != "" {
+				packages = append(packages,
+					packageImport{qualifiedName: "fmt"},
+					packageImport{qualifiedName: "time"},
+				)
+			}
+		} else if isNetIPAddr(v.defaultValueType) {
+			defaultIPStr, ok := v.defaultValue.(string)
+			if ok && defaultIPStr != "" {
+				packages = append(packages,
+					packageImport{qualifiedName: "fmt"},
+					packageImport{qualifiedName: "net/netip"},
+				)
 			}
 		}
 	}

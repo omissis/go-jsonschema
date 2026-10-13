@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"net/netip"
 	"os"
 	"reflect"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testIpDefault "github.com/atombender/go-jsonschema/tests/data/validation/ipDefault"
 )
 
 func TestYamlV3Unmarshal(t *testing.T) {
@@ -66,5 +68,27 @@ func TestYamlV3UnmarshalInvalidEnum(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "invalid value (expected one of") {
 		t.Error("Expected unmarshal error to contain enum values")
+	}
+}
+
+func TestYamlV3UnmarshalIPDefault(t *testing.T) {
+	t.Parallel()
+
+	yamlData := []byte(`{}`)
+
+	var conf testIpDefault.IpDefault
+
+	if err := yamlv3.Unmarshal(yamlData, &conf); err != nil {
+		t.Fatal(err)
+	}
+
+	want := testIpDefault.IpDefault{
+		Ipv4:         netip.MustParseAddr("127.0.0.1"),
+		Ipv6:         netip.MustParseAddr("2001:db8::68"),
+		NullableIpv4: ptr(netip.MustParseAddr("192.168.1.1")),
+	}
+
+	if !reflect.DeepEqual(conf, want) {
+		t.Errorf("Unmarshalled YAML data does not match expected\nWant: %#v\nGot:  %#v", want, conf)
 	}
 }

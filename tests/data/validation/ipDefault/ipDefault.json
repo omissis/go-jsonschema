@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/ipDefault",
+  "type": "object",
+  "properties": {
+    "ipv4": {
+      "type": "string",
+      "format": "ipv4",
+      "default": "127.0.0.1"
+    },
+    "ipv6": {
+      "type": "string",
+      "format": "ipv6",
+      "default": "2001:db8::68"
+    },
+    "nullableIpv4": {
+      "type": "string",
+      "format": "ipv4",
+      "default": "192.168.1.1",
+      "goJSONSchema": {
+        "pointer": true
+      }
+    }
+  }
+}

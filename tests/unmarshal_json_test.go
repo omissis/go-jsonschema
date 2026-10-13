@@ -3,6 +3,7 @@ package tests_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,7 @@ import (
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testIpDefault "github.com/atombender/go-jsonschema/tests/data/validation/ipDefault"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
 
@@ -34,6 +36,38 @@ func TestJsonUnmarshalValidation(t *testing.T) {
 						MyNullableObject:      nil,
 						MyNullableString:      nil,
 						MyNullableStringArray: nil,
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc:   "ipDefault - omitted fields use defaults",
+			json:   `{}`,
+			target: &testIpDefault.IpDefault{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testIpDefault.IpDefault{
+						Ipv4:         netip.MustParseAddr("127.0.0.1"),
+						Ipv6:         netip.MustParseAddr("2001:db8::68"),
+						NullableIpv4: ptr(netip.MustParseAddr("192.168.1.1")),
+					},
+					target,
+				)
+			},
+		},
+		{
+			desc:   "ipDefault - explicit values override defaults",
+			json:   `{"ipv4": "10.0.0.1", "ipv6": "::1", "nullableIpv4": "10.0.0.2"}`,
+			target: &testIpDefault.IpDefault{},
+			assertFn: func(target any) {
+				assert.Equal(
+					t,
+					&testIpDefault.IpDefault{
+						Ipv4:         netip.MustParseAddr("10.0.0.1"),
+						Ipv6:         netip.MustParseAddr("::1"),
+						NullableIpv4: ptr(netip.MustParseAddr("10.0.0.2")),
 					},
 					target,
 				)
