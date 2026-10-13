@@ -26,13 +26,9 @@
       "default": 1
     },
     "label": {
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "number"
-        }
+      "type": [
+        "string",
+        "number"
       ],
       "default": "auto"
     },
@@ -48,16 +44,10 @@
       "default": 5
     },
     "nullable": {
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "number"
-        },
-        {
-          "type": "null"
-        }
+      "type": [
+        "string",
+        "number",
+        "null"
       ],
       "default": "x"
     }
