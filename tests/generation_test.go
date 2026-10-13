@@ -54,6 +54,19 @@ func TestOmitBoth(t *testing.T) {
 	testExamples(t, cfg, "./data/omitBoth")
 }
 
+// TestValidateNullTypes covers the opt-in `type` enforcement for explicitly
+// null values. The nullAllowed fixture is the important half: a nullable union
+// and an untyped property must keep accepting null, since `type` is what makes
+// a null invalid and neither of those excludes it.
+func TestValidateNullTypes(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.ValidateNullTypes = true
+
+	testExamples(t, cfg, "./data/validateNullTypes")
+}
+
 func TestOmitEmpty(t *testing.T) {
 	t.Parallel()
 
