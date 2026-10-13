@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "labels is an anyOf of an object and null, and is first referenced from a property of alert, a definition generated before it. Its type comes back as a pointer to the declared type, which that reference used to reject with \"expected named type\", stopping generation.",
+  "definitions": {
+    "alert": {
+      "properties": {
+        "labels": {
+          "$ref": "#/definitions/labels"
+        }
+      }
+    },
+    "labels": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

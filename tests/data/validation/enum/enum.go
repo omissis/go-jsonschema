@@ -196,7 +196,7 @@ func (j *EnumMyMixedTypeEnum) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML implements yaml.Marshal.
 func (j *EnumMyMixedTypeEnum) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(j.Value)
+	return j.Value, nil
 }
 
 var enumValues_EnumMyMixedTypeEnum = []interface{}{
@@ -259,7 +259,7 @@ func (j *EnumMyMixedUntypedEnum) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML implements yaml.Marshal.
 func (j *EnumMyMixedUntypedEnum) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(j.Value)
+	return j.Value, nil
 }
 
 var enumValues_EnumMyMixedUntypedEnum = []interface{}{
@@ -324,7 +324,7 @@ func (j *EnumMyNullTypedEnum) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML implements yaml.Marshal.
 func (j *EnumMyNullTypedEnum) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(j.Value)
+	return j.Value, nil
 }
 
 var enumValues_EnumMyNullTypedEnum = []interface{}{
@@ -386,7 +386,7 @@ func (j *EnumMyNullUntypedEnum) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML implements yaml.Marshal.
 func (j *EnumMyNullUntypedEnum) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(j.Value)
+	return j.Value, nil
 }
 
 var enumValues_EnumMyNullUntypedEnum = []interface{}{

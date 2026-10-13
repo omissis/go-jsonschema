@@ -23,6 +23,7 @@ var (
 	errSchemaHasNoRoot                = errors.New("schema has no root")
 	errEnumArrCannotBeEmpty           = errors.New("enum array cannot be empty")
 	errEnumNonPrimitiveVal            = errors.New("enum has non-primitive value")
+	errRootConstNotInEnum             = errors.New("root const is not one of its enum values, so no value matches")
 	errMapURIToPackageName            = errors.New("unable to map schema URI to Go package name")
 	errExpectedNamedType              = errors.New("expected named type")
 	errCannotResolveRef               = errors.New("cannot resolve reference")
@@ -30,17 +31,29 @@ var (
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 	errCannotGenerateSources          = errors.New("cannot generate sources")
+	errInvalidExtensionTagKey         = errors.New("invalid struct tag key")
+	errDuplicateExtensionTagKey       = errors.New("duplicate struct tag key")
 )
 
 type Generator struct {
-	caser        *text.Caser
-	config       Config
-	inScope      map[qualifiedDefinition]struct{}
-	outputs      map[string]*output
-	warner       func(string)
-	formatters   []formatter
-	loader       schemas.Loader
-	minimalNames bool
+	caser   *text.Caser
+	config  Config
+	inScope map[qualifiedDefinition]struct{}
+	// mergingAllOf maps an allOf schema whose merge is being generated to
+	// that merge, so generateAllOfType recognises a merge that leads back to
+	// itself.
+	mergingAllOf map[*schemas.Type]*schemas.Type
+	// resolvingRefs holds the $ref schemas alreadyDeclaredType is resolving in
+	// place of their placeholder declarations.
+	resolvingRefs map[*schemas.Type]struct{}
+	// reportedConditionals holds the schemas whose uncompiled conditional or
+	// not has been reported, so it is not reported a second time.
+	reportedConditionals map[*schemas.Type]struct{}
+	outputs              map[string]*output
+	warner               func(string)
+	formatters           []formatter
+	loader               schemas.Loader
+	minimalNames         bool
 }
 
 type qualifiedDefinition struct {
@@ -51,6 +64,15 @@ type qualifiedDefinition struct {
 }
 
 func New(config Config) (*Generator, error) {
+	if err := checkExtensionTagKeys(config.ExtensionTags, config.Tags); err != nil {
+		return nil, err
+	}
+
+	if !config.StrictAdditionalProperties.IsValid() {
+		return nil, fmt.Errorf("%w: got %q",
+			ErrInvalidStrictAdditionalPropertiesMode, config.StrictAdditionalProperties)
+	}
+
 	formatters := []formatter{
 		&jsonFormatter{},
 	}
@@ -59,14 +81,17 @@ func New(config Config) (*Generator, error) {
 	}
 
 	generator := &Generator{
-		caser:        text.NewCaser(config.Capitalizations, config.ResolveExtensions),
-		config:       config,
-		inScope:      map[qualifiedDefinition]struct{}{},
-		outputs:      map[string]*output{},
-		warner:       config.Warner,
-		formatters:   formatters,
-		loader:       config.Loader,
-		minimalNames: config.MinimalNames,
+		caser:                text.NewCaser(config.Capitalizations, config.ResolveExtensions),
+		config:               config,
+		inScope:              map[qualifiedDefinition]struct{}{},
+		mergingAllOf:         map[*schemas.Type]*schemas.Type{},
+		resolvingRefs:        map[*schemas.Type]struct{}{},
+		reportedConditionals: map[*schemas.Type]struct{}{},
+		outputs:              map[string]*output{},
+		warner:               config.Warner,
+		formatters:           formatters,
+		loader:               config.Loader,
+		minimalNames:         config.MinimalNames,
 	}
 
 	if config.Loader == nil {
@@ -85,6 +110,8 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 		if output.file.FileName == "" {
 			continue
 		}
+
+		g.renameConstantsShadowingImports(output)
 
 		emitter := codegen.NewEmitter(maxLineLength)
 
@@ -218,8 +245,10 @@ func (g *Generator) beginOutput(
 			Package:  pkg,
 		},
 		declsBySchema:           map[*schemas.Type]*codegen.TypeDecl{},
+		anyOfVariants:           map[*schemas.Type][]string{},
 		declsByName:             map[string]*codegen.TypeDecl{},
 		unmarshallersByTypeDecl: map[*codegen.TypeDecl]bool{},
+		primitiveWrapperKinds:   map[*codegen.TypeDecl]oneOfKind{},
 		processedSchemas:        map[string]bool{},
 	}
 	g.outputs[id] = output
@@ -239,4 +268,35 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 	}
 
 	return typeName + idv
+}
+
+// renameConstantsShadowingImports renames a package-level constant that shares
+// its name with an import, which Go rejects. enumVarnames refuses a varname
+// naming a package already imported, but an import can arrive after the
+// constant — a later type adding mapstructure, say — so the final set is
+// checked here. Generated code never refers to an enum constant by name, so
+// renaming one is safe; the warning says what the user-facing name became.
+func (g *Generator) renameConstantsShadowingImports(o *output) {
+	for _, decl := range o.file.Package.Decls {
+		c, ok := decl.(*codegen.Constant)
+		if !ok || !o.importsName(c.Name) {
+			continue
+		}
+
+		for n := 1; ; n++ {
+			candidate := fmt.Sprintf("%s_%d", c.Name, n)
+			if o.importsName(candidate) || o.declaresName(candidate) {
+				continue
+			}
+
+			g.config.Warner(fmt.Sprintf(
+				"Constant %q shares its name with an imported package; declaring it as %q instead",
+				c.Name, candidate,
+			))
+
+			c.Name = candidate
+
+			break
+		}
+	}
 }

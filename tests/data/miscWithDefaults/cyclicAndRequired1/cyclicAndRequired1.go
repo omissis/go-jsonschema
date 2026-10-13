@@ -25,7 +25,7 @@ type Foo struct {
 func (j *Foo) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Foo: %w", err)
 	}
 	if _, ok := raw["refToBar"]; raw != nil && !ok {
 		return fmt.Errorf("field refToBar in Foo: required")
@@ -33,7 +33,7 @@ func (j *Foo) UnmarshalJSON(value []byte) error {
 	type Plain Foo
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Foo: %w", err)
 	}
 	*j = Foo(plain)
 	return nil
@@ -43,7 +43,7 @@ func (j *Foo) UnmarshalJSON(value []byte) error {
 func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Foo: %w", err)
 	}
 	if _, ok := raw["refToBar"]; raw != nil && !ok {
 		return fmt.Errorf("field refToBar in Foo: required")
@@ -51,7 +51,7 @@ func (j *Foo) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Foo
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Foo: %w", err)
 	}
 	*j = Foo(plain)
 	return nil
