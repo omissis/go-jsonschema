@@ -36,7 +36,7 @@ type Exact struct {
 func (j *Exact) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Exact: %w", err)
 	}
 	if _, ok := raw["i16"]; raw != nil && !ok {
 		return fmt.Errorf("field i16 in Exact: required")
@@ -65,7 +65,7 @@ func (j *Exact) UnmarshalJSON(value []byte) error {
 	type Plain Exact
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Exact: %w", err)
 	}
 	*j = Exact(plain)
 	return nil
@@ -75,7 +75,7 @@ func (j *Exact) UnmarshalJSON(value []byte) error {
 func (j *Exact) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Exact: %w", err)
 	}
 	if _, ok := raw["i16"]; raw != nil && !ok {
 		return fmt.Errorf("field i16 in Exact: required")
@@ -104,7 +104,7 @@ func (j *Exact) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Exact
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Exact: %w", err)
 	}
 	*j = Exact(plain)
 	return nil
