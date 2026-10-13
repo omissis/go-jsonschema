@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "description": "`items: null` at the schema root. `null` is not a schema; at the root it used to decode to nil without reaching any check, so the schema silently generated an unconstrained array.",
+  "items": null
+}

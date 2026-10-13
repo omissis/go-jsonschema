@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "description": "A tuple at the schema root. The root used to be decoded straight into the embedded type, bypassing the tuple handling every subschema gets, so this failed the whole parse.",
+  "additionalItems": false,
+  "minItems": 1,
+  "maxItems": 1,
+  "items": [
+    { "type": "string" }
+  ]
+}
