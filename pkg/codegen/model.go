@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/sanity-io/litter"
@@ -492,7 +493,15 @@ func (f *StructField) Generate(out *Emitter) error {
 	}
 
 	if f.Tags != "" {
-		out.Printf(" `%s`", f.Tags)
+		// Tags normally go in a raw string literal, which keeps the quoted
+		// tag values readable. A backtick would terminate it, and a raw
+		// literal has no escape for one, so fall back to an interpreted
+		// literal — reflect reads either form identically.
+		if strings.ContainsRune(f.Tags, '`') {
+			out.Printf(" %s", strconv.Quote(f.Tags))
+		} else {
+			out.Printf(" `%s`", f.Tags)
+		}
 	}
 
 	return nil

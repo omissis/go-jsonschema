@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -26,6 +27,15 @@ var (
 	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
 
 	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
+
+	// ErrPropertyNameNotRepresentable is returned for a property name that
+	// encoding/json will not accept in a struct tag. Such a field cannot be
+	// mapped at all — decode leaves it unset and encode emits a truncated key
+	// — so the schema is refused rather than generated with a field that
+	// silently does not round-trip.
+	ErrPropertyNameNotRepresentable = errors.New(
+		"property name cannot be represented in a Go struct tag that encoding/json accepts",
+	)
 )
 
 const float64Type = "float64"
@@ -891,6 +901,10 @@ func (g *schemaGenerator) addStructField(
 		return fmt.Errorf("cannot add struct field: %w", err)
 	}
 
+	if !jsonTagNameIsRepresentable(name) {
+		return fmt.Errorf("%w: %q", ErrPropertyNameNotRepresentable, name)
+	}
+
 	structField := codegen.StructField{
 		Name:         fieldName,
 		Comment:      comment,
@@ -906,6 +920,35 @@ func (g *schemaGenerator) addStructField(
 	structType.AddField(structField)
 
 	return nil
+}
+
+// jsonTagNameIsRepresentable reports whether name can be carried in a Go struct
+// tag that encoding/json will honour.
+//
+// This mirrors encoding/json's own isValidTag. A name it rejects does not fall
+// back to anything usable: the field is left unset on decode and encode emits a
+// truncated key, so `a"b` round-trips as `a`. Escaping cannot help — the
+// limitation is in what the codec accepts, not in how the tag is written — so
+// such a schema is refused rather than generated with a field that silently
+// does not map.
+func jsonTagNameIsRepresentable(name string) bool {
+	if name == "" {
+		return false
+	}
+
+	for _, r := range name {
+		switch {
+		case strings.ContainsRune("!#$%&()*+-./:;<=>?@[]^_{|}~ ", r):
+			// Punctuation encoding/json accepts in a tag name. Quote,
+			// backslash and comma are deliberately absent: the first two are
+			// reserved and the third separates tag options.
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []string, isRequired bool) string {
@@ -927,12 +970,18 @@ func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []strin
 		}
 	}
 
+	// The name is schema data and lands inside a quoted tag value, which
+	// reflect parses with strconv.Unquote. Unescaped, `a"b` truncates the
+	// value to `a` and `back\slash` makes the tag unparseable, so reflect
+	// reports it as absent and the field silently falls back to its Go name.
+	quotedName := goQuotedBody(name)
+
 	for _, tag := range g.config.Tags {
 		switch tag {
 		case "json":
-			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitJson)
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, quotedName, omitJson)
 		default:
-			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitRest)
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, quotedName, omitRest)
 		}
 	}
 
