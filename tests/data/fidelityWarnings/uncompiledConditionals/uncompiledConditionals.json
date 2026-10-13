@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Conditionals and negations outside the allOf conditional discriminator pattern, which no code path compiles: each is reported, once, under the type that declares it, including where the type falls back to interface{} and declares nothing else.",
+  "properties": {
+    "kind": { "type": "string" },
+    "limit": { "type": "integer" },
+    "name": { "type": "string", "not": { "const": "" } },
+    "legacy": false,
+    "value": {
+      "oneOf": [
+        { "type": "string", "not": { "enum": ["none"] } },
+        { "type": "number" }
+      ]
+    },
+    "status": { "type": "string", "enum": ["on", "off", "unknown"], "not": { "const": "unknown" } },
+    "choice": {
+      "anyOf": [
+        { "type": "object", "properties": { "x": { "type": "string" } }, "not": { "required": ["y"] } },
+        { "type": "object", "properties": { "y": { "type": "string" } } }
+      ]
+    },
+    "merged": {
+      "allOf": [
+        { "type": "object", "properties": { "p": { "type": "string" }, "q": { "type": "string" } } },
+        { "if": { "required": ["p"] }, "then": { "required": ["q"] } }
+      ]
+    },
+    "code": {
+      "allOf": [
+        { "type": "string" },
+        { "if": { "maxLength": 3 }, "then": { "pattern": "^[a-z]+$" } }
+      ]
+    },
+    "either": {
+      "oneOf": [
+        { "type": "string", "not": { "const": "" } },
+        { "type": "integer" }
+      ]
+    }
+  },
+  "if": { "properties": { "kind": { "const": "bounded" } }, "required": ["kind"] },
+  "then": { "required": ["limit"] },
+  "definitions": {
+    "names": { "type": "array", "items": { "type": "string", "not": { "const": "" } } },
+    "shape": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "enum": ["circle", "square"] },
+        "radius": { "type": "number" },
+        "side": { "type": "number" },
+        "label": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["kind"],
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "circle" } } }, "then": { "required": ["radius"] } },
+        { "if": { "properties": { "kind": { "const": "square" } } }, "then": { "required": ["side"] } }
+      ],
+      "if": { "required": ["label"] },
+      "then": { "required": ["color"] }
+    }
+  }
+}

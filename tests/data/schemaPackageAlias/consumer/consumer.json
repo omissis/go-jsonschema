@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://example.com/consumer",
+  "type": "object",
+  "properties": {
+    "header": {
+      "$ref": "../header/v1/header.json"
+    },
+    "jobPriority": {
+      "$ref": "../jobs/v1/jobs.json#/$defs/JobPriority"
+    }
+  }
+}

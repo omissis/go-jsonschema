@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/withConstraint",
+  "type": "object",
+  "properties": {
+    "value": {
+      "description": "A variant carrying a constraint the wrapper has nowhere to enforce still disqualifies it, because the wrapper dispatches on JSON token kind alone.",
+      "oneOf": [
+        { "type": "string", "minLength": 3 },
+        { "type": "boolean" }
+      ]
+    }
+  },
+  "required": ["value"]
+}

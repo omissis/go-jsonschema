@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Defaults on primitive union wrappers. A wrapper is a struct, so the default is decoded into it as JSON rather than assigned as a literal. nullable accepts null, so an explicit null is a value and keeps it; only an absent key takes the default. mismatch's default is a number, which its union does not accept, so it is left out with a warning.",
+  "properties": {
+    "debug": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": false
+    },
+    "tab": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": 1
+    },
+    "label": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "default": "auto"
+    },
+    "mismatch": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": 5
+    },
+    "nullable": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "x"
+    }
+  }
+}

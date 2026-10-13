@@ -1,0 +1,6 @@
+$schema: "http://json-schema.org/draft-04/schema#"
+id: "https://example.com/canonical/v1/canonical.json"
+type: object
+properties:
+  messageId:
+    type: string
