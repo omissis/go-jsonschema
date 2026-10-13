@@ -34,6 +34,7 @@ var (
 	minSizedInts              bool
 	minimalNames              bool
 	disableReadOnlyValidation bool
+	validateNullTypes         bool
 	disableCustomTypesForMaps bool
 	disableOmitEmpty          bool
 	disableOmitZero           bool
@@ -84,6 +85,7 @@ var (
 				MinSizedInts:              minSizedInts,
 				MinimalNames:              minimalNames,
 				DisableReadOnlyValidation: disableReadOnlyValidation,
+				ValidateNullTypes:         validateNullTypes,
 				DisableCustomTypesForMaps: disableCustomTypesForMaps,
 				DisableOmitEmpty:          disableOmitEmpty,
 				DisableOmitZero:           disableOmitZero,
@@ -167,6 +169,8 @@ func main() {
 		"Verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&extraImports, "extra-imports", "e", false,
 		"Allow extra imports (non standard library)")
+	rootCmd.PersistentFlags().BoolVar(&validateNullTypes, "validate-null-types", false,
+		"reject an explicit null where the schema's type excludes it; adds a raw decode to affected types")
 	rootCmd.PersistentFlags().BoolVar(&onlyModels, "only-models", false,
 		"Generate only models (no unmarshal methods, no validation)")
 	rootCmd.PersistentFlags().StringVarP(&defaultPackage, "package", "p", "",

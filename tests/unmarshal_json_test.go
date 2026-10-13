@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	testAdditionalProperties "github.com/atombender/go-jsonschema/tests/data/core/additionalProperties"
 	testAllOf "github.com/atombender/go-jsonschema/tests/data/core/allOf"
 	testAnyOf "github.com/atombender/go-jsonschema/tests/data/core/anyOf"
 	test "github.com/atombender/go-jsonschema/tests/data/extraImports/gopkgYAMLv3"
+	testNullTypes "github.com/atombender/go-jsonschema/tests/data/validateNullTypes"
 	testValudationRequiredFields "github.com/atombender/go-jsonschema/tests/data/validation/requiredFields"
 )
 
@@ -431,4 +433,132 @@ func formatGopkgYAMLv3(v test.GopkgYAMLv3) string {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+// TestJsonUnmarshalValidateNullTypes pins the opt-in `type` enforcement for
+// explicit nulls, and — more importantly — pins the cases that must keep
+// accepting null.
+//
+// Per draft-07 a null is invalid only because `type` says so: §6.5.3 defines
+// `required` as testing presence by name (so `{"x": null}` satisfies it), and
+// keywords are vacuously true for instances of a type they do not target. A
+// blanket "reject null" would therefore be a spec violation.
+func TestJsonUnmarshalValidateNullTypes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("null is rejected where type excludes it", func(t *testing.T) {
+		t.Parallel()
+
+		var v testNullTypes.NullTypes
+
+		// The container itself: `type: object` does not admit null.
+		require.Error(t, json.Unmarshal([]byte(`null`), &v))
+
+		// A present-but-null property whose type excludes null.
+		err := json.Unmarshal([]byte(`{"name":null}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must not be null")
+
+		err = json.Unmarshal([]byte(`{"name":"a","tags":null}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must not be null")
+	})
+
+	t.Run("a differently-cased key is rejected too", func(t *testing.T) {
+		t.Parallel()
+
+		// encoding/json matches a JSON key to a struct field without regard
+		// to case, so `{"Name": null}` is assigned to the `name` field. An
+		// exact raw-map lookup missed it and the check never fired — the flag
+		// was bypassable by changing a key's case.
+		// Uses an optional property deliberately. For a REQUIRED one the
+		// upstream required check indexes the raw map exactly too, so it
+		// reports "required" first and masks this — a separate gap, in
+		// upstream code, that is not this flag's to fix.
+		for _, payload := range []string{`{"name":"a","Tags":null}`, `{"name":"a","TAGS":null}`} {
+			var v testNullTypes.NullTypes
+
+			err := json.Unmarshal([]byte(payload), &v)
+			require.Error(t, err, "payload %s", payload)
+			assert.Contains(t, err.Error(), "must not be null")
+		}
+	})
+
+	t.Run("properties differing only in case split the keys as encoding/json does", func(t *testing.T) {
+		t.Parallel()
+
+		// encoding/json binds a key to the field with exactly that name, and
+		// otherwise to the first field whose name matches regardless of case.
+		// Matching every key case-insensitively rejected `{"Foo": null}` as a
+		// null `foo`, although encoding/json binds it to the untyped `Foo`.
+		for _, tc := range []struct {
+			payload string
+			reject  bool
+		}{
+			{`{"name":"a","Foo":null}`, false}, // exact: the untyped Foo
+			{`{"name":"a","foo":null}`, true},  // exact: the strict foo
+			{`{"name":"a","FOO":null}`, false}, // inexact: Foo comes first
+			{`{"name":"a","bar":null}`, false}, // exact: the untyped bar
+			{`{"name":"a","Bar":null}`, true},  // exact: the strict Bar
+			{`{"name":"a","BAR":null}`, true},  // inexact: Bar comes first
+		} {
+			var v testNullTypes.NullTypes
+
+			err := json.Unmarshal([]byte(tc.payload), &v)
+			if tc.reject {
+				require.Error(t, err, "payload %s", tc.payload)
+				assert.Contains(t, err.Error(), "must not be null")
+			} else {
+				require.NoError(t, err, "payload %s", tc.payload)
+			}
+		}
+	})
+
+	t.Run("a $ref property is checked against its target", func(t *testing.T) {
+		t.Parallel()
+
+		// StructField.SchemaType keeps the reference as written, and a
+		// reference declares no `type` of its own — so unresolved this looked
+		// like a schema constraining nothing and got no check at all.
+		var v testNullTypes.NullTypes
+
+		err := json.Unmarshal([]byte(`{"name":"a","viaRef":null}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must not be null")
+
+		// The other direction: a reference to a target that admits null, and
+		// one to a target with no `type`, both stay valid.
+		var w testNullTypes.NullAllowed
+
+		require.NoError(t, json.Unmarshal([]byte(`{"nullableViaRef":null}`), &w))
+		require.NoError(t, json.Unmarshal([]byte(`{"untypedViaRef":null}`), &w))
+	})
+
+	t.Run("omission and valid values are unaffected", func(t *testing.T) {
+		t.Parallel()
+
+		var v testNullTypes.NullTypes
+
+		require.NoError(t, json.Unmarshal([]byte(`{"name":"a"}`), &v))
+
+		// Still a required-field error, not a null error.
+		err := json.Unmarshal([]byte(`{}`), &v)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "required")
+	})
+
+	t.Run("null stays valid where the schema admits it", func(t *testing.T) {
+		t.Parallel()
+
+		var v testNullTypes.NullAllowed
+
+		// `{"type": ["string", "null"]}` admits null deliberately.
+		require.NoError(t, json.Unmarshal([]byte(`{"nullable":null}`), &v))
+
+		// No `type` keyword constrains nothing, so null is valid.
+		require.NoError(t, json.Unmarshal([]byte(`{"untyped":null}`), &v))
+
+		// But a plain `type: string` still rejects it.
+		require.Error(t, json.Unmarshal([]byte(`{"strict":null}`), &v))
+	})
 }

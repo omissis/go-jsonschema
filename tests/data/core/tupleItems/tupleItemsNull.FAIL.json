@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "`null` is not a schema. Left to the regular decode it lands in Items as nil, indistinguishable from an absent `items`, so an invalid schema would silently generate an unconstrained array.",
+  "properties": {
+    "tags": { "type": "array", "items": null }
+  }
+}
