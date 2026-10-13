@@ -10,9 +10,10 @@ import "reflect"
 type Raw json.RawMessage
 
 // Conditionals that lose nothing: an if without then or else, a then and an else
-// that impose nothing; a not on a definition the goJSONSchema extension maps to a
-// Go type of the user's, which is that type's to check, and additionalProperties:
-// false on a map, which StrictAdditionalProperties governs. None is reported.
+// that impose nothing, and a conditional discriminator that compiles; a not on a
+// definition the goJSONSchema extension maps to a Go type of the user's, which is
+// that type's to check, and additionalProperties: false on a map, which
+// StrictAdditionalProperties governs. None is reported.
 type VacuousConditionals struct {
 	// Extra corresponds to the JSON schema field "extra".
 	Extra *Raw `json:"extra,omitempty,omitzero" yaml:"extra,omitempty" mapstructure:"extra,omitempty"`
@@ -94,6 +95,23 @@ func (j *VacuousConditionals) UnmarshalJSON(value []byte) error {
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in VacuousConditionals: required")
 	}
+	rawDisc, hasDisc := raw["kind"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field kind in VacuousConditionals: must be a string for discriminator dispatch")
+		}
+		if discStr == "circle" {
+			if _, ok := raw["radius"]; !ok {
+				return fmt.Errorf("field radius in VacuousConditionals (when kind='circle'): required")
+			}
+		}
+		if discStr == "square" {
+			if _, ok := raw["side"]; !ok {
+				return fmt.Errorf("field side in VacuousConditionals (when kind='square'): required")
+			}
+		}
+	}
 	type Plain VacuousConditionals
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
@@ -111,6 +129,23 @@ func (j *VacuousConditionals) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if _, ok := raw["kind"]; raw != nil && !ok {
 		return fmt.Errorf("field kind in VacuousConditionals: required")
+	}
+	rawDisc, hasDisc := raw["kind"]
+	if hasDisc {
+		discStr, isStr := rawDisc.(string)
+		if !isStr {
+			return fmt.Errorf("field kind in VacuousConditionals: must be a string for discriminator dispatch")
+		}
+		if discStr == "circle" {
+			if _, ok := raw["radius"]; !ok {
+				return fmt.Errorf("field radius in VacuousConditionals (when kind='circle'): required")
+			}
+		}
+		if discStr == "square" {
+			if _, ok := raw["side"]; !ok {
+				return fmt.Errorf("field side in VacuousConditionals (when kind='square'): required")
+			}
+		}
 	}
 	type Plain VacuousConditionals
 	var plain Plain

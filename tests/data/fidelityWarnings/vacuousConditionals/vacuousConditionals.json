@@ -1,64 +1,35 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "description": "Conditionals that lose nothing: an if without then or else, a then and an else that impose nothing; a not on a definition the goJSONSchema extension maps to a Go type of the user's, which is that type's to check, and additionalProperties: false on a map, which StrictAdditionalProperties governs. None is reported.",
+  "description": "Conditionals that lose nothing: an if without then or else, a then and an else that impose nothing, and a conditional discriminator that compiles; a not on a definition the goJSONSchema extension maps to a Go type of the user's, which is that type's to check, and additionalProperties: false on a map, which StrictAdditionalProperties governs. None is reported.",
   "properties": {
-    "kind": {
-      "type": "string",
-      "enum": [
-        "circle",
-        "square"
-      ]
-    },
-    "radius": {
-      "type": "number"
-    },
-    "side": {
-      "type": "number"
-    },
+    "kind": { "type": "string", "enum": ["circle", "square"] },
+    "radius": { "type": "number" },
+    "side": { "type": "number" },
     "label": {
       "type": "string",
-      "if": {
-        "minLength": 1
-      },
+      "if": { "minLength": 1 },
       "then": {},
-      "else": {
-        "description": "An empty label is shown as it is."
-      }
+      "else": { "description": "An empty label is shown as it is." }
     },
-    "extra": {
-      "$ref": "#/definitions/raw"
-    },
+    "extra": { "$ref": "#/definitions/raw" },
     "tags": {
       "type": "object",
-      "patternProperties": {
-        "^[a-z]+$": {
-          "type": "string"
-        }
-      },
+      "patternProperties": { "^[a-z]+$": { "type": "string" } },
       "additionalProperties": false
     }
   },
   "definitions": {
     "raw": {
       "type": "string",
-      "not": {
-        "const": ""
-      },
-      "goJSONSchema": {
-        "type": "json.RawMessage",
-        "imports": [
-          "encoding/json"
-        ]
-      }
+      "not": { "const": "" },
+      "goJSONSchema": { "type": "json.RawMessage", "imports": ["encoding/json"] }
     }
   },
-  "required": [
-    "kind"
-  ],
-  "if": {
-    "required": [
-      "label"
-    ]
-  }
+  "required": ["kind"],
+  "if": { "required": ["label"] },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "circle" } } }, "then": { "required": ["radius"] } },
+    { "if": { "properties": { "kind": { "const": "square" } } }, "then": { "required": ["side"] } }
+  ]
 }

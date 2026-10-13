@@ -184,6 +184,18 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		assert.Empty(t, notEnforced)
 	})
 
+	t.Run("a declined conditional discriminator still reports what goes unchecked", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := filterFidelityWarnings(generateWithWarnerCapture(t,
+			"./data/conditionalDiscriminator/thenConstraints/thenConstraints.json"))
+
+		assert.Equal(t, []string{
+			"schema fidelity: type ThenConstraints does not enforce all it declares: " +
+				"if/then/else not compiled (in allOf branch)",
+		}, warnings, "the decline says why; the fidelity warning says what goes unchecked")
+	})
+
 	t.Run("conditionals that lose nothing stay silent", func(t *testing.T) {
 		t.Parallel()
 
