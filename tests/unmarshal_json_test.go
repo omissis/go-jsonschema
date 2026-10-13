@@ -408,6 +408,19 @@ func TestJSONUnmarshalAdditionalProperties(t *testing.T) {
 				assert.Equal(t, map[string]string{"property1": "hello", "property2": "world"}, addProps)
 			},
 		},
+		{
+			desc: "empty string key in input initializes additional properties map",
+			json: `{
+				"": "empty key value"
+			}`,
+			target: &testAdditionalProperties.StringAdditionalProperties{},
+			assertFn: func(target json.Unmarshaler) {
+				addProps := target.(*testAdditionalProperties.StringAdditionalProperties).AdditionalProperties
+
+				assert.Equal(t, map[string]string{}, addProps)
+				assert.NotNil(t, addProps)
+			},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
