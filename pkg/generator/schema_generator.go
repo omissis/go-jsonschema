@@ -1839,9 +1839,12 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	// decodes every branch into a type of its own. If a branch admits a
 	// primitive or an array too, that struct would reject values the schema
 	// allows and its validator has no type to decode them into, so the anyOf
-	// is interface{} instead, as upstream generates it for these. A merge into
-	// a map keeps its type, as upstream's.
+	// is interface{} instead, as upstream generates it for these, and the
+	// fidelity warning names what goes unchecked. A merge into a map keeps
+	// its type, as upstream's.
 	if mergesIntoStruct(t, rAnyOf) && g.mixesObjectAndNonObject(t, rAnyOf) {
+		g.warnFallback(t, scope, "anyOf with both object and non-object branches")
+
 		return emptyInterfaceTypeVal, nil
 	}
 

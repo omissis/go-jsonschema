@@ -93,6 +93,16 @@ func TestFidelityWarningsBehavior(t *testing.T) {
 		}
 	})
 
+	t.Run("anyOf mixing object and string branches falls back and warns", func(t *testing.T) {
+		t.Parallel()
+
+		warnings := generateWithWarnerCapture(t, "./data/core/anyOf/anyOfRefToString.json")
+		joined := strings.Join(filterFidelityWarnings(warnings), "\n")
+
+		assert.Contains(t, joined, "anyOf with both object and non-object branches")
+		assert.Contains(t, joined, "declared property(ies)")
+	})
+
 	t.Run("schema with no enforcement-implying keywords stays silent", func(t *testing.T) {
 		t.Parallel()
 
