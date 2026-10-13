@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/tryEachSelfReference",
+  "$ref": "#/definitions/Node",
+  "definitions": {
+    "Node": {
+      "description": "A try-each variant refers back to the oneOf that holds it. The holder is registered before its variants, so Children resolves to it; before, Children got a type that was never declared.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "leaf": { "type": "string" } },
+          "required": ["leaf"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "children": { "type": "array", "items": { "$ref": "#/definitions/Node" } }
+          },
+          "required": ["children"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

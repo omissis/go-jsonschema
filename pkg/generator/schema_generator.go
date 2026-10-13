@@ -1,10 +1,13 @@
 package generator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -26,6 +29,15 @@ var (
 	arrayTypeVal = codegen.ArrayType{Type: emptyInterfaceTypeVal}
 
 	errEmptyInAnyOf = errors.New("cannot have empty anyOf array")
+
+	// ErrPropertyNameNotRepresentable is returned for a property name that
+	// encoding/json will not accept in a struct tag. Such a field cannot be
+	// mapped at all — decode leaves it unset and encode emits a truncated key
+	// — so the schema is refused rather than generated with a field that
+	// silently does not round-trip.
+	ErrPropertyNameNotRepresentable = errors.New(
+		"property name cannot be represented in a Go struct tag that encoding/json accepts",
+	)
 )
 
 const float64Type = "float64"
@@ -141,15 +153,14 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 	var def *schemas.Type
 
 	if defName != "" {
-		// TODO: Support nested definitions.
-		var ok bool
+		var rerr error
 
-		def, ok = schema.Definitions[defName]
-		if !ok {
-			return nil, fmt.Errorf("%w: %q (from ref %q)", errDefinitionDoesNotExistInSchema, defName, t.Ref)
+		def, rerr = resolveRefPath(schema.Definitions, defName)
+		if rerr != nil {
+			return nil, fmt.Errorf("%w: %q (from ref %q)", rerr, defName, t.Ref)
 		}
 
-		defName = g.caser.Identifierize(defName)
+		defName = sg.avoidInProgressName(t, def, g.caser.Identifierize(refPathTypeName(defName)))
 	} else {
 		def = (*schemas.Type)(schema.ObjectAsType)
 		defName = g.getRootTypeName(schema, fileName)
@@ -178,9 +189,12 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		return dt, nil
 	}
 
-	nt, ok := dt.(*codegen.NamedType)
-	if !ok {
-		return nil, fmt.Errorf("%w: got %T", errExpectedNamedType, t)
+	// A nullable definition, such as an anyOf of an object and null, comes
+	// back as a pointer to its declared type; references to it keep the
+	// pointer.
+	nt, err := g.extractPointedType(dt)
+	if err != nil {
+		return nil, err
 	}
 
 	if isCycle {
@@ -207,10 +221,16 @@ func (g *schemaGenerator) generateReferencedType(t *schemas.Type) (codegen.Type,
 		g.output.file.Package.AddImport(sg.output.file.Package.QualifiedName, sg.output.file.Package.Name())
 	}
 
-	return &codegen.NamedType{
+	ref := &codegen.NamedType{
 		Package: &sg.output.file.Package,
 		Decl:    nt.Decl,
-	}, nil
+	}
+
+	if _, isPointer := dt.(*codegen.PointerType); isPointer {
+		return &codegen.PointerType{Type: ref}, nil
+	}
+
+	return ref, nil
 }
 
 func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, error) {
@@ -249,23 +269,133 @@ func (g *schemaGenerator) extractRefNames(t *schemas.Type) (string, string, erro
 	return defName, fileName, nil
 }
 
+// avoidInProgressName returns name unless it is held by a declaration still
+// being generated for a different schema - the root, say, while its fields are
+// walked. isUniqueTypeName treats an in-progress name as free (the allOf and
+// anyOf merges rely on that), so a nested ref named after its path would take
+// the name and the other declaration would be silently dropped. A schema
+// re-entering itself never needs this: generateDeclaredType answers from
+// declsBySchema first. Nor does a name held by ref itself: generateDeclaredType
+// reserves a property's scope name for the referencing schema before resolving
+// it, and drops that placeholder once the ref resolves to a named type. So a
+// property order.shipping referencing #/$defs/orderShipping keeps the name
+// OrderShipping for the definition rather than declaring it as OrderShipping_1.
+// The suffixed name carries the usual collision warning.
+func (g *schemaGenerator) avoidInProgressName(ref, def *schemas.Type, name string) string {
+	if _, cached := g.output.declsBySchema[def]; cached {
+		return name
+	}
+
+	if decl, taken := g.output.declsByName[name]; !taken || decl.Type != nil || decl.SchemaType == ref {
+		return name
+	}
+
+	for n := 1; ; n++ {
+		suffixed := fmt.Sprintf("%s_%d", name, n)
+		if _, ok := g.output.declsByName[suffixed]; !ok {
+			g.warner(fmt.Sprintf(
+				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed,
+			))
+
+			return suffixed
+		}
+	}
+}
+
+// generateOneOfComposition routes a `oneOf` to whichever specialised generator
+// covers its shape, reporting whether it handled the schema at all. Collecting
+// the strategies here keeps generateDeclaredType to a single branch for the
+// family, and gives each new strategy one place to slot into.
+//
+// OnlyModels declines every strategy: each emits a type whose entire API is its
+// generated Unmarshal/Marshal methods — the primitive wrapper has only an
+// unexported `value` field, and the holders only variant pointers — so without
+// those methods the result is unusable. The regular generation path produces
+// something consumers can at least construct.
+func (g *schemaGenerator) generateOneOfComposition(
+	t *schemas.Type,
+	scope nameScope,
+) (codegen.Type, bool, error) {
+	if g.config.OnlyModels {
+		return nil, false, nil
+	}
+
+	if isPrimitiveOneOf(t) {
+		return g.generateOneOfPrimitive(t, scope), true, nil
+	}
+
+	if len(t.OneOf) > 1 {
+		// A natural discriminator gives a direct dispatch; otherwise fall
+		// back to try-each, which checks each variant and accepts only when
+		// exactly one succeeds.
+		if d := g.detectDiscriminator(t.OneOf); d.ok && !g.variantRedefinesParent(t, d.prop) {
+			dt, err := g.generateOneOfDiscriminator(t, scope, d)
+
+			return dt, true, err
+		}
+
+		if g.useTryEach(t) {
+			dt, err := g.generateOneOfTryEach(t, scope)
+
+			return dt, true, err
+		}
+	}
+
+	return nil, false, nil
+}
+
+// alreadyDeclaredType is the type of t, which declsBySchema holds as decl, for
+// use at scope.
+func (g *schemaGenerator) alreadyDeclaredType(
+	t *schemas.Type,
+	decl *codegen.TypeDecl,
+	scope nameScope,
+) (codegen.Type, error) {
+	// A $ref's own declaration is only a placeholder while the ref resolves,
+	// dropped as soon as it does. Reached again before then, through a copy
+	// of a schema enclosing it, the placeholder would end up named in the
+	// output but never declared; the ref is what it stands for.
+	//
+	// The placeholder is kept, as before, where the ref cannot be resolved
+	// here, and where definitions that are only $refs to one another lead
+	// back to this ref while it is still being resolved.
+	if _, resolving := g.resolvingRefs[t]; decl.Type == nil && resolvesToRef(t) && !resolving {
+		g.resolvingRefs[t] = struct{}{}
+		defer delete(g.resolvingRefs, t)
+
+		if rt, err := g.generateReferencedType(t); err == nil {
+			// A cycle through the ref comes back as a pointer to the type.
+			// Callers want the declared type itself, package qualifier
+			// included, and add the pointer themselves where their own
+			// reference is cyclic.
+			if pt, ok := rt.(*codegen.PointerType); ok {
+				if nt, ok := pt.Type.(*codegen.NamedType); ok {
+					return nt, nil
+				}
+			}
+
+			return rt, nil
+		}
+	}
+
+	if t.Dereferenced && decl.Name != scope.string() {
+		declAlias := &codegen.AliasType{
+			Alias: scope.string(),
+			Name:  decl.Name,
+		}
+
+		g.generateUnmarshaler(decl, nil)
+
+		g.output.file.Package.AddDecl(declAlias)
+	}
+
+	return &codegen.NamedType{Decl: decl}, nil
+}
+
 //nolint:gocyclo // todo: reduce cyclomatic complexity
 func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	if decl, ok := g.output.declsBySchema[t]; ok {
-		if t.Dereferenced {
-			if decl.Name != scope.string() {
-				declAlias := &codegen.AliasType{
-					Alias: scope.string(),
-					Name:  decl.Name,
-				}
-
-				g.generateUnmarshaler(decl, nil)
-
-				g.output.file.Package.AddDecl(declAlias)
-			}
-		}
-
-		return &codegen.NamedType{Decl: decl}, nil
+		return g.alreadyDeclaredType(t, decl, scope)
 	}
 
 	if !g.output.isUniqueTypeName(scope.string()) {
@@ -286,6 +416,10 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	if t.Enum != nil {
 		return g.generateEnumType(t, scope)
+	}
+
+	if dt, handled, err := g.generateOneOfComposition(t, scope); handled {
+		return dt, err
 	}
 
 	name := g.output.uniqueTypeName(scope)
@@ -309,8 +443,7 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 
 	if isNamedType(theType) || (isMapType(theType) && g.config.DisableCustomTypesForMaps) {
 		// Don't declare named types under a new name.
-		delete(g.output.declsBySchema, t)
-		delete(g.output.declsByName, decl.Name)
+		g.output.forgetDecl(t, &decl, theType)
 
 		return theType, nil
 	}
@@ -328,14 +461,25 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	switch tt := theType.(type) {
 	case *codegen.StructType:
 		if t.GetSubSchemaType() == schemas.SubSchemaTypeAnyOf {
-			validators = append(validators, &anyOfValidator{decl.Name, t.GetSubSchemasCount()})
+			validators = append(validators, newAnyOfValidator(decl.Name, t.GetSubSchemasCount(), g.output.anyOfVariants[t]))
 			g.generateUnmarshaler(&decl, validators)
 
 			return &codegen.NamedType{Decl: &decl}, nil
 		}
 
+		// Null checks precede the required ones: those deliberately pass for a
+		// null instance (the keyword is vacuous off-type), so the container
+		// check is what turns a null into the type error it actually is.
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, true)...)
+
 		for _, f := range tt.RequiredJSONFields {
 			validators = append(validators, &requiredValidator{f, decl.Name})
+		}
+
+		validators = append(validators, g.nullTypeValidators(t, tt, decl.Name, false)...)
+
+		if v := g.strictFieldsValidatorFor(t, tt, decl.Name); v != nil {
+			validators = append(validators, v)
 		}
 
 		for _, f := range tt.Fields {
@@ -354,13 +498,9 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 					dvIsPointer = true
 				}
 
-				validators = append(validators, &defaultValidator{
-					jsonName:         f.JSONName,
-					fieldName:        f.Name,
-					defaultValueType: dvType,
-					defaultValue:     f.DefaultValue,
-					isPointer:        dvIsPointer,
-				})
+				if v := g.defaultValidatorFor(f, dvType, dvIsPointer); v != nil {
+					validators = append(validators, v)
+				}
 			}
 
 			if !g.config.DisableReadOnlyValidation && f.SchemaType.ReadOnly {
@@ -387,13 +527,206 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 			g.generateUnmarshaler(&decl, validators)
 		}
 
-	case codegen.MapType, *codegen.MapType:
-		if t.IsSubSchemaTypeElem() {
-			g.generateUnmarshaler(&decl, []validator{})
-		}
+	case codegen.MapType, *codegen.MapType, codegen.ArrayType, *codegen.ArrayType:
+		g.generateContainerUnmarshaler(&decl, t, tt)
 	}
 
 	return &codegen.NamedType{Decl: &decl}, nil
+}
+
+// generateContainerUnmarshaler gives a declared map or array the unmarshaler it
+// needs. A map that is a subschema element always gets one. Either kind also
+// gets one to check the `format` of the strings it holds, since a field holding
+// it sees only the named type; a declared array, such as a `$ref`'d definition
+// of `type: array`, gets none otherwise.
+func (g *schemaGenerator) generateContainerUnmarshaler(decl *codegen.TypeDecl, t *schemas.Type, tt codegen.Type) {
+	validators := []validator{}
+
+	if fv := g.elementFormatValidator(codegen.StructField{Type: tt, SchemaType: t}, tt, false); fv != nil {
+		validators = append(validators, fv)
+	}
+
+	_, isMap := tt.(codegen.MapType)
+	if _, ok := tt.(*codegen.MapType); ok {
+		isMap = true
+	}
+
+	if (isMap && t.IsSubSchemaTypeElem()) || len(validators) > 0 {
+		g.generateUnmarshaler(decl, validators)
+	}
+}
+
+// nullTypeValidators builds the opt-in `type` checks for explicit nulls. The
+// container check and the per-property checks are requested separately because
+// they bracket the required checks: the container one must run before them, the
+// property ones after.
+//
+// Returns nothing unless ValidateNullTypes is set.
+func (g *schemaGenerator) nullTypeValidators(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+	container bool,
+) []validator {
+	if !g.config.ValidateNullTypes {
+		return nil
+	}
+
+	if container {
+		if !schemaExcludesNull(t) {
+			return nil
+		}
+
+		return []validator{&nonNullContainerValidator{declName}}
+	}
+
+	var out []validator
+
+	for i, f := range tt.Fields {
+		if !g.schemaExcludesNullResolved(f.SchemaType) {
+			continue
+		}
+
+		v := &nonNullValidator{jsonName: f.JSONName, declName: declName}
+
+		// encoding/json binds a key to the field with exactly that name, and
+		// only otherwise to the first field whose name matches it regardless
+		// of case. Properties differing only in case split the keys between
+		// them that way, so the check has to split them the same way.
+		for j, other := range tt.Fields {
+			if j == i || !strings.EqualFold(other.JSONName, f.JSONName) {
+				continue
+			}
+
+			v.caseVariants = append(v.caseVariants, other.JSONName)
+			v.exactOnly = v.exactOnly || j < i
+		}
+
+		out = append(out, v)
+	}
+
+	return out
+}
+
+// maxNullCheckRefHops bounds the reference chain walked while deciding whether a
+// property admits null. A schema may legitimately point a `$ref` at another
+// `$ref`, and a cyclic chain must not hang the generator.
+const maxNullCheckRefHops = 16
+
+// schemaExcludesNullResolved answers schemaExcludesNull for a property, looking
+// through any `$ref` first.
+//
+// StructField.SchemaType keeps the reference as written, and a reference
+// declares no `type` of its own — so unresolved, a `$ref` to
+// `{"type": "string"}` looks like a schema that constrains nothing and no check
+// is emitted, while the same type written inline gets one.
+//
+// Resolved by walking this schema's definitions rather than through
+// resolveRef, which generates the referenced type as a side effect. A
+// reference this cannot follow — into another document, or to a definition
+// that is not there — keeps the previous answer rather than forcing one.
+func (g *schemaGenerator) schemaExcludesNullResolved(t *schemas.Type) bool {
+	for hops := 0; t != nil && t.Ref != "" && hops < maxNullCheckRefHops; hops++ {
+		resolved := g.localRefTarget(t)
+		if resolved == nil {
+			return false
+		}
+
+		t = resolved
+	}
+
+	return schemaExcludesNull(t)
+}
+
+// localRefTarget returns the schema a same-document `$ref` points at, or nil
+// when it points elsewhere or cannot be followed. Nothing is generated.
+func (g *schemaGenerator) localRefTarget(t *schemas.Type) *schemas.Type {
+	defName, fileName, err := g.extractRefNames(t)
+	if err != nil || fileName != "" || defName == "" {
+		return nil
+	}
+
+	def, err := resolveRefPath(g.schema.Definitions, defName)
+	if err != nil {
+		return nil
+	}
+
+	return def
+}
+
+// schemaExcludesNull reports whether a schema declares a `type` that does not
+// admit null, which is the only situation where an explicit null is invalid.
+//
+// A schema with no `type` constrains nothing, and a nullable union such as
+// `{"type": ["string", "null"]}` admits null deliberately; both must keep
+// accepting it.
+func schemaExcludesNull(t *schemas.Type) bool {
+	if t == nil || len(t.Type) == 0 {
+		return false
+	}
+
+	return !slices.Contains(t.Type, schemas.TypeNameNull)
+}
+
+// strictFieldsValidatorFor returns a strictFieldsValidator when the active
+// configuration calls for `additionalProperties: false` enforcement on this
+// type, or nil when no such validator should be emitted.
+//
+// Enforcement is suppressed for objects that have a typed `additionalProperties`
+// (a catch-all field is generated instead), and for objects that declare
+// `patternProperties` (which would erroneously be rejected; this is a known
+// limitation since patternProperties has no first-class generator support).
+func (g *schemaGenerator) strictFieldsValidatorFor(
+	t *schemas.Type,
+	tt *codegen.StructType,
+	declName string,
+) *strictFieldsValidator {
+	// Only the `false` schema forbids every extra property. Any other
+	// `not` schema forbids some values and allows the rest, so enforcing
+	// on it would reject data the schema accepts.
+	schemaSaysFalse := isFalseSchema(t.AdditionalProperties)
+	schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
+
+	switch g.config.StrictAdditionalProperties {
+	case StrictAdditionalPropertiesOff:
+		return nil
+
+	case StrictAdditionalPropertiesRespectSchema:
+		if !schemaSaysFalse {
+			return nil
+		}
+
+	case StrictAdditionalPropertiesStrict:
+		if schemaTypedAddl {
+			return nil
+		}
+	}
+
+	if len(t.PatternProperties) > 0 {
+		g.warner(fmt.Sprintf(
+			"strictAdditionalProperties: skipping %s because patternProperties is not supported",
+			declName,
+		))
+
+		return nil
+	}
+
+	known := make([]string, 0, len(tt.Fields))
+
+	for _, f := range tt.Fields {
+		if f.Name == additionalProperties {
+			continue
+		}
+
+		known = append(known, f.JSONName)
+	}
+
+	slices.Sort(known)
+
+	return &strictFieldsValidator{
+		declName:    declName,
+		knownFields: known,
+	}
 }
 
 //nolint:gocyclo // todo: reduce cyclomatic complexity
@@ -454,6 +787,17 @@ func (g *schemaGenerator) structFieldValidators(
 				g.output.file.Package.AddImport("regexp", "")
 			}
 
+			if format := f.SchemaType.Format; format != "" &&
+				isKnownFormatKeyword(format) &&
+				g.config.FormatValidation.shouldValidate(format) {
+				validators = append(validators, &formatValidator{
+					jsonName:   f.JSONName,
+					fieldName:  f.Name,
+					format:     format,
+					isNillable: isNillable,
+				})
+			}
+
 		case strings.Contains(v.Type, "int") || v.Type == float64Type:
 			if f.SchemaType.MultipleOf != nil ||
 				f.SchemaType.Maximum != nil ||
@@ -512,21 +856,164 @@ func (g *schemaGenerator) structFieldValidators(
 				})
 
 				break
-			} else if f.SchemaType.MinItems != 0 || f.SchemaType.MaxItems != 0 {
+			} else if maxItems, hasMax := effectiveMaxItems(f.SchemaType); f.SchemaType.MinItems != 0 || hasMax {
 				validators = append(validators, &arrayValidator{
-					fieldName:  f.Name,
-					jsonName:   f.JSONName,
-					arrayDepth: arrayDepth,
-					minItems:   f.SchemaType.MinItems,
-					maxItems:   f.SchemaType.MaxItems,
+					fieldName:   f.Name,
+					jsonName:    f.JSONName,
+					arrayDepth:  arrayDepth,
+					minItems:    f.SchemaType.MinItems,
+					maxItems:    maxItems,
+					maxItemsSet: hasMax,
 				})
 			}
 
 			t = v.Type
 		}
+
+		if fv := g.elementFormatValidator(f, v, isNillable); fv != nil {
+			validators = append(validators, fv)
+		}
+
+	case codegen.ArrayType, *codegen.MapType, codegen.MapType:
+		if fv := g.elementFormatValidator(f, t, isNillable); fv != nil {
+			validators = append(validators, fv)
+		}
 	}
 
 	return validators
+}
+
+// elementFormatValidator returns the `format` check for the string held in an
+// inline array or map, nested ones included, or nil when there is nothing to
+// check. Without it the check only ever reached a string-typed field, so
+// `items: {format: uuid}` let any string through.
+//
+// The walk stops at a named element type: that type is declared separately and
+// checks its own value in its own unmarshaler.
+func (g *schemaGenerator) elementFormatValidator(
+	f codegen.StructField,
+	t codegen.Type,
+	isNillable bool,
+) validator {
+	schema := f.SchemaType
+
+	var levels []containerLevel
+
+	for schema != nil {
+		elem, elemSchema, level, ok := containerElement(t, schema)
+		if !ok {
+			break
+		}
+
+		levels = append(levels, level)
+		t, schema = elem, elemSchema
+	}
+
+	if len(levels) == 0 || schema == nil {
+		return nil
+	}
+
+	isElemNillable := false
+	if pt, ok := t.(*codegen.PointerType); ok {
+		t, isElemNillable = pt.Type, true
+	}
+
+	if !isStringType(t) {
+		return nil
+	}
+
+	format := schema.Format
+	if format == "" || !isKnownFormatKeyword(format) || !g.config.FormatValidation.shouldValidate(format) {
+		return nil
+	}
+
+	return &formatValidator{
+		jsonName:       f.JSONName,
+		fieldName:      f.Name,
+		format:         format,
+		isNillable:     isNillable,
+		elements:       levels,
+		isElemNillable: isElemNillable,
+		// The struct's catch-all map is filled after the other checks run.
+		afterAdditionalProperties: f.Name == additionalProperties,
+	}
+}
+
+// containerElement steps from an inline array or map to the element it holds,
+// together with the element's schema. Both forms of each type occur: inline
+// fields hold pointers, while declared types and map values hold values.
+func containerElement(t codegen.Type, s *schemas.Type) (codegen.Type, *schemas.Type, containerLevel, bool) {
+	switch ct := t.(type) {
+	case *codegen.ArrayType:
+		return ct.Type, elementSchema(s), containerArray, true
+
+	case codegen.ArrayType:
+		return ct.Type, elementSchema(s), containerArray, true
+
+	case *codegen.MapType:
+		return ct.ValueType, s.AdditionalProperties, containerMap, true
+
+	case codegen.MapType:
+		return ct.ValueType, s.AdditionalProperties, containerMap, true
+	}
+
+	return nil, nil, 0, false
+}
+
+// isStringType reports whether t is the primitive string type.
+func isStringType(t codegen.Type) bool {
+	switch pt := t.(type) {
+	case codegen.PrimitiveType:
+		return pt.Type == schemas.TypeNameString
+
+	case *codegen.PrimitiveType:
+		return pt.Type == schemas.TypeNameString
+	}
+
+	return false
+}
+
+// defaultValidatorFor sets field f to its default while its key is absent;
+// dvType is f's type with any pointer removed.
+//
+// A primitive union wrapper takes its default the way it takes any value,
+// through its own UnmarshalJSON, so the default is stored exactly as a decoded
+// one would be. A default of a kind the wrapper does not accept is left out
+// with a warning: it could never be decoded, and a default is only an
+// annotation.
+func (g *schemaGenerator) defaultValidatorFor(
+	f codegen.StructField,
+	dvType codegen.Type,
+	isPointer bool,
+) validator {
+	if nt, ok := dvType.(*codegen.NamedType); ok {
+		if kinds, ok := g.output.primitiveWrapperKinds[nt.Decl]; ok {
+			encoded, err := json.Marshal(f.DefaultValue)
+			if err != nil || !kinds.has(oneOfKindOf(f.DefaultValue)) {
+				g.warner(fmt.Sprintf(
+					"default %s for field %q is not a value its type %s accepts; it is left out",
+					encoded, f.JSONName, nt.Decl.Name,
+				))
+
+				return nil
+			}
+
+			return &wrapperDefaultValidator{
+				jsonName:    f.JSONName,
+				fieldName:   f.Name,
+				encoded:     string(encoded),
+				acceptsNull: kinds.has(oneOfKindNull),
+			}
+		}
+	}
+
+	return &defaultValidator{
+		jsonName:         f.JSONName,
+		fieldName:        f.Name,
+		defaultValueType: dvType,
+		defaultValue:     f.DefaultValue,
+		isPointer:        isPointer,
+	}
 }
 
 func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators []validator) {
@@ -555,6 +1042,10 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			g.output.file.Package.AddImport(pkg.qualifiedName, "")
 		}
 
+		for _, decl := range v.desc().decls {
+			g.output.file.Package.AddDecl(decl)
+		}
+
 		if v.desc().hasError {
 			g.output.file.Package.AddImport("fmt", "")
 		}
@@ -568,6 +1059,112 @@ func (g *schemaGenerator) generateUnmarshaler(decl *codegen.TypeDecl, validators
 			Name: decl.GetName() + "_validator_" + formatter.getName(),
 		})
 	}
+}
+
+// itemsSchema resolves the element schema for an array, covering both draft-07
+// forms of `items`. The single-schema form is returned as-is.
+//
+// For the tuple form, a one-element tuple — the common "a tuple of exactly one"
+// idiom, usually paired with minItems/maxItems 1 — maps cleanly onto that
+// element's type, so the array is generated as a properly typed slice. A
+// heterogeneous tuple has no faithful Go slice representation, so it warns and
+// returns nil, leaving the caller to fall back to an untyped array. Positional
+// types and `additionalItems` are not otherwise enforced.
+func (g *schemaGenerator) itemsSchema(t *schemas.Type, scope nameScope) *schemas.Type {
+	if items := elementSchema(t); items != nil || len(t.TupleItems) == 0 {
+		return items
+	}
+
+	g.warner(fmt.Sprintf(
+		"Array %s uses a tuple for items that does not describe a single "+
+			"element type; positional types are not modelled and it will be "+
+			"represented as an untyped array",
+		scope.string(),
+	))
+
+	return nil
+}
+
+// elementSchema returns the schema every element of the array t follows, or
+// nil when there is none. It is itemsSchema without the warning, for callers
+// that only read the schema.
+func elementSchema(t *schemas.Type) *schemas.Type {
+	if len(t.TupleItems) == 0 {
+		return t.Items
+	}
+
+	// Only a CLOSED one-element tuple describes every element. Left open,
+	// `items: [A]` constrains position 0 and leaves positions 1+ to any
+	// type, so collapsing it to []A would reject data the schema allows.
+	if len(t.TupleItems) == 1 && tupleIsClosed(t) {
+		return t.TupleItems[0]
+	}
+
+	return nil
+}
+
+// tupleIsClosed reports whether a tuple forbids elements beyond the ones it
+// lists, either by capping the length with maxItems or by disallowing extras
+// with `additionalItems: false`.
+func tupleIsClosed(t *schemas.Type) bool {
+	if t.MaxItems == len(t.TupleItems) {
+		return true
+	}
+
+	return isFalseSchema(t.AdditionalItems)
+}
+
+// effectiveMaxItems returns the array length cap a schema implies, including
+// the one a closed tuple carries without saying so.
+//
+// `items: [A], additionalItems: false` permits at most len(items) elements, but
+// expresses that through `additionalItems` rather than `maxItems`. itemsSchema
+// collapses exactly that shape to []A, so without this the generated slice
+// would accept more elements than the schema allows — `["a", "b"]` would decode
+// cleanly against a tuple that admits one element.
+func effectiveMaxItems(t *schemas.Type) (int, bool) {
+	// Presence is returned separately from the value because a closed tuple
+	// can legitimately cap the array at zero: `items: [], additionalItems:
+	// false` leaves every element "additional" and so forbidden, admitting
+	// only the empty array. Reporting that as a bare 0 is indistinguishable
+	// from "no maximum" and emits no check at all.
+	// `additionalItems` only has meaning alongside the tuple form of `items`
+	// (draft-07 §6.4.2); with a single-schema `items` it applies to nothing
+	// and must not cap the array. TupleItems is non-nil exactly when the
+	// tuple form was parsed, which is what distinguishes `items: []` — a
+	// closed tuple of zero members — from `items: {...}`.
+	tupleClosed := t.TupleItems != nil && isFalseSchema(t.AdditionalItems)
+
+	tupleMax := 0
+	if tupleClosed {
+		tupleMax = len(t.TupleItems)
+	}
+
+	switch {
+	case !tupleClosed:
+		return t.MaxItems, t.MaxItems != 0
+
+	case t.MaxItems == 0:
+		return tupleMax, true
+
+	default:
+		// Both cap the array, so the tighter one wins. A schema may well
+		// declare `maxItems: 3` beside a one-member closed tuple; the
+		// tuple still admits one element, and taking maxItems on its own
+		// would let two more through.
+		return min(t.MaxItems, tupleMax), true
+	}
+}
+
+// isFalseSchema reports whether t is the JSON Schema `false`.
+//
+// Type.UnmarshalJSON decodes `false` as a `not` of the empty (always-true)
+// schema, i.e. Type{Not: &Type{}}. Testing merely for a non-nil Not would also
+// match a real constraint such as {"not": {"type": "integer"}}, which still
+// permits values — treating that as closed would wrongly collapse a tuple to a
+// single element type and reject data the schema allows.
+func isFalseSchema(t *schemas.Type) bool {
+	return t != nil && t.Not != nil && reflect.DeepEqual(*t.Not, schemas.Type{})
 }
 
 func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codegen.Type, error) {
@@ -589,15 +1186,63 @@ func (g *schemaGenerator) generateType(t *schemas.Type, scope nameScope) (codege
 		return g.generateReferencedType(t)
 	}
 
+	// AnyOf / AllOf must be delegated to their dedicated generators before
+	// falling through to determineTypeName + the type switch — otherwise a
+	// schema like `{allOf:[{$ref:Base},{type:"object",...}]}` ends up with
+	// determineTypeName returning "null" (the variants have mismatched
+	// Type slices: an empty one for the $ref and `[object]` for the inline
+	// branch) and the schema is silently emitted as `interface{}`. This
+	// mirrors the same delegation already done by generateTypeInline and
+	// is required for the discriminator-detection path (Phase 5) to emit
+	// real variant structs instead of interface{}.
+	//
+	// On merge failure (e.g. unsupported nested definitions whose refs
+	// can't resolve), warn and fall back to interface{} rather than
+	// surfacing a hard error — preserves the previous silent-fallback
+	// behaviour for schemas that hit unsupported features. A schema that
+	// declares `type: object` is the exception: it went through
+	// generateStructType before, which returned the merge error, so it
+	// still fails rather than becoming an unchecked interface{}.
+	if len(t.AnyOf) > 0 {
+		dt, err := g.generateAnyOfType(t, scope)
+		if err != nil {
+			if slices.Contains(t.Type, schemas.TypeNameObject) {
+				return nil, err
+			}
+
+			g.warner(fmt.Sprintf("anyOf generation failed for %v; falling back to interface{}: %v", scope, err))
+
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		return dt, nil
+	}
+
+	if len(t.AllOf) > 0 {
+		dt, err := g.generateAllOfType(t, scope)
+		if err != nil {
+			if slices.Contains(t.Type, schemas.TypeNameObject) {
+				return nil, err
+			}
+
+			g.warner(fmt.Sprintf("allOf generation failed for %v; falling back to interface{}: %v", scope, err))
+
+			return codegen.EmptyInterfaceType{}, nil
+		}
+
+		return dt, nil
+	}
+
 	typeName, typePtr := g.determineTypeName(t)
 
 	switch typeName {
 	case schemas.TypeNameArray:
-		if t.Items == nil {
+		items := g.itemsSchema(t, scope)
+		if items == nil {
 			return arrayTypeVal, nil
 		}
 
-		elemType, err := g.generateType(t.Items, g.singularScope(scope))
+		elemType, err := g.generateType(items, g.singularScope(scope))
 		if err != nil {
 			return nil, err
 		}
@@ -731,6 +1376,42 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 				"skipping validation code for them since we don't know their types")
 		}
 
+		// Property-less object schemas that should reject unknown keys cannot
+		// be represented as a map (no validator hook). Synthesize an empty
+		// struct so the standard strictFieldsValidatorFor path attaches a
+		// rejector. Without this, schemas like `{"type":"object",
+		// "additionalProperties":false}` silently accept any map under the
+		// `RespectSchema` mode, and `Strict` mode misses property-less
+		// schemas entirely.
+		//
+		// Skip the conversion when patternProperties is present: strict
+		// enforcement is suppressed in that case (see strictFieldsValidatorFor),
+		// so an empty struct would silently drop pattern-matched keys instead
+		// of preserving the map behavior.
+		// Only the `false` schema forbids every extra property. Any other
+		// `not` schema forbids some values and allows the rest, so enforcing
+		// on it would reject data the schema accepts.
+		schemaSaysFalse := isFalseSchema(t.AdditionalProperties)
+		schemaTypedAddl := t.AdditionalProperties != nil && t.AdditionalProperties.Not == nil
+		hasPatternProps := len(t.PatternProperties) > 0
+
+		if !hasPatternProps {
+			switch g.config.StrictAdditionalProperties {
+			case StrictAdditionalPropertiesOff:
+				// No enforcement — falls through to the map representation below.
+
+			case StrictAdditionalPropertiesRespectSchema:
+				if schemaSaysFalse {
+					return &codegen.StructType{}, nil
+				}
+
+			case StrictAdditionalPropertiesStrict:
+				if !schemaTypedAddl {
+					return &codegen.StructType{}, nil
+				}
+			}
+		}
+
 		valueType := codegen.Type(emptyInterfaceTypeVal)
 
 		var err error
@@ -827,9 +1508,11 @@ func (g *schemaGenerator) generateStructType(t *schemas.Type, scope nameScope) (
 			codegen.StructField{
 				Name:         additionalProperties,
 				DefaultValue: defaultValue,
-				SchemaType:   &schemas.Type{},
-				Type:         fieldType,
-				Tags:         "mapstructure:\",remain\"",
+				// The map's own schema, so its values are checked like any
+				// other map's (their `format`, say).
+				SchemaType: &schemas.Type{AdditionalProperties: t.AdditionalProperties},
+				Type:       fieldType,
+				Tags:       "mapstructure:\",remain\"",
 			},
 		)
 	}
@@ -870,6 +1553,8 @@ func (g *schemaGenerator) addStructField(
 		}
 	}
 
+	extraTags = append(extraTags, g.extensionTags(prop, name)...)
+
 	slices.Sort(extraTags)
 
 	if count, ok := uniqueNames[fieldName]; ok {
@@ -891,6 +1576,10 @@ func (g *schemaGenerator) addStructField(
 		return fmt.Errorf("cannot add struct field: %w", err)
 	}
 
+	if !jsonTagNameIsRepresentable(name) {
+		return fmt.Errorf("%w: %q", ErrPropertyNameNotRepresentable, name)
+	}
+
 	structField := codegen.StructField{
 		Name:         fieldName,
 		Comment:      comment,
@@ -906,6 +1595,35 @@ func (g *schemaGenerator) addStructField(
 	structType.AddField(structField)
 
 	return nil
+}
+
+// jsonTagNameIsRepresentable reports whether name can be carried in a Go struct
+// tag that encoding/json will honour.
+//
+// This mirrors encoding/json's own isValidTag. A name it rejects does not fall
+// back to anything usable: the field is left unset on decode and encode emits a
+// truncated key, so `a"b` round-trips as `a`. Escaping cannot help — the
+// limitation is in what the codec accepts, not in how the tag is written — so
+// such a schema is refused rather than generated with a field that silently
+// does not map.
+func jsonTagNameIsRepresentable(name string) bool {
+	if name == "" {
+		return false
+	}
+
+	for _, r := range name {
+		switch {
+		case strings.ContainsRune("!#$%&()*+-./:;<=>?@[]^_{|}~ ", r):
+			// Punctuation encoding/json accepts in a tag name. Quote,
+			// backslash and comma are deliberately absent: the first two are
+			// reserved and the third separates tag options.
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []string, isRequired bool) string {
@@ -927,12 +1645,18 @@ func (g *schemaGenerator) generateStructFieldTags(name string, extraTags []strin
 		}
 	}
 
+	// The name is schema data and lands inside a quoted tag value, which
+	// reflect parses with strconv.Unquote. Unescaped, `a"b` truncates the
+	// value to `a` and `back\slash` makes the tag unparseable, so reflect
+	// reports it as absent and the field silently falls back to its Go name.
+	quotedName := goQuotedBody(name)
+
 	for _, tag := range g.config.Tags {
 		switch tag {
 		case "json":
-			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitJson)
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, quotedName, omitJson)
 		default:
-			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, name, omitRest)
+			fmt.Fprintf(&tagsBuilder, `%s:"%s%s" `, tag, quotedName, omitRest)
 		}
 	}
 
@@ -1029,6 +1753,19 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 		return g.primitiveType(rAnyOf[0], rAnyOf[0].Type[0], true)
 	}
 
+	// When the branches merge into an object with properties, the anyOf
+	// becomes a struct, which can hold only an object, with a validator that
+	// decodes every branch into a type of its own. If a branch admits a
+	// primitive or an array too, that struct would reject values the schema
+	// allows and its validator has no type to decode them into, so the anyOf
+	// is interface{} instead, as upstream generates it for these. A merge into
+	// a map keeps its type, as upstream's.
+	if mergesIntoStruct(t, rAnyOf) && g.mixesObjectAndNonObject(t, rAnyOf) {
+		return emptyInterfaceTypeVal, nil
+	}
+
+	variantNames := make([]string, len(rAnyOf))
+
 	for i, typ := range rAnyOf {
 		// infer type from base if not set
 		if len(typ.Type) == 0 {
@@ -1054,8 +1791,18 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 			typ.Type.Add(schemas.TypeNameNull)
 		}
 
-		if _, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i))); err != nil {
+		variant, err := g.generateTypeInline(typ, scope.add(fmt.Sprintf("_%d", i)))
+		if err != nil {
 			return nil, err
+		}
+
+		// A branch generated earlier keeps the name it was declared under,
+		// which need not be this scope's. So does a branch that is a declared
+		// definition generated inline here, such as a $ref to a string.
+		if named := namedDecl(variant); named != nil {
+			variantNames[i] = named.Name
+		} else if decl, ok := g.output.declsBySchema[typ]; ok {
+			variantNames[i] = decl.Name
 		}
 	}
 
@@ -1069,6 +1816,7 @@ func (g *schemaGenerator) generateAnyOfType(t *schemas.Type, scope nameScope) (c
 	}
 
 	anyOfType.AnyOf = nil
+	g.output.anyOfVariants[anyOfType] = variantNames
 
 	return g.generateTypeInline(anyOfType, scope)
 }
@@ -1088,6 +1836,15 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 
 	rAllOf, _ := g.resolveRefs(t.AllOf, true)
 
+	// A recursive allOf, whose merged type leads back to an allOf with the same
+	// merge, would merge into a fresh copy at every level and never finish: no
+	// cache knows the copies. Its re-entry refers to the merge still being
+	// generated instead, through a pointer, the way a $ref cycle is broken.
+	key := allOfMergeKey(t, rAllOf)
+	if merged, ok := g.mergingAllOf[key]; ok {
+		return g.allOfCycleType(merged, scope)
+	}
+
 	allOfType, err := schemas.AllOf(rAllOf, t)
 	if err != nil {
 		return nil, fmt.Errorf("could not merge allOf types: %w", err)
@@ -1095,7 +1852,51 @@ func (g *schemaGenerator) generateAllOfType(t *schemas.Type, scope nameScope) (c
 
 	allOfType.AllOf = nil
 
+	g.mergingAllOf[key] = allOfType
+	defer delete(g.mergingAllOf, key)
+
 	return g.generateTypeInline(allOfType, scope)
+}
+
+// allOfMergeKey identifies what an allOf merges into. An allOf of a single
+// schema that declares nothing besides annotations merges into a copy of that
+// schema wherever it is written, so it is keyed by that schema: recursion
+// through two such allOfs of one schema is then caught at the first repeat,
+// not after every combination of them. Any other allOf is keyed by itself.
+func allOfMergeKey(t *schemas.Type, resolved []*schemas.Type) *schemas.Type {
+	if len(t.AllOf) != 1 || len(resolved) != 1 {
+		return t
+	}
+
+	rest := *t
+	rest.AllOf = nil
+
+	if !isAnnotationOnly(&rest) {
+		return t
+	}
+
+	return resolved[0]
+}
+
+// allOfCycleType is the type of a recursive allOf's re-entry: a pointer to the
+// type declared for the merge still being generated. A merged object or oneOf
+// registers its declaration before generating its body, so the re-entry finds
+// it; a merge that declares itself only afterwards is declared here instead,
+// and its own re-entry then finds that.
+func (g *schemaGenerator) allOfCycleType(merged *schemas.Type, scope nameScope) (codegen.Type, error) {
+	decl, ok := g.output.declsBySchema[merged]
+	if !ok {
+		dt, err := g.generateDeclaredType(merged, scope)
+		if err != nil {
+			return nil, err
+		}
+
+		return codegen.WrapTypeInPointer(dt), nil
+	}
+
+	g.warner(fmt.Sprintf("Cycle detected; must wrap type %s in pointer", decl.Name))
+
+	return codegen.WrapTypeInPointer(&codegen.NamedType{Decl: decl}), nil
 }
 
 func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
@@ -1134,6 +1935,37 @@ func (g *schemaGenerator) defaultPropertyValue(prop *schemas.Type) any {
 	return prop.Default
 }
 
+// needsDeclaredType reports whether a schema must be routed through
+// generateDeclaredType rather than inlined.
+//
+// Every composition form that emits a named wrapper or holder needs a full
+// declaration: inlining one would collapse it to interface{} and drop the
+// generated methods along with it. Keeping the whole decision here means
+// generateTypeInline spends a single branch on the family rather than one per
+// form, and later forms extend this predicate instead of adding another branch
+// to an already-large function.
+func (g *schemaGenerator) needsDeclaredType(t *schemas.Type) bool {
+	// A primitive `oneOf` carries no top-level `type`.
+	if len(t.OneOf) > 0 && isPrimitiveOneOf(t) {
+		return true
+	}
+
+	// A discriminated object `oneOf`, or one handled by the try-each
+	// fallback, emits a holder plus per-variant types; both likewise carry
+	// no top-level `type`. Not under OnlyModels: generateDeclaredType builds
+	// neither there, and routing the property through it would only turn the
+	// inline interface{} into a named one.
+	if len(t.OneOf) > 1 && !g.config.OnlyModels {
+		if d := g.detectDiscriminator(t.OneOf); d.ok && !g.variantRedefinesParent(t, d.prop) {
+			return true
+		}
+
+		return g.useTryEach(t)
+	}
+
+	return false
+}
+
 func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (codegen.Type, error) {
 	typeIndex, typeIsNullable := isTypeNullable(t)
 
@@ -1156,15 +1988,35 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 			return g.generateAllOfType(t, scope)
 		}
 
+		// Composition forms that emit a named wrapper or holder must be
+		// routed to generateDeclaredType before the `len(t.Type) == 0`
+		// bail-out below, since they carry no top-level `type` and would
+		// otherwise be emitted as interface{}. Collected in one predicate so
+		// this function keeps a single branch for the whole family.
+		if g.needsDeclaredType(t) {
+			return g.generateDeclaredType(t, scope)
+		}
+
 		if len(t.Type) == 0 {
 			return codegen.EmptyInterfaceType{}, nil
 		}
 
+		// A nullable primitive becomes a plain pointer to that primitive
+		// rather than a named alias of one.
+		//
+		// The alias form (`type FooBar *float64`, used as `FooBar`) is a named
+		// POINTER type, and Go forbids those as method receivers entirely —
+		// `invalid receiver type FooBar (pointer or interface type)`. So the
+		// name can never carry UnmarshalJSON, a String(), or validation: it is
+		// pure indirection, and taking its address yields a **float64.
+		//
+		// Upstream already made exactly this change for the temporal formats
+		// in #570 and #607; the reasoning was never specific to time.Time, so
+		// this generalises it to the rest of the primitives.
 		if typeIndex != -1 &&
 			typeIsNullable &&
 			!t.IsSubSchemaTypeElem() &&
-			schemas.IsPrimitiveType(t.Type[typeIndex]) &&
-			isTypeTemporal(t.Type[typeIndex], t.Format) {
+			schemas.IsPrimitiveType(t.Type[typeIndex]) {
 			return g.primitiveType(t, t.Type[typeIndex], typeIsNullable)
 		}
 
@@ -1194,10 +2046,10 @@ func (g *schemaGenerator) generateTypeInline(t *schemas.Type, scope nameScope) (
 		if typeIndex != -1 && t.Type[typeIndex] == schemas.TypeNameArray {
 			var theType codegen.Type = emptyInterfaceTypeVal
 
-			if t.Items != nil {
+			if items := g.itemsSchema(t, scope); items != nil {
 				var err error
 
-				theType, err = g.generateTypeInline(t.Items, g.singularScope(scope))
+				theType, err = g.generateTypeInline(items, g.singularScope(scope))
 				if err != nil {
 					return nil, err
 				}
@@ -1346,7 +2198,7 @@ func (g *schemaGenerator) generateEnumType(
 	if !g.config.OnlyModels {
 		valueConstant := &codegen.Var{
 			Name:  schemas.PrefixEnumValue + enumDecl.Name,
-			Value: t.Enum,
+			Value: g.enumValueList(enumType, t.Enum, enumDecl.Name),
 		}
 		g.output.file.Package.AddDecl(valueConstant)
 
@@ -1368,15 +2220,18 @@ func (g *schemaGenerator) generateEnumType(
 				Name: enumDecl.GetName() + "_enum_unmarshal_" + formatter.getName(),
 			})
 		}
+
+		g.output.ownUnmarshalers(&enumDecl)
 	}
 
 	// TODO: May be aliased string type.
 	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
-		for _, v := range t.Enum {
+		varnames := g.enumVarnames(t, enumDecl.Name)
+
+		for i, v := range t.Enum {
 			if s, ok := v.(string); ok {
-				// TODO: Make sure the name is unique across scope.
 				g.output.file.Package.AddDecl(&codegen.Constant{
-					Name:  g.makeEnumConstantName(enumDecl.Name, s),
+					Name:  g.uniqueEnumConstantName(varnames, enumDecl.Name, i, s),
 					Type:  &codegen.NamedType{Decl: &enumDecl},
 					Value: s,
 				})
@@ -1520,4 +2375,86 @@ func isTypeNullable(t *schemas.Type) (int, bool) {
 
 func isTypeTemporal(typ, format string) bool {
 	return typ == schemas.TypeNameString && (format == "date-time" || format == "date" || format == "time")
+}
+
+// enumValueList is what an enum's allowed-values variable is emitted with. The
+// enum's validator decodes into the underlying type and compares each element
+// with reflect.DeepEqual, so the elements have to carry that type. An untyped
+// list serves `int` — an untyped integer constant in an []interface{} is an int
+// — but for a sized integer, `int32` from `format: int32` or a width
+// --min-sized-ints picked, no element ever matched and every value was
+// rejected, valid ones included. litter keeps a slice's element type but not an
+// interface element's, so a sized integer enum gets a typed slice.
+//
+// A member the width cannot hold is left out: decoding never produces it, so
+// it could not be accepted anyway, and keeping it would mean keeping the
+// untyped list, which rejects every member. The schema is contradicting itself
+// there, so it is reported.
+func (g *schemaGenerator) enumValueList(enumType codegen.Type, values []any, declName string) any {
+	prim, ok := enumType.(codegen.PrimitiveType)
+	if !ok || prim.Type == typeInt {
+		return values
+	}
+
+	elem, ok := sizedIntegerType(prim.Type)
+	if !ok {
+		return values
+	}
+
+	list := reflect.MakeSlice(reflect.SliceOf(elem), 0, len(values))
+
+	for _, v := range values {
+		n, ok := v.(int)
+		if !ok {
+			return values
+		}
+
+		ev := reflect.New(elem).Elem()
+
+		switch {
+		case ev.CanInt() && !ev.OverflowInt(int64(n)):
+			ev.SetInt(int64(n))
+
+		case ev.CanUint() && n >= 0 && !ev.OverflowUint(uint64(n)):
+			ev.SetUint(uint64(n))
+
+		default:
+			g.warner(fmt.Sprintf(
+				"Enum %s: value %d does not fit %s, so it can never be decoded; leaving it out of the allowed values",
+				declName, n, prim.Type,
+			))
+
+			continue
+		}
+
+		list = reflect.Append(list, ev)
+	}
+
+	return list.Interface()
+}
+
+// sizedIntegerType maps a sized Go integer type name to its reflect.Type.
+func sizedIntegerType(name string) (reflect.Type, bool) {
+	switch name {
+	case "int8":
+		return reflect.TypeFor[int8](), true
+	case "int16":
+		return reflect.TypeFor[int16](), true
+	case "int32":
+		return reflect.TypeFor[int32](), true
+	case "int64":
+		return reflect.TypeFor[int64](), true
+	case "uint":
+		return reflect.TypeFor[uint](), true
+	case "uint8":
+		return reflect.TypeFor[uint8](), true
+	case "uint16":
+		return reflect.TypeFor[uint16](), true
+	case "uint32":
+		return reflect.TypeFor[uint32](), true
+	case "uint64":
+		return reflect.TypeFor[uint64](), true
+	default:
+		return nil, false
+	}
 }
