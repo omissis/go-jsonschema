@@ -49,7 +49,7 @@ type Pointer struct {
 func (j *Pointer) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Pointer: %w", err)
 	}
 	if _, ok := raw["requiredIntNonPointer"]; raw != nil && !ok {
 		return fmt.Errorf("field requiredIntNonPointer in Pointer: required")
@@ -99,7 +99,7 @@ func (j *Pointer) UnmarshalJSON(value []byte) error {
 func (j *Pointer) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Pointer: %w", err)
 	}
 	if _, ok := raw["requiredIntNonPointer"]; raw != nil && !ok {
 		return fmt.Errorf("field requiredIntNonPointer in Pointer: required")

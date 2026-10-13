@@ -30,6 +30,8 @@ var (
 	errDefinitionDoesNotExistInSchema = errors.New("definition does not exist in schema")
 	errCannotGenerateReferencedType   = errors.New("cannot generate referenced type")
 	errCannotGenerateSources          = errors.New("cannot generate sources")
+	errInvalidExtensionTagKey         = errors.New("invalid struct tag key")
+	errDuplicateExtensionTagKey       = errors.New("duplicate struct tag key")
 )
 
 type Generator struct {
@@ -51,6 +53,10 @@ type qualifiedDefinition struct {
 }
 
 func New(config Config) (*Generator, error) {
+	if err := checkExtensionTagKeys(config.ExtensionTags, config.Tags); err != nil {
+		return nil, err
+	}
+
 	formatters := []formatter{
 		&jsonFormatter{},
 	}
@@ -85,6 +91,8 @@ func (g *Generator) Sources() (map[string][]byte, error) {
 		if output.file.FileName == "" {
 			continue
 		}
+
+		g.renameConstantsShadowingImports(output)
 
 		emitter := codegen.NewEmitter(maxLineLength)
 
@@ -239,4 +247,35 @@ func (g *Generator) makeEnumConstantName(typeName, value string) string {
 	}
 
 	return typeName + idv
+}
+
+// renameConstantsShadowingImports renames a package-level constant that shares
+// its name with an import, which Go rejects. enumVarnames refuses a varname
+// naming a package already imported, but an import can arrive after the
+// constant — a later type adding mapstructure, say — so the final set is
+// checked here. Generated code never refers to an enum constant by name, so
+// renaming one is safe; the warning says what the user-facing name became.
+func (g *Generator) renameConstantsShadowingImports(o *output) {
+	for _, decl := range o.file.Package.Decls {
+		c, ok := decl.(*codegen.Constant)
+		if !ok || !o.importsName(c.Name) {
+			continue
+		}
+
+		for n := 1; ; n++ {
+			candidate := fmt.Sprintf("%s_%d", c.Name, n)
+			if o.importsName(candidate) || o.declaresName(candidate) {
+				continue
+			}
+
+			g.config.Warner(fmt.Sprintf(
+				"Constant %q shares its name with an imported package; declaring it as %q instead",
+				c.Name, candidate,
+			))
+
+			c.Name = candidate
+
+			break
+		}
+	}
 }
