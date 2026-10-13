@@ -3,7 +3,10 @@
 package test
 
 import "encoding/json"
+import "fmt"
 import yaml "gopkg.in/yaml.v3"
+
+type AllOf = Thing
 
 type Thing struct {
 	// Values corresponds to the JSON schema field "values".
@@ -15,7 +18,7 @@ func (j *Thing) UnmarshalJSON(value []byte) error {
 	type Plain Thing
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Thing: %w", err)
 	}
 	*j = Thing(plain)
 	return nil
@@ -26,12 +29,10 @@ func (j *Thing) UnmarshalYAML(value *yaml.Node) error {
 	type Plain Thing
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal Thing: %w", err)
 	}
 	*j = Thing(plain)
 	return nil
 }
 
 type Value float64
-
-type AllOf = Thing

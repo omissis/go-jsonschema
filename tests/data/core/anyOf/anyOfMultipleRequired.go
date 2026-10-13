@@ -10,6 +10,121 @@ import yaml "gopkg.in/yaml.v3"
 import "reflect"
 import "strings"
 
+type ComposedWithMultipleRequired struct {
+	// BaseField corresponds to the JSON schema field "baseField".
+	BaseField *string `json:"baseField,omitempty,omitzero" yaml:"baseField,omitempty" mapstructure:"baseField,omitempty"`
+
+	// DirectField corresponds to the JSON schema field "directField".
+	DirectField bool `json:"directField" yaml:"directField" mapstructure:"directField"`
+
+	// MiddleField corresponds to the JSON schema field "middleField".
+	MiddleField *float64 `json:"middleField,omitempty,omitzero" yaml:"middleField,omitempty" mapstructure:"middleField,omitempty"`
+
+	AdditionalProperties interface{} `mapstructure:",remain"`
+}
+
+type ComposedWithMultipleRequired_0 = MultipleRequiredBase
+
+type ComposedWithMultipleRequired_1 = MultipleRequiredMiddle
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
+	}
+	var composedWithMultipleRequired_0 MultipleRequiredBase
+	var composedWithMultipleRequired_1 MultipleRequiredMiddle
+	var errs []error
+	if err := composedWithMultipleRequired_0.UnmarshalJSON(value); err != nil {
+		errs = append(errs, err)
+	}
+	if err := composedWithMultipleRequired_1.UnmarshalJSON(value); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 2 {
+		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	}
+	type Plain ComposedWithMultipleRequired
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal ComposedWithMultipleRequired: %w", err)
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		for k := range raw {
+			if strings.EqualFold(k, name) {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for ComposedWithMultipleRequired: %w", err)
+	}
+	*j = ComposedWithMultipleRequired(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw ComposedWithMultipleRequired: %w", err)
+	}
+	var composedWithMultipleRequired_0 MultipleRequiredBase
+	var composedWithMultipleRequired_1 MultipleRequiredMiddle
+	var errs []error
+	if err := composedWithMultipleRequired_0.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if err := composedWithMultipleRequired_1.UnmarshalYAML(value); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) == 2 {
+		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
+	}
+	type Plain ComposedWithMultipleRequired
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal ComposedWithMultipleRequired: %w", err)
+	}
+	st := reflect.TypeOf(Plain{})
+	for i := 0; i < st.NumField(); i++ {
+		f := st.Field(i)
+		if f.Name == "AdditionalProperties" {
+			continue
+		}
+		name := strings.Split(f.Tag.Get("yaml"), ",")[0]
+		if name == "-" {
+			continue
+		}
+		if name == "" {
+			name = strings.ToLower(f.Name)
+		}
+		for k := range raw {
+			if k == name {
+				delete(raw, k)
+			}
+		}
+	}
+	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
+		return fmt.Errorf("decode additional properties for ComposedWithMultipleRequired: %w", err)
+	}
+	*j = ComposedWithMultipleRequired(plain)
+	return nil
+}
+
 type MultipleRequiredBase struct {
 	// BaseField corresponds to the JSON schema field "baseField".
 	BaseField string `json:"baseField" yaml:"baseField" mapstructure:"baseField"`
@@ -19,7 +134,7 @@ type MultipleRequiredBase struct {
 func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
 	}
 	if _, ok := raw["baseField"]; raw != nil && !ok {
 		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
@@ -27,7 +142,7 @@ func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 	type Plain MultipleRequiredBase
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
 	}
 	*j = MultipleRequiredBase(plain)
 	return nil
@@ -37,7 +152,7 @@ func (j *MultipleRequiredBase) UnmarshalJSON(value []byte) error {
 func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredBase: %w", err)
 	}
 	if _, ok := raw["baseField"]; raw != nil && !ok {
 		return fmt.Errorf("field baseField in MultipleRequiredBase: required")
@@ -45,7 +160,7 @@ func (j *MultipleRequiredBase) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MultipleRequiredBase
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredBase: %w", err)
 	}
 	*j = MultipleRequiredBase(plain)
 	return nil
@@ -60,7 +175,7 @@ type MultipleRequiredMiddle struct {
 func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
 	}
 	if _, ok := raw["middleField"]; raw != nil && !ok {
 		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
@@ -68,7 +183,7 @@ func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 	type Plain MultipleRequiredMiddle
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
 	}
 	*j = MultipleRequiredMiddle(plain)
 	return nil
@@ -78,7 +193,7 @@ func (j *MultipleRequiredMiddle) UnmarshalJSON(value []byte) error {
 func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw MultipleRequiredMiddle: %w", err)
 	}
 	if _, ok := raw["middleField"]; raw != nil && !ok {
 		return fmt.Errorf("field middleField in MultipleRequiredMiddle: required")
@@ -86,95 +201,8 @@ func (j *MultipleRequiredMiddle) UnmarshalYAML(value *yaml.Node) error {
 	type Plain MultipleRequiredMiddle
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal MultipleRequiredMiddle: %w", err)
 	}
 	*j = MultipleRequiredMiddle(plain)
-	return nil
-}
-
-type ComposedWithMultipleRequired_0 = MultipleRequiredBase
-
-type ComposedWithMultipleRequired_1 = MultipleRequiredMiddle
-
-type ComposedWithMultipleRequired struct {
-	// BaseField corresponds to the JSON schema field "baseField".
-	BaseField *string `json:"baseField,omitempty,omitzero" yaml:"baseField,omitempty" mapstructure:"baseField,omitempty"`
-
-	// DirectField corresponds to the JSON schema field "directField".
-	DirectField bool `json:"directField" yaml:"directField" mapstructure:"directField"`
-
-	// MiddleField corresponds to the JSON schema field "middleField".
-	MiddleField *float64 `json:"middleField,omitempty,omitzero" yaml:"middleField,omitempty" mapstructure:"middleField,omitempty"`
-
-	AdditionalProperties interface{} `mapstructure:",remain"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ComposedWithMultipleRequired) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
-	var composedWithMultipleRequired_0 ComposedWithMultipleRequired_0
-	var composedWithMultipleRequired_1 ComposedWithMultipleRequired_1
-	var errs []error
-	if err := composedWithMultipleRequired_0.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := composedWithMultipleRequired_1.UnmarshalJSON(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain ComposedWithMultipleRequired
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
-	}
-	*j = ComposedWithMultipleRequired(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ComposedWithMultipleRequired) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	var composedWithMultipleRequired_0 ComposedWithMultipleRequired_0
-	var composedWithMultipleRequired_1 ComposedWithMultipleRequired_1
-	var errs []error
-	if err := composedWithMultipleRequired_0.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if err := composedWithMultipleRequired_1.UnmarshalYAML(value); err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 2 {
-		return fmt.Errorf("all validators failed: %s", errors.Join(errs...))
-	}
-	type Plain ComposedWithMultipleRequired
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	st := reflect.TypeOf(Plain{})
-	for i := range st.NumField() {
-		delete(raw, st.Field(i).Name)
-		delete(raw, strings.Split(st.Field(i).Tag.Get("json"), ",")[0])
-	}
-	if err := mapstructure.Decode(raw, &plain.AdditionalProperties); err != nil {
-		return err
-	}
-	*j = ComposedWithMultipleRequired(plain)
 	return nil
 }

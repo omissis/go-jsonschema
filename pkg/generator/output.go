@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -11,13 +12,19 @@ import (
 )
 
 type output struct {
-	minimalNames            bool
-	file                    *codegen.File
-	declsByName             map[string]*codegen.TypeDecl
-	declsBySchema           map[*schemas.Type]*codegen.TypeDecl
+	minimalNames  bool
+	file          *codegen.File
+	declsByName   map[string]*codegen.TypeDecl
+	declsBySchema map[*schemas.Type]*codegen.TypeDecl
+	// anyOfVariants holds, for a type merged from an anyOf, the Go type of
+	// each branch, so its validator can name the types that were declared.
+	anyOfVariants           map[*schemas.Type][]string
 	unmarshallersByTypeDecl map[*codegen.TypeDecl]bool
-	processedSchemas        map[string]bool
-	warner                  func(string)
+	// primitiveWrapperKinds holds the JSON kinds each primitive union wrapper
+	// accepts.
+	primitiveWrapperKinds map[*codegen.TypeDecl]primitiveKind
+	processedSchemas      map[string]bool
+	warner                func(string)
 }
 
 func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.TypeDecl {
@@ -46,6 +53,38 @@ func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.Typ
 	}
 }
 
+// forgetDecl withdraws decl, registered for t, once t turns out to be the type
+// declared as resolved instead.
+//
+// t is then remembered as resolved's declaration rather than forgotten: a
+// definition whose type is another named type would otherwise be generated
+// anew at every later reference, and each copy declared under a suffixed name
+// that nothing refers to.
+//
+// decl's name is released only while decl still holds it: a referenced
+// definition whose name matches decl's scope takes the name over from decl
+// meanwhile, and freeing it then would let a later schema claim the same name
+// and bind it to a different type.
+func (o *output) forgetDecl(t *schemas.Type, decl *codegen.TypeDecl, resolved codegen.Type) {
+	if named := namedDecl(resolved); named != nil {
+		o.declsBySchema[t] = named
+	} else {
+		delete(o.declsBySchema, t)
+	}
+
+	if o.declsByName[decl.Name] == decl {
+		delete(o.declsByName, decl.Name)
+	}
+}
+
+// ownUnmarshalers records that decl's unmarshalers are emitted by the code
+// that declared it, as for an enum or a oneOf holder, so generateUnmarshaler
+// does not add a second, plain pair: Go rejects a type declaring a method
+// twice.
+func (o *output) ownUnmarshalers(decl *codegen.TypeDecl) {
+	o.unmarshallersByTypeDecl[decl] = true
+}
+
 func (o *output) isUniqueTypeName(name string) bool {
 	v, ok := o.declsByName[name]
 
@@ -55,16 +94,24 @@ func (o *output) isUniqueTypeName(name string) bool {
 // uniqueTypeName finds the shortest identifier in a name scope that yields a unique type name.
 // If a given suffix on the name scope is not unique, more context from the scope is added. If the
 // entire context does not yield a unique name, a numeric suffix is used.
+//
+// The second result reports that the name needed a numeric suffix. Reporting
+// that is left to the caller rather than warned about here, because a caller
+// may go on to discard the declaration — generateDeclaredType does exactly that
+// for a type that turns out to be already named — and a warning emitted from
+// here would already have been printed by then, describing a `_1` type that is
+// never emitted.
+//
 // TODO: we should check for schema equality on name collisions here to deduplicate identifiers.
-func (o *output) uniqueTypeName(scope nameScope) string {
-	if o.minimalNames {
+func (o *output) uniqueTypeName(scope nameScope) (string, bool) {
+	if o.minimalNames && !scope.keepRoot {
 		for i := scope.len() - 1; i >= 0; i-- {
 			name := scope.stringFrom(i)
 
 			v, ok := o.declsByName[name]
-			if !ok || (ok && v.Type == nil) {
+			if (!ok || (ok && v.Type == nil)) && !o.declaresConstant(name) {
 				// An identifier using the current amount of name context is unique, use it.
-				return name
+				return name, false
 			}
 		}
 	}
@@ -74,19 +121,110 @@ func (o *output) uniqueTypeName(scope nameScope) string {
 	name := scope.string()
 
 	v, ok := o.declsByName[name]
-	if !ok || (ok && v.Type == nil) {
-		return name
+	if (!ok || (ok && v.Type == nil)) && !o.declaresConstant(name) {
+		return name, false
 	}
 
 	for {
 		suffixed := fmt.Sprintf("%s_%d", name, count)
-		if _, ok := o.declsByName[suffixed]; !ok {
-			o.warner(fmt.Sprintf(
-				"Multiple types map to the name %q; declaring duplicate as %q instead", name, suffixed))
-
-			return suffixed
+		if _, ok := o.declsByName[suffixed]; !ok && !o.declaresConstant(suffixed) {
+			return suffixed, true
 		}
 
 		count++
 	}
+}
+
+// declaresName reports whether the package declares name, as a type or a
+// constant. A type still being generated is registered in declsByName before it
+// reaches Package.Decls, and anything that took its name meanwhile would make
+// AddDecl drop the type once it finishes.
+func (o *output) declaresName(name string) bool {
+	if _, ok := o.declsByName[name]; ok {
+		return true
+	}
+
+	for _, decl := range o.file.Package.Decls {
+		if named, ok := decl.(codegen.Named); ok && named.GetName() == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// declaresConstant reports whether the package declares a constant named name.
+// declsByName only knows types, but a type given a constant's name would be
+// dropped by AddDecl, so type allocation has to treat it as taken.
+func (o *output) declaresConstant(name string) bool {
+	for _, decl := range o.file.Package.Decls {
+		if c, ok := decl.(*codegen.Constant); ok && c.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// importsName reports whether an import binds name in the file.
+func (o *output) importsName(name string) bool {
+	for _, imp := range o.file.Package.Imports {
+		if importedName(imp) == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// importedName is the identifier an import binds: its alias, or otherwise the
+// package name its path implies — the last element, skipping a major-version
+// element (`mapstructure/v2`) and dropping a gopkg.in version suffix
+// (`yaml.v3`).
+func importedName(imp codegen.Import) string {
+	if imp.Name != "" {
+		return imp.Name
+	}
+
+	elems := strings.Split(imp.QualifiedName, "/")
+	name := elems[len(elems)-1]
+
+	if len(elems) > 1 && strings.HasPrefix(name, "v") && isDigits(name[1:]) {
+		name = elems[len(elems)-2]
+	}
+
+	if i := strings.LastIndex(name, ".v"); i > 0 && isDigits(name[i+2:]) {
+		name = name[:i]
+	}
+
+	return name
+}
+
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+
+	return true
+}
+
+// warnNameCollision reports that scope's natural name was taken and uniqueName
+// was used instead. A no-op unless collided, so callers can report
+// unconditionally at the point where the suffixed declaration is known to be
+// kept rather than branching around it.
+func (o *output) warnNameCollision(collided bool, scope nameScope, uniqueName string) {
+	if !collided {
+		return
+	}
+
+	o.warner(fmt.Sprintf(
+		"Multiple types map to the name %q; declaring duplicate as %q instead",
+		scope.string(), uniqueName,
+	))
 }

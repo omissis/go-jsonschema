@@ -7,50 +7,6 @@ import "errors"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
-// Text provided to or from an LLM.
-type TextContent struct {
-	// The text content of the message.
-	Text string `json:"text" yaml:"text" mapstructure:"text"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TextContent) UnmarshalJSON(value []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["text"]; raw != nil && !ok {
-		return fmt.Errorf("field text in TextContent: required")
-	}
-	type Plain TextContent
-	var plain Plain
-	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
-	}
-	*j = TextContent(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["text"]; raw != nil && !ok {
-		return fmt.Errorf("field text in TextContent: required")
-	}
-	type Plain TextContent
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = TextContent(plain)
-	return nil
-}
-
-type CallToolResultContentElem_0 = TextContent
-
 // The server's response to a tool call
 type CallToolResult struct {
 	// Content corresponds to the JSON schema field "content".
@@ -63,13 +19,15 @@ type CallToolResultContentElem struct {
 	Text string `json:"text" yaml:"text" mapstructure:"text"`
 }
 
+type CallToolResultContentElem_0 = TextContent
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
-	var callToolResultContentElem_0 CallToolResultContentElem_0
+	var callToolResultContentElem_0 TextContent
 	var errs []error
 	if err := callToolResultContentElem_0.UnmarshalJSON(value); err != nil {
 		errs = append(errs, err)
@@ -80,7 +38,7 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 	type Plain CallToolResultContentElem
 	var plain Plain
 	if err := json.Unmarshal(value, &plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal CallToolResultContentElem: %w", err)
 	}
 	*j = CallToolResultContentElem(plain)
 	return nil
@@ -90,9 +48,9 @@ func (j *CallToolResultContentElem) UnmarshalJSON(value []byte) error {
 func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw CallToolResultContentElem: %w", err)
 	}
-	var callToolResultContentElem_0 CallToolResultContentElem_0
+	var callToolResultContentElem_0 TextContent
 	var errs []error
 	if err := callToolResultContentElem_0.UnmarshalYAML(value); err != nil {
 		errs = append(errs, err)
@@ -103,8 +61,50 @@ func (j *CallToolResultContentElem) UnmarshalYAML(value *yaml.Node) error {
 	type Plain CallToolResultContentElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
-		return err
+		return fmt.Errorf("unmarshal CallToolResultContentElem: %w", err)
 	}
 	*j = CallToolResultContentElem(plain)
+	return nil
+}
+
+// Text provided to or from an LLM.
+type TextContent struct {
+	// The text content of the message.
+	Text string `json:"text" yaml:"text" mapstructure:"text"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TextContent) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return fmt.Errorf("unmarshal raw TextContent: %w", err)
+	}
+	if _, ok := raw["text"]; raw != nil && !ok {
+		return fmt.Errorf("field text in TextContent: required")
+	}
+	type Plain TextContent
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return fmt.Errorf("unmarshal TextContent: %w", err)
+	}
+	*j = TextContent(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TextContent) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return fmt.Errorf("unmarshal raw TextContent: %w", err)
+	}
+	if _, ok := raw["text"]; raw != nil && !ok {
+		return fmt.Errorf("field text in TextContent: required")
+	}
+	type Plain TextContent
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return fmt.Errorf("unmarshal TextContent: %w", err)
+	}
+	*j = TextContent(plain)
 	return nil
 }
