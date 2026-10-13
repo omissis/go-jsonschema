@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A property whose path-derived name equals the name of the definition it references: order.shipping refers to #/definitions/orderShipping, and both map to OrderShipping. The property's own placeholder used to count as a rival for the name, so the definition was declared as OrderShipping_1 with a spurious collision warning.",
+  "definitions": {
+    "order": {
+      "type": "object",
+      "properties": {
+        "shipping": { "$ref": "#/definitions/orderShipping" }
+      }
+    },
+    "orderShipping": {
+      "type": "object",
+      "properties": {
+        "carrier": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "order": { "$ref": "#/definitions/order" }
+  }
+}

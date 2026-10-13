@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "An anyOf whose branches are an object and a $ref to a string. A struct merged from them could hold only the object, and so would reject the strings the schema allows, so the anyOf is interface{}, as upstream generates it, with a fidelity warning.",
+  "properties": {
+    "language": {
+      "$ref": "#/definitions/language"
+    }
+  },
+  "definitions": {
+    "languageName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/languageName"
+            }
+          }
+        },
+        {
+          "$ref": "#/definitions/languageName"
+        }
+      ]
+    }
+  }
+}

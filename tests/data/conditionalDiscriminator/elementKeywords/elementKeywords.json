@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/elementKeywords",
+  "description": "The allOf element requires y unconditionally beside its if/then. Detection declines with a warning, and the allOf merge keeps y required in every mode.",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["a", "b"] },
+    "y": { "type": "string" }
+  },
+  "required": ["kind"],
+  "allOf": [
+    {
+      "required": ["y"],
+      "if": { "properties": { "kind": { "const": "a" } } },
+      "then": { "required": ["y"] }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/formatValidation/elements",
+  "description": "Format checks on strings held in arrays and maps: one loop per container, and the error names the element.",
+  "type": "object",
+  "properties": {
+    "ids": {
+      "type": "array",
+      "items": { "type": "string", "format": "uuid" }
+    },
+    "idGrid": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "string", "format": "uuid" }
+      }
+    },
+    "maybeIds": {
+      "description": "Nullable items: a null element is left alone.",
+      "type": "array",
+      "items": { "type": ["string", "null"], "format": "uuid" }
+    },
+    "emails": {
+      "type": "array",
+      "items": { "type": "string", "format": "email" }
+    },
+    "byName": {
+      "description": "Declared as its own map type, which checks its values in its own unmarshaler.",
+      "type": "object",
+      "additionalProperties": { "type": "string", "format": "uuid" }
+    },
+    "listsByName": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string", "format": "uuid" }
+      }
+    },
+    "idList": {
+      "$ref": "#/definitions/IdList"
+    }
+  },
+  "definitions": {
+    "IdList": {
+      "description": "A declared array checks its own elements.",
+      "type": "array",
+      "items": { "type": "string", "format": "uuid" }
+    }
+  }
+}

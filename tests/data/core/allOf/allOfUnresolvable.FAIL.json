@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/allOfUnresolvable",
+  "$ref": "#/definitions/Thing",
+  "definitions": {
+    "Thing": {
+      "description": "An object whose only allOf member cannot be resolved: there is nothing to merge, and generation fails rather than emitting an unchecked interface{}.",
+      "type": "object",
+      "allOf": [{ "$ref": "#/definitions/Missing" }]
+    }
+  }
+}
