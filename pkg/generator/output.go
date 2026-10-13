@@ -46,6 +46,19 @@ func (o *output) getDeclByEqualSchema(name string, t *schemas.Type) *codegen.Typ
 	}
 }
 
+// forgetDecl withdraws decl, registered for t, once t turns out to be declared
+// elsewhere. The name is released only while decl still holds it: a referenced
+// definition whose name matches decl's scope takes the name over from decl
+// meanwhile, and freeing it then would let a later schema claim the same name
+// and bind it to a different type.
+func (o *output) forgetDecl(t *schemas.Type, decl *codegen.TypeDecl) {
+	delete(o.declsBySchema, t)
+
+	if o.declsByName[decl.Name] == decl {
+		delete(o.declsByName, decl.Name)
+	}
+}
+
 func (o *output) isUniqueTypeName(name string) bool {
 	v, ok := o.declsByName[name]
 
