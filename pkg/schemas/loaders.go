@@ -43,7 +43,7 @@ func (l *CachedLoader) Load(uri, parentURI string) (*Schema, error) {
 
 	schema, err := l.loader.Load(uri, parentURI)
 	if err != nil {
-		return nil, errors.Join(ErrCannotLoadSchema, err)
+		return nil, errors.Join(fmt.Errorf("%s: %w", uri, ErrCannotLoadSchema), err)
 	}
 
 	l.cache[uri] = schema
