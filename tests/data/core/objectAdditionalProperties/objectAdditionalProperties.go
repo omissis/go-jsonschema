@@ -3,6 +3,7 @@
 package test
 
 import "encoding/json"
+import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
 type ObjectAdditionalProperties struct {
@@ -16,7 +17,7 @@ type ObjectAdditionalPropertiesFoo map[string]string
 func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ObjectAdditionalProperties: %w", err)
 	}
 	type Plain ObjectAdditionalProperties
 	var plain Plain
@@ -34,7 +35,7 @@ func (j *ObjectAdditionalProperties) UnmarshalJSON(value []byte) error {
 func (j *ObjectAdditionalProperties) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw ObjectAdditionalProperties: %w", err)
 	}
 	type Plain ObjectAdditionalProperties
 	var plain Plain

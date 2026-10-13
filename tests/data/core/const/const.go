@@ -84,7 +84,7 @@ type Required struct {
 func (j *Required) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(value, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Required: %w", err)
 	}
 	if _, ok := raw["myBoolean"]; raw != nil && !ok {
 		return fmt.Errorf("field myBoolean in Required: required")
@@ -123,7 +123,7 @@ func (j *Required) UnmarshalJSON(value []byte) error {
 func (j *Required) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshal raw Required: %w", err)
 	}
 	if _, ok := raw["myBoolean"]; raw != nil && !ok {
 		return fmt.Errorf("field myBoolean in Required: required")
