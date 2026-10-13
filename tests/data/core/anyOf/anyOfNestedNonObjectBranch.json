@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "nthChild is an anyOf of a $ref to simple and an object. simple is itself an anyOf of an integer and a string, so nthChild admits numbers and strings as well as objects; a struct merged from the branches could hold only the object, so nthChild is interface{}.",
+  "properties": {
+    "nthChild": { "$ref": "#/definitions/nthChild" }
+  },
+  "definitions": {
+    "simple": { "anyOf": [{ "type": "integer" }, { "type": "string" }] },
+    "nthChild": {
+      "anyOf": [
+        { "$ref": "#/definitions/simple" },
+        { "type": "object", "properties": { "position": { "type": "string" } } }
+      ]
+    }
+  }
+}

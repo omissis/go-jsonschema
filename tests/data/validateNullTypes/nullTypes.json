@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/nullIssue",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "viaRef": {
+      "description": "A $ref property. StructField.SchemaType keeps the reference as written and a reference declares no type of its own, so without resolving it this looked like a schema that constrains nothing and got no check \u2014 while the same type inline got one.",
+      "$ref": "#/definitions/StrictName"
+    },
+    "foo": {
+      "description": "Strict, and a case variant of the untyped `Foo`, which comes first in the struct. encoding/json gives `Foo` and every inexact spelling to that field, so only the exact key `foo` is this one's.",
+      "type": "string",
+      "goJSONSchema": {
+        "identifier": "FooStrict"
+      }
+    },
+    "Foo": {
+      "description": "Untyped, so it admits null. Its exact key must not trip `foo`'s check.",
+      "goJSONSchema": {
+        "identifier": "FooUntyped"
+      }
+    },
+    "Bar": {
+      "description": "Strict, and first of its case variants in the struct: encoding/json gives it every spelling of `bar` except the exact key of the untyped `bar`.",
+      "type": "string",
+      "goJSONSchema": {
+        "identifier": "BarStrict"
+      }
+    },
+    "bar": {
+      "description": "Untyped, so it admits null. Its exact key must not trip `Bar`'s check.",
+      "goJSONSchema": {
+        "identifier": "BarUntyped"
+      }
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "definitions": {
+    "StrictName": {
+      "type": "string"
+    }
+  }
+}

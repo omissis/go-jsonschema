@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/tryEachOverlappingRecursion",
+  "type": "object",
+  "properties": {
+    "node": { "$ref": "#/definitions/Node" },
+    "chain": { "$ref": "#/definitions/Chain" }
+  },
+  "definitions": {
+    "Node": {
+      "description": "Both variants accept an object with children and recurse through them, so try-each would decode every level once per variant and double the work with each level. Declined: the generic representation stays.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "children": { "type": "array", "items": { "$ref": "#/definitions/Node" } },
+            "a": { "type": "string" }
+          },
+          "required": ["children"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "children": { "type": "array", "items": { "$ref": "#/definitions/Node" } },
+            "b": { "type": "string" }
+          },
+          "required": ["children"]
+        }
+      ]
+    },
+    "Chain": {
+      "description": "The recursion runs through the parent's own next property, which every variant carries, and an object with both x and y passes both variants. Declined as well: the parent struct stays.",
+      "type": "object",
+      "properties": { "next": { "$ref": "#/definitions/Chain" } },
+      "oneOf": [
+        { "type": "object", "properties": { "x": { "type": "string" } }, "required": ["x"] },
+        { "type": "object", "properties": { "y": { "type": "string" } }, "required": ["y"] }
+      ]
+    }
+  }
+}
