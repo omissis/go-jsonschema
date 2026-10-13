@@ -543,6 +543,7 @@ func (g *schemaGenerator) generateOneOfTryEach(t *schemas.Type, scope nameScope)
 	}
 
 	addMethod("UnmarshalJSON", emitOneOfTryEachUnmarshalJSON(holderName, bindings, shapes, arrayMode))
+	g.output.ownUnmarshalers(holderDecl)
 	addMethod("MarshalJSON", emitOneOfDiscriminatorMarshalJSON(holderName, bindings))
 
 	if hasYAML {
