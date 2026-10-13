@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/formatValidation/additionalElements",
+  "description": "Extra properties beside named ones are collected into AdditionalProperties after the other checks run, so their format is checked once that map is decoded.",
+  "type": "object",
+  "properties": {
+    "foo": { "type": "string" }
+  },
+  "additionalProperties": { "type": "string", "format": "uuid" }
+}

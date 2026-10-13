@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "An anyOf generated twice: once for the job definition, once for the root, which merges job in through allOf. Its first branch is one schema in both, declared as JobEnvironment_0 the first time, so the root's validator must use that type rather than a scope-derived AnyOfSharedBranchEnvironment_0 that is never declared.",
+  "allOf": [{ "$ref": "#/definitions/job" }],
+  "properties": {
+    "jobs": { "type": "array", "items": { "$ref": "#/definitions/job" } }
+  },
+  "definitions": {
+    "envVars": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "job": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "anyOf": [
+            { "type": "object", "properties": { "global": { "$ref": "#/definitions/envVars" } } },
+            { "$ref": "#/definitions/envVars" }
+          ]
+        }
+      }
+    }
+  }
+}

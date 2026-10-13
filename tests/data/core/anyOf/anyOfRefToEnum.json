@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "An anyOf whose first branch is a $ref to a string enum. The enum declares its own UnmarshalJSON; referring to it from the anyOf used to add a second, plain one, and Go rejects a type declaring a method twice.",
+  "properties": {
+    "kind": { "anyOf": [{ "$ref": "#/definitions/fieldType" }, { "type": "string" }] }
+  },
+  "definitions": {
+    "fieldType": { "type": "string", "enum": ["string", "number"] }
+  }
+}

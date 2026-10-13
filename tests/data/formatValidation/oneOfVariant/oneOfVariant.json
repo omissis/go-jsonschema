@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/oneOfVariant",
+  "type": "object",
+  "properties": {
+    "idOrNumber": {
+      "description": "With format validation enabled the check runs at the end of the wrapper's string branch, against the value it just decoded — the same check, from the same validator, as the non-oneOf path emits.",
+      "oneOf": [
+        { "type": "string", "format": "uuid" },
+        { "type": "number" }
+      ]
+    },
+    "plainUuid": {
+      "description": "The non-oneOf path, for comparison: same schema declaration, same check.",
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

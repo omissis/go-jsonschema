@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/strictAdditionalProperties/addlNot",
+  "description": "A `not` schema under additionalProperties forbids some values and allows the rest, so respect-schema mode does not reject unknown fields here; only `false` does.",
+  "type": "object",
+  "properties": {
+    "foo": { "type": "string" },
+    "inner": {
+      "description": "Property-less, so enforcing here would also turn it into an empty struct that rejects every key.",
+      "type": "object",
+      "additionalProperties": { "not": { "type": "string" } }
+    }
+  },
+  "additionalProperties": { "not": { "type": "string" } }
+}
