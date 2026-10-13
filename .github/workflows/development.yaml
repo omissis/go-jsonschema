@@ -41,7 +41,7 @@ jobs:
         uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7
         with:
           distribution: goreleaser
-          version: 2.17.0
+          version: v2.18.3
           args: release --verbose --snapshot --clean
         env:
           GO_VERSION: 1.25.12
