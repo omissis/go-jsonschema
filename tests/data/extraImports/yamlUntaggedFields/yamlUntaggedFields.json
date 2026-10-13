@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/yamlUntaggedFields",
+  "description": "Generated with Tags set to json only, so no field carries a yaml tag. yaml.v3 binds such a field under its lowercased Go name, and pruning AdditionalProperties must remove that same key.",
+  "type": "object",
+  "properties": {
+    "foo": {
+      "description": "Bound by yaml.v3 as `foo`, the lowercased name of the field Foo.",
+      "type": "string"
+    }
+  },
+  "additionalProperties": {
+    "type": "string"
+  }
+}

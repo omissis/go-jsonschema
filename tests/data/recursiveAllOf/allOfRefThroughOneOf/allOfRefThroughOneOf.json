@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A discriminated oneOf whose variants refer back to it through allOf. Each allOf merges the oneOf into a copy with the same variants, so generation used to recurse forever. An allOf of one $ref is keyed by its target, so both variants' filters within a copy refer to that copy.",
+  "properties": {
+    "predicate": { "$ref": "#/definitions/node" }
+  },
+  "definitions": {
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "value"],
+          "properties": { "kind": { "const": "leaf" }, "value": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "filter"],
+          "properties": { "kind": { "const": "some" }, "filter": { "allOf": [{ "$ref": "#/definitions/node" }] } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "filter"],
+          "properties": { "kind": { "const": "every" }, "filter": { "allOf": [{ "$ref": "#/definitions/node" }] } }
+        }
+      ]
+    }
+  }
+}
