@@ -129,7 +129,7 @@ only specific validations remain to be fully implemented.
     * [x] `enum`
     * [x] `type` (single)
     * [x] `type` (multiple; **note**: partial support, limited validation)
-    * [ ] `const`
+    * [x] `const`
   * [X] Numeric validation (§6.2)
     * [X] `multipleOf`
     * [X] `maximum`
@@ -168,7 +168,7 @@ only specific validations remain to be fully implemented.
     * [x] Dates and times
     * [ ] Email addresses
     * [ ] Hostnames
-    * [ ] IP addresses
+    * [x] IP addresses (`ipv4` and `ipv6`, typed as `net/netip.Addr`)
     * [ ] Resource identifiers
     * [ ] URI-template
     * [ ] JSON pointers
