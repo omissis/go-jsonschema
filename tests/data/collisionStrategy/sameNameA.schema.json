@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/collisionStrategy/sameNameA",
+  "description": "The root property and the definition it $refs share a name. Under qualify both resolve to the same qualified identifier, so the property's pass collides with the definition's declaration — and is then discarded, because the type turns out to be already named.",
+  "type": "object",
+  "properties": { "metadata": { "$ref": "#/$defs/metadata" } },
+  "required": ["metadata"],
+  "$defs": {
+    "metadata": { "type": "object", "properties": { "fromA": { "type": "string" } } }
+  }
+}

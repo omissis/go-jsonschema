@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/noDiscriminator",
+  "type": "object",
+  "properties": {
+    "value": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "a": { "type": "string" } },
+          "required": ["a"]
+        },
+        {
+          "type": "object",
+          "properties": { "b": { "type": "string" } },
+          "required": ["b"]
+        }
+      ]
+    }
+  },
+  "required": ["value"]
+}

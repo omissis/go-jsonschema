@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A oneOf whose branches only list required: exactly one of value and ref must be present. No oneOf strategy compiles it, so the struct accepts neither or both, and that is reported.",
+  "required": ["kind"],
+  "properties": {
+    "kind": { "type": "string", "enum": ["line", "area"] },
+    "value": { "type": "number" },
+    "ref": { "type": "string" }
+  },
+  "oneOf": [{ "required": ["value"] }, { "required": ["ref"] }]
+}
