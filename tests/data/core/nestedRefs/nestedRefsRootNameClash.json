@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A nested ref whose derived name matches the root's own. The root's declaration is still in progress when the ref is named, and an in-progress name used to count as free, so the nested type took the name and this root struct was silently dropped.",
+  "definitions": {
+    "NestedRefsRootName": {
+      "type": "object",
+      "properties": {
+        "clash": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "value": { "$ref": "#/definitions/NestedRefsRootName/properties/clash" }
+  }
+}

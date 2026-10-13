@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A node whose child is an allOf of a $ref back to the node. The allOf merges the node into a copy, which holds the same child, so the merge used to recurse forever. Its re-entry now refers to the merge being generated, through a pointer.",
+  "properties": {
+    "root": { "$ref": "#/definitions/node" }
+  },
+  "definitions": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "child": { "allOf": [{ "$ref": "#/definitions/node" }], "description": "The next node." }
+      }
+    }
+  }
+}

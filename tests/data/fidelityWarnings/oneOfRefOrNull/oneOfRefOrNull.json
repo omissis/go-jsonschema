@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "A oneOf of a $ref and null falls back to interface{}. The referenced schema's constraints go unchecked with it, which is reported by naming the $ref.",
+  "properties": {
+    "pair": { "oneOf": [{ "$ref": "#/definitions/pair" }, { "type": "null" }] }
+  },
+  "definitions": {
+    "pair": { "type": "object", "required": ["k"], "properties": { "k": { "type": "string" } } }
+  }
+}

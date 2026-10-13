@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/rootAllOf",
+  "allOf": [
+    {
+      "$ref": "#/$defs/Base"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "extra": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "extra"
+      ]
+    }
+  ],
+  "$defs": {
+    "Base": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  }
+}
