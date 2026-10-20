@@ -10,6 +10,7 @@ import (
 
 	"github.com/atombender/go-jsonschema/pkg/cmputil"
 	"github.com/atombender/go-jsonschema/pkg/codegen"
+	"github.com/atombender/go-jsonschema/pkg/mathutils"
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 )
 
@@ -1266,7 +1267,7 @@ func (g *schemaGenerator) generateEnumType(
 			for i, v := range t.Enum {
 				switch v := v.(type) {
 				case float64:
-					t.Enum[i] = int(v)
+					t.Enum[i] = int(mathutils.SaturatingInt64(v))
 
 				default:
 					return nil, fmt.Errorf("%w %v", errEnumNonPrimitiveVal, v)

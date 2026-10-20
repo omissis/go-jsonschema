@@ -7,6 +7,7 @@ import (
 
 	testExclusiveMaximum "github.com/atombender/go-jsonschema/tests/data/validation/exclusiveMaximum"
 	testExclusiveMinimum "github.com/atombender/go-jsonschema/tests/data/validation/exclusiveMinimum"
+	testInt64Bounds "github.com/atombender/go-jsonschema/tests/data/validation/int64Bounds"
 	testMaxLength "github.com/atombender/go-jsonschema/tests/data/validation/maxLength"
 	testMaximum "github.com/atombender/go-jsonschema/tests/data/validation/maximum"
 	testMinLength "github.com/atombender/go-jsonschema/tests/data/validation/minLength"
@@ -532,6 +533,55 @@ func TestExclusiveMinimum(t *testing.T) {
 			mo2 := testExclusiveMinimum.ExclusiveMinimumOld{}
 
 			err = json.Unmarshal([]byte(tC.data), &mo2)
+
+			helpers.CheckError(t, tC.wantErr, err)
+		})
+	}
+}
+
+// Bounds at the edges of int64 are held as float64, where 9223372036854775807
+// rounds up to 2^63. Converting that back to int64 is implementation-defined,
+// so the generated bound must be clamped, or amd64 emits math.MinInt64 and
+// rejects every value.
+func TestInt64Bounds(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc    string
+		data    string
+		wantErr error
+	}{
+		{
+			desc: "ordinary values",
+			data: `{"myMaximum": 1, "myMinimum": 1, "myExclusiveMaximum": 1, "myExclusiveMinimum": 1}`,
+		},
+		{
+			desc: "inclusive bounds at the int64 limits",
+			data: `{"myMaximum": 9223372036854775807, "myMinimum": -9223372036854775808}`,
+		},
+		{
+			desc: "just inside the exclusive bounds",
+			data: `{"myExclusiveMaximum": 9223372036854775806, "myExclusiveMinimum": -9223372036854775807}`,
+		},
+		{
+			desc:    "exclusive maximum at the int64 limit",
+			data:    `{"myExclusiveMaximum": 9223372036854775807}`,
+			wantErr: errors.New("field myExclusiveMaximum: must be < 9223372036854775807"),
+		},
+		{
+			desc:    "exclusive minimum at the int64 limit",
+			data:    `{"myExclusiveMinimum": -9223372036854775808}`,
+			wantErr: errors.New("field myExclusiveMinimum: must be > -9223372036854775808"),
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			mo := testInt64Bounds.Int64Bounds{}
+
+			err := json.Unmarshal([]byte(tC.data), &mo)
 
 			helpers.CheckError(t, tC.wantErr, err)
 		})

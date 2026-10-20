@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://example.com/int64Bounds",
+  "type": "object",
+  "properties": {
+    "myMaximum": {
+      "type": "integer",
+      "maximum": 9223372036854775807
+    },
+    "myMinimum": {
+      "type": "integer",
+      "minimum": -9223372036854775808
+    },
+    "myExclusiveMaximum": {
+      "type": "integer",
+      "exclusiveMaximum": 9223372036854775807
+    },
+    "myExclusiveMinimum": {
+      "type": "integer",
+      "exclusiveMinimum": -9223372036854775808
+    },
+    "myDefault": {
+      "type": "integer",
+      "default": 9223372036854775807
+    },
+    "myEnum": {
+      "type": "integer",
+      "enum": [
+        1,
+        9223372036854775807
+      ]
+    }
+  }
+}
