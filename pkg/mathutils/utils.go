@@ -1,5 +1,22 @@
 package mathutils
 
+import "math"
+
+// SaturatingInt64 converts f to int64, clamping values outside int64's range
+// to its limits. A plain int64(f) is implementation-defined there: a JSON
+// 9223372036854775807 decodes to float64 2^63, which saturates to
+// math.MaxInt64 on arm64 but becomes math.MinInt64 on amd64.
+func SaturatingInt64(f float64) int64 {
+	switch {
+	case f >= math.MaxInt64:
+		return math.MaxInt64
+	case f <= math.MinInt64:
+		return math.MinInt64
+	}
+
+	return int64(f)
+}
+
 // NormalizeBounds is a public function that normalizes the given bounds and exclusivity flags.
 func NormalizeBounds(
 	minimum, maximum *float64, exclusiveMinimum, exclusiveMaximum *any,

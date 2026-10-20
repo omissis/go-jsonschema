@@ -243,7 +243,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 	// We need to create a temp variable and take its address.
 	if v.isPointerToInteger() {
 		if f, ok := v.defaultValue.(float64); ok {
-			intVal := int(f)
+			intVal := int(mathutils.SaturatingInt64(f))
 			tmpEmitter := codegen.NewEmitter(out.MaxLineLength())
 			tmpEmitter.Printlnf("defaultInt := %d", intVal)
 			tmpEmitter.Printlnf(`%s = &defaultInt`, getPlainName(v.fieldName))
@@ -257,7 +257,7 @@ func (v *defaultValidator) dumpDefaultValueAssignment(out *codegen.Emitter) (any
 	defaultValue := v.defaultValue
 	if v.isIntegerType() {
 		if f, ok := v.defaultValue.(float64); ok {
-			defaultValue = int(f)
+			defaultValue = int(mathutils.SaturatingInt64(f))
 		}
 	}
 
@@ -640,7 +640,7 @@ func (v *numericValidator) desc() *validatorDesc {
 
 func (v *numericValidator) valueOf(val float64) any {
 	if v.roundToInt {
-		return int64(val)
+		return mathutils.SaturatingInt64(val)
 	}
 
 	return val

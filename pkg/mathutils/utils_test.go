@@ -1,6 +1,7 @@
 package mathutils_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -107,4 +108,32 @@ func TestNormalizeBounds(t *testing.T) {
 		assert.False(t, nMinExclusive)
 		assert.False(t, nMaxExclusive)
 	})
+}
+
+func TestSaturatingInt64(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc string
+		in   float64
+		want int64
+	}{
+		{desc: "zero", in: 0, want: 0},
+		{desc: "truncates toward zero", in: 2.9, want: 2},
+		{desc: "truncates negative toward zero", in: -2.9, want: -2},
+		{desc: "int64 max as decoded from JSON", in: math.MaxInt64, want: math.MaxInt64},
+		{desc: "int64 min", in: math.MinInt64, want: math.MinInt64},
+		{desc: "above int64 range", in: 1e19, want: math.MaxInt64},
+		{desc: "below int64 range", in: -1e19, want: math.MinInt64},
+		{desc: "positive infinity", in: math.Inf(1), want: math.MaxInt64},
+		{desc: "negative infinity", in: math.Inf(-1), want: math.MinInt64},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tC.want, mathutils.SaturatingInt64(tC.in))
+		})
+	}
 }
