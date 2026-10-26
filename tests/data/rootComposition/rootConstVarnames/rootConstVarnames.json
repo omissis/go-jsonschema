@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/rootConstVarnames",
+  "description": "Narrowing the enum to the const keeps the x-enum-varnames entry at the const's position.",
+  "enum": ["a", "b"],
+  "x-enum-varnames": ["Alpha", "Beta"],
+  "const": "b"
+}

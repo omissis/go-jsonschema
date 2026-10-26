@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "condition's first variant refers to operand, whose oneOf refers back to condition through an allOf. That allOf copies condition, variants included, so the copy's operand property is reached again while its own $ref is still being resolved. The placeholder declared for that property is dropped once the ref resolves, so it used to end up named in the copy but never declared; the copy now resolves the ref itself.",
+  "definitions": {
+    "condition": {
+      "oneOf": [
+        {
+          "properties": {
+            "operand": {
+              "$ref": "#/definitions/operand"
+            }
+          }
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "operand": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "properties": {
+                "filter": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/condition"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

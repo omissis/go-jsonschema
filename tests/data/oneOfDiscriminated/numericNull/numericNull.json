@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/numericNull",
+  "type": "object",
+  "properties": {
+    "withNull": {
+      "description": "A numeric discriminator beside a null one. null is routed before the numeric switch; it used to be emitted as `case <nil>:`, which does not compile.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "version": { "const": 1 }, "a": { "type": "string" } },
+          "required": ["version"]
+        },
+        {
+          "type": "object",
+          "properties": { "version": { "const": 2 }, "b": { "type": "string" } },
+          "required": ["version"]
+        },
+        {
+          "type": "object",
+          "properties": { "version": { "enum": [null] } },
+          "required": ["version"]
+        }
+      ]
+    },
+    "withZero": {
+      "description": "No null variant but a 0 one: a null discriminator is rejected, not decoded as 0 and dispatched to the 0 variant.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "version": { "const": 0 }, "a": { "type": "string" } },
+          "required": ["version"]
+        },
+        {
+          "type": "object",
+          "properties": { "version": { "const": 1 }, "b": { "type": "string" } },
+          "required": ["version"]
+        }
+      ]
+    }
+  }
+}

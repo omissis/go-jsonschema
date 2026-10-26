@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/formatRejected",
+  "description": "A format on the union declines the wrapper, whose string branch could not apply it, so the property stays interface{}.",
+  "type": "object",
+  "properties": {
+    "when": { "type": ["string", "number"], "format": "date-time" }
+  }
+}
