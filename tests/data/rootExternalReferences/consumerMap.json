@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Consumer.Map",
+  "description": "A root schema that is a map of enum values.",
+  "type": "object",
+  "additionalProperties": {
+    "enum": [
+      "FOO",
+      "BAR"
+    ]
+  }
+}

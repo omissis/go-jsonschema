@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Consumer",
+  "type": "object",
+  "properties": {
+    "foo": {
+      "$ref": "enum.json"
+    },
+    "constant": {
+      "$ref": "const.json"
+    },
+    "empty": {
+      "$ref": "empty.json"
+    },
+    "map": {
+      "$ref": "consumerMap.json"
+    },
+    "aliased": {
+      "$ref": "ref.json"
+    },
+    "composed": {
+      "$ref": "oneOf.json"
+    }
+  }
+}

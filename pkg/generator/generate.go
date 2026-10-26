@@ -234,14 +234,22 @@ func (g *Generator) DoFile(fileName string) error {
 }
 
 func (g *Generator) AddFile(fileName string, schema *schemas.Schema) error {
+	_, err := g.addFile(fileName, schema)
+	return err
+}
+
+// addFile generates the root type of schema and returns its declaration, or
+// nil when the root declares nothing that produces a Go type. References to a
+// whole file use this result instead of regenerating the root themselves.
+func (g *Generator) addFile(fileName string, schema *schemas.Schema) (*codegen.TypeDecl, error) {
 	o, err := g.findOutputFileForSchemaID(schema.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if schema.ID != "" {
 		if _, processed := o.processedSchemas[schema.ID]; processed {
-			return nil
+			return o.declsByName[g.getRootTypeName(schema, fileName)], nil
 		}
 
 		o.processedSchemas[schema.ID] = true

@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Aliased",
+  "description": "A root schema that is only a reference to another file.",
+  "$ref": "enum.json"
+}

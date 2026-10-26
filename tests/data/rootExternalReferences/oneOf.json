@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Composed",
+  "description": "A root schema that has no explicit type, only a oneOf.",
+  "oneOf": [
+    {
+      "type": "string"
+    },
+    {
+      "type": "integer"
+    }
+  ]
+}

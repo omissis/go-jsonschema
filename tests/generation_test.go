@@ -572,6 +572,16 @@ func TestRootComposition(t *testing.T) {
 	testExamples(t, basicConfig, "./data/rootComposition")
 }
 
+// TestRootExternalReferences covers whole-file references to roots that have
+// no explicit type. addFile generates each referenced root once; the reference
+// must reuse that declaration rather than assign the root an "object" type and
+// generate it a second time.
+func TestRootExternalReferences(t *testing.T) {
+	t.Parallel()
+
+	testExampleFile(t, basicConfig, "./data/rootExternalReferences/consumer.json")
+}
+
 func TestFidelityWarnings(t *testing.T) {
 	t.Parallel()
 
