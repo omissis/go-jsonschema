@@ -218,6 +218,14 @@ func TestStructNameFromTitle(t *testing.T) {
 	testExamples(t, cfg, "./data/nameFromTitle")
 }
 
+func TestStructNamePrefix(t *testing.T) {
+	t.Parallel()
+
+	cfg := basicConfig
+	cfg.StructNamePrefix = "Prefix"
+	testExamples(t, cfg, "./data/structNamePrefix")
+}
+
 func TestYamlStructNameFromFile(t *testing.T) {
 	t.Parallel()
 

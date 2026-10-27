@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/structNamePrefix",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "status": { "type": "string", "enum": ["draft", "sent"] },
+    "address": {
+      "type": "object",
+      "properties": { "city": { "type": "string" } }
+    },
+    "contact": { "$ref": "#/definitions/contact" }
+  },
+  "definitions": {
+    "contact": {
+      "type": "object",
+      "properties": { "email": { "type": "string" } }
+    }
+  }
+}
