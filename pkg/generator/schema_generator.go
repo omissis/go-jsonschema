@@ -295,10 +295,10 @@ func (g *schemaGenerator) generateDeclaredType(t *schemas.Type, scope nameScope)
 	}
 
 	// Apply prefix if configured
-	if g.Generator.config.StructNamePrefix != "" {
+	if g.config.StructNamePrefix != "" {
 		// Don't apply prefix to types that are already prefixed
-		if !strings.HasPrefix(name, g.Generator.config.StructNamePrefix) {
-			name = g.Generator.config.StructNamePrefix + name
+		if !strings.HasPrefix(name, g.config.StructNamePrefix) {
+			name = g.config.StructNamePrefix + name
 		}
 	}
 
@@ -1344,10 +1344,10 @@ func (g *schemaGenerator) generateEnumType(
 	name := g.output.uniqueTypeName(scope)
 
 	// Apply prefix if configured
-	if g.Generator.config.StructNamePrefix != "" {
+	if g.config.StructNamePrefix != "" {
 		// Don't apply prefix to types that are already prefixed
-		if !strings.HasPrefix(name, g.Generator.config.StructNamePrefix) {
-			name = g.Generator.config.StructNamePrefix + name
+		if !strings.HasPrefix(name, g.config.StructNamePrefix) {
+			name = g.config.StructNamePrefix + name
 		}
 	}
 
