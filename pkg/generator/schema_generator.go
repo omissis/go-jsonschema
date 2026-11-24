@@ -1372,11 +1372,24 @@ func (g *schemaGenerator) generateEnumType(
 
 	// TODO: May be aliased string type.
 	if prim, ok := enumType.(codegen.PrimitiveType); ok && prim.Type == "string" {
+		seenValues := map[string]bool{}
+
 		for _, v := range t.Enum {
 			if s, ok := v.(string); ok {
-				// TODO: Make sure the name is unique across scope.
+				if seenValues[s] {
+					continue
+				}
+				seenValues[s] = true
+
+				name := g.makeEnumConstantName(enumDecl.Name, s)
+				uniqueName := g.output.uniqueConstantName(name)
+				if uniqueName != name {
+					g.warner(fmt.Sprintf("Enum value %q maps to a constant by the same name declared "+
+						"in the same package; it will be declared as %s", s, uniqueName))
+				}
+
 				g.output.file.Package.AddDecl(&codegen.Constant{
-					Name:  g.makeEnumConstantName(enumDecl.Name, s),
+					Name:  uniqueName,
 					Type:  &codegen.NamedType{Decl: &enumDecl},
 					Value: s,
 				})
