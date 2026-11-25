@@ -52,6 +52,29 @@ func (o *output) isUniqueTypeName(name string) bool {
 	return !ok || (ok && v.Type == nil)
 }
 
+func (o *output) uniqueConstantName(name string) string {
+	if o.isUniqueConstantName(name) {
+		return name
+	}
+
+	for count := 1; ; count++ {
+		suffixed := fmt.Sprintf("%s_%d", name, count)
+		if o.isUniqueConstantName(suffixed) {
+			return suffixed
+		}
+	}
+}
+
+func (o *output) isUniqueConstantName(name string) bool {
+	for _, decl := range o.file.Package.Decls {
+		if named, ok := decl.(codegen.Named); ok && named.GetName() == name {
+			return false
+		}
+	}
+
+	return true
+}
+
 // uniqueTypeName finds the shortest identifier in a name scope that yields a unique type name.
 // If a given suffix on the name scope is not unique, more context from the scope is added. If the
 // entire context does not yield a unique name, a numeric suffix is used.
