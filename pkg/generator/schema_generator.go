@@ -1379,10 +1379,11 @@ func (g *schemaGenerator) generateEnumType(
 				if seenValues[s] {
 					continue
 				}
-				seenValues[s] = true
 
+				seenValues[s] = true
 				name := g.makeEnumConstantName(enumDecl.Name, s)
 				uniqueName := g.output.uniqueConstantName(name)
+
 				if uniqueName != name {
 					g.warner(fmt.Sprintf("Enum value %q maps to a constant by the same name declared "+
 						"in the same package; it will be declared as %s", s, uniqueName))
